@@ -1,0 +1,187 @@
+name: hidden_pantry_app
+description: "A new Flutter project."
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.2
+  firebase_core: ^3.6.0
+  firebase_app_check: ^0.3.0
+  firebase_auth: ^5.3.1
+  cloud_firestore: ^5.0.0
+  sqflite: ^2.3.0
+  path: ^1.9.0
+  path_provider: ^2.1.0
+  cupertino_icons: ^1.0.8
+  shared_preferences: ^2.3.2
+  country_code_picker: ^3.4.1
+  google_sign_in: ^6.2.1
+  sign_in_with_apple: ^6.1.1
+  firebase_storage: ^12.0.0
+  image_picker: ^1.1.2
+  flutter_tts: ^4.2.2
+  audioplayers: ^6.5.1
+  url_launcher: ^6.3.1
+  add_2_calendar: ^3.0.1
+  file_picker: ^8.1.6
+  firebase_messaging: ^15.2.10
+  flutter_stripe: ^12.3.0
+  cloud_functions: ^5.1.3
+  intl: ^0.19.0
+  camera: ^0.10.6
+  tflite_flutter: ^0.11.0
+  image: ^4.1.7
+  flutter_local_notifications: ^17.2.3
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.13.1
+  mockito: ^5.4.4
+  firebase_auth_mocks: ^0.14.2
+
+# ✅ MUST BE HERE (root level)
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/Logos/mainLogo.png
+  adaptive_icon_background: "#FFF3EB"
+  adaptive_icon_foreground: assets/Logos/mainLogo.png
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/Logos/name.png
+    - assets/Logos/knife.png
+    - assets/Logos/logo.png
+    - assets/Logos/logo2.png
+    - assets/Logos/mainLogo.png
+    - assets/bg/1.png
+    - assets/bg/2.png
+    - assets/bg/3.jpg
+    - assets/bg/4.png
+    - assets/icons/nextButton.png
+    - assets/icons/apple.png
+    - assets/icons/chef.png
+    - assets/icons/question.png
+    - assets/icons/eye-disable.png
+    - assets/icons/eye.png
+    - assets/Logos/apple.png
+    - assets/Logos/google.png
+    - assets/icons/Bookmark_active.png
+    - assets/icons/Bookmark_inactive.png
+    - assets/icons/search_inactive.png
+    - assets/icons/Search_active.png
+    - assets/icons/Search.png
+    - assets/icons/Plus.png
+    - assets/icons/User_active.png
+    - assets/icons/User_inactive.png
+    - assets/icons/home_active.png
+    - assets/icons/home_inactive.png
+    - assets/Logos/profile_placeholder.png
+    - assets/Logos/recipe_placeholder.jpg
+    - assets/bg/nav_bar.png
+    - assets/icons/next_brown.png
+    - assets/icons/card.png
+    - assets/icons/logout.png
+    - assets/icons/book.png
+    - assets/icons/setting.png
+    - assets/icons/notification.png
+    - assets/food/caffeine.png
+    - assets/food/eggs.png
+    - assets/food/fish.png
+    - assets/food/gluten.png
+    - assets/food/milk.png
+    - assets/food/peanuts.png
+    - assets/food/shellfish.png
+    - assets/food/soy.png
+    - assets/food/spicy.png
+    - assets/food/tomato.png
+    - assets/food/treenuts.png
+    - assets/food/wheat.png
+    - assets/icons/camera.png
+    - assets/icons/backButton.png
+    - assets/bg/5.png
+    - assets/Logos/master.png
+    - assets/Logos/visa.png
+    - assets/Logos/card.png
+    - assets/icons/heart.png
+    - assets/icons/heart_filled.png
+    - assets/icons/bookmark.png
+    - assets/icons/bookmark_filled.png
+    - assets/icons/minus_orange.png
+    - assets/icons/plus_orange.png
+    - assets/icons/next_purple.png
+    - assets/icons/next_filled.png
+    - assets/icons/star.png
+    - assets/icons/gmail.png
+    - assets/icons/call.png
+    - assets/icons/Camera_brown.png
+    - assets/food/pantry.png
+    - assets/food/GrainsAndCereals.png
+    - assets/food/LegumesPlantProtein.png
+    - assets/food/baking.png
+    - assets/food/beverages.png
+    - assets/food/cheese.png
+    - assets/food/dairy.png
+    - assets/food/dairy_free.png
+    - assets/food/fruits.png
+    - assets/food/mushroom.png
+    - assets/food/nutsAndSeed.png
+    - assets/food/oil.png
+    - assets/food/packed_food.png
+    - assets/food/pasta.png
+    - assets/food/premade_dough.png
+    - assets/food/seafood.png
+    - assets/food/seasoning.png
+    - assets/food/spices.png
+    - assets/food/sugar.png
+    - assets/food/vegetables.png
+    - assets/icons/client_active.png
+    - assets/icons/client_inactive.png
+    - assets/icons/dashboard_active.png
+    - assets/icons/dashboard_inactive.png
+    - assets/icons/message_active.png
+    - assets/icons/message_inactive.png
+    - assets/icons/plans_active.png
+    - assets/icons/plans_inactive.png
+    - assets/data/ingredients_categorized.csv
+    - assets/food/alcholic_beverages.png
+    - assets/food/baby_food.png
+    - assets/food/bakery_breads.png
+    - assets/food/baking_ingredients.png
+    - assets/food/candied_fruit.png
+    - assets/food/candy.png
+    - assets/food/canned_goods.png
+    - assets/food/cereal.png
+    - assets/food/chocolate.png
+    - assets/food/sauces.png
+    - assets/food/dried_fruit.png
+    - assets/food/fats.png
+    - assets/food/fermented.png
+    - assets/food/frozen_foods.png
+    - assets/food/herbs.png
+    - assets/food/herbs_supplements.png
+    - assets/food/meat.png
+    - assets/food/nut_butter.png
+    - assets/food/preserved_vegetables.png
+    - assets/food/tofu_meat_alternatives.png
+    - assets/food/rice.png
+    - assets/food/seaweed.png
+    - assets/bg/6.png
+    - assets/model/
+    - assets/icons/users.png
+    - assets/food/jams.png
+    - assets/food/soups_stocks.png
+    - assets/food/snacks.png
+
+
+    

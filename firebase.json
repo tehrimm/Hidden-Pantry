@@ -1,0 +1,50 @@
+{
+    "firestore": {
+        "rules": "firestore.rules",
+        "indexes": "firestore.indexes.json"
+    },
+    "storage": {
+        "rules": "storage.rules"
+    },
+    "functions": [
+        {
+            "source": "functions",
+            "codebase": "default",
+            "ignore": [
+                "node_modules",
+                ".git",
+                "firebase-debug.log",
+                "firebase-debug.*.log"
+            ]
+        }
+    ],
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "arched-sunbeam-478306-u3",
+                    "appId": "1:1089198153938:android:6dec8ecf94fd3bd5080d0b",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "arched-sunbeam-478306-u3",
+                    "configurations": {
+                        "android": "1:1089198153938:android:6dec8ecf94fd3bd5080d0b",
+                        "ios": "1:1089198153938:ios:e38c625c2ad7335f080d0b"
+                    }
+                }
+            }
+        }
+    },
+    "hosting": {
+        "public": "public",
+        "cleanUrls": true,
+        "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**"
+        ]
+    }
+}

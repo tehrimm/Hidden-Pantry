@@ -1,0 +1,126 @@
+{
+  "project_info": {
+    "project_number": "1089198153938",
+    "project_id": "arched-sunbeam-478306-u3",
+    "storage_bucket": "arched-sunbeam-478306-u3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1089198153938:android:0bd54e8e2698cf1c080d0b",
+        "android_client_info": {
+          "package_name": "com.example.hidden_pantry"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1089198153938-04q35pvnoj4brdhvd738ov3ifa8vdbgs.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.hidden_pantry",
+            "certificate_hash": "290a6d8f45f594f4767f48df8f231540d314bd23"
+          }
+        },
+        {
+          "client_id": "1089198153938-s383unmjbfqsk6c4rori22vkui31shue.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4mgi_eP_9lGfrBIteNJWa__a2LRoRQNQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1089198153938-s383unmjbfqsk6c4rori22vkui31shue.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1089198153938-1gtlmm6q4ao6qsc2lm1g99fdh55jpijm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.hiddenPantryApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1089198153938:android:6dec8ecf94fd3bd5080d0b",
+        "android_client_info": {
+          "package_name": "com.example.hidden_pantry_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1089198153938-s383unmjbfqsk6c4rori22vkui31shue.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4mgi_eP_9lGfrBIteNJWa__a2LRoRQNQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1089198153938-s383unmjbfqsk6c4rori22vkui31shue.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1089198153938-1gtlmm6q4ao6qsc2lm1g99fdh55jpijm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.hiddenPantryApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1089198153938:android:84a6be8dff97c30c080d0b",
+        "android_client_info": {
+          "package_name": "com.hiddenpantry"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1089198153938-s383unmjbfqsk6c4rori22vkui31shue.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB4mgi_eP_9lGfrBIteNJWa__a2LRoRQNQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1089198153938-s383unmjbfqsk6c4rori22vkui31shue.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1089198153938-1gtlmm6q4ao6qsc2lm1g99fdh55jpijm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.hiddenPantryApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

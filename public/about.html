@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>About - Hidden Pantry</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDF7F2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #462F4D;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            padding: 40px 24px;
+            max-width: 700px;
+            width: 100%;
+        }
+
+        .logo {
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo img {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+        }
+
+        .logo-text {
+            font-size: 22px;
+            font-weight: 800;
+            color: #462F4D;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-dot {
+            color: #EF8A54;
+        }
+
+        .card {
+            background: white;
+            padding: 40px 36px;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(70, 47, 77, 0.06);
+            max-width: 700px;
+            width: 100%;
+        }
+
+        .page-title {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .page-title h1 {
+            color: #462F4D;
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .hero-logo {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .hero-logo img {
+            width: 80px;
+            height: 80px;
+            border-radius: 20px;
+            box-shadow: 0 6px 20px rgba(70, 47, 77, 0.1);
+        }
+
+        h2 {
+            color: #462F4D;
+            font-size: 16px;
+            font-weight: 700;
+            margin-top: 28px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: #7a6b80;
+            line-height: 1.8;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 12px 0;
+        }
+
+        .feature-list li {
+            color: #7a6b80;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 1.8;
+            padding: 6px 0;
+            padding-left: 28px;
+            position: relative;
+        }
+
+        .feature-list li::before {
+            content: "✦";
+            color: #EF8A54;
+            position: absolute;
+            left: 4px;
+            font-size: 12px;
+        }
+
+        .feature-list li strong {
+            color: #462F4D;
+            font-weight: 700;
+        }
+
+        .version {
+            text-align: center;
+            margin-top: 28px;
+            color: #b8a8be;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .footer {
+            padding: 24px;
+            text-align: center;
+            color: #b8a8be;
+            font-size: 12px;
+            font-weight: 500;
+            line-height: 1.8;
+        }
+
+        .powered {
+            font-weight: 600;
+            color: #9a8a9e;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="logo">
+            <img src="/logo.png" alt="Hidden Pantry Logo">
+            <span class="logo-text">Hidden Pantry<span class="logo-dot">.</span></span>
+        </div>
+
+        <div class="card">
+            <div class="hero-logo">
+                <img src="/logo.png" alt="Hidden Pantry">
+            </div>
+            <div class="page-title">
+                <h1>About Hidden Pantry</h1>
+            </div>
+
+            <p>Hidden Pantry is a comprehensive nutrition and recipe platform that connects users with certified
+                nutritionists for personalised dietary guidance.</p>
+
+            <h2>Our Mission</h2>
+            <p>To make professional nutrition advice accessible to everyone, while providing a platform for
+                nutritionists to grow their practice and reach more clients.</p>
+
+            <h2>Key Features</h2>
+            <ul class="feature-list">
+                <li><strong>Smart Recipe Discovery</strong> — Browse thousands of recipes with intelligent search
+                    powered by pantry-based ingredient matching and TF-IDF recommendations.</li>
+                <li><strong>Nutritionist Marketplace</strong> — Find and subscribe to certified nutritionists across
+                    various specialisations including Clinical Nutrition, Sports Nutrition, Weight Management, and more.
+                </li>
+                <li><strong>Personalised Meal Plans</strong> — Receive custom meal plans tailored to your dietary needs,
+                    goals, and preferences directly from your nutritionist.</li>
+                <li><strong>Real-Time Consultations</strong> — Chat with your nutritionist, schedule meetings, and
+                    receive ongoing support through our integrated messaging system.</li>
+                <li><strong>Cooking Assistant</strong> — Step-by-step cooking guidance with text-to-speech instructions
+                    and dynamic serving size adjustments.</li>
+                <li><strong>Offline Access</strong> — Download your favourite recipes for offline use, perfect for
+                    cooking without internet access.</li>
+            </ul>
+
+            <h2>Technology</h2>
+            <p>Built with Flutter and powered by Firebase, Hidden Pantry leverages modern cloud infrastructure for
+                real-time data synchronisation, secure payments via Stripe Connect, and intelligent recipe
+                recommendations through our custom TF-IDF backend.</p>
+
+            <div class="version">Version 1.0.0</div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <span class="powered">Powered by Hidden Pantry</span><br>
+        <span>© 2026 Hidden Pantry. All rights reserved.</span>
+    </div>
+</body>
+
+</html>
