@@ -103,10 +103,12 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
           (route) => false,
         );
     } else if (i == 1) {
-      Navigator.pushReplacement(
+      Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const SearchScreen()),
-      );
+      ).then((_) {
+        if (mounted) setState(() => _bottomIndex = 4);
+      });
     } else if (i == 2) {
       Navigator.push(
         context,
@@ -115,10 +117,12 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
          if (mounted) setState(() => _bottomIndex = 4);
       });
     } else if (i == 3) {
-      Navigator.pushReplacement(
+      Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const SavedRecipesScreen()),
-      );
+      ).then((_) {
+        if (mounted) setState(() => _bottomIndex = 4);
+      });
     } else if (i == 4) {
        // Check if user is trying to switch to "User Profile" view of dashboard, 
        // but here we are in Discovery mode.
@@ -425,13 +429,20 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      Icon(Icons.star_rounded, color: Colors.amber[700], size: 16),
-                      const SizedBox(width: 4),
-                      Text("4.9", style: TextStyle(color: purple, fontSize: 12, fontWeight: FontWeight.bold)),
-                      const SizedBox(width: 12),
-                      Icon(Icons.verified_rounded, color: orange, size: 16),
-                      const SizedBox(width: 4),
-                      Text("Verified", style: TextStyle(color: orange, fontSize: 12, fontWeight: FontWeight.bold)),
+                      if (data["avgRating"] != null && (data["avgRating"] as num) > 0) ...[
+                        Icon(Icons.star_rounded, color: Colors.amber[700], size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          (data["avgRating"] as num).toStringAsFixed(1), 
+                          style: TextStyle(color: purple, fontSize: 12, fontWeight: FontWeight.bold)
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                      if (data["verificationStatus"] == "approved") ...[
+                        Icon(Icons.verified_rounded, color: orange, size: 16),
+                        const SizedBox(width: 4),
+                        Text("Verified", style: TextStyle(color: orange, fontSize: 12, fontWeight: FontWeight.bold)),
+                      ],
                     ],
                   ),
                 ],

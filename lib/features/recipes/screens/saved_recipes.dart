@@ -162,7 +162,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
         (route) => false,
       );
     } else if (i == 1) {
-      Navigator.pushReplacement(
+      Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const SearchScreen()),
       );
@@ -172,7 +172,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
         MaterialPageRoute(builder: (_) => const UploadRecipeStep1()),
       );
     } else if (i == 4) {
-      Navigator.pushReplacement(
+      Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => const NutritionistDiscoveryScreen()),
       );

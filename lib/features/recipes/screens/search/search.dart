@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
@@ -12,7 +13,7 @@ import 'package:hidden_pantry_app/core/widgets/home_bottom_nav.dart';
 import 'package:hidden_pantry_app/features/recipes/upload/upload_recipe_step1.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/saved_recipes.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/discovery.dart';
-// import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
+import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 import 'filter_bottom_sheet.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
 import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
@@ -35,6 +36,7 @@ class _SearchScreenState extends State<SearchScreen> {
   List<Recipe> _results = [];
   List<String> _recentSearches = [];
   List<String> _currentIngredients = [];
+  List<String> _userAllergies = [];
   bool _hasSearched = false;
 
   bool get _isUnderTest => widget.apiService != null;
@@ -65,6 +67,25 @@ class _SearchScreenState extends State<SearchScreen> {
     debugPrint('[SearchScreen] Initialized (inShell: ${widget.inShell})');
     _api = widget.apiService ?? const RecipeApiService(baseUrl: ApiConstants.baseUrl);
     _loadRecentSearches();
+    _loadUserAllergies();
+  }
+
+  Future<void> _loadUserAllergies() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+         final snap = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+         final data = snap.data();
+         if (data != null && data['allergies'] is List) {
+           setState(() {
+             _userAllergies = List<String>.from(data['allergies']);
+           });
+           debugPrint('[SearchScreen] Loaded allergens: $_userAllergies');
+         }
+      }
+    } catch (e) {
+      debugPrint('[SearchScreen] Error loading allergens: $e');
+    }
   }
 
   // Focus change handler removed (unused)
@@ -194,21 +215,44 @@ class _SearchScreenState extends State<SearchScreen> {
       _hasSearched = true;
     });
     try {
-      // 1. Fetch from API (Official Recipes) first
-      final apiResults = await _api.searchRecipes(
-        query, 
-        limit: 50, 
+      // 1. Fetch from Firestore (User Uploaded Recipes)
+      final firestoreResults = await RecipeService().searchRecipes(
+        query,
+        limit: 20,
         ingredients: _currentIngredients,
         maxMinutes: _filterMaxMinutes,
         tags: _filterTags,
       );
+
+      // 2. Fetch from API (External Recipes)
+      final apiResults = await _api.searchRecipes(
+        query, 
+        limit: 30, 
+        ingredients: _currentIngredients,
+        maxMinutes: _filterMaxMinutes,
+        tags: _filterTags,
+        allergies: _userAllergies,
+      );
+
       if (mounted) {
         setState(() {
-          _results = List<Recipe>.from(apiResults);
+          // Combine and prioritize Firestore results
+          final List<Recipe> combined = [];
+          
+          // Add Firestore results first (User uploaded)
+          combined.addAll(firestoreResults);
+          
+          // Add API results if not already present (avoid duplicates)
+          for (var apiR in apiResults) {
+            if (!combined.any((r) => r.id == apiR.id)) {
+              combined.add(apiR);
+            }
+          }
+          
+          _results = combined;
         });
         FocusScope.of(context).unfocus();
       }
-      // 2. Keep API results; Firestore merge skipped during tests
     } catch (e) {
       print('DEBUG _performSearch ERROR: $e');
       if (mounted) {
@@ -437,7 +481,15 @@ class _SearchScreenState extends State<SearchScreen> {
                       if (_searchFocus.hasFocus) {
                         _searchFocus.unfocus();
                       } else {
-                        Navigator.pop(context);
+                        if (Navigator.canPop(context)) {
+                          Navigator.pop(context);
+                        } else {
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (_) => MainNavigationShell()),
+                            (route) => false,
+                          );
+                        }
                       }
                     },
                     child: Icon(Icons.arrow_back, size: 24, color: purple),

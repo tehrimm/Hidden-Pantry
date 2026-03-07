@@ -380,9 +380,10 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
       child: Scaffold(
         backgroundColor: bg,
         resizeToAvoidBottomInset: false,
-        body: SafeArea(
+        body: Center(
           child: SizedBox(
             width: sx(_baseW),
+            height: sy(_baseH),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(sx(30)),
               child: Stack(
@@ -902,15 +903,15 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
                           SizedBox(height: sy(32)),
                           ],
                         ),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ),
     ),
     );
   }

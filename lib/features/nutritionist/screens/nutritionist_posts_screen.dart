@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
+import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
 
 class NutritionistPostsScreen extends StatefulWidget {
   const NutritionistPostsScreen({super.key});
@@ -275,6 +277,13 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
                     child: _mealPlanPreview(data["mealPlanId"], content, uid),
                   ),
 
+                // Shared Recipe Attachment
+                if (data["recipeId"] != null)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: _recipePreview(data["recipeId"], data["recipeName"], data["recipeImageUrl"] ?? data["imageUrl"]),
+                  ),
+
                 // Document Attachment
                 if (data["docUrl"] != null)
                   GestureDetector(
@@ -356,9 +365,11 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
                   label: "Share",
                   color: purple.withValues(alpha:0.5),
                   onTap: () {
-                    final shareText = type == "meal_plan" 
+                    final shareText = type == "meal_plan" || data["mealPlanId"] != null
                       ? "Check out this Meal Plan from ${_fullName ?? "a Nutritionist"}: $content"
-                      : "💡 Health Tip from ${_fullName ?? "a Nutritionist"}:\n\n$content\n\n— Hidden Pantry";
+                      : data["recipeId"] != null
+                          ? "Check out this Recipe from ${_fullName ?? "a Nutritionist"}: ${data['recipeName'] ?? 'Shared Recipe'}\n\n$content"
+                          : "💡 Health Tip from ${_fullName ?? "a Nutritionist"}:\n\n$content\n\n— Hidden Pantry";
                     Clipboard.setData(ClipboardData(text: shareText));
                     Toaster.show(context, "Copied to clipboard!");
                   },
@@ -644,5 +655,110 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
     if (diff.inHours < 24) return "${diff.inHours}h ago";
     if (diff.inDays < 7) return "${diff.inDays}d ago";
     return "${date.day}/${date.month}/${date.year}";
+  }
+
+  Widget _recipePreview(String recipeId, String? recipeName, String? recipeImageUrl) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardInner,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: orange.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        children: [
+          // Square Thumbnail or Icon if null
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              width: 50,
+              height: 50,
+              child: recipeImageUrl != null && recipeImageUrl.isNotEmpty
+                  ? Image.network(
+                      recipeImageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _recipeCardPlaceholder(),
+                    )
+                  : _recipeCardPlaceholder(),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Info Middle
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  recipeName ?? "Shared Recipe",
+                  style: TextStyle(
+                    color: purple,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    fontFamily: "Satoshi",
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "View detailed recipe instructions",
+                  style: TextStyle(
+                    color: purple.withValues(alpha: 0.5),
+                    fontSize: 13,
+                    fontFamily: "Satoshi",
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Button Right
+          ElevatedButton(
+            onPressed: () => _navigateToRecipe(recipeId),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: orange,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              minimumSize: Size.zero,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              elevation: 0,
+            ),
+            child: const Text(
+              "View",
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _recipeCardPlaceholder() {
+    return Container(
+      decoration: BoxDecoration(color: orange.withValues(alpha: 0.1), shape: BoxShape.circle),
+      child: Icon(Icons.restaurant_menu_rounded, color: orange, size: 24),
+    );
+  }
+
+  Future<void> _navigateToRecipe(String recipeId) async {
+    try {
+      final recipe = await RecipeService().getRecipeById(recipeId);
+      if (recipe != null && mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => RecipeDetailsScreen(recipe: recipe),
+          ),
+        );
+      } else if (mounted) {
+        Toaster.show(context, "Recipe not found", isError: true);
+      }
+    } catch (e) {
+      if (mounted) {
+        Toaster.show(context, "Error loading recipe: $e", isError: true);
+      }
+    }
   }
 }

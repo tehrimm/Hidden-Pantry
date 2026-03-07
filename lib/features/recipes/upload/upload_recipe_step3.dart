@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
+import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'add_ingredient_screen.dart';
 import 'upload_recipe_step4.dart';
 
@@ -12,6 +14,7 @@ class UploadRecipeStep3 extends StatefulWidget {
   final int servings;
   final String? difficulty;
   final List<String> tags;
+  final Recipe? editingRecipe;
 
   const UploadRecipeStep3({
     super.key,
@@ -22,6 +25,7 @@ class UploadRecipeStep3 extends StatefulWidget {
     required this.servings,
     this.difficulty,
     required this.tags,
+    this.editingRecipe,
   });
 
   @override
@@ -29,7 +33,19 @@ class UploadRecipeStep3 extends StatefulWidget {
 }
 
 class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
-  final List<Map<String, String>> _ingredients = [];
+  late final List<Map<String, String>> _ingredients;
+
+  @override
+  void initState() {
+    super.initState();
+    _ingredients = widget.editingRecipe?.ingredients.map((ing) {
+          return {
+            'name': ing.name,
+            'quantity': ing.unit.isEmpty ? ing.quantity.toString() : "${ing.quantity} ${ing.unit}",
+          };
+        }).toList() ??
+        [];
+  }
 
   final Color purple = const Color(0xFF462F4D);
   final Color orange = const Color(0xFFF2894F);
@@ -70,9 +86,9 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const SizedBox(width: 40),
+                    BackButtonWidget(color: purple),
                     Text(
-                      'Add Recipe',
+                      widget.editingRecipe != null ? 'Edit Recipe' : 'Add Recipe',
                       style: TextStyle(
                         color: purple,
                         fontSize: 20,
@@ -236,20 +252,8 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
                       padding: const EdgeInsets.fromLTRB(30, 42, 29, 42),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          GestureDetector(
-                            onTap: () => Navigator.pop(context),
-                            child: Container(
-                              width: 52,
-                              height: 53,
-                              decoration: BoxDecoration(
-                                color: cardBg,
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              child: const Icon(Icons.arrow_back_ios_new, size: 16, color: Color(0xFF462F4D)),
-                            ),
-                          ),
-                          const SizedBox(width: 60),
                           Expanded(
                             child: GestureDetector(
                               onTap: () {
@@ -265,6 +269,7 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
                                       difficulty: widget.difficulty,
                                       tags: widget.tags,
                                       ingredients: _ingredients,
+                                      editingRecipe: widget.editingRecipe,
                                     ),
                                   ),
                                 );

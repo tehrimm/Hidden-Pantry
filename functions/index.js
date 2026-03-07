@@ -297,7 +297,16 @@ exports.createNutritionistCheckout = functions.https.onCall(async (data, context
         throw new functions.https.HttpsError('unauthenticated', 'Must be logged in');
     }
 
-    const { planTitle, price, interval, nutritionistId, nutritionistName, tierLevel, existingSubscriptionId } = data;
+    let { planTitle, price, interval, nutritionistId, nutritionistName, tierLevel, existingSubscriptionId } = data;
+
+    // Robustly parse price and tierLevel
+    price = parseFloat(String(price || 0).replace(/[^\d.-]/g, ''));
+    tierLevel = parseInt(String(tierLevel || 1).replace(/[^\d]/g, '')) || 1;
+
+    if (isNaN(price) || price <= 0) {
+        throw new functions.https.HttpsError('invalid-argument', 'Invalid price provided');
+    }
+
     const uid = context.auth.uid;
     const db = admin.firestore();
 

@@ -14,9 +14,11 @@ import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_cha
 import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_posts_screen.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/features/nutritionist/services/nutritionist_service.dart';
+import 'package:hidden_pantry_app/features/nutritionist/widgets/recipe_selection_sheet.dart';
+import 'package:hidden_pantry_app/features/nutritionist/widgets/share_recipe_post_dialog.dart';
+import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
-import 'dart:io';
 
 class NutritionistDashboard extends StatefulWidget {
   const NutritionistDashboard({super.key});
@@ -82,15 +84,12 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
   }
 
   void _showPlusMenu() {
-    const Color iconColor = Color(0xFF74503C);
     const Color actionOrange = Color(0xFFE48E5B);
-    const Color subTextColor = Color(0xFFBFA89A);
 
     final actions = [
       {"icon": Icons.restaurant_menu_rounded, "title": "Create New Meal Plan", "subtitle": "Design a custom plan for your client", "action": "plan"},
-      {"icon": Icons.bookmark_rounded, "title": "Share Saved Meal Plans", "subtitle": "Send from your existing plans library", "action": "share"},
-      {"icon": Icons.add_box_outlined, "title": "Make a Post", "subtitle": "Share health advice or meal plans with your subscribers", "action": "tip"},
       {"icon": Icons.medical_services_rounded, "title": "Share Supplement Guide", "subtitle": "Send personalized recommendations", "action": "supplement"},
+      {"icon": Icons.add_box_outlined, "title": "Make a Post", "subtitle": "Share health advice, recipes, or updates", "action": "tip"},
     ];
 
     showModalBottomSheet(
@@ -99,20 +98,18 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
       isScrollControlled: true,
       builder: (context) => Container(
         decoration: const BoxDecoration(
-          color: Color(0xFFF9E3D5), // Sheet becomes darker beige
+          color: Color(0xFFF9E3D5),
           borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Handle
             Container(
               margin: const EdgeInsets.only(top: 10),
               width: 50, height: 5,
               decoration: BoxDecoration(color: actionOrange, borderRadius: BorderRadius.circular(3)),
             ),
             const SizedBox(height: 20),
-            // Title row
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 22),
               child: Row(
@@ -124,94 +121,122 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                 ],
               ),
             ),
-            const SizedBox(height: 24), // Added spacing
-            // Action items — individual cards
-            ...List.generate(actions.length, (i) {
-              final action = actions[i];
-              return Container(
-                margin: EdgeInsets.only(left: 16, right: 16, bottom: i < actions.length - 1 ? 8 : 0),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF2EA), // Cards become lighter
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(color: purple.withValues(alpha:0.04), blurRadius: 8, offset: const Offset(0, 2)),
+            const SizedBox(height: 16),
+            Flexible(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ...actions.map((a) => _actionItem(a)),
                   ],
                 ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
-                    onTap: () {
-                      Navigator.pop(context);
-                      final key = action["action"] as String;
-                      if (key == "plan") {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const MealPlanCreatorScreen()));
-                      } else if (key == "share") {
-                        _showSavedPlansSheet();
-                      } else if (key == "tip") {
-                         Future.delayed(const Duration(milliseconds: 300), () {
-                           if (mounted) _showPostTipDialog();
-                         });
-                      } else if (key == "supplement") {
-                        _showSelectClientSheet({}, "supplement_guide", benefitTitle: "Supplement Guide");
-                      } else {
-                        Toaster.show(context, "${action["title"]} coming soon!");
-                      }
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            decoration: BoxDecoration(
-                              color: purple.withValues(alpha:0.1),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(color: purple.withValues(alpha:0.06)),
-                            ),
-                            child: Icon(action["icon"] as IconData, color: actionOrange, size: 22),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  action["title"] as String,
-                                  style: TextStyle(color: purple, fontWeight: FontWeight.w700, fontSize: 15, fontFamily: "Satoshi"),
-                                ),
-                                const SizedBox(height: 3),
-                                Text(
-                                  action["subtitle"] as String,
-                                  style: TextStyle(color: subTextColor, fontSize: 12, height: 1.3),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Container(
-                            width: 30, height: 30,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF9E3D5), // Arrow box becomes darker beige for contrast
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: iconColor),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }),
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  void _showPostTipDialog() {
+  Widget _sectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 22),
+      child: Row(
+        children: [
+          Text(
+            title,
+            style: TextStyle(
+              color: purple,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              fontFamily: "Satoshi",
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionItem(Map<String, dynamic> action) {
+    const Color actionOrange = Color(0xFFE48E5B);
+    const Color iconColor = Color(0xFF74503C);
+    const Color subTextColor = Color(0xFFBFA89A);
+
+    return Container(
+      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF2EA),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: purple.withValues(alpha:0.04), blurRadius: 8, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () async {
+            Navigator.pop(context);
+            final key = action["action"] as String;
+            if (key == "plan") {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const MealPlanCreatorScreen()));
+            } else if (key == "tip") {
+              Future.delayed(const Duration(milliseconds: 300), () {
+                if (mounted) _showMakePostDialog();
+              });
+            } else if (key == "supplement") {
+              _showSelectClientSheet({}, "supplement_guide", benefitTitle: "Supplement Guide");
+            }
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: purple.withValues(alpha:0.1),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: purple.withValues(alpha:0.06)),
+                  ),
+                  child: Icon(action["icon"] as IconData, color: actionOrange, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        action["title"] as String,
+                        style: TextStyle(color: purple, fontWeight: FontWeight.w700, fontSize: 15, fontFamily: "Satoshi"),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        action["subtitle"] as String,
+                        style: TextStyle(color: subTextColor, fontSize: 12, height: 1.3),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 30, height: 30,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF9E3D5),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: iconColor),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showMakePostDialog({File? initialImage, File? initialDoc, String? initialRecipeId, String? initialRecipeTitle, String? initialRecipeImageUrl}) {
     final TextEditingController tipController = TextEditingController();
     
     showDialog(
@@ -219,15 +244,18 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
       builder: (context) {
         String? selectedPlanId;
         String? selectedPlanTitle;
-        File? attachedImage;
-        File? attachedDoc;
+        String? selectedRecipeId = initialRecipeId;
+        String? selectedRecipeTitle = initialRecipeTitle;
+        String? selectedRecipeImageUrl = initialRecipeImageUrl;
+        File? attachedImage = initialImage;
+        File? attachedDoc = initialDoc;
         bool isPosting = false;
         int selectedTier = 0; // 0: Free, 1: Silver, 2: Gold, 3: Platinum
 
         return StatefulBuilder(
           builder: (context, setState) {
             return AlertDialog(
-              backgroundColor: Colors.white,
+              backgroundColor: bg,
               insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
               title: Row(
@@ -257,7 +285,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                         decoration: InputDecoration(
                           hintText: "What's on your mind?...",
                           filled: true,
-                          fillColor: const Color(0xFFFFF3EB),
+                          fillColor: const Color(0xFFF9E3D5),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
@@ -267,10 +295,16 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                       const SizedBox(height: 20),
 
                       // Attachments List (Previews)
-                      if (selectedPlanId != null || attachedImage != null || attachedDoc != null) ...[
-                         Text("Attachments", style: TextStyle(color: purple, fontSize: 12, fontWeight: FontWeight.bold)),
-                         const SizedBox(height: 8),
-                         if (selectedPlanId != null)
+                      if (selectedPlanId != null || attachedImage != null || attachedDoc != null || selectedRecipeId != null) ...[
+                        Text("Attachments", style: TextStyle(color: purple, fontSize: 12, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        if (selectedRecipeId != null)
+                          _attachmentPreview(
+                            label: selectedRecipeTitle ?? "Recipe",
+                            icon: Icons.restaurant_rounded,
+                            onRemove: () => setState(() => selectedRecipeId = selectedRecipeTitle = selectedRecipeImageUrl = null),
+                          ),
+                        if (selectedPlanId != null)
                            _attachmentPreview(
                              label: selectedPlanTitle ?? "Meal Plan",
                              icon: Icons.restaurant_menu_rounded,
@@ -315,6 +349,18 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                         scrollDirection: Axis.horizontal,
                         child: Row(
                           children: [
+                             _attachmentButton(
+                               icon: Icons.restaurant_rounded,
+                               label: "Recipe",
+                               onTap: () => _selectRecipeForPost(setState, (id, title, imageUrl) {
+                                 setState(() {
+                                   selectedRecipeId = id;
+                                   selectedRecipeTitle = title;
+                                   selectedRecipeImageUrl = imageUrl;
+                                 });
+                               }),
+                             ),
+                             const SizedBox(width: 8),
                              _attachmentButton(
                                icon: Icons.restaurant_menu_rounded,
                                label: "Meal Plan",
@@ -364,17 +410,18 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                         decoration: InputDecoration(
                           isDense: true,
                           filled: true,
-                          fillColor: const Color(0xFFFFF3EB),
+                          fillColor: const Color(0xFFF9E3D5),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
                         ),
+                        dropdownColor: const Color(0xFFF9E3D5),
                         items: const [
-                          DropdownMenuItem(value: 0, child: Text("Free (Public)")),
-                          DropdownMenuItem(value: 1, child: Text("Tier 1 (Silver Sub)")),
-                          DropdownMenuItem(value: 2, child: Text("Tier 2 (Gold Sub)")),
-                          DropdownMenuItem(value: 3, child: Text("Tier 3 (Platinum)")),
+                          DropdownMenuItem(value: 0, child: Text("Free (Public)", style: TextStyle(color: Color(0xFF462F4D), fontFamily: "Satoshi"))),
+                          DropdownMenuItem(value: 1, child: Text("Tier 1 (Silver Sub)", style: TextStyle(color: Color(0xFF462F4D), fontFamily: "Satoshi"))),
+                          DropdownMenuItem(value: 2, child: Text("Tier 2 (Gold Sub)", style: TextStyle(color: Color(0xFF462F4D), fontFamily: "Satoshi"))),
+                          DropdownMenuItem(value: 3, child: Text("Tier 3 (Platinum)", style: TextStyle(color: Color(0xFF462F4D), fontFamily: "Satoshi"))),
                         ],
                         onChanged: isPosting ? null : (v) => setState(() => selectedTier = v ?? 0),
                       ),
@@ -389,7 +436,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                     child: Text("Cancel", style: TextStyle(color: purple.withValues(alpha:0.6))),
                   ),
                 ElevatedButton(
-                  onPressed: (isPosting || (tipController.text.trim().isEmpty && attachedImage == null && attachedDoc == null && selectedPlanId == null))
+                  onPressed: (isPosting || (tipController.text.trim().isEmpty && attachedImage == null && attachedDoc == null && selectedPlanId == null && selectedRecipeId == null))
                       ? null
                       : () async {
                           final user = FirebaseAuth.instance.currentUser;
@@ -422,6 +469,12 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                             if (selectedPlanId != null) {
                               postData["mealPlanId"] = selectedPlanId;
                               postData["hasMealPlan"] = true;
+                            }
+                            if (selectedRecipeId != null) {
+                              postData["recipeId"] = selectedRecipeId;
+                              postData["hasRecipe"] = true;
+                              postData["recipeName"] = selectedRecipeTitle;
+                              postData["recipeImageUrl"] = selectedRecipeImageUrl;
                             }
                             if (imageUrl != null) {
                               postData["imageUrl"] = imageUrl;
@@ -505,7 +558,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3EB),
+        color: const Color(0xFFF9E3D5),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: orange.withValues(alpha:0.2)),
       ),
@@ -533,31 +586,36 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
         padding: const EdgeInsets.all(20),
         decoration: const BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
+            Container(
+              margin: const EdgeInsets.only(bottom: 20),
+              width: 50, height: 5,
+              decoration: BoxDecoration(color: orange.withValues(alpha:0.3), borderRadius: BorderRadius.circular(3)),
+            ),
             Text("Select a Meal Plan", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 18)),
             const SizedBox(height: 16),
-            StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection("nutritionists")
-                  .doc(user.uid)
-                  .collection("meal_plans")
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) return const CircularProgressIndicator();
-                final docs = snapshot.data!.docs;
-                if (docs.isEmpty) return const Text("No meal plans found.");
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection("nutritionists")
+                    .doc(user.uid)
+                    .collection("meal_plans")
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                  final docs = snapshot.data!.docs;
+                  if (docs.isEmpty) return const Center(child: Text("No meal plans found."));
 
-                return Flexible(
-                  child: ListView.builder(
-                    shrinkWrap: true,
+                  return ListView.builder(
                     itemCount: docs.length,
                     itemBuilder: (context, index) {
                       final plan = docs[index].data() as Map<String, dynamic>;
@@ -573,14 +631,18 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                         subtitle: Text("${plan['duration'] ?? 0} Days", style: TextStyle(color: purple.withValues(alpha:0.5))),
                       );
                     },
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  void _selectRecipeForPost(StateSetter dialogSetState, Function(String, String, String?) onSelect) {
+    _showRecipeSelectionSheet(onSelected: onSelect);
   }
 
   
@@ -1959,6 +2021,57 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
     
     clients.sort((a, b) => (a["name"] as String).compareTo(b["name"] as String));
     return clients;
+  }
+
+  void _showRecipeSelectionSheet({Function(String, String, String?)? onSelected}) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => RecipeSelectionSheet(
+        onRecipeSelected: (recipe) {
+          Navigator.pop(context);
+          if (onSelected != null) {
+            onSelected(recipe['id'], recipe['name'] ?? recipe['title'] ?? 'Recipe', (recipe['recipeImageUrl'] ?? recipe['imageUrl'] ?? recipe['image_url'] ?? recipe['image'] ?? recipe['photoUrl']) as String?);
+          } else {
+            _showShareRecipePostDialog(recipe);
+          }
+        },
+      ),
+    );
+  }
+
+  void _showShareRecipePostDialog(Map<String, dynamic> recipe) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => ShareRecipePostDialog(
+        recipe: recipe,
+        onPost: (message, tier) async {
+          final user = FirebaseAuth.instance.currentUser;
+          if (user == null) return;
+
+          try {
+            await const NutritionistService().shareRecipeAsPost(
+              nutritionistId: user.uid,
+              recipeId: recipe['id'],
+              message: message,
+              minTier: tier,
+              recipeName: recipe['name'] ?? recipe['title'] ?? 'Recipe',
+              recipeImageUrl: (recipe['recipeImageUrl'] ?? recipe['imageUrl'] ?? recipe['image_url'] ?? recipe['image'] ?? recipe['photoUrl']) as String?,
+            );
+
+            if (mounted) {
+              Toaster.show(context, "Recipe shared successfully!");
+            }
+          } catch (e) {
+            if (mounted) {
+              Toaster.show(context, "Failed to share recipe: $e", isError: true);
+            }
+          }
+        },
+      ),
+    );
   }
 }
 

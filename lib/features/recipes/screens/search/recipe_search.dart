@@ -4,8 +4,10 @@ import 'package:hidden_pantry_app/features/recipes/services/recipe_api_service.d
 import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
 import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
 import 'package:hidden_pantry_app/core/constants/api_constants.dart';
-import 'package:hidden_pantry_app/features/recipes/widgets/recipe_rating_widget.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
+import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
 
 class RecipeSearchScreen extends StatefulWidget {
   final String query;
@@ -128,7 +130,17 @@ class _RecipeSearchScreenState extends State<RecipeSearchScreen> {
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
           child: GestureDetector(
-            onTap: () => Navigator.pop(context),
+            onTap: () {
+              if (Navigator.canPop(context)) {
+                Navigator.pop(context);
+              } else {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => MainNavigationShell()),
+                  (route) => false,
+                );
+              }
+            },
             child: Container(
               decoration: BoxDecoration(
                 color: const Color(0xFFF9E3D5),
@@ -195,66 +207,16 @@ class _RecipeSearchScreenState extends State<RecipeSearchScreen> {
         crossAxisCount: 2,
         crossAxisSpacing: 16,
         mainAxisSpacing: 22,
-        childAspectRatio: 160 / 240,
+        childAspectRatio: 157 / 231,
       ),
       itemCount: _results.length,
-      itemBuilder: (_, i) => _recipeCard(_results[i]),
-    );
-  }
-
-  Widget _recipeCard(Recipe r) {
-    return GestureDetector(
-      onTap: () => _openRecipe(r),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: (r.imageUrl != null && r.imageUrl!.trim().isNotEmpty && r.imageUrl!.startsWith("http"))
-                  ? Image.network(
-                      r.imageUrl!,
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      errorBuilder: (_, __, ___) => _placeholder(),
-                    )
-                  : _placeholder(),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            r.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(color: purple, fontSize: 15, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              Text(
-                "${r.minutes} min  •  ",
-                style: TextStyle(color: purple.withValues(alpha:0.7), fontSize: 11, fontFamily: "Satoshi"),
-              ),
-              RecipeRatingWidget(
-                recipeId: r.id,
-                initialRating: r.avgRating,
-                style: TextStyle(color: purple.withValues(alpha:0.7), fontSize: 11, fontFamily: "Satoshi"),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _placeholder() {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: const Color(0xFFF9E3D5),
-      child: Center(
-        child: Icon(Icons.restaurant, color: purple.withValues(alpha:0.2), size: 40),
-      ),
+      itemBuilder: (_, i) {
+        final r = _results[i];
+        return RecipeCard(
+          recipe: r,
+          onTap: () => _openRecipe(r),
+        );
+      },
     );
   }
 }

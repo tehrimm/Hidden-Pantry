@@ -81,6 +81,20 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
     );
   }
 
+  Future<void> _refreshAfterReviews() async {
+    try {
+      final firestoreRecipe = await _recipeService.getRecipeById(_recipe.id).timeout(const Duration(seconds: 5));
+      if (firestoreRecipe != null && mounted) {
+        setState(() {
+          _recipe = _recipe.copyWith(
+            avgRating: firestoreRecipe.avgRating,
+            reviewCount: firestoreRecipe.reviewCount,
+          );
+        });
+      }
+    } catch (_) {}
+  }
+
   Future<void> _checkBookmarkStatus() async {
     User? user;
     try {
@@ -147,7 +161,40 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
     });
 
     try {
-      // 1. Try API first
+      // 1. Try Firestore first (handles user-uploaded recipes reliably)
+      try {
+        final firestoreRecipe = await _recipeService.getRecipeById(_recipe.id).timeout(const Duration(seconds: 5));
+        final bool isPartial = firestoreRecipe == null || firestoreRecipe.name.isEmpty || firestoreRecipe.directions.isEmpty;
+        if (!isPartial && firestoreRecipe != null) {
+          final count = await _recipeService.countRecipesByAuthor(firestoreRecipe.authorId).timeout(const Duration(seconds: 5));
+          
+          if (mounted) {
+            setState(() {
+              _recipe = firestoreRecipe;
+              _authorRecipeCount = count;
+              _servings = (firestoreRecipe.baseServings <= 0) ? 1 : firestoreRecipe.baseServings;
+              _loading = false;
+            });
+            
+            if (firestoreRecipe.authorName != null && firestoreRecipe.authorName!.isNotEmpty) {
+              final otherRecipes = await api.searchRecipes(firestoreRecipe.authorName!, limit: 12);
+              if (mounted) {
+                setState(() {
+                  _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || r.authorId == firestoreRecipe.authorId)).toList();
+                });
+              }
+            }
+          }
+          return;
+        }
+      } catch (fsErr) {
+        print("[RecipeDetails] Firestore fetch failed: $fsErr. Trying API...");
+        if (mounted) {
+          setState(() {});
+        }
+      }
+
+      // 2. Try API next (official recipes)
       try {
         final fullRecipe = await api.getRecipeById(_recipe.id);
         int count = 0;
@@ -184,59 +231,25 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
           final otherRecipes = await api.fetchRecipesByAuthor(fullRecipe.authorId, limit: 12);
           if (mounted) {
             setState(() {
-              _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id).toList();
+              _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || r.authorId == fullRecipe.authorId)).toList();
             });
             print("[RecipeDetails] Loaded ${_authorRecipes.length} recipes for authorId: ${fullRecipe.authorId}");
           }
         } else if (fullRecipe.authorName != null && fullRecipe.authorName!.isNotEmpty) {
-          // Fallback: search by author name
           final otherRecipes = await api.searchRecipes(fullRecipe.authorName!, limit: 12);
           if (mounted) {
             setState(() {
-              _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id).toList();
+              _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || (fullRecipe.authorId.isNotEmpty && r.authorId == fullRecipe.authorId))).toList();
             });
             print("[RecipeDetails] Fallback: Loaded ${_authorRecipes.length} recipes for authorName: ${fullRecipe.authorName}");
           }
         }
         return; // Success, exit
       } catch (apiError) {
-        print("[RecipeDetails] API Fetch failed: $apiError. Trying Firestore...");
+        print("[RecipeDetails] API Fetch failed finally: $apiError.");
       }
 
-      // 2. Fallback to Firestore (for user-uploaded recipes) with short timeout
-      try {
-        final firestoreRecipe = await _recipeService.getRecipeById(_recipe.id).timeout(const Duration(milliseconds: 150));
-        if (firestoreRecipe != null) {
-          final count = await _recipeService.countRecipesByAuthor(firestoreRecipe.authorId).timeout(const Duration(milliseconds: 150));
-          
-          if (mounted) {
-            setState(() {
-              _recipe = firestoreRecipe;
-              _authorRecipeCount = count;
-              _servings = (firestoreRecipe.baseServings <= 0) ? 1 : firestoreRecipe.baseServings;
-              _loading = false;
-            });
-            
-            if (firestoreRecipe.authorName != null && firestoreRecipe.authorName!.isNotEmpty) {
-              final otherRecipes = await api.searchRecipes(firestoreRecipe.authorName!, limit: 12);
-              if (mounted) {
-                setState(() {
-                  _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id).toList();
-                });
-              }
-            }
-          }
-          return;
-        }
-      } catch (_) {
-        if (mounted) {
-          setState(() {
-            _loading = false;
-          });
-        }
-      }
-
-      // 3. Fallback to Local Storage (if even Firestore fails or it's offline)
+      // 3. Fallback to Local Storage (if both Firestore and API fail)
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final isOffline = await _localService.isRecipeOffline(_recipe.id, user.uid);
@@ -256,8 +269,9 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
 
       if (mounted) {
         setState(() {
+          // Gracefully show passed-in recipe instead of error
           _loading = false;
-          _error = "Could not find recipe details.";
+          _error = null;
         });
       }
     } catch (e) {
@@ -265,7 +279,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
       if (mounted) {
         setState(() {
           _loading = false;
-          _error = "An error occurred while loading the recipe.";
+          _error = null;
         });
       }
     }
@@ -639,7 +653,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                 MaterialPageRoute(
                   builder: (_) => ReviewsScreen(recipe: r),
                 ),
-              ).then((_) => _loadFullDetails());
+              ).then((_) => _refreshAfterReviews());
             },
             borderRadius: BorderRadius.circular(20),
             child: Container(
@@ -751,7 +765,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      "Nutritional Info",
+                      "Nutrition Info",
                       style: TextStyle(
                         color: textColor,
                         fontSize: 24,
@@ -762,7 +776,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                     Text(
                       "per ${r.servingSize?.isNotEmpty == true ? r.servingSize : 'dash'} serving",
                       style: TextStyle(
-                        color: textColor.withValues(alpha:0.5),
+                        color: textColor.withValues(alpha: 0.5),
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                         fontFamily: "Satoshi",
@@ -771,7 +785,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                   ],
                 ),
               ),
-              const Spacer(),
+              const SizedBox(width: 8),
               InkWell(
                 onTap: () =>
                     setState(() => _nutritionExpanded = !_nutritionExpanded),
@@ -1107,21 +1121,26 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   }
 
   Widget _ratingPill(double rating) {
+    final bool hasRating = rating > 0;
+    
     return Container(
       height: 34,
       padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
-        color: orange2,
+        color: hasRating ? orange2 : Colors.grey.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.star_rounded, size: 18, color: Colors.white),
-          const SizedBox(width: 6),
+          if (hasRating) ...[
+            const Icon(Icons.star_rounded, size: 18, color: Colors.white),
+            const SizedBox(width: 6),
+          ],
           Text(
-            rating.toStringAsFixed(1),
-            style: const TextStyle(
-              color: Colors.white,
+            hasRating ? rating.toStringAsFixed(1) : "no rating",
+            style: TextStyle(
+              color: hasRating ? Colors.white : textColor.withValues(alpha: 0.5),
               fontSize: 12,
               fontWeight: FontWeight.w900,
               fontFamily: "Satoshi",
@@ -1214,6 +1233,8 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                   flex: 3,
                   child: Text(
                     e.key,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: textColor,
                       fontSize: 14,
@@ -1228,6 +1249,8 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                   child: Text(
                     e.value,
                     textAlign: TextAlign.right,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       color: textColor,
                       fontSize: 14,
@@ -1479,4 +1502,3 @@ class _ErrorState extends StatelessWidget {
     );
   }
 }
-

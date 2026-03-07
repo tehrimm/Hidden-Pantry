@@ -15,6 +15,8 @@ import 'package:hidden_pantry_app/features/user/screens/meal_plan_view.dart';
 import 'package:hidden_pantry_app/core/services/view_mode_service.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
+import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 import 'chat_interface_part.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 
@@ -584,7 +586,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
                         ),
                         const SizedBox(height: 12),
                         Text(
-                          "Exclusive ${minTier == 3 ? 'PLATINUM' : minTier == 2 ? 'GOLD' : 'SILVER'} ${type == 'meal_plan' || data['mealPlanId'] != null ? 'Meal Plan' : 'Update'}",
+                          "Exclusive ${minTier == 3 ? 'PLATINUM' : minTier == 2 ? 'GOLD' : 'SILVER'} ${type == 'meal_plan' || data['mealPlanId'] != null ? 'Meal Plan' : (data['recipeId'] != null) ? 'Recipe' : 'Update'}",
                           style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14, fontFamily: "Satoshi")
                         ),
                         const SizedBox(height: 12),
@@ -641,6 +643,13 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: _mealPlanInteractionCard(data["mealPlanId"], content),
+                    ),
+
+                  // Shared Recipe
+                  if (data["recipeId"] != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _recipeInteractionCard(data["recipeId"], data["recipeName"], data["recipeImageUrl"] ?? data["imageUrl"]),
                     ),
 
                   // Document Attachment
@@ -743,9 +752,11 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
                     label: "Share",
                     color: purple.withValues(alpha:0.5),
                     onTap: () {
-                       final String shareText = type == "meal_plan" 
+                       final String shareText = type == "meal_plan" || data["mealPlanId"] != null
                         ? "Check out this Meal Plan from ${widget.nutritionistData['fullName']}: $content"
-                        : "💡 Health Tip from ${widget.nutritionistData['fullName']}:\n\n$content\n\n— Hidden Pantry";
+                        : data["recipeId"] != null
+                            ? "Check out this Recipe from ${widget.nutritionistData['fullName']}: ${data['recipeName'] ?? 'Shared Recipe'}\n\n$content"
+                            : "💡 Health Tip from ${widget.nutritionistData['fullName']}:\n\n$content\n\n— Hidden Pantry";
                        Clipboard.setData(ClipboardData(text: shareText));
                        Toaster.show(context, "Copied to clipboard!");
                     },
@@ -758,6 +769,120 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
       ),
     );
   }
+
+   Widget _recipeInteractionCard(String recipeId, String? recipeName, String? recipeImageUrl) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: orange.withValues(alpha: 0.1)),
+      ),
+      child: Row(
+        children: [
+          // Square Thumbnail or Icon if null
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              width: 50, // Reduced to match meal plan icon scale
+              height: 50,
+              child: recipeImageUrl != null && recipeImageUrl.isNotEmpty
+                  ? Image.network(
+                      recipeImageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _recipeCardIconPlaceholder(),
+                    )
+                  : _recipeCardIconPlaceholder(),
+            ),
+          ),
+          const SizedBox(width: 16),
+          // Info Middle
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  recipeName ?? "Shared Recipe",
+                  style: TextStyle(
+                    color: purple,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    fontFamily: "Satoshi",
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  "View detailed recipe instructions",
+                  style: TextStyle(
+                    color: purple.withValues(alpha: 0.5),
+                    fontSize: 13,
+                    fontFamily: "Satoshi",
+                  ),
+                  maxLines: 1, // Keep it single line like meal plan
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          // Button Right
+          ElevatedButton(
+            onPressed: () => _navigateToRecipe(recipeId),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: orange,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              minimumSize: Size.zero,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              elevation: 0,
+            ),
+            child: const Text(
+              "View",
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _recipeCardIconPlaceholder() {
+    return Container(
+      decoration: BoxDecoration(color: orange.withValues(alpha: 0.1), shape: BoxShape.circle),
+      child: Icon(Icons.restaurant_menu_rounded, color: orange, size: 24),
+    );
+  }
+
+ Widget _recipeCardPlaceholder() {
+   return Container(
+     color: orange.withValues(alpha: 0.05),
+     child: Center(
+       child: Icon(Icons.restaurant_menu_rounded, color: orange.withValues(alpha: 0.2), size: 48),
+     ),
+   );
+ }
+
+   Future<void> _navigateToRecipe(String recipeId) async {
+     try {
+       final recipe = await RecipeService().getRecipeById(recipeId);
+       if (recipe != null && mounted) {
+         Navigator.push(
+           context,
+           MaterialPageRoute(
+             builder: (_) => RecipeDetailsScreen(recipe: recipe),
+           ),
+         );
+       } else if (mounted) {
+         Toaster.show(context, "Could not load recipe details", isError: true);
+       }
+     } catch (e) {
+       if (mounted) {
+         Toaster.show(context, "Error: $e", isError: true);
+       }
+     }
+   }
 
   Widget _mealPlanPlaceholder() {
     return Container(
@@ -1165,15 +1290,36 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
   Future<void> _startStripeCheckout(Map<String, dynamic> plan) async {
      setState(() => _isLoadingSubscription = true);
      try {
+       final rawPrice = plan['price'];
+       double price = 0.0;
+       
+       if (rawPrice is num) {
+         price = rawPrice.toDouble();
+       } else if (rawPrice is String) {
+         price = double.tryParse(rawPrice.replaceAll(',', '')) ?? 0.0;
+       }
+
+       if (price <= 0) {
+         throw Exception("Invalid plan price: $rawPrice");
+       }
+
+       final rawTier = plan['tierLevel'];
+       int tierLevel = 1;
+       if (rawTier is num) {
+         tierLevel = rawTier.toInt();
+       } else if (rawTier is String) {
+         tierLevel = int.tryParse(rawTier) ?? 1;
+       }
+
        final stripe = StripeService();
        final url = await stripe.createNutritionistCheckout(
          planTitle: plan['title'] ?? 'Plan',
-         price: (plan['price'] is String ? double.tryParse(plan['price']) ?? 0.0 : (plan['price'] as num).toDouble()),
+         price: price,
          interval: plan['interval'] ?? 'month',
          nutritionistId: widget.nutritionistId,
          nutritionistName: widget.nutritionistData['fullName'] ?? 'Nutritionist',
          existingSubscriptionId: _subscriptionDocId,
-         tierLevel: (plan['tierLevel'] as num?)?.toInt() ?? 1,
+         tierLevel: tierLevel,
        );
 
        if (mounted) {

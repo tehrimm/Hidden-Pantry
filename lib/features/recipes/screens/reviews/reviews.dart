@@ -137,71 +137,67 @@ class ReviewsScreen extends StatelessWidget {
     if (user == null) return const SizedBox.shrink();
 
     final reviewId = "${user.uid}_${recipe.id}";
-
-    return FutureBuilder<List<DocumentSnapshot>>(
-      future: Future.wait([
-        FirebaseFirestore.instance.collection('reviews').doc(reviewId).get(),
-        FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
-      ]),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SizedBox(height: 50, child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
-          }
-          return const SizedBox.shrink();
+    final reviewDocStream = FirebaseFirestore.instance.collection('reviews').doc(reviewId).snapshots();
+    return StreamBuilder<DocumentSnapshot>(
+      stream: reviewDocStream,
+      builder: (context, reviewSnap) {
+        if (reviewSnap.connectionState == ConnectionState.waiting) {
+          return const SizedBox(height: 50, child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
         }
+        final hasReviewed = reviewSnap.data?.exists ?? false;
 
-        final reviewSnapshot = snapshot.data![0];
-        final userSnapshot = snapshot.data![1];
-        
-        final hasReviewed = reviewSnapshot.exists;
-        final userData = userSnapshot.data() as Map<String, dynamic>? ?? {};
-        final userName = userData['fullName'] ?? user.displayName ?? "You";
-        final userImageUrl = userData['photoUrl'] ?? user.photoURL ?? "";
+        return FutureBuilder<DocumentSnapshot>(
+          future: FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
+          builder: (context, userSnap) {
+            final userData = userSnap.data?.data() as Map<String, dynamic>? ?? {};
+            final userName = userData['fullName'] ?? user.displayName ?? "You";
+            final userImageUrl = userData['photoUrl'] ?? user.photoURL ?? "";
 
-        return GestureDetector(
-          onTap: hasReviewed 
-            ? null 
-            : () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => PostReviewScreen(recipe: recipe)),
-                );
-              },
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: purple.withValues(alpha:0.1),
-                backgroundImage: (userImageUrl.trim().isNotEmpty && userImageUrl.startsWith("http")) ? NetworkImage(userImageUrl) : null,
-                child: (userImageUrl.trim().isEmpty || !userImageUrl.startsWith("http")) ? Icon(Icons.person, color: purple, size: 18) : null,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: purple.withValues(alpha:0.1)),
+            return GestureDetector(
+              onTap: hasReviewed 
+                ? null 
+                : () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => PostReviewScreen(recipe: recipe)),
+                    );
+                  },
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: purple.withValues(alpha:0.1),
+                    backgroundImage: (userImageUrl.trim().isNotEmpty && userImageUrl.startsWith("http")) ? NetworkImage(userImageUrl) : null,
+                    child: (userImageUrl.trim().isEmpty || !userImageUrl.startsWith("http")) ? Icon(Icons.person, color: purple, size: 18) : null,
                   ),
-                  child: Text(
-                    hasReviewed 
-                      ? "You have already rated this recipe."
-                      : "Add a review as $userName...",
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: hasReviewed ? purple.withValues(alpha:0.7) : purple.withValues(alpha:0.4), 
-                      fontSize: 12, 
-                      fontFamily: "Satoshi",
-                      fontWeight: hasReviewed ? FontWeight.bold : FontWeight.normal,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: purple.withValues(alpha:0.1)),
+                      ),
+                      child: Text(
+                        hasReviewed 
+                          ? "You have already rated this recipe."
+                          : "Add a review as $userName...",
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: hasReviewed ? purple.withValues(alpha:0.7) : purple.withValues(alpha:0.4), 
+                          fontSize: 12, 
+                          fontFamily: "Satoshi",
+                          fontWeight: hasReviewed ? FontWeight.bold : FontWeight.normal,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );

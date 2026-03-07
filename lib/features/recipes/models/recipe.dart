@@ -5,7 +5,8 @@ class DirectionStep {
   final String id;
   String text;
   File? image;
-  DirectionStep({required this.id, this.text = '', this.image});
+  String? imageUrl; // Remote URL for editing existing steps
+  DirectionStep({required this.id, this.text = '', this.image, this.imageUrl});
 }
 
 class Recipe {
@@ -14,6 +15,7 @@ class Recipe {
   final String? description;
   final String? category;
   final List<String> allergens;
+  final String? difficulty;
   final String? servingSize;
 
   final int minutes;
@@ -101,6 +103,7 @@ class Recipe {
     this.description,
     this.category,
     this.allergens = const [],
+    this.difficulty,
     this.servingSize,
     required this.minutes,
     int? prepMinutes,
@@ -380,6 +383,7 @@ class Recipe {
       data['image_url'] ?? 
       data['recipe_image'] ?? 
       data['recipe_imageUrl'] ??
+      data['recipeImageUrl'] ??
       data['recipe_image_url']
     );
 
@@ -397,6 +401,7 @@ class Recipe {
       description: _cleanNullableString(data['description'] ?? data['recipe_description'] ?? data['summary']),
       category: _cleanNullableString(data['category'] ?? data['recipe_category']),
       allergens: _toStringList(data['allergens']),
+      difficulty: _cleanNullableString(data['difficulty']),
       servingSize: _cleanNullableString(
         data['serving_size'] ?? 
         data['servingSize'] ?? 
@@ -414,12 +419,8 @@ class Recipe {
         data['prep_time'], 
         fallback: 0
       ),
-      prepMinutes: (data['prep_minutes'] != null || data['prep_time'] != null) 
-          ? _toInt(data['prep_minutes'] ?? data['prep_time']) 
-          : null,
-      cookMinutes: (data['cook_minutes'] != null || data['cook_time'] != null)
-          ? _toInt(data['cook_minutes'] ?? data['cook_time'])
-          : null,
+      prepMinutes: _toInt(data['prep_minutes'] ?? data['prep_time'] ?? data['prepMinutes'] ?? data['prepTime']),
+      cookMinutes: _toInt(data['cook_minutes'] ?? data['cook_time'] ?? data['cookMinutes'] ?? data['cookTime']),
       avgRating: _toDouble(
         data['avg_rating'] ?? 
         data['avgRating'] ?? 
@@ -439,20 +440,16 @@ class Recipe {
       ),
       baseServings: () {
         final keys = [
-          'serving_size', 'servingSize', 'servings', 'n_servings',
-          'yields', 'yield', 'serves', 'base_servings', 'baseServings'
+          'base_servings', 'baseServings', 'servings', 'serving_size', 'servingSize', 'n_servings',
+          'yields', 'yield', 'serves'
         ];
-        dynamic val;
         for (final k in keys) {
           if (data.containsKey(k) && data[k] != null) {
             final int parsed = _toInt(data[k], fallback: 0);
-            if (parsed > 0) {
-              val = data[k];
-              if (parsed > 1) break;
-            }
+            if (parsed > 0) return parsed;
           }
         }
-        return _toInt(val, fallback: 1);
+        return 1;
       }(),
       ingredients: _parseIngredients(data),
       directions: _parseDirections(data),
@@ -473,13 +470,22 @@ class Recipe {
     return {
       'id': id,
       'name': name,
+      'name_search': name.toLowerCase(),
+      'description': description,
+      'difficulty': difficulty,
       'minutes': minutes,
+      'prepTime': _prepMinutes,
+      'cookTime': _cookMinutes,
+      'prep_minutes': _prepMinutes,
+      'cook_minutes': _cookMinutes,
       'avg_rating': avgRating,
+      'review_count': reviewCount,
       'image_url': imageUrl,
       'author_id': authorId,
       'author_name': authorName,
       'author_profile_image_url': authorProfileImageUrl,
       'base_servings': baseServings,
+      'servings': baseServings,
       'ingredients': ingredients.map((e) => e.toJson()).toList(),
       'directions': directions,
       'nutrition': nutrition,
@@ -501,6 +507,7 @@ class Recipe {
     String? authorProfileImageUrl,
     List<IngredientItem>? ingredients,
     List<String>? directions,
+    String? difficulty,
     bool? isPublic,
   }) {
     return Recipe(
@@ -509,6 +516,7 @@ class Recipe {
       description: description,
       category: category,
       allergens: allergens,
+      difficulty: difficulty ?? this.difficulty,
       servingSize: servingSize,
       minutes: minutes,
       prepMinutes: _prepMinutes,

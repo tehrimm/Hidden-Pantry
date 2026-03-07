@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
+import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'upload_recipe_step5.dart';
 
 class UploadRecipeStep4 extends StatefulWidget {
@@ -14,6 +15,7 @@ class UploadRecipeStep4 extends StatefulWidget {
   final String? difficulty;
   final List<String> tags;
   final List<Map<String, String>> ingredients;
+  final Recipe? editingRecipe;
 
   const UploadRecipeStep4({
     super.key,
@@ -25,6 +27,7 @@ class UploadRecipeStep4 extends StatefulWidget {
     this.difficulty,
     required this.tags,
     required this.ingredients,
+    this.editingRecipe,
   });
 
   @override
@@ -32,14 +35,31 @@ class UploadRecipeStep4 extends StatefulWidget {
 }
 
 class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
-  final List<DirectionStep> _steps = [
-    DirectionStep(id: DateTime.now().millisecondsSinceEpoch.toString())
-  ];
+  late final List<DirectionStep> _steps;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.editingRecipe?.stepsDetailed != null && widget.editingRecipe!.stepsDetailed!.isNotEmpty) {
+      _steps = widget.editingRecipe!.stepsDetailed!.asMap().entries.map((entry) {
+        final idx = entry.key;
+        final s = entry.value;
+        return DirectionStep(
+          id: DateTime.now().millisecondsSinceEpoch.toString() + idx.toString(),
+          text: s['text'] ?? '',
+          imageUrl: s['imageUrl'], // Preserve remote URL
+        );
+      }).toList();
+    } else {
+      _steps = [DirectionStep(id: DateTime.now().millisecondsSinceEpoch.toString())];
+    }
+  }
   final ImagePicker _picker = ImagePicker();
 
   final Color purple = const Color(0xFF462F4D);
   final Color orange = const Color(0xFFF2894F);
   final Color cardBg = const Color(0xFFF9E3D5);
+  final Color bg = const Color(0xFFFFF3EB);
 
   void _addStep() {
     setState(() {
@@ -64,196 +84,153 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
   Future<void> _pickStepImage(int index) async {
     showModalBottomSheet(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-        ),
-        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 30),
+      backgroundColor: const Color(0xFFF9E3D5),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Upload or Take Photo',
-              style: TextStyle(
-                color: purple,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Satoshi',
-              ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: Color(0xFF462F4D)),
+              title: const Text('Take a Photo', style: TextStyle(color: Color(0xFF462F4D), fontFamily: 'Satoshi')),
+              onTap: () async {
+                Navigator.pop(context);
+                final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
+                if (photo != null) {
+                  setState(() => _steps[index].image = File(photo.path));
+                }
+              },
             ),
-            const SizedBox(height: 20),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                _sourceButton(
-                  icon: Icons.camera_alt_rounded,
-                  label: 'Camera',
-                  onTap: () async {
-                    Navigator.pop(context);
-                    final XFile? image = await _picker.pickImage(source: ImageSource.camera);
-                    if (image != null) {
-                      setState(() {
-                        _steps[index].image = File(image.path);
-                      });
-                    }
-                  },
-                ),
-                _sourceButton(
-                  icon: Icons.image_rounded,
-                  label: 'Gallery',
-                  onTap: () async {
-                    Navigator.pop(context);
-                    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-                    if (image != null) {
-                      setState(() {
-                        _steps[index].image = File(image.path);
-                      });
-                    }
-                  },
-                ),
-              ],
+            ListTile(
+              leading: const Icon(Icons.photo_library, color: Color(0xFF462F4D)),
+              title: const Text('Choose from Gallery', style: TextStyle(color: Color(0xFF462F4D), fontFamily: 'Satoshi')),
+              onTap: () async {
+                Navigator.pop(context);
+                final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+                if (image != null) {
+                  setState(() => _steps[index].image = File(image.path));
+                }
+              },
             ),
-            const SizedBox(height: 20),
           ],
         ),
       ),
     );
   }
 
-  Widget _sourceButton({required IconData icon, required String label, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Icon(icon, color: purple, size: 28),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              color: purple,
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Satoshi',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Source button previously used for inline camera/gallery; replaced by Step 1-style bottom sheet
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false,
-      body: Stack(
-        children: [
-          const _BackgroundPatterns(),
-          Column(
-            children: [
-              const SizedBox(height: 50),
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 29),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const SizedBox(width: 40),
-                    Text(
-                      'Add Recipe',
-                      style: TextStyle(
-                        color: purple,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Satoshi',
-                      ),
-                    ),
-                    Container(
-                      width: 69,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: purple,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          '4/5',
+      body: Container(
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Stack(
+          children: [
+            const _BackgroundPatterns(),
+            SafeArea(
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 29),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        BackButtonWidget(color: purple),
+                        Text(
+                          widget.editingRecipe != null ? 'Edit Recipe' : 'Add Recipe',
                           style: TextStyle(
-                            color: const Color(0xFFFFF2EA),
-                            fontSize: 12,
+                            color: purple,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Satoshi',
                           ),
                         ),
+                        Container(
+                          width: 69,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: purple,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              '4/5',
+                              style: TextStyle(
+                                color: Color(0xFFFFF2EA),
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Satoshi',
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+ 
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 27),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Direction',
+                        style: TextStyle(
+                          color: purple,
+                          fontSize: 40,
+                          fontWeight: FontWeight.w900,
+                          height: 1.1,
+                          fontFamily: 'Satoshi',
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 27),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Direction',
-                    style: TextStyle(
-                      color: purple,
-                      fontSize: 40,
-                      fontWeight: FontWeight.w900,
-                      height: 1.1,
-                      fontFamily: 'Satoshi',
+                  ),
+ 
+                  Expanded(
+                    child: Theme(
+                      data: Theme.of(context).copyWith(
+                        canvasColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                      ),
+                      child: ReorderableListView.builder(
+                        padding: const EdgeInsets.only(top: 20, bottom: 120),
+                        itemCount: _steps.length + 2,
+                        itemBuilder: (context, index) {
+                          if (index == _steps.length) {
+                            return _buildAddButton(index);
+                          }
+                          if (index == _steps.length + 1) {
+                            return _buildNavigationButtons(index);
+                          }
+                          return _buildStepItem(index);
+                        },
+                        onReorder: (oldIndex, newIndex) {
+                          if (newIndex > oldIndex) newIndex -= 1;
+                          if (newIndex >= _steps.length) return;
+                          if (oldIndex >= _steps.length) return;
+ 
+                          setState(() {
+                            final step = _steps.removeAt(oldIndex);
+                            _steps.insert(newIndex, step);
+                          });
+                        },
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
-
-              // Reorderable List
-              Expanded(
-                child: Theme(
-                  data: Theme.of(context).copyWith(
-                    canvasColor: Colors.transparent,
-                    shadowColor: Colors.transparent,
-                  ),
-                  child: ReorderableListView.builder(
-                    padding: const EdgeInsets.only(top: 20, bottom: 120),
-                    itemCount: _steps.length + 2, // +1 for "Add Direction", +1 for Buttons
-                    itemBuilder: (context, index) {
-                      if (index == _steps.length) {
-                        return _buildAddButton(index);
-                      }
-                      if (index == _steps.length + 1) {
-                        return _buildNavigationButtons(index);
-                      }
-                      return _buildStepItem(index);
-                    },
-                    onReorder: (oldIndex, newIndex) {
-                      if (newIndex > oldIndex) newIndex -= 1;
-                      if (newIndex >= _steps.length) return; // Don't allow reordering below "Add" button
-                      if (oldIndex >= _steps.length) return;
-
-                      setState(() {
-                        final step = _steps.removeAt(oldIndex);
-                        _steps.insert(newIndex, step);
-                      });
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -264,20 +241,8 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
       padding: const EdgeInsets.fromLTRB(30, 42, 29, 42),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          GestureDetector(
-            onTap: () => Navigator.pop(context),
-            child: Container(
-              width: 52,
-              height: 53,
-              decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: BorderRadius.circular(15),
-              ),
-              child: const Icon(Icons.arrow_back_ios_new, size: 16, color: Color(0xFF462F4D)),
-            ),
-          ),
-          const SizedBox(width: 60),
           Expanded(
             child: GestureDetector(
               onTap: () {
@@ -294,6 +259,7 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
                       tags: widget.tags,
                       ingredients: widget.ingredients,
                       steps: _steps,
+                      editingRecipe: widget.editingRecipe,
                     ),
                   ),
                 );
@@ -430,9 +396,11 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
                       borderRadius: BorderRadius.circular(20),
                       image: step.image != null
                           ? DecorationImage(image: FileImage(step.image!), fit: BoxFit.cover)
-                          : null,
+                          : (step.imageUrl != null
+                              ? DecorationImage(image: NetworkImage(step.imageUrl!), fit: BoxFit.cover)
+                              : null),
                     ),
-                    child: step.image == null
+                    child: step.image == null && step.imageUrl == null
                         ? Center(child: Icon(Icons.camera_alt_outlined, color: purple, size: 24))
                         : null,
                   ),

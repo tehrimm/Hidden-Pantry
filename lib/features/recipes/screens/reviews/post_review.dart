@@ -6,6 +6,7 @@ import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:hidden_pantry_app/core/utils/toaster.dart';
 
 import '../../models/recipe.dart';
 import '../../services/recipe_service.dart';
@@ -27,6 +28,39 @@ class _PostReviewScreenState extends State<PostReviewScreen> {
   double _rating = 5.0;
   XFile? _image;
   bool _isSubmitting = false;
+  bool _hasReviewed = false;
+  bool _checkedReviewed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _precheck();
+  }
+
+  Future<void> _precheck() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() {
+        _checkedReviewed = true;
+      });
+      return;
+    }
+    try {
+      final exists = await _recipeService.hasUserReviewed(widget.recipe.id, user.uid);
+      if (mounted) {
+        setState(() {
+          _hasReviewed = exists;
+          _checkedReviewed = true;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _checkedReviewed = true;
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -110,6 +144,27 @@ class _PostReviewScreenState extends State<PostReviewScreen> {
                     children: [
                       const SizedBox(height: 60),
                       const SizedBox(height: 20),
+                      if (!_checkedReviewed)
+                        const Center(child: Padding(
+                          padding: EdgeInsets.only(top: 40),
+                          child: CircularProgressIndicator(),
+                        )),
+                      if (_checkedReviewed && _hasReviewed)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 20, bottom: 12),
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Color(0xFFFFE2D2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
+                              "You have already reviewed this recipe.",
+                              style: TextStyle(color: textColor, fontFamily: "Satoshi"),
+                            ),
+                          ),
+                        ),
                       FutureBuilder<DocumentSnapshot>(
                         future: FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser?.uid).get(),
                         builder: (context, snapshot) {
@@ -161,8 +216,8 @@ class _PostReviewScreenState extends State<PostReviewScreen> {
                       LayoutBuilder(
                         builder: (_, constraints) {
                           return GestureDetector(
-                            onTapDown: _isSubmitting ? null : (d) => _updateRating(d.localPosition.dx, constraints.maxWidth),
-                            onPanUpdate: _isSubmitting ? null : (d) => _updateRating(d.localPosition.dx, constraints.maxWidth),
+                            onTapDown: _isSubmitting || _hasReviewed ? null : (d) => _updateRating(d.localPosition.dx, constraints.maxWidth),
+                            onPanUpdate: _isSubmitting || _hasReviewed ? null : (d) => _updateRating(d.localPosition.dx, constraints.maxWidth),
                             child: Row(
                               children: List.generate(5, (i) {
                                 return Icon(
@@ -184,9 +239,9 @@ class _PostReviewScreenState extends State<PostReviewScreen> {
                       TextField(
                         controller: _controller,
                         maxLines: 5,
-                        enabled: !_isSubmitting,
+                        enabled: !_isSubmitting && !_hasReviewed,
                         decoration: InputDecoration(
-                          hintText: "Share your experience...",
+                          hintText: _hasReviewed ? "You already reviewed this recipe" : "Share your experience...",
                           filled: true,
                           fillColor: const Color(0xFFF9E3D5),
                           border: OutlineInputBorder(
@@ -197,7 +252,7 @@ class _PostReviewScreenState extends State<PostReviewScreen> {
                       ),
                       const SizedBox(height: 24),
                       GestureDetector(
-                        onTap: _isSubmitting ? null : _showImageSourceDialog,
+                        onTap: _isSubmitting || _hasReviewed ? null : _showImageSourceDialog,
                         child: Container(
                           height: 180,
                           decoration: BoxDecoration(
@@ -211,11 +266,11 @@ class _PostReviewScreenState extends State<PostReviewScreen> {
                       ),
                       const SizedBox(height: 32),
                       GestureDetector(
-                        onTap: _isSubmitting ? () {} : _submitReview,
+                        onTap: _isSubmitting || _hasReviewed ? () {} : _submitReview,
                         child: Container(
                           height: 60,
                           decoration: BoxDecoration(
-                            color: orange,
+                            color: _hasReviewed ? Colors.grey : orange,
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Center(
@@ -253,6 +308,14 @@ class _PostReviewScreenState extends State<PostReviewScreen> {
   Future<void> _submitReview() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
+    if (_hasReviewed) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You have already reviewed this recipe')),
+        );
+      }
+      return;
+    }
 
     final comment = _controller.text.trim();
     setState(() => _isSubmitting = true);
@@ -289,10 +352,9 @@ class _PostReviewScreenState extends State<PostReviewScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Review posted successfully!')),
-        );
-        Navigator.pop(context);
+        _hasReviewed = true;
+        Toaster.show(context, 'Review posted successfully!');
+        Navigator.pop(context, true);
       }
     } catch (e) {
       print("[PostReview] Error submitting review: $e");

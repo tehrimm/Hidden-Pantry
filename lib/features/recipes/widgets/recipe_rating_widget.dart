@@ -51,6 +51,16 @@ class RecipeRatingWidget extends StatelessWidget {
           displayRating = double.tryParse(data['avg_rating']?.toString() ?? "0") ?? initialRating;
         }
 
+        if (displayRating <= 0) {
+          return Text(
+            "no rating",
+            style: style ?? const TextStyle(
+              fontSize: 11,
+              fontFamily: "Satoshi",
+            ),
+          );
+        }
+
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [

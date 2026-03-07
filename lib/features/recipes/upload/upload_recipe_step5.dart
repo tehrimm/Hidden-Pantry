@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
+import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
@@ -16,6 +17,7 @@ class UploadRecipeStep5 extends StatefulWidget {
   final List<String> tags;
   final List<Map<String, String>> ingredients;
   final List<DirectionStep> steps;
+  final Recipe? editingRecipe;
 
   const UploadRecipeStep5({
     super.key,
@@ -28,6 +30,7 @@ class UploadRecipeStep5 extends StatefulWidget {
     required this.tags,
     required this.ingredients,
     required this.steps,
+    this.editingRecipe,
   });
 
   @override
@@ -48,10 +51,25 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
   final Color purple = const Color(0xFF462F4D);
   final Color orange = const Color(0xFFF2894F);
   final Color cardBg = const Color(0xFFF9E3D5);
+  final Color bg = const Color(0xFFFFF3EB);
   final RecipeService _recipeService = RecipeService();
   
   bool _isSubmitting = false;
-  bool _isPublic = false;
+  late bool _isPublic;
+
+  @override
+  void initState() {
+    super.initState();
+    _isPublic = widget.editingRecipe?.isPublic ?? false;
+
+    // Pre-fill nutrition controllers
+    _controllers.forEach((key, controller) {
+      final val = widget.editingRecipe?.nutrition?[key];
+      if (val != null) {
+        controller.text = RegExp(r'[\d.]+').firstMatch(val)?.group(0) ?? '';
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -76,6 +94,7 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
       });
 
       await _recipeService.uploadFullRecipe(
+        recipeId: widget.editingRecipe?.id,
         title: widget.title,
         mainImage: widget.image,
         prepTime: widget.prepTime,
@@ -126,151 +145,152 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false,
-      body: Stack(
-        children: [
-          const _BackgroundPatterns(),
-          Column(
-            children: [
-              const SizedBox(height: 50),
-              // Header
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 29),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const SizedBox(width: 40),
-                    Text(
-                      'Add Recipe',
-                      style: TextStyle(
-                        color: purple,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Satoshi',
-                      ),
-                    ),
-                    Container(
-                      width: 69,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        color: purple,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          '5/5',
+      body: Container(
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(30),
+        ),
+        child: Stack(
+          children: [
+            const _BackgroundPatterns(),
+            SafeArea(
+              child: Column(
+                children: [
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 29),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        BackButtonWidget(color: purple),
+                        Text(
+                          widget.editingRecipe != null ? 'Edit Recipe' : 'Add Recipe',
                           style: TextStyle(
-                            color: const Color(0xFFFFF2EA),
-                            fontSize: 12,
+                            color: purple,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Satoshi',
                           ),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 27),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Nutrition',
-                    style: TextStyle(
-                      color: purple,
-                      fontSize: 40,
-                      fontWeight: FontWeight.w900,
-                      height: 1.1,
-                      fontFamily: 'Satoshi',
+                        Container(
+                          width: 69,
+                          height: 42,
+                          decoration: BoxDecoration(
+                            color: purple,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              '5/5',
+                              style: TextStyle(
+                                color: Color(0xFFFFF2EA),
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'Satoshi',
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ),
-
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.only(top: 20, bottom: 120, left: 27, right: 27),
-                  children: [
-                    Text(
-                      'Enter nutritional information per serving (optional).',
-                      style: TextStyle(
-                        color: purple.withValues(alpha:0.6),
-                        fontSize: 14,
-                        fontFamily: 'Satoshi',
+ 
+                  const SizedBox(height: 20),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 27),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Nutrition',
+                        style: TextStyle(
+                          color: purple,
+                          fontSize: 40,
+                          fontWeight: FontWeight.w900,
+                          height: 1.1,
+                          fontFamily: 'Satoshi',
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 30),
-                    _buildVisibilityToggle(),
-                    const SizedBox(height: 30),
-                    ..._controllers.keys.map((key) => _buildNutritionField(key)).toList(),
-
-                    // Navigation buttons inside the scrollable area
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(30, 42, 29, 42),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          GestureDetector(
-                            onTap: () => Navigator.pop(context),
-                            child: Container(
-                              width: 52,
-                              height: 53,
-                              decoration: BoxDecoration(
-                                color: cardBg,
-                                borderRadius: BorderRadius.circular(15),
-                              ),
-                              child: Icon(Icons.arrow_back_ios_new, size: 16, color: purple),
-                            ),
+                  ),
+ 
+                  Expanded(
+                    child: ListView(
+                      padding: const EdgeInsets.only(top: 20, bottom: 120, left: 30, right: 30),
+                      children: [
+                        Text(
+                          'Enter nutritional information per serving (optional).',
+                          style: TextStyle(
+                            color: purple.withValues(alpha:0.6),
+                            fontSize: 14,
+                            fontFamily: 'Satoshi',
                           ),
-                          const SizedBox(width: 60),
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: _isSubmitting ? null : _submit,
-                              child: Container(
-                                height: 62,
-                                decoration: BoxDecoration(
-                                  color: orange,
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Center(
-                                  child: _isSubmitting
-                                      ? const SizedBox(
-                                          width: 24,
-                                          height: 24,
-                                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                                        )
-                                      : const Text(
-                                          'Submit Recipe',
-                                          style: TextStyle(
-                                            color: Color(0xFFFFF2EA),
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.bold,
-                                            fontFamily: 'Satoshi',
+                        ),
+                        const SizedBox(height: 30),
+                        _buildVisibilityToggle(),
+                        const SizedBox(height: 30),
+                        ..._controllers.keys.map((key) => _buildNutritionField(key)).toList(),
+ 
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 42),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: _isSubmitting ? null : _submit,
+                                  child: Container(
+                                    height: 62,
+                                    decoration: BoxDecoration(
+                                      color: orange,
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: _isSubmitting
+                                        ? const Center(
+                                            child: SizedBox(
+                                              width: 24,
+                                              height: 24,
+                                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                            ),
+                                          )
+                                        : Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: const [
+                                              Text(
+                                                'Submit',
+                                                style: TextStyle(
+                                                  color: Color(0xFFFFF2EA),
+                                                  fontSize: 15,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily: 'Satoshi',
+                                                ),
+                                              ),
+                                              SizedBox(width: 10),
+                                              Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                                            ],
                                           ),
-                                        ),
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          if (_isSubmitting)
-            Container(
-              color: Colors.black.withValues(alpha:0.3),
-              child: Center(
-                child: CircularProgressIndicator(color: orange),
+                  ),
+                ],
               ),
             ),
-        ],
+ 
+            if (_isSubmitting)
+              Container(
+                color: Colors.black.withValues(alpha:0.3),
+                child: Center(
+                  child: CircularProgressIndicator(color: orange),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

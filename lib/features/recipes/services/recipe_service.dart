@@ -79,8 +79,10 @@ class RecipeService {
     }
   }
 
-  /// Handles the complete multi-step upload and Firestore persistence
+  /// Handles the complete multi-step upload and Firestore persistence.
+  /// If [recipeId] is provided, it updates the existing recipe.
   Future<void> uploadFullRecipe({
+    String? recipeId,
     required String title,
     required File? mainImage,
     required List<Map<String, dynamic>> ingredients,
@@ -96,33 +98,37 @@ class RecipeService {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception("User must be logged in to upload");
 
-    final String recipeId = DateTime.now().millisecondsSinceEpoch.toString();
+    final bool isUpdate = recipeId != null;
+    final String finalRecipeId = recipeId ?? DateTime.now().millisecondsSinceEpoch.toString();
     
-    // 1. Upload Main Image
-    String? mainImageUrl;
+    // 0. Fetch existing recipe if updating to preserve old image URLs
+    Recipe? existing;
+    if (isUpdate) {
+      existing = await getRecipeById(finalRecipeId);
+    }
+
+    // 1. Upload Main Image (or preserve existing)
+    String? mainImageUrl = existing?.imageUrl;
     if (mainImage != null) {
       print("[RecipeService] Uploading main image: ${mainImage.path}");
-      mainImageUrl = await _uploadFile('recipe_photos/$recipeId/main.jpg', mainImage);
+      mainImageUrl = await _uploadFile('recipe_photos/$finalRecipeId/main.jpg', mainImage);
       print("[RecipeService] Main image URL: $mainImageUrl");
-    } else {
-      print("[RecipeService] No main image provided");
     }
 
     // 2. Upload Step Images & Prepare Directions
     final List<String> directionsFlattened = [];
     final List<Map<String, dynamic>> stepsData = [];
 
-    print("[RecipeService] Starting step images upload for ${steps.length} steps...");
+    print("[RecipeService] Processing ${steps.length} steps...");
 
     for (int i = 0; i < steps.length; i++) {
       final s = steps[i];
-      String? stepImageUrl;
+      String? stepImageUrl = s.imageUrl; // Use existing URL if provided
+
       if (s.image != null) {
         print("[RecipeService] Uploading image for step $i: ${s.image!.path}");
-        stepImageUrl = await _uploadFile('recipe_photos/$recipeId/steps/step_$i.jpg', s.image!);
+        stepImageUrl = await _uploadFile('recipe_photos/$finalRecipeId/steps/step_$i.jpg', s.image!);
         print("[RecipeService] Step $i image URL: $stepImageUrl");
-      } else {
-        print("[RecipeService] No image for step $i");
       }
       
       directionsFlattened.add(s.text);
@@ -134,7 +140,7 @@ class RecipeService {
 
     // 3. Prepare Final Recipe Map
     final recipeData = {
-      'id': recipeId,
+      'id': finalRecipeId,
       'name': title,
       'name_search': title.toLowerCase(),
       'title': title,
@@ -151,40 +157,42 @@ class RecipeService {
       'author_profile_image_url': user.photoURL,
       'ingredients_parsed': ingredients.map((ing) {
         final rawQty = ing['quantity'] ?? '0';
-        // Extract numeric part in case they typed "2 cups"
-        final numericOnly = RegExp(r'[\d.]+').firstMatch(rawQty)?.group(0) ?? '0';
+        final numericOnly = RegExp(r'[\d.]+').firstMatch(rawQty.toString())?.group(0) ?? '0';
         return {
           'name': ing['name'],
           'quantity': double.tryParse(numericOnly) ?? 0.0,
-          'unit': rawQty.replaceAll(numericOnly, '').trim(),
+          'unit': rawQty.toString().replaceAll(numericOnly, '').trim(),
         };
       }).toList(),
       'ingredients': ingredients.map((e) => "${e['quantity'] ?? ''} ${e['name'] ?? ''}".trim()).toList(),
       'directions': directionsFlattened,
       'steps_detailed': stepsData,
       'nutrition': nutrition,
-      'avg_rating': 0.0,
+      'avg_rating': existing?.avgRating ?? 0.0,
+      'review_count': existing?.reviewCount ?? 0,
       'n_steps': steps.length,
       'is_nutritionist_recipe': await ViewModeService().isNutritionist(),
       'is_public': isPublic,
-      'createdAt': FieldValue.serverTimestamp(),
+      if (!isUpdate) 'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     };
 
     // 4. Save to Firestore
-    await _firestore.collection('recipes').doc(recipeId).set(recipeData);
+    await _firestore.collection('recipes').doc(finalRecipeId).set(recipeData, SetOptions(merge: true));
 
-    // 5. Increment recipe_count on Author Profile
-    try {
-      final isNutr = recipeData['is_nutritionist_recipe'] as bool? ?? false;
-      final coll = isNutr ? 'nutritionists' : 'users';
-      await _firestore.collection(coll).doc(user.uid).set({
-        'recipe_count': FieldValue.increment(1),
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-      print("[RecipeService] Author recipe_count incremented in $coll");
-    } catch (e) {
-      print("[RecipeService] Failed to increment author recipe_count: $e");
+    // 5. Increment recipe_count on Author Profile (Only for NEW recipes)
+    if (!isUpdate) {
+      try {
+        final isNutr = recipeData['is_nutritionist_recipe'] as bool? ?? false;
+        final coll = isNutr ? 'nutritionists' : 'users';
+        await _firestore.collection(coll).doc(user.uid).set({
+          'recipe_count': FieldValue.increment(1),
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+        print("[RecipeService] Author recipe_count incremented in $coll");
+      } catch (e) {
+        print("[RecipeService] Failed to increment author recipe_count: $e");
+      }
     }
   }
 
@@ -196,6 +204,13 @@ class RecipeService {
         .collection('reviews')
         .where('recipeId', isEqualTo: recipeId)
         .snapshots();
+  }
+
+  /// Checks if a user has already reviewed a specific recipe
+  Future<bool> hasUserReviewed(String recipeId, String userId) async {
+    if (recipeId.isEmpty || userId.isEmpty) return false;
+    final doc = await _firestore.collection('reviews').doc("${userId}_${recipeId}").get();
+    return doc.exists;
   }
 
   /// Adds a new review to Firestore
@@ -229,26 +244,24 @@ class RecipeService {
         'likedBy': [],
       });
 
-      if (recipeId.isNotEmpty && recipeRef != null) {
+      if (recipeId.isNotEmpty && recipeRef != null && recipeDoc != null && recipeDoc.exists) {
         double currentAvg = initialAvg ?? 0.0;
         int currentCount = initialCount ?? 0;
 
-        if (recipeDoc != null && recipeDoc.exists) {
-          final data = recipeDoc.data() as Map<String, dynamic>;
-          final double fsAvg = double.tryParse(data['avg_rating']?.toString() ?? "0") ?? 0.0;
-          final int fsCount = int.tryParse(data['review_count']?.toString() ?? "0") ?? 0;
-          
-          final int baseCount = initialCount ?? 0;
-          
-          if (fsCount >= baseCount) {
-            currentAvg = fsAvg;
-            currentCount = fsCount;
-          } else {
-            currentAvg = initialAvg ?? 0.0;
-            currentCount = baseCount;
-          }
-        }
+        final data = recipeDoc.data() as Map<String, dynamic>;
+        final double fsAvg = double.tryParse(data['avg_rating']?.toString() ?? "0") ?? 0.0;
+        final int fsCount = int.tryParse(data['review_count']?.toString() ?? "0") ?? 0;
         
+        final int baseCount = initialCount ?? 0;
+        
+        if (fsCount >= baseCount) {
+          currentAvg = fsAvg;
+          currentCount = fsCount;
+        } else {
+          currentAvg = initialAvg ?? 0.0;
+          currentCount = baseCount;
+        }
+
         final int finalCount = currentCount + 1;
         final double finalAvg = ((currentAvg * currentCount) + rating) / finalCount;
 
@@ -260,21 +273,6 @@ class RecipeService {
           'base_count': initialCount ?? 0,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
-
-        // 3. Update Author Stats
-        if (recipeDoc != null && recipeDoc.exists) {
-          final rData = recipeDoc.data() as Map<String, dynamic>;
-          final authorId = rData['author_id'];
-          final isNutr = rData['is_nutritionist_recipe'] as bool? ?? false;
-          if (authorId != null) {
-            final authorRef = _firestore.collection(isNutr ? 'nutritionists' : 'users').doc(authorId);
-            transaction.set(authorRef, {
-              'total_rating_sum': FieldValue.increment(rating),
-              'total_review_count': FieldValue.increment(1),
-              'updatedAt': FieldValue.serverTimestamp(),
-            }, SetOptions(merge: true));
-          }
-        }
       }
     });
 
@@ -287,6 +285,8 @@ class RecipeService {
           final authorId = recipeData['author_id'];
           final recipeName = recipeData['name'] ?? 'your recipe';
           final senderName = reviewData['userName'] ?? 'Someone';
+          final isNutr = recipeData['is_nutritionist_recipe'] as bool? ?? false;
+          final double ratingVal = double.tryParse(reviewData['rating']?.toString() ?? "0") ?? 0.0;
 
           if (authorId != null && authorId != userId) {
             NotificationService().sendNotification(
@@ -296,6 +296,19 @@ class RecipeService {
               type: NotificationType.comment,
               targetId: recipeId,
             );
+          }
+
+          try {
+            if (authorId != null && authorId.toString().isNotEmpty) {
+              final authorColl = isNutr ? 'nutritionists' : 'users';
+              await _firestore.collection(authorColl).doc(authorId).set({
+                'total_rating_sum': FieldValue.increment(ratingVal),
+                'total_review_count': FieldValue.increment(1),
+                'updatedAt': FieldValue.serverTimestamp(),
+              }, SetOptions(merge: true));
+            }
+          } catch (e) {
+            print("Author stats update skipped: $e");
           }
         }
       } catch (e) {
@@ -655,7 +668,7 @@ class RecipeService {
           .collection('recipes')
           .doc(recipeId)
           .get()
-          .timeout(const Duration(milliseconds: 150));
+          .timeout(const Duration(seconds: 5));
       if (!doc.exists) return null;
       return Recipe.fromJson(doc.data()!);
     } catch (e) {
@@ -735,11 +748,8 @@ class RecipeService {
       var results = snap.docs
           .map((doc) => Recipe.fromJson(doc.data()))
           .where((r) {
-            // Only show nutritionist recipes if they are public
-            if (r.isNutritionistRecipe && !r.isPublic) return false;
-            // Always show non-nutritionist recipes (legacy/user) OR filter them too?
-            // User said: "no other user cna search the recipe from regular search bar" refers to nutritionist's private recipes.
-            return true;
+            // Only show recipes that are explicitly marked as public
+            return r.isPublic;
           })
           .toList();
 
@@ -820,5 +830,3 @@ class RecipeService {
     }
   }
 }
-
-

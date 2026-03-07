@@ -338,6 +338,31 @@ class NutritionistService {
       print("Nutritionist profile not found for token update, skipping.");
     }
   }
+
+  /// Share a recipe as a community post
+  Future<void> shareRecipeAsPost({
+    required String nutritionistId,
+    required String recipeId,
+    String? message,
+    required int minTier,
+    required String recipeName,
+    String? recipeImageUrl,
+  }) async {
+    final Map<String, dynamic> postData = {
+      "content": message ?? "Check out my latest recipe: $recipeName",
+      "timestamp": FieldValue.serverTimestamp(),
+      "minTier": minTier,
+      "likes": 0,
+      "commentCount": 0,
+      "likedBy": [],
+      "type": "recipe",
+      "recipeId": recipeId,
+      "recipeName": recipeName,
+      "recipeImageUrl": recipeImageUrl,
+    };
+
+    await _nutritionists.doc(nutritionistId).collection("tips").add(postData);
+  }
 }
 
 

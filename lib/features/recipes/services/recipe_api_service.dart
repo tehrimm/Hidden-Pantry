@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hidden_pantry_app/core/utils/recipe_matcher.dart';
 
 class RecipeApiService {
   final String baseUrl;
@@ -185,6 +186,7 @@ class RecipeApiService {
     List<String>? ingredients,
     int? maxMinutes,
     List<String>? tags,
+    List<String>? allergies,
   }) async {
     Map<String, num> userTagWeights = {};
     Set<String> recentViewed = {};
@@ -237,13 +239,14 @@ class RecipeApiService {
     
     final uri = Uri.parse("$baseUrl/recommend");
     // Fetch MORE results (top_k) for ingredient searches to allow effective local filtering
-    final topK = hasIngredients ? 1500 : (limit > 50 ? limit : 50);
+    final topK = (hasIngredients || (allergies != null && allergies.isNotEmpty)) ? 1500 : (limit > 50 ? limit : 50);
     
     final body = <String, dynamic>{
       "query": effectiveQuery,
       "ingredients": ingredients ?? [],
       "max_minutes": maxMinutes,
       "top_k": topK, 
+      "allergies": allergies ?? [], // Pass to backend if it supports it
     };
 
     try {
@@ -264,6 +267,13 @@ class RecipeApiService {
       // Local Filtering
       if (maxMinutes != null) {
         allRecipes = allRecipes.where((r) => r.minutes > 0 && r.minutes <= maxMinutes).toList();
+      }
+
+      // Allergen Filtering (Local)
+      if (allergies != null && allergies.isNotEmpty) {
+        allRecipes = allRecipes.where((r) {
+           return RecipeMatcher.calculateMatch(r, [], allergies: allergies) > 0 || r.ingredients.isEmpty;
+        }).toList();
       }
 
       // Note: We no longer perform strict tag filtering here.

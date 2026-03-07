@@ -73,14 +73,17 @@ class StripeService {
     int? tierLevel,
   }) async {
     final callable = FirebaseFunctions.instance.httpsCallable('createNutritionistCheckout');
+    // Normalize numeric types to integers to satisfy platform channel expectations and backend schema
+    final int priceCents = (price * 100).round();
+    final int safeTier = (tierLevel ?? 1).toInt();
     final result = await callable.call({
       'planTitle': planTitle,
-      'price': price,
+      'price': priceCents,
       'interval': interval,
       'nutritionistId': nutritionistId,
       'nutritionistName': nutritionistName,
-      'existingSubscriptionId': existingSubscriptionId,
-      'tierLevel': tierLevel,
+      'existingSubscriptionId': existingSubscriptionId ?? '',
+      'tierLevel': safeTier,
     });
     return result.data['url'] as String;
   }

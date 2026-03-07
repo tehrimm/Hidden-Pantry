@@ -6,46 +6,68 @@ class Toaster {
     final Color textColor = const Color(0xFF462F4D);
     final Color orange = const Color(0xFFEF8A54);
 
-    final mediaQuery = MediaQuery.of(context);
-    final bottomInset = mediaQuery.viewInsets.bottom;
-    final bottomPadding = mediaQuery.viewPadding.bottom;
-    final safeBottomMargin = 16.0 + bottomInset + bottomPadding;
+    final overlay = Overlay.of(context);
+    if (overlay == null) return;
 
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              isError ? Icons.error_outline : Icons.info_outline,
-              color: isError ? Colors.red : orange,
-              size: 20,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                message,
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: "Satoshi",
+    final topPadding = MediaQuery.of(context).viewPadding.top + 16;
+
+    final entry = OverlayEntry(
+      builder: (ctx) {
+        return Positioned(
+          top: topPadding,
+          left: 16,
+          right: 16,
+          child: SafeArea(
+            bottom: false,
+            child: Material(
+              color: Colors.transparent,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    Icon(
+                      isError ? Icons.error_outline : Icons.info_outline,
+                      color: isError ? Colors.red : orange,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        message,
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: "Satoshi",
+                        ),
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
-        backgroundColor: bgColor,
-        behavior: SnackBarBehavior.floating,
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        margin: EdgeInsets.only(
-          bottom: safeBottomMargin,
-          left: 16,
-          right: 16,
-        ),
-        duration: const Duration(seconds: 3),
-      ),
+          ),
+        );
+      },
     );
+
+    overlay.insert(entry);
+    Future.delayed(const Duration(seconds: 3)).then((_) {
+      entry.remove();
+    });
   }
 }

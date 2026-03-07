@@ -2,20 +2,35 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
+import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'upload_recipe_step2.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 
 class UploadRecipeStep1 extends StatefulWidget {
-  const UploadRecipeStep1({super.key});
+  final Recipe? editingRecipe;
+  const UploadRecipeStep1({super.key, this.editingRecipe});
 
   @override
   State<UploadRecipeStep1> createState() => _UploadRecipeStep1State();
 }
 
 class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
-  final TextEditingController _titleController = TextEditingController();
+  late final TextEditingController _titleController;
   File? _image;
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.editingRecipe?.name ?? '');
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickImage() async {
     showModalBottomSheet(
@@ -79,20 +94,9 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: cardBg,
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        child: const Icon(Icons.arrow_back_ios_new, size: 18, color: Color(0xFF462F4D)),
-                      ),
-                    ),
+                    BackButtonWidget(color: purple),
                     Text(
-                      'Add Recipe',
+                      widget.editingRecipe != null ? 'Edit Recipe' : 'Add Recipe',
                       style: TextStyle(
                         color: purple,
                         fontSize: 20,
@@ -133,10 +137,10 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'Title',
                             style: TextStyle(
-                              color: purple,
+                              color: Color(0xFF462F4D),
                               fontSize: 40,
                               fontWeight: FontWeight.bold,
                               fontFamily: 'Satoshi',
@@ -179,32 +183,34 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                                 borderRadius: BorderRadius.circular(20),
                                 child: _image != null
                                     ? Image.file(_image!, fit: BoxFit.cover)
-                                    : Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Icon(Icons.file_upload_outlined, size: 40, color: purple),
-                                          const SizedBox(height: 15),
-                                          Text(
-                                            'Upload your recipe picture',
-                                            style: TextStyle(
-                                              color: purple,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w500,
-                                              letterSpacing: 0.2,
-                                              fontFamily: 'Satoshi',
-                                            ),
-                                          ),
-                                          const SizedBox(height: 5),
-                                          Text(
-                                            '*maximum size 2MB',
-                                            style: TextStyle(
-                                              color: purple,
-                                              fontSize: 9,
-                                              fontFamily: 'Satoshi',
-                                            ),
-                                          ),
-                                        ],
-                                      ),
+                                    : (widget.editingRecipe?.imageUrl != null
+                                        ? Image.network(widget.editingRecipe!.imageUrl!, fit: BoxFit.cover)
+                                        : Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(Icons.file_upload_outlined, size: 40, color: purple),
+                                              const SizedBox(height: 15),
+                                              Text(
+                                                'Upload your recipe picture',
+                                                style: TextStyle(
+                                                  color: purple,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w500,
+                                                  letterSpacing: 0.2,
+                                                  fontFamily: 'Satoshi',
+                                                ),
+                                              ),
+                                              const SizedBox(height: 5),
+                                              Text(
+                                                '*maximum size 2MB',
+                                                style: TextStyle(
+                                                  color: purple,
+                                                  fontSize: 9,
+                                                  fontFamily: 'Satoshi',
+                                                ),
+                                              ),
+                                            ],
+                                          )),
                               ),
                             ),
                           ),
@@ -218,7 +224,7 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                         alignment: Alignment.centerRight,
                         child: GestureDetector(
                           onTap: () {
-                            if (_titleController.text.isEmpty || _image == null) {
+                            if (_titleController.text.isEmpty || (_image == null && widget.editingRecipe?.imageUrl == null)) {
                               Toaster.show(context, 'Please enter a title and select an image', isError: true);
                               return;
                             }
@@ -228,6 +234,7 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                                 builder: (_) => UploadRecipeStep2(
                                   title: _titleController.text,
                                   image: _image,
+                                  editingRecipe: widget.editingRecipe,
                                 ),
                               ),
                             );

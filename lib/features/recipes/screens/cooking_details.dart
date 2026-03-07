@@ -254,7 +254,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
   }
 
   void _openReview() {
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => PostReviewScreen(recipe: widget.recipe),
@@ -293,11 +293,11 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                 // Background Patterns
                 const PatternBackground(),
                 
-                // Animated step card
+                // Step image (uses step-specific image when available)
                Positioned(
                 left: 0,
                 top: 140,
-                child: _recipeImage(screenWidth),
+                child: _stepImage(screenWidth, _currentIndex),
               ),
                 
                 // Header: Close Button, Step Counter, Ingredient Label
@@ -598,8 +598,17 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
     );
   }
 
-  Widget _recipeImage(double width) {
-    final url = widget.recipe.imageUrl;
+  Widget _stepImage(double width, int index) {
+    String? url;
+    final steps = widget.recipe.stepsDetailed;
+    if (steps != null && index >= 0 && index < steps.length) {
+      final m = steps[index];
+      final u = m['imageUrl'] ?? m['image_url'] ?? m['image'];
+      if (u is String && u.trim().isNotEmpty) {
+        url = u.trim();
+      }
+    }
+    url ??= widget.recipe.imageUrl;
     final hasImage = url != null && url.trim().isNotEmpty;
 
     return Container(
@@ -629,7 +638,6 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
     );
   }
 }
-
 
 
 

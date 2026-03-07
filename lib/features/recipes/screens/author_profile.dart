@@ -7,6 +7,7 @@ import 'package:hidden_pantry_app/features/recipes/services/recipe_api_service.d
 import 'package:hidden_pantry_app/core/constants/api_constants.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
 import 'package:hidden_pantry_app/features/user/services/follow_service.dart';
+import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
 
 class AuthorProfileScreen extends StatefulWidget {
   final String authorId;
@@ -56,6 +57,10 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
           print("[AuthorProfile] Recipes error: $e");
           return <Recipe>[];
         }),
+        _fetchFirestoreRecipesByAuthor(widget.authorId).catchError((e) {
+          print("[AuthorProfile] Firestore recipes error: $e");
+          return <Recipe>[];
+        }),
         _followService.isFollowing(widget.authorId).catchError((e) {
           print("[AuthorProfile] Follow check error: $e");
           return false;
@@ -70,7 +75,14 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
       if (mounted) {
         setState(() {
           _stats = results[0] as Map<String, dynamic>;
-          _recipes = results[1] as List<Recipe>;
+          final apiRecipes = results[1] as List<Recipe>;
+          final fsRecipes = results[2] as List<Recipe>;
+          final byId = <String, Recipe>{};
+          for (final r in [...apiRecipes, ...fsRecipes]) {
+            if (r.id.isNotEmpty) byId[r.id] = r;
+          }
+          _recipes = byId.values.toList();
+          _stats['recipe_count'] = _recipes.length;
           _isFollowing = results[2] as bool;
           
           final firestoreFollowStats = results[3] as Map<String, int>;
@@ -123,6 +135,19 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
     } catch (e) {
       print("[AuthorProfile] Error fetching Firestore metrics: $e");
       return {};
+    }
+  }
+
+  Future<List<Recipe>> _fetchFirestoreRecipesByAuthor(String authorId) async {
+    try {
+      final snap = await FirebaseFirestore.instance
+          .collection('recipes')
+          .where('author_id', isEqualTo: authorId)
+          .get();
+      return snap.docs.map((d) => Recipe.fromJson(d.data())).toList();
+    } catch (e) {
+      print("[AuthorProfile] Error fetching Firestore recipes for author $authorId: $e");
+      return [];
     }
   }
 
@@ -250,7 +275,8 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
               _statItem("Recipes", _stats['recipe_count']?.toString() ?? "0"),
               _statItem("Followers", _stats['followers']?.toString() ?? "0"),
               _statItem("Following", _stats['following']?.toString() ?? "0"),
-              _statItem("Rating", _stats['avg_rating']?.toString() ?? "0.0"),
+              if (_stats['avg_rating'] != null && _stats['avg_rating'] != "0.0")
+                _statItem("Rating", _stats['avg_rating']?.toString() ?? "0.0"),
             ],
           ),
 
@@ -319,49 +345,21 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.75,
+        childAspectRatio: 157 / 231, // Standard aspect ratio for cards
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
       ),
       itemCount: _recipes.length,
       itemBuilder: (context, index) {
         final r = _recipes[index];
-        return GestureDetector(
+        return RecipeCard(
+          recipe: r,
           onTap: () {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => RecipeDetailsScreen(recipe: r)),
             );
           },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    width: double.infinity,
-                    decoration: const BoxDecoration(color: cardColor),
-                    child: r.imageUrl != null && r.imageUrl!.startsWith("http")
-                      ? Image.network(r.imageUrl!, fit: BoxFit.cover, errorBuilder: (_,__,___) => _fallbackRecipe())
-                      : _fallbackRecipe(),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                r.name,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: textColor,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: "Satoshi",
-                ),
-              ),
-            ],
-          ),
         );
       },
     );

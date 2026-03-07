@@ -3,11 +3,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
-import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
+
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'recipe_details.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
+import 'package:hidden_pantry_app/features/recipes/upload/upload_recipe_step1.dart';
+import 'package:hidden_pantry_app/core/services/view_mode_service.dart';
 
 class MyRecipesScreen extends StatefulWidget {
   const MyRecipesScreen({super.key});
@@ -23,6 +26,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
   final Color orange = const Color(0xFFEF8A54);
 
   final RecipeService _recipeService = RecipeService();
+  bool _isNutritionist = false;
   
   String? _name;
   String? _bio;
@@ -32,6 +36,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
   void initState() {
     super.initState();
     _loadProfile();
+    _checkRole();
   }
 
   Future<void> _loadProfile() async {
@@ -69,6 +74,49 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
     } catch (e) {
       if (mounted) {}
     }
+  }
+
+  Future<void> _checkRole() async {
+    final isNutr = await ViewModeService().isNutritionist();
+    if (mounted) setState(() => _isNutritionist = isNutr);
+  }
+
+  void _showEditShareSheet(Recipe recipe) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFFF9E3D5),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.edit_rounded, color: Color(0xFF462F4D)),
+              title: const Text('Edit Recipe', style: TextStyle(color: Color(0xFF462F4D), fontFamily: 'Satoshi')),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => UploadRecipeStep1(editingRecipe: recipe),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.share_rounded, color: Color(0xFF462F4D)),
+              title: const Text('Share Recipe', style: TextStyle(color: Color(0xFF462F4D), fontFamily: 'Satoshi')),
+              onTap: () {
+                Navigator.pop(context);
+                _showShareOptions(recipe);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Future<void> _confirmDelete(Recipe recipe) async {
@@ -128,6 +176,56 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
         Toaster.show(context, 'Error updating visibility: $e', isError: true);
       }
     }
+  }
+
+  void _showManagementOptions(Recipe recipe) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 50, height: 5,
+              decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(3)),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              "Manage Recipe",
+              style: TextStyle(color: purple, fontSize: 20, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: Icon(Icons.edit_rounded, color: orange),
+              title: Text("Edit Recipe", style: TextStyle(color: purple, fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => UploadRecipeStep1(editingRecipe: recipe),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+              title: const Text("Delete Recipe", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                _confirmDelete(recipe);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showShareOptions(Recipe recipe) {
@@ -557,7 +655,8 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
             final data = docs[index].data() as Map<String, dynamic>;
             final recipe = Recipe.fromJson(data);
 
-            return GestureDetector(
+            return RecipeCard(
+              recipe: recipe,
               onTap: () {
                 Navigator.push(
                   context,
@@ -566,104 +665,11 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                   ),
                 );
               },
-              onLongPress: () => _confirmDelete(recipe),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha:0.5),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Stack(
-                  children: [
-                    // Image
-                    Positioned.fill(
-                      bottom: 70, // Increased to accommodate visibility label
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: (recipe.imageUrl != null && recipe.imageUrl!.trim().isNotEmpty)
-                            ? Image.network(
-                                recipe.imageUrl!,
-                                fit: BoxFit.cover,
-                                loadingBuilder: (context, child, progress) => progress == null
-                                    ? child
-                                    : const SkeletonBox(
-                                        width: double.infinity,
-                                        height: double.infinity,
-                                        borderRadius: BorderRadius.all(Radius.circular(20)),
-                                      ),
-                                errorBuilder: (_, __, ___) => Image.asset(
-                                  'assets/Logos/recipe_placeholder.jpg',
-                                  fit: BoxFit.cover,
-                                ),
-                              )
-                            : Image.asset(
-                                'assets/Logos/recipe_placeholder.jpg',
-                                fit: BoxFit.cover,
-                              ),
-                      ),
-                    ),
-                    // Recipe Name
-                    Positioned(
-                      left: 12,
-                      bottom: 28,
-                      right: 12,
-                      child: Text(
-                        recipe.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: purple,
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'Satoshi',
-                        ),
-                      ),
-                    ),
-                    // Time and Rating
-                    Positioned(
-                      left: 12,
-                      bottom: 10,
-                      child: Text(
-                        '${recipe.minutes} min  •  ⭐ ${recipe.avgRating.toStringAsFixed(1)}',
-                        style: TextStyle(
-                          color: purple.withValues(alpha:0.75),
-                          fontSize: 11,
-                          fontFamily: 'Satoshi',
-                        ),
-                      ),
-                    ),
-                    // Visibility Indicator (Nutritionist only)
-                    Positioned(
-                      top: 10,
-                      right: 10,
-                      child: GestureDetector(
-                        onTap: () => _toggleVisibility(recipe),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: recipe.isPublic ? Colors.green.withValues(alpha:0.8) : Colors.red.withValues(alpha:0.8),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            recipe.isPublic ? "Public" : "Private",
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Share Button (Nutritionist only)
-                    Positioned(
-                      bottom: 5,
-                      right: 5,
-                      child: IconButton(
-                        icon: Icon(Icons.share_rounded, color: orange, size: 18),
-                        onPressed: () => _showShareOptions(recipe),
-                        constraints: const BoxConstraints(),
-                        padding: const EdgeInsets.all(8),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              onLongPress: () => (_isNutritionist ? _showEditShareSheet(recipe) : _showManagementOptions(recipe)),
+              onShareTap: _isNutritionist ? () => _showShareOptions(recipe) : null,
+              onVisibilityTap: _isNutritionist ? () => _toggleVisibility(recipe) : null,
+              isPublic: recipe.isPublic,
+              isNutritionist: _isNutritionist,
             );
           },
         );

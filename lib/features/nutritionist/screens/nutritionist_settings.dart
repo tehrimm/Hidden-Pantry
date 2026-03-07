@@ -6,6 +6,7 @@ import 'package:hidden_pantry_app/features/onboarding/screens/loading_five.dart'
 import 'package:hidden_pantry_app/features/recipes/screens/my_recipes.dart';
 import 'package:hidden_pantry_app/features/nutritionist/services/nutritionist_service.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/payout_management.dart';
+import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_meal_plans_screen.dart';
 
 import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_profile_setting.dart';
 import 'package:hidden_pantry_app/core/services/notification_service.dart';
@@ -169,6 +170,16 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
                                         context,
                                         MaterialPageRoute(builder: (_) => const NutritionistProfileSettingScreen()),
                                       ).then((_) => _loadProfile());
+                                    },
+                                  ),
+                                  _tile(
+                                    iconData: Icons.restaurant_menu_rounded,
+                                    title: "Create Meal Plans",
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => const NutritionistMealPlansScreen()),
+                                      );
                                     },
                                   ),
                                   _tile(

@@ -1,16 +1,20 @@
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
+import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'upload_recipe_step3.dart';
 
 class UploadRecipeStep2 extends StatefulWidget {
   final String title;
   final File? image;
+  final Recipe? editingRecipe;
 
   const UploadRecipeStep2({
     super.key,
     required this.title,
     this.image,
+    this.editingRecipe,
   });
 
   @override
@@ -18,11 +22,21 @@ class UploadRecipeStep2 extends StatefulWidget {
 }
 
 class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
-  int _prepTime = 15;
-  int _cookTime = 40;
-  int _servings = 2;
+  late int _prepTime;
+  late int _cookTime;
+  late int _servings;
   String? _difficulty;
-  final List<String> _selectedTags = [];
+  late final List<String> _selectedTags;
+
+  @override
+  void initState() {
+    super.initState();
+    _prepTime = widget.editingRecipe?.prepMinutes ?? 15;
+    _cookTime = widget.editingRecipe?.cookMinutes ?? 40;
+    _servings = widget.editingRecipe?.baseServings ?? 2;
+    _difficulty = widget.editingRecipe?.difficulty;
+    _selectedTags = List<String>.from(widget.editingRecipe?.tags ?? []);
+  }
 
   final Map<String, List<String>> _allCategories = {
     'Time': [
@@ -157,9 +171,9 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        SizedBox(width: 40 * s), // Spacer for centering title
+                        BackButtonWidget(color: purple),
                         Text(
-                          'Add Recipe',
+                          widget.editingRecipe != null ? 'Edit Recipe' : 'Add Recipe',
                           style: TextStyle(
                             color: purple,
                             fontSize: 20 * s,
@@ -357,20 +371,8 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                           padding: const EdgeInsets.fromLTRB(30, 42, 29, 42),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              GestureDetector(
-                                onTap: () => Navigator.pop(context),
-                                child: Container(
-                                  width: 52,
-                                  height: 53,
-                                  decoration: BoxDecoration(
-                                    color: cardBg,
-                                    borderRadius: BorderRadius.circular(15),
-                                  ),
-                                  child: const Icon(Icons.arrow_back_ios_new, size: 16, color: Color(0xFF462F4D)),
-                                ),
-                              ),
-                              const SizedBox(width: 60),
                               Expanded(
                                 child: GestureDetector(
                                   onTap: () {
@@ -385,6 +387,7 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                                           servings: _servings,
                                           difficulty: _difficulty,
                                           tags: _selectedTags,
+                                          editingRecipe: widget.editingRecipe,
                                         ),
                                       ),
                                     );
@@ -436,84 +439,144 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
     required double scale,
     required Function(int) onChanged,
   }) {
+    return _CounterInput(
+      label: label,
+      value: value,
+      unit: unit,
+      scale: scale,
+      onChanged: onChanged,
+      purple: purple,
+      cardBg: cardBg,
+      textBrown: textBrown,
+    );
+  }
+}
+
+class _CounterInput extends StatefulWidget {
+  final String label;
+  final int value;
+  final String unit;
+  final double scale;
+  final Function(int) onChanged;
+  final Color purple;
+  final Color cardBg;
+  final Color textBrown;
+
+  const _CounterInput({
+    required this.label,
+    required this.value,
+    required this.unit,
+    required this.scale,
+    required this.onChanged,
+    required this.purple,
+    required this.cardBg,
+    required this.textBrown,
+  });
+
+  @override
+  State<_CounterInput> createState() => _CounterInputState();
+}
+
+class _CounterInputState extends State<_CounterInput> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value.toString());
+  }
+
+  @override
+  void didUpdateWidget(_CounterInput oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value.toString() != _controller.text) {
+      _controller.text = widget.value.toString();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 29 * scale, vertical: 8 * scale),
+      padding: EdgeInsets.symmetric(horizontal: 29 * widget.scale, vertical: 8 * widget.scale),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
-            child: Text(label,
+            child: Text(widget.label,
                 style: TextStyle(
-                  color: purple,
-                  fontSize: 15 * scale,
+                  color: widget.purple,
+                  fontSize: 15 * widget.scale,
                   fontFamily: 'Satoshi',
                 )),
           ),
           Container(
-            width: 176 * scale,
-            height: 61 * scale,
+            width: 176 * widget.scale,
+            height: 61 * widget.scale,
             decoration: BoxDecoration(
-              color: cardBg,
-              borderRadius: BorderRadius.circular(8 * scale),
+              color: widget.cardBg,
+              borderRadius: BorderRadius.circular(8 * widget.scale),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 GestureDetector(
                   onTap: () {
-                    if (value > 0) onChanged(value - 1);
+                    if (widget.value > 0) widget.onChanged(widget.value - 1);
                   },
                   child: Padding(
-                    padding: EdgeInsets.all(8.0 * scale),
+                    padding: EdgeInsets.all(8.0 * widget.scale),
                     child: Text('-',
                         style: TextStyle(
                           color: const Color(0xFF74503C),
-                          fontSize: 24 * scale,
+                          fontSize: 24 * widget.scale,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Satoshi',
                         )),
                   ),
                 ),
                 SizedBox(
-                  width: 50 * scale,
+                  width: 50 * widget.scale,
                   child: TextField(
                     textAlign: TextAlign.center,
                     keyboardType: TextInputType.number,
                     onChanged: (v) {
                       final parsed = int.tryParse(v);
-                      if (parsed != null) onChanged(parsed);
+                      if (parsed != null) widget.onChanged(parsed);
                     },
-                    controller: TextEditingValue(
-                      text: value.toString(),
-                      selection: TextSelection.collapsed(offset: value.toString().length),
-                    ).let((v) => TextEditingController.fromValue(v)),
+                    controller: _controller,
                     decoration: const InputDecoration(border: InputBorder.none),
                     style: TextStyle(
-                      color: textBrown,
-                      fontSize: 16 * scale,
+                      color: widget.textBrown,
+                      fontSize: 16 * widget.scale,
                       fontWeight: FontWeight.bold,
                       fontFamily: 'Satoshi',
                     ),
                   ),
                 ),
-                if (unit.isNotEmpty)
+                if (widget.unit.isNotEmpty)
                   Padding(
-                    padding: EdgeInsets.only(right: 8 * scale),
-                    child: Text(unit,
+                    padding: EdgeInsets.only(right: 8 * widget.scale),
+                    child: Text(widget.unit,
                         style: TextStyle(
-                          color: textBrown,
-                          fontSize: 12 * scale,
+                          color: widget.textBrown,
+                          fontSize: 12 * widget.scale,
                           fontFamily: 'Satoshi',
                         )),
                   ),
                 GestureDetector(
-                  onTap: () => onChanged(value + 1),
+                  onTap: () => widget.onChanged(widget.value + 1),
                   child: Padding(
-                    padding: EdgeInsets.all(8.0 * scale),
+                    padding: EdgeInsets.all(8.0 * widget.scale),
                     child: Text('+',
                         style: TextStyle(
                           color: const Color(0xFF74503C),
-                          fontSize: 24 * scale,
+                          fontSize: 24 * widget.scale,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Satoshi',
                         )),
