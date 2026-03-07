@@ -372,7 +372,5 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
     );
   }
 
-  Widget _fallbackRecipe() {
-    return Image.asset('assets/Logos/recipe_placeholder.jpg', fit: BoxFit.cover);
-  }
+  
 }

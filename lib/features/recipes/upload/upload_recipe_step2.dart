@@ -636,8 +636,6 @@ class _BackgroundPatterns extends StatelessWidget {
   }
 }
 
-extension on TextEditingValue {
-  T let<T>(T Function(TextEditingValue) block) => block(this);
-}
+ 
 
 

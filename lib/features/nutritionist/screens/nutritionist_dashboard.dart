@@ -139,24 +139,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
     );
   }
 
-  Widget _sectionHeader(String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 22),
-      child: Row(
-        children: [
-          Text(
-            title,
-            style: TextStyle(
-              color: purple,
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              fontFamily: "Satoshi",
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  
 
   Widget _actionItem(Map<String, dynamic> action) {
     const Color actionOrange = Color(0xFFE48E5B);

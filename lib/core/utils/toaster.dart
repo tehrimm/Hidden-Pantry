@@ -6,7 +6,7 @@ class Toaster {
     final Color textColor = const Color(0xFF462F4D);
     final Color orange = const Color(0xFFEF8A54);
 
-    final overlay = Overlay.of(context);
+    final overlay = Overlay.maybeOf(context);
     if (overlay == null) return;
 
     final topPadding = MediaQuery.of(context).viewPadding.top + 16;

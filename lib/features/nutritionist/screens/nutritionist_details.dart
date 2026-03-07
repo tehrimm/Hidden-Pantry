@@ -855,14 +855,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
     );
   }
 
- Widget _recipeCardPlaceholder() {
-   return Container(
-     color: orange.withValues(alpha: 0.05),
-     child: Center(
-       child: Icon(Icons.restaurant_menu_rounded, color: orange.withValues(alpha: 0.2), size: 48),
-     ),
-   );
- }
+ 
 
    Future<void> _navigateToRecipe(String recipeId) async {
      try {

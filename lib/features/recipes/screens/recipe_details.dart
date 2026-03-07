@@ -165,22 +165,22 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
       try {
         final firestoreRecipe = await _recipeService.getRecipeById(_recipe.id).timeout(const Duration(seconds: 5));
         final bool isPartial = firestoreRecipe == null || firestoreRecipe.name.isEmpty || firestoreRecipe.directions.isEmpty;
-        if (!isPartial && firestoreRecipe != null) {
-          final count = await _recipeService.countRecipesByAuthor(firestoreRecipe.authorId).timeout(const Duration(seconds: 5));
+        if (!isPartial) {
+          final count = await _recipeService.countRecipesByAuthor(firestoreRecipe!.authorId).timeout(const Duration(seconds: 5));
           
           if (mounted) {
             setState(() {
-              _recipe = firestoreRecipe;
+              _recipe = firestoreRecipe!;
               _authorRecipeCount = count;
-              _servings = (firestoreRecipe.baseServings <= 0) ? 1 : firestoreRecipe.baseServings;
+              _servings = (firestoreRecipe!.baseServings <= 0) ? 1 : firestoreRecipe!.baseServings;
               _loading = false;
             });
             
-            if (firestoreRecipe.authorName != null && firestoreRecipe.authorName!.isNotEmpty) {
-              final otherRecipes = await api.searchRecipes(firestoreRecipe.authorName!, limit: 12);
+            if (firestoreRecipe!.authorName != null && firestoreRecipe!.authorName!.isNotEmpty) {
+              final otherRecipes = await api.searchRecipes(firestoreRecipe!.authorName!, limit: 12);
               if (mounted) {
                 setState(() {
-                  _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || r.authorId == firestoreRecipe.authorId)).toList();
+                  _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || r.authorId == firestoreRecipe!.authorId)).toList();
                 });
               }
             }
@@ -298,16 +298,44 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
         final bool? confirmRemoval = await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text("Recipe already downloaded", style: TextStyle(fontFamily: "Satoshi", fontWeight: FontWeight.bold)),
-            content: const Text("Would you like to remove it from local storage?", style: TextStyle(fontFamily: "Satoshi")),
+            backgroundColor: bgColor,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text(
+              "Recipe already downloaded",
+              style: TextStyle(
+                color: textColor,
+                fontFamily: "Satoshi",
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: const Text(
+              "Would you like to remove it from local storage?",
+              style: TextStyle(
+                color: textColor,
+                fontFamily: "Satoshi",
+              ),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context, false),
-                child: const Text("Cancel", style: TextStyle(color: Colors.grey, fontFamily: "Satoshi")),
+                child: const Text(
+                  "Cancel",
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontFamily: "Satoshi",
+                  ),
+                ),
               ),
               TextButton(
                 onPressed: () => Navigator.pop(context, true),
-                child: const Text("Remove", style: TextStyle(color: orange, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+                child: const Text(
+                  "Remove",
+                  style: TextStyle(
+                    color: orange,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: "Satoshi",
+                  ),
+                ),
               ),
             ],
           ),
