@@ -627,10 +627,14 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
 
                     if (subscriptionDocId) {
                         // Update the pending doc to active
+                        const expiryDate = new Date();
+                        expiryDate.setMonth(expiryDate.getMonth() + 1);
+
                         await db.collection('subscriptions').doc(subscriptionDocId).update({
                             status: 'active',
                             tierLevel: parseInt(tierLevel) || 1,
                             stripeSubscriptionId: session.subscription,
+                            expiryDate: admin.firestore.Timestamp.fromDate(expiryDate),
                             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                         });
                         console.log(`Updated subscription doc ${subscriptionDocId} to active with tier ${tierLevel}`);

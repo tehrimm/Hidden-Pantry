@@ -7,7 +7,6 @@ import 'package:hidden_pantry_app/features/onboarding/screens/starting_screen.da
 import 'package:flutter_stripe/flutter_stripe.dart';
 import 'firebase_options.dart';
 
-
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:hidden_pantry_app/core/services/fcm_service.dart';
 import 'package:hidden_pantry_app/core/services/navigation_service.dart';
@@ -43,11 +42,15 @@ Future<void> main() async {
   }
 
   // App Check (fixes: "No AppCheckProvider installed")
-  // Use debug provider in development so Storage works without enforcement issues.
-  await FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.debug,
-    appleProvider: AppleProvider.debug,
-  );
+  // Use PlayIntegrity (Android) and DeviceCheck (iOS) to stop Debug quota exhaustion which causes "Too many attempts" errors.
+  try {
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: AndroidProvider.playIntegrity,
+      appleProvider: AppleProvider.deviceCheck,
+    );
+  } catch (e) {
+    print("AppCheck Init Non-fatal Error: $e");
+  }
 
   // Initialize Stripe with test publishable key
   // Replace with your real Stripe test publishable key from dashboard.stripe.com
@@ -99,6 +102,3 @@ class _HiddenPantryAppState extends State<HiddenPantryApp> {
     );
   }
 }
-
-
-

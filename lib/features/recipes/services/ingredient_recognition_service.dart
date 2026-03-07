@@ -82,13 +82,6 @@ class IngredientRecognitionService {
     return probs;
   }
 
-  ({List<double> probs, double top1, double margin}) _score(List<double> probs) {
-    final indexed = List.generate(probs.length, (i) => (i, probs[i]));
-    indexed.sort((a, b) => b.$2.compareTo(a.$2));
-    final top1 = indexed.isNotEmpty ? indexed.first.$2 : 0.0;
-    final top2 = indexed.length > 1 ? indexed[1].$2 : 0.0;
-    return (probs: probs, top1: top1, margin: top1 - top2);
-  }
 
   Future<List<({String label, double confidence})>> predict(File imageFile) async {
     if (_interpreter == null) {
@@ -109,29 +102,21 @@ class IngredientRecognitionService {
       final square = img.copyCrop(image, x: x, y: y, width: side, height: side);
       final resized = img.copyResize(square, width: _inputSize, height: _inputSize);
 
-      // 3. Build two input variants: [-1,1] and [0,1]
+      // 3. Build input: [0, 1] (as trained by train_model.py ImageDataGenerator)
       final total = _inputSize * _inputSize * 3;
-      final a = List<double>.filled(total, 0.0); // [-1, 1]
-      final b = List<double>.filled(total, 0.0); // [0, 1]
+      final inputBuffer = List<double>.filled(total, 0.0);
       var idx = 0;
       for (var y = 0; y < _inputSize; y++) {
         for (var x = 0; x < _inputSize; x++) {
           final rgb = _getRgb(resized, x, y);
-          a[idx] = (rgb[0] / 127.5) - 1.0;
-          b[idx++] = rgb[0] / 255.0;
-          a[idx] = (rgb[1] / 127.5) - 1.0;
-          b[idx++] = rgb[1] / 255.0;
-          a[idx] = (rgb[2] / 127.5) - 1.0;
-          b[idx++] = rgb[2] / 255.0;
+          inputBuffer[idx++] = rgb[0] / 255.0;
+          inputBuffer[idx++] = rgb[1] / 255.0;
+          inputBuffer[idx++] = rgb[2] / 255.0;
         }
       }
 
-      // 4. Run both and choose the more confident distribution
-      final probsA = _run(a, [1, _inputSize, _inputSize, 3]);
-      final probsB = _run(b, [1, _inputSize, _inputSize, 3]);
-      final sA = _score(probsA);
-      final sB = _score(probsB);
-      final chosen = (sA.top1 + sA.margin) >= (sB.top1 + sB.margin) ? probsA : probsB;
+      // 4. Run model inference
+      final chosen = _run(inputBuffer, [1, _inputSize, _inputSize, 3]);
 
       // 5. Parse results
       final indexedProbs = List.generate(chosen.length, (i) => (index: i, prob: chosen[i]));

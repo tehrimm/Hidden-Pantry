@@ -79,7 +79,7 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
           final fsRecipes = results[2] as List<Recipe>;
           final byId = <String, Recipe>{};
           for (final r in [...apiRecipes, ...fsRecipes]) {
-            if (r.id.isNotEmpty) byId[r.id] = r;
+            if (r.id.isNotEmpty && r.isPublic) byId[r.id] = r;
           }
           _recipes = byId.values.toList();
           _stats['recipe_count'] = _recipes.length;
@@ -143,6 +143,7 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
       final snap = await FirebaseFirestore.instance
           .collection('recipes')
           .where('author_id', isEqualTo: authorId)
+          .where('is_public', isEqualTo: true)
           .get();
       return snap.docs.map((d) => Recipe.fromJson(d.data())).toList();
     } catch (e) {
