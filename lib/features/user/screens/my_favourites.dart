@@ -55,30 +55,11 @@ class _MyFavouritesScreenState extends State<MyFavouritesScreen> {
       }
 
       // 2. Fetch full recipe objects from Firestore
-      final firestoreRecipes = await _recipeService.getRecipesByIds(likedIds);
-      
-      // 3. Any missing IDs might be from the FastAPI backend
-      final firestoreIds = firestoreRecipes.map((r) => r.id).toSet();
-      final missingIds = likedIds.where((id) => !firestoreIds.contains(id)).toList();
-      
-      final apiRecipes = <Recipe>[];
-      if (missingIds.isNotEmpty) {
-        final apiService = const RecipeApiService(baseUrl: ApiConstants.baseUrl);
-        final futures = missingIds.map((id) async {
-          try {
-            return await apiService.getRecipeById(id);
-          } catch (_) {
-            return null; // Ignore errors for deleted/missing recipes
-          }
-        });
-        
-        final results = await Future.wait(futures);
-        apiRecipes.addAll(results.whereType<Recipe>());
-      }
+      final recipes = await _recipeService.getRecipesByIds(likedIds);
       
       if (mounted) {
         setState(() {
-          _recipes = [...firestoreRecipes, ...apiRecipes];
+          _recipes = recipes;
           _loading = false;
         });
       }
@@ -94,7 +75,9 @@ class _MyFavouritesScreenState extends State<MyFavouritesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Widget content = Scaffold(
+    final double topPad = MediaQuery.of(context).padding.top;
+
+    return Scaffold(
       backgroundColor: widget.isNutritionist ? Colors.white : bg,
       body: ClipRRect(
         borderRadius: widget.isNutritionist ? BorderRadius.circular(30) : BorderRadius.zero,
@@ -104,39 +87,42 @@ class _MyFavouritesScreenState extends State<MyFavouritesScreen> {
             children: [
               const PatternBackground(),
 
-              SafeArea(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 80), // Space for header
-                    Expanded(
-                      child: _buildBody(),
-                    ),
-                  ],
+              // Standardized Header - Back Button
+              Positioned(
+                left: 30,
+                top: topPad + 20,
+                child: BackButtonWidget(
+                  color: brown,
+                  onPressed: () => Navigator.pop(context),
                 ),
               ),
 
-              // Fixed Header
+              // Standardized Header - Title
               Positioned(
-                top: 51,
-                left: 22,
-                right: 22,
-                child: Row(
+                left: 0,
+                right: 0,
+                top: topPad + 20,
+                height: 50,
+                child: const Center(
+                  child: Text(
+                    "My Favourites",
+                    style: TextStyle(
+                      color: purple,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: "Satoshi",
+                    ),
+                  ),
+                ),
+              ),
+
+              SafeArea(
+                child: Column(
                   children: [
-                    BackButtonWidget(
-                      color: brown,
-                      onPressed: () => Navigator.pop(context),
+                    SizedBox(height: topPad + 70), // Responsive gap for header
+                    Expanded(
+                      child: _buildBody(),
                     ),
-                    const Spacer(),
-                    const Text(
-                      "My Favourites",
-                      style: TextStyle(
-                        color: purple,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: "Satoshi",
-                      ),
-                    ),
-                    const Spacer(flex: 2),
                   ],
                 ),
               ),
@@ -145,8 +131,6 @@ class _MyFavouritesScreenState extends State<MyFavouritesScreen> {
         ),
       ),
     );
-
-    return content;
   }
 
   Widget _buildBody() {
@@ -197,28 +181,49 @@ class _MyFavouritesScreenState extends State<MyFavouritesScreen> {
       );
     }
 
-    return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 157 / 231,
-        crossAxisSpacing: 15,
-        mainAxisSpacing: 15,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 30),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 20),
+          const Text(
+            "My Favourites",
+            style: TextStyle(
+              color: purple,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'Satoshi',
+            ),
+          ),
+          const SizedBox(height: 20),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 157 / 231,
+              crossAxisSpacing: 15,
+              mainAxisSpacing: 15,
+            ),
+            itemCount: _recipes.length,
+            itemBuilder: (context, index) {
+              final r = _recipes[index];
+              return RecipeCard(
+                recipe: r,
+                isNutritionist: widget.isNutritionist,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => RecipeDetailsScreen(recipe: r)),
+                  );
+                },
+              );
+            },
+          ),
+          const SizedBox(height: 30),
+        ],
       ),
-      itemCount: _recipes.length,
-      itemBuilder: (context, index) {
-        final r = _recipes[index];
-        return RecipeCard(
-          recipe: r,
-          isNutritionist: false,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => RecipeDetailsScreen(recipe: r)),
-            );
-          },
-        );
-      },
     );
   }
 }

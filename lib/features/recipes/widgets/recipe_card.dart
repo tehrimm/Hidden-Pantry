@@ -43,6 +43,7 @@ class RecipeCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
       ),
       child: Stack(
+        fit: StackFit.expand,
         children: [
           // Image
           Positioned.fill(
@@ -105,7 +106,7 @@ class RecipeCard extends StatelessWidget {
             bottom: 28,
             right: 12,
             child: Text(
-              recipe.name.isEmpty ? "Recipe" : recipe.name,
+              recipe.name.trim().isEmpty ? "Recipe" : recipe.name,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
@@ -124,14 +125,16 @@ class RecipeCard extends StatelessWidget {
             right: 12,
             child: Row(
               children: [
-                Text(
-                  "${recipe.minutes} min • ",
-                  style: const TextStyle(
-                    color: purple,
-                    fontSize: 11,
-                    fontFamily: 'Satoshi',
+                if (recipe.minutes > 0)
+                  Text(
+                    "${recipe.minutes} min • ",
+                    style: const TextStyle(
+                      color: purple,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Satoshi',
+                    ),
                   ),
-                ),
                 Expanded(
                   child: RecipeRatingWidget(
                     recipeId: recipe.id,
@@ -139,6 +142,7 @@ class RecipeCard extends StatelessWidget {
                     style: const TextStyle(
                       color: purple,
                       fontSize: 11,
+                      fontWeight: FontWeight.bold,
                       fontFamily: 'Satoshi',
                     ),
                   ),

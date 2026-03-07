@@ -657,81 +657,101 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
     return "${date.day}/${date.month}/${date.year}";
   }
 
-  Widget _recipePreview(String recipeId, String? recipeName, String? recipeImageUrl) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: cardInner,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: orange.withValues(alpha: 0.1)),
-      ),
-      child: Row(
-        children: [
-          // Square Thumbnail or Icon if null
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              width: 50,
-              height: 50,
-              child: recipeImageUrl != null && recipeImageUrl.isNotEmpty
-                  ? Image.network(
-                      recipeImageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _recipeCardPlaceholder(),
-                    )
-                  : _recipeCardPlaceholder(),
-            ),
+  Widget _recipePreview(String recipeId, String? fallbackName, String? fallbackImage) {
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance.collection("recipes").doc(recipeId).snapshots(),
+      builder: (context, snap) {
+        // Fallback data if doc doesn't exist or is loading
+        String name = fallbackName ?? "Shared Recipe";
+        String? img = fallbackImage;
+
+        if (snap.hasData && snap.data!.exists) {
+          final rData = snap.data!.data() as Map<String, dynamic>;
+          name = rData["name"] ?? name;
+          img = rData["imageUrl"] ?? rData["image_url"] ?? img;
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: cardInner,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: orange.withValues(alpha: 0.1)),
           ),
-          const SizedBox(width: 16),
-          // Info Middle
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  recipeName ?? "Shared Recipe",
-                  style: TextStyle(
-                    color: purple,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    fontFamily: "Satoshi",
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          child: Row(
+            children: [
+              // Square Thumbnail
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: 50,
+                  height: 50,
+                  color: orange.withValues(alpha: 0.05),
+                  child: (img != null && img.isNotEmpty)
+                      ? Image.network(
+                          img,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _recipeCardPlaceholder(),
+                        )
+                      : _recipeCardPlaceholder(),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  "View detailed recipe instructions",
-                  style: TextStyle(
-                    color: purple.withValues(alpha: 0.5),
-                    fontSize: 13,
-                    fontFamily: "Satoshi",
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(width: 12),
+              // Info Middle
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(
+                        color: purple,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        fontFamily: "Satoshi",
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      "View detailed recipe instructions",
+                      style: TextStyle(
+                        color: purple.withValues(alpha: 0.4),
+                        fontSize: 11,
+                        fontFamily: "Satoshi",
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 8),
+              // Button Right
+              InkWell(
+                onTap: () => _navigateToRecipe(recipeId),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: orange,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    "View",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: "Satoshi",
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          // Button Right
-          ElevatedButton(
-            onPressed: () => _navigateToRecipe(recipeId),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: orange,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              minimumSize: Size.zero,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              elevation: 0,
-            ),
-            child: const Text(
-              "View",
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

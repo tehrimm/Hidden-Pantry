@@ -6,9 +6,12 @@ import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/core/services/notification_service.dart';
 import 'package:hidden_pantry_app/features/user/models/notification_model.dart';
 import 'package:hidden_pantry_app/core/services/view_mode_service.dart';
+import 'package:hidden_pantry_app/features/recipes/services/recipe_api_service.dart';
+import 'package:hidden_pantry_app/core/constants/api_constants.dart';
 
 class RecipeService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final RecipeApiService _api = const RecipeApiService(baseUrl: ApiConstants.baseUrl);
 
   /// Increments the view count for a specific recipe to track popularity.
   Future<void> incrementRecipeView(String recipeId) async {
@@ -669,8 +672,9 @@ class RecipeService {
           .doc(recipeId)
           .get()
           .timeout(const Duration(seconds: 5));
-      if (!doc.exists) return null;
-      return Recipe.fromJson(doc.data()!);
+      final data = doc.data()!;
+      data['id'] = doc.id;
+      return Recipe.fromJson(data);
     } catch (e) {
       print("[RecipeService] Error fetching recipe $recipeId: $e");
       return null;
@@ -691,16 +695,35 @@ class RecipeService {
       try {
         final snap = await _firestore
             .collection('recipes')
-            .where('id', whereIn: chunk)
+            .where(FieldPath.documentId, whereIn: chunk)
             .get();
             
-        results.addAll(snap.docs.map((doc) => Recipe.fromJson(doc.data())));
+        results.addAll(snap.docs.map((doc) {
+          final data = doc.data();
+          data['id'] = doc.id;
+          return Recipe.fromJson(data);
+        }));
+        // 2. Identify missing IDs (likely from API)
+        final fetchedIds = snap.docs.map((doc) => doc.id).toSet();
+        final missingIds = chunk.where((id) => !fetchedIds.contains(id)).toList();
+        
+        // 3. Fetch missing from API
+        for (var id in missingIds) {
+          try {
+            final r = await _api.getRecipeById(id);
+            results.add(r);
+          } catch (e) {
+            print("[RecipeService] API fallback failed for $id: $e");
+          }
+        }
       } catch (e) {
         print("[RecipeService] Error fetching chunk of recipes: $e");
       }
     }
     
-    return results;
+    // Maintain result order based on input IDs
+    final Map<String, Recipe> resultMap = {for (var r in results) r.id: r};
+    return ids.where((id) => resultMap.containsKey(id)).map((id) => resultMap[id]!).toList();
   }
 
   Future<int> countRecipesByAuthor(String authorId) async {

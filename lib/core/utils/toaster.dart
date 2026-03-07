@@ -9,7 +9,10 @@ class Toaster {
     final overlay = Overlay.maybeOf(context);
     if (overlay == null) return;
 
-    final topPadding = MediaQuery.of(context).viewPadding.top + 16;
+    final statusTop = MediaQuery.of(context).viewPadding.top;
+    final canPop = ModalRoute.of(context)?.canPop ?? Navigator.canPop(context);
+    final extra = canPop ? (kToolbarHeight + 8.0) : 16.0;
+    final topPadding = statusTop + extra;
 
     final entry = OverlayEntry(
       builder: (ctx) {

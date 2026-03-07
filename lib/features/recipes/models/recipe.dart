@@ -384,7 +384,10 @@ class Recipe {
       data['recipe_image'] ?? 
       data['recipe_imageUrl'] ??
       data['recipeImageUrl'] ??
-      data['recipe_image_url']
+      data['recipe_image_url'] ??
+      data['recipe_img'] ??
+      data['img_url'] ??
+      data['imagePath']
     );
 
     return Recipe(
@@ -396,6 +399,8 @@ class Recipe {
         data['recipeName'] ?? 
         data['label'] ?? 
         data['recipe_title'] ??
+        data['recipeTitle'] ??
+        data['display_name'] ??
         ""
       ).toString(),
       description: _cleanNullableString(data['description'] ?? data['recipe_description'] ?? data['summary']),
@@ -417,7 +422,7 @@ class Recipe {
         data['cook_time'] ?? 
         data['cookTime'] ??
         data['prep_time'], 
-        fallback: 0
+        fallback: _toInt(data['prepTime'] ?? 0) + _toInt(data['cookTime'] ?? 0)
       ),
       prepMinutes: _toInt(data['prep_minutes'] ?? data['prep_time'] ?? data['prepMinutes'] ?? data['prepTime']),
       cookMinutes: _toInt(data['cook_minutes'] ?? data['cook_time'] ?? data['cookMinutes'] ?? data['cookTime']),
