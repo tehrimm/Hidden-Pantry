@@ -765,93 +765,8 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
               ),
             ),
           ],
-        ],
+        ),
       ),
-    );
-  }
-
-   Widget _recipeInteractionCard(String recipeId, String? recipeName, String? recipeImageUrl) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: orange.withValues(alpha: 0.1)),
-      ),
-      child: Row(
-        children: [
-          // Square Thumbnail or Icon if null
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: SizedBox(
-              width: 50, // Reduced to match meal plan icon scale
-              height: 50,
-              child: recipeImageUrl != null && recipeImageUrl.isNotEmpty
-                  ? Image.network(
-                      recipeImageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _recipeCardIconPlaceholder(),
-                    )
-                  : _recipeCardIconPlaceholder(),
-            ),
-          ),
-          const SizedBox(width: 16),
-          // Info Middle
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  recipeName ?? "Shared Recipe",
-                  style: TextStyle(
-                    color: purple,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    fontFamily: "Satoshi",
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "View detailed recipe instructions",
-                  style: TextStyle(
-                    color: purple.withValues(alpha: 0.5),
-                    fontSize: 13,
-                    fontFamily: "Satoshi",
-                  ),
-                  maxLines: 1, // Keep it single line like meal plan
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Button Right
-          ElevatedButton(
-            onPressed: () => _navigateToRecipe(recipeId),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: orange,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              minimumSize: Size.zero,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              elevation: 0,
-            ),
-            child: const Text(
-              "View",
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _recipeCardIconPlaceholder() {
-    return Container(
-      decoration: BoxDecoration(color: orange.withValues(alpha: 0.1), shape: BoxShape.circle),
-      child: Icon(Icons.restaurant_menu_rounded, color: orange, size: 24),
     );
   }
 
@@ -957,6 +872,64 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
          );
        },
      );
+  }
+
+  Widget _recipeInteractionCard(String recipeId, String? recipeName, String? imageUrl) {
+    if (recipeId.isEmpty) return Container();
+    final title = (recipeName == null || recipeName.isEmpty) ? "Shared Recipe" : recipeName;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: orange.withValues(alpha:0.1)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: orange.withValues(alpha:0.08),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: (imageUrl != null && imageUrl.startsWith("http"))
+                ? Image.network(imageUrl, fit: BoxFit.cover)
+                : _recipeCardIconPlaceholder(),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 15),
+            ),
+          ),
+          const SizedBox(width: 12),
+          ElevatedButton(
+            onPressed: () => _navigateToRecipe(recipeId),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: orange,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              minimumSize: Size.zero,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              elevation: 0,
+            ),
+            child: const Text("View", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _recipeCardIconPlaceholder() {
+    return Container(
+      decoration: BoxDecoration(color: orange.withValues(alpha: 0.1), shape: BoxShape.circle),
+      child: Icon(Icons.restaurant_menu_rounded, color: orange, size: 24),
+    );
   }
 
   Widget _placeholderTab(String message, {IconData icon = Icons.construction_rounded}) {

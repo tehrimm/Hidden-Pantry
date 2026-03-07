@@ -31,8 +31,8 @@ class RecipeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     const Color purple = Color(0xFF462F4D);
     const Color orange = Color(0xFFEF8A54);
-    final imageUrl = recipe.imageUrl;
-    final hasImage = imageUrl != null && imageUrl.trim().isNotEmpty;
+    final imageUrl = recipe.imageUrl ?? "";
+    final hasImage = imageUrl.trim().isNotEmpty;
     final bool showManagement = onShareTap != null || onVisibilityTap != null;
 
     // Unified Stack-based design for both nutritionist and default
@@ -51,7 +51,7 @@ class RecipeCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
               child: Container(
                 color: const Color(0xFFF9E3D5),
-                child: hasImage && imageUrl.startsWith('http')
+                child: hasImage
                     ? Image.network(
                         imageUrl,
                         fit: BoxFit.cover,
@@ -62,10 +62,13 @@ class RecipeCard extends StatelessWidget {
                                 height: double.infinity,
                                 borderRadius: BorderRadius.all(Radius.circular(20)),
                               ),
-                        errorBuilder: (_, __, ___) => Image.asset(
-                          'assets/Logos/recipe_placeholder.jpg',
-                          fit: BoxFit.cover,
-                        ),
+                        errorBuilder: (context, error, stackTrace) {
+                          print("RecipeCard Image Error: $error for $imageUrl");
+                          return Image.asset(
+                            'assets/Logos/recipe_placeholder.jpg',
+                            fit: BoxFit.cover,
+                          );
+                        },
                       )
                     : Image.asset(
                         'assets/Logos/recipe_placeholder.jpg',
