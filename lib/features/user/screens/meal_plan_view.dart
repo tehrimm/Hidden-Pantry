@@ -111,7 +111,7 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     if (widget.apiService != null) {
       try {
         final r = await widget.apiService!.getRecipeById(recipeId);
-        if (r != null) return r;
+        return r;
       } catch (_) {}
     }
     try {
@@ -120,7 +120,7 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     } catch (_) {}
     try {
       final r = await const RecipeApiService(baseUrl: ApiConstants.baseUrl).getRecipeById(recipeId);
-      if (r != null) return r;
+      return r;
     } catch (_) {}
     return null;
   }

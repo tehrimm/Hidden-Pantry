@@ -826,7 +826,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
          return Container(
            padding: const EdgeInsets.all(16),
            decoration: BoxDecoration(
-             color: Colors.white,
+             color: cardInner,
              borderRadius: BorderRadius.circular(16),
              border: Border.all(color: orange.withValues(alpha:0.1)),
            ),
@@ -880,7 +880,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardInner,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: orange.withValues(alpha:0.1)),
       ),

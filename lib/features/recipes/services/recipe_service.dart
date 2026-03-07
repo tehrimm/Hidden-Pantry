@@ -718,7 +718,6 @@ class RecipeService {
           
           // Check if this is a partial document (e.g. created by merge operations for reviews)
           final hasName = data['name'] != null || data['title'] != null;
-          final hasIngredients = data['ingredients'] != null || data['ingredients_parsed'] != null;
           
           if (hasName) {
             results.add(Recipe.fromJson(data));

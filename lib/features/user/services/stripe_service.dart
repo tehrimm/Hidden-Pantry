@@ -73,17 +73,20 @@ class StripeService {
     int? tierLevel,
   }) async {
     final callable = FirebaseFunctions.instance.httpsCallable('createNutritionistCheckout');
-    // Normalize numeric types to integers to satisfy platform channel expectations and backend schema
-    final int priceCents = (price * 100).round();
-    final int safeTier = (tierLevel ?? 1).toInt();
+    
+    // Normalize numeric types and pass as strings to bypass Pigeon codec typing bugs
+    // Pass the raw price; the Cloud Function will do the `* 100` conversion.
+    final String priceStr = price.toString();
+    final String tierStr = (tierLevel ?? 1).toString();
+    
     final result = await callable.call({
       'planTitle': planTitle,
-      'price': priceCents,
+      'price': priceStr,
       'interval': interval,
       'nutritionistId': nutritionistId,
       'nutritionistName': nutritionistName,
       'existingSubscriptionId': existingSubscriptionId ?? '',
-      'tierLevel': safeTier,
+      'tierLevel': tierStr,
     });
     return result.data['url'] as String;
   }

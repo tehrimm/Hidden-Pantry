@@ -328,7 +328,7 @@ exports.createNutritionistCheckout = functions.https.onCall(async (data, context
     try {
         let proRatedCredit = 0;
         let oldStripeSubId = null;
-        let trialEnd = null;
+        let trialEnd = undefined; // Prevent "Invalid integer" error from Stripe by using undefined instead of null
         let isDowngrade = false;
 
         if (existingSubscriptionId) {
