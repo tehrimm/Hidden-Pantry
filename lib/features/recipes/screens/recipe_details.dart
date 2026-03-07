@@ -164,28 +164,30 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
       // 1. Try Firestore first (handles user-uploaded recipes reliably)
       try {
         final firestoreRecipe = await _recipeService.getRecipeById(_recipe.id).timeout(const Duration(seconds: 5));
-        final bool isPartial = firestoreRecipe == null || firestoreRecipe.name.isEmpty || firestoreRecipe.directions.isEmpty;
-        if (!isPartial) {
-          final count = await _recipeService.countRecipesByAuthor(firestoreRecipe!.authorId).timeout(const Duration(seconds: 5));
-          
-          if (mounted) {
-            setState(() {
-              _recipe = firestoreRecipe!;
-              _authorRecipeCount = count;
-              _servings = (firestoreRecipe!.baseServings <= 0) ? 1 : firestoreRecipe!.baseServings;
-              _loading = false;
-            });
+        if (firestoreRecipe != null) {
+          final bool isPartial = firestoreRecipe.name.isEmpty || firestoreRecipe.directions.isEmpty;
+          if (!isPartial) {
+            final count = await _recipeService.countRecipesByAuthor(firestoreRecipe.authorId).timeout(const Duration(seconds: 5));
             
-            if (firestoreRecipe!.authorName != null && firestoreRecipe!.authorName!.isNotEmpty) {
-              final otherRecipes = await api.searchRecipes(firestoreRecipe!.authorName!, limit: 12);
-              if (mounted) {
-                setState(() {
-                  _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || r.authorId == firestoreRecipe!.authorId)).toList();
-                });
+            if (mounted) {
+              setState(() {
+                _recipe = firestoreRecipe;
+                _authorRecipeCount = count;
+                _servings = (firestoreRecipe.baseServings <= 0) ? 1 : firestoreRecipe.baseServings;
+                _loading = false;
+              });
+              
+              if (firestoreRecipe.authorName != null && firestoreRecipe.authorName!.isNotEmpty) {
+                final otherRecipes = await api.searchRecipes(firestoreRecipe.authorName!, limit: 12);
+                if (mounted) {
+                  setState(() {
+                    _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || r.authorId == firestoreRecipe.authorId)).toList();
+                  });
+                }
               }
             }
+            return;
           }
-          return;
         }
       } catch (fsErr) {
         print("[RecipeDetails] Firestore fetch failed: $fsErr. Trying API...");
