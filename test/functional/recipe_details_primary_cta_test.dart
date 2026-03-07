@@ -40,6 +40,7 @@ class FakeApi extends RecipeApiService {
     List<String>? ingredients,
     int? maxMinutes,
     List<String>? tags,
+    List<String>? allergies,
   }) async =>
       const [];
 }

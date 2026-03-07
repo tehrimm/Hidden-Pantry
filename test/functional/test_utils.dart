@@ -152,6 +152,7 @@ class MockRecipeApiService extends Mock implements RecipeApiService {
     List<String>? ingredients,
     int? maxMinutes,
     List<String>? tags,
+    List<String>? allergies,
   }) =>
       super.noSuchMethod(
         Invocation.method(#searchRecipes, [
@@ -161,6 +162,7 @@ class MockRecipeApiService extends Mock implements RecipeApiService {
           #ingredients: ingredients,
           #maxMinutes: maxMinutes,
           #tags: tags,
+          #allergies: allergies,
         }),
         returnValue: Future.value(<Recipe>[]),
       );
