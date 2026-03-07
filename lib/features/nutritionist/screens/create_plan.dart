@@ -37,10 +37,10 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
   }
 
   List<Map<String, dynamic>> _benefits = [
-    {"icon": Icons.restaurant_rounded, "title": "Customized Recipes", "subtitle": "Based on preferences", "enabled": true},
-    {"icon": Icons.calendar_today_rounded, "title": "Weekly Check-ins", "subtitle": "30 min video call", "enabled": true},
+    {"icon": Icons.restaurant_menu_rounded, "title": "InChat meal plans", "subtitle": "Direct meal plan sharing", "enabled": true},
     {"icon": Icons.chat_bubble_rounded, "title": "Priority Support", "subtitle": "Direct chat access", "enabled": true},
     {"icon": Icons.medical_services_rounded, "title": "Supplement Guide", "subtitle": "Personalized recommendations", "enabled": false},
+    {"icon": Icons.verified_rounded, "title": "Nutritionist Approved Recipes", "subtitle": "Exclusive recipe access", "enabled": false},
   ];
 
   bool _isPublishing = false;

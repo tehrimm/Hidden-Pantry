@@ -164,21 +164,20 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
           });
         }
 
-        // EXTRA: Always check Firestore for dynamic ratings/stats even if API succeeds
-        final fsRecipe = await _recipeService.getRecipeById(_recipe.id);
-        if (fsRecipe != null && mounted) {
-          setState(() {
-            // Merge dynamic fields from Firestore
-            _recipe = _recipe.copyWith(
-              avgRating: fsRecipe.avgRating,
-              reviewCount: fsRecipe.reviewCount,
-            );
-            // Only update serving if Firestore has a non-default (>1) value
-            if (fsRecipe.baseServings > 1) {
-              _servings = fsRecipe.baseServings;
-            }
-          });
-        }
+        // EXTRA: Firestore dynamic merge as non-blocking background update
+        _recipeService.getRecipeById(_recipe.id).then((fsRecipe) {
+          if (fsRecipe != null && mounted) {
+            setState(() {
+              _recipe = _recipe.copyWith(
+                avgRating: fsRecipe.avgRating,
+                reviewCount: fsRecipe.reviewCount,
+              );
+              if (fsRecipe.baseServings > 1) {
+                _servings = fsRecipe.baseServings;
+              }
+            });
+          }
+        }).catchError((_) {});
         
         // Fetch Other Recipes by same author
         if (fullRecipe.authorId.isNotEmpty) {
@@ -204,31 +203,37 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
         print("[RecipeDetails] API Fetch failed: $apiError. Trying Firestore...");
       }
 
-      // 2. Fallback to Firestore (for user-uploaded recipes)
-      final firestoreRecipe = await _recipeService.getRecipeById(_recipe.id);
-      if (firestoreRecipe != null) {
-        final count = await _recipeService.countRecipesByAuthor(firestoreRecipe.authorId);
-        
-        if (mounted) {
-          setState(() {
-            _recipe = firestoreRecipe;
-            _authorRecipeCount = count;
-            _servings = (firestoreRecipe.baseServings <= 0) ? 1 : firestoreRecipe.baseServings;
-            _loading = false;
-          });
+      // 2. Fallback to Firestore (for user-uploaded recipes) with short timeout
+      try {
+        final firestoreRecipe = await _recipeService.getRecipeById(_recipe.id).timeout(const Duration(milliseconds: 150));
+        if (firestoreRecipe != null) {
+          final count = await _recipeService.countRecipesByAuthor(firestoreRecipe.authorId).timeout(const Duration(milliseconds: 150));
           
-          // Try to fetch author's other recipes from Firestore? 
-          // (Not implemented in Firestore yet, but we can try API search by name)
-          if (firestoreRecipe.authorName != null && firestoreRecipe.authorName!.isNotEmpty) {
-            final otherRecipes = await api.searchRecipes(firestoreRecipe.authorName!, limit: 12);
-            if (mounted) {
-              setState(() {
-                _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id).toList();
-              });
+          if (mounted) {
+            setState(() {
+              _recipe = firestoreRecipe;
+              _authorRecipeCount = count;
+              _servings = (firestoreRecipe.baseServings <= 0) ? 1 : firestoreRecipe.baseServings;
+              _loading = false;
+            });
+            
+            if (firestoreRecipe.authorName != null && firestoreRecipe.authorName!.isNotEmpty) {
+              final otherRecipes = await api.searchRecipes(firestoreRecipe.authorName!, limit: 12);
+              if (mounted) {
+                setState(() {
+                  _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id).toList();
+                });
+              }
             }
           }
+          return;
         }
-        return; // Success, exit
+      } catch (_) {
+        if (mounted) {
+          setState(() {
+            _loading = false;
+          });
+        }
       }
 
       // 3. Fallback to Local Storage (if even Firestore fails or it's offline)
@@ -275,10 +280,31 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
 
     try {
       if (_isDownloaded) {
-        await _localService.removeRecipeOffline(_recipe.id, user.uid);
-        if (mounted) {
-          setState(() => _isDownloaded = false);
-          Toaster.show(context, 'Removed from offline cache');
+        // Show confirmation dialog before removing
+        final bool? confirmRemoval = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text("Recipe already downloaded", style: TextStyle(fontFamily: "Satoshi", fontWeight: FontWeight.bold)),
+            content: const Text("Would you like to remove it from local storage?", style: TextStyle(fontFamily: "Satoshi")),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text("Cancel", style: TextStyle(color: Colors.grey, fontFamily: "Satoshi")),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text("Remove", style: TextStyle(color: orange, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+              ),
+            ],
+          ),
+        );
+
+        if (confirmRemoval == true) {
+          await _localService.removeRecipeOffline(_recipe.id, user.uid);
+          if (mounted) {
+            setState(() => _isDownloaded = false);
+            Toaster.show(context, 'Removed from offline cache');
+          }
         }
       } else {
         await _localService.saveRecipeOffline(_recipe, user.uid);
@@ -1453,6 +1479,4 @@ class _ErrorState extends StatelessWidget {
     );
   }
 }
-
-
 

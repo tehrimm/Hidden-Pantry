@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/features/user/screens/payment_setting.dart';
+import 'package:hidden_pantry_app/core/utils/toaster.dart';
 
 /// Full-screen payment error result.
 /// Shows reason card, retry, try another method, and support link.
@@ -240,11 +241,7 @@ class _PaymentErrorScreenState extends State<PaymentErrorScreen> {
 
                     // Support Link
                     TextButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Contact support@hiddenpantry.app for help')),
-                        );
-                      },
+                      onPressed: () => Toaster.show(context, 'Contact support@hiddenpantry.app for help'),
                       icon: Icon(Icons.support_agent_rounded, size: 18, color: _purple.withValues(alpha: 0.5)),
                       label: Text(
                         'Contact Support',

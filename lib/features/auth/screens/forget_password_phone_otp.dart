@@ -9,6 +9,7 @@ import 'login_user.dart';
 import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
 import 'forget_password_phone.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
+import 'package:hidden_pantry_app/core/utils/toaster.dart';
  // back goes to phone screen (change if needed)
 
 class ForgetPasswordPhoneOtpScreen extends StatefulWidget {
@@ -72,7 +73,7 @@ class _ForgetPasswordPhoneOtpScreenState
 
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    Toaster.show(context, msg);
   }
 
   void _onChanged(int i, String v) {
@@ -221,12 +222,13 @@ class _ForgetPasswordPhoneOtpScreenState
 
           debugPrint("IDENTITY MATCH CONFIRMED");
 
+
           // 3. Success! Phone UID matches DB UID
           _snack("Login Successful!");
           if (mounted) {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (_) => const MainNavigationShell()),
+              MaterialPageRoute(builder: (_) => MainNavigationShell()),
               (route) => false,
             );
           }

@@ -19,8 +19,8 @@ import 'forget_password.dart';
 import 'nutritionist_signup_wrapper.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/auth_validator.dart';
-
 import 'package:hidden_pantry_app/core/services/auth_service.dart';
+import 'package:hidden_pantry_app/features/user/services/user_service.dart';
 
 class UserLoginScreen extends StatefulWidget {
   final AuthService? authService;
@@ -88,30 +88,21 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
 
     setState(() {
       _gmailErr = AuthValidator.validateEmail(email);
+      if (_gmailErr == "*email field is required") {
+        _gmailErr = "*field is required";
+      }
       _passErr = AuthValidator.validatePassword(pass);
     });
 
     return _gmailErr == null && _passErr == null;
   }
 
-  Future<void> _ensureUserDoc(User user) async {
-    final ref = FirebaseFirestore.instance.collection("users").doc(user.uid);
-    await ref.set({
-      "uid": user.uid,
-      "email": user.email ?? "",
-      "fullName": user.displayName ?? "User",
-      "role": "homecook",
-      "provider":
-          user.providerData.isNotEmpty ? user.providerData.first.providerId : "password",
-      "createdAt": FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
-  }
 
   Future<void> _goHome() async {
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const MainNavigationShell()),
+      MaterialPageRoute(builder: (_) => MainNavigationShell()),
     );
   }
 
@@ -127,16 +118,13 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     if (!_validate()) return;
 
     final email = _gmailCtrl.text.trim();
-    final pass = _passwordCtrl.text.trim();
+    final pass = _passwordCtrl.text;
 
     _setLoading(true);
     try {
       final sw = Stopwatch()..start();
 
-      await _authService.loginWithEmail(
-        email: email,
-        password: pass,
-      );
+      await _authService.loginWithEmail(email, pass);
 
       final user = _authService.currentUser;
       if (user != null) {
@@ -209,7 +197,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
         return;
       }
 
-      _ensureUserDoc(cred.user!).catchError((e) {
+      UserService().ensureUserDoc(cred.user!).catchError((e) {
         if (kDebugMode) debugPrint("Background user sync failed: $e");
       });
 
@@ -251,7 +239,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
         return;
       }
 
-      _ensureUserDoc(cred.user!).catchError((e) {
+      UserService().ensureUserDoc(cred.user!).catchError((e) {
         if (kDebugMode) debugPrint("Background user sync failed: $e");
       });
 

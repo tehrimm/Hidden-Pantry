@@ -4,12 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_api_service.dart';
 import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
-import 'package:hidden_pantry_app/features/recipes/widgets/recipe_rating_widget.dart';
 import 'package:hidden_pantry_app/core/constants/api_constants.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hidden_pantry_app/features/user/services/follow_service.dart';
+import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
 
 class CategoriesScreen extends StatefulWidget {
   final String title;
@@ -301,81 +301,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   }
 
   Widget _buildRecipeCard(Recipe r) {
-    // Snippet style
-    return GestureDetector(
+    return RecipeCard(
+      recipe: r,
       onTap: () => _openRecipe(r),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: Colors.transparent,
-        ),
-        child: Stack(
-          children: [
-            // Image
-            Positioned.fill(
-              bottom: 50, // Leave space for text
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: (r.imageUrl != null && r.imageUrl!.trim().isNotEmpty && r.imageUrl!.startsWith("http"))
-                    ? Image.network(
-                        r.imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Image.asset(
-                          'assets/Logos/recipe_placeholder.jpg',
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                    : Image.asset(
-                        'assets/Logos/recipe_placeholder.jpg',
-                        fit: BoxFit.cover,
-                      ),
-              ),
-            ),
-            // Text Content - Overlay or below?
-            // Snippet puts text at "top: 184" which is near bottom of 231 height.
-            Positioned(
-              left: 12,
-              bottom: 28, // Approx
-              right: 12,
-              child: Text(
-                r.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFF462F4D),
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Satoshi',
-                ),
-              ),
-            ),
-             Positioned(
-              left: 11,
-              bottom: 8,
-              child: Row(
-                children: [
-                   Text(
-                    "${r.minutes} min • ",
-                    style: const TextStyle(
-                      color: Color(0xFF462F4D),
-                      fontSize: 11,
-                      fontFamily: 'Satoshi',
-                    ),
-                  ),
-                  RecipeRatingWidget(
-                    recipeId: r.id,
-                    initialRating: r.avgRating,
-                    style: const TextStyle(
-                      color: Color(0xFF462F4D),
-                      fontSize: 11,
-                      fontFamily: 'Satoshi',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -436,5 +364,4 @@ class _CategoryBackgroundPattern extends StatelessWidget {
     );
   }
 }
-
 

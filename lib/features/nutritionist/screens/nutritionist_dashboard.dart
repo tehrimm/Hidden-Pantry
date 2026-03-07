@@ -90,6 +90,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
       {"icon": Icons.restaurant_menu_rounded, "title": "Create New Meal Plan", "subtitle": "Design a custom plan for your client", "action": "plan"},
       {"icon": Icons.bookmark_rounded, "title": "Share Saved Meal Plans", "subtitle": "Send from your existing plans library", "action": "share"},
       {"icon": Icons.add_box_outlined, "title": "Make a Post", "subtitle": "Share health advice or meal plans with your subscribers", "action": "tip"},
+      {"icon": Icons.medical_services_rounded, "title": "Share Supplement Guide", "subtitle": "Send personalized recommendations", "action": "supplement"},
     ];
 
     showModalBottomSheet(
@@ -151,6 +152,8 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                          Future.delayed(const Duration(milliseconds: 300), () {
                            if (mounted) _showPostTipDialog();
                          });
+                      } else if (key == "supplement") {
+                        _showSelectClientSheet({}, "supplement_guide", benefitTitle: "Supplement Guide");
                       } else {
                         Toaster.show(context, "${action["title"]} coming soon!");
                       }
@@ -594,7 +597,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const MainNavigationShell()),
+      MaterialPageRoute(builder: (_) => MainNavigationShell()),
       (route) => false,
     );
   }
@@ -742,7 +745,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                 stream: FirebaseFirestore.instance
                     .collection("subscriptions")
                     .where("nutritionistId", isEqualTo: uid)
-                    .where("status", isEqualTo: "active")
+                    .where("status", whereIn: ["active", "trialing"])
                     .snapshots(),
                 builder: (context, snap) {
                   // Count unique original users to avoid duplicates if they changed plans
@@ -786,7 +789,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
               stream: FirebaseFirestore.instance
                   .collection("subscriptions")
                   .where("nutritionistId", isEqualTo: uid)
-                  .where("status", isEqualTo: "active")
+                  .where("status", whereIn: ["active", "trialing"])
                   .snapshots(),
               builder: (context, subSnap) {
                 double projectedMonthly = 0;
@@ -1296,7 +1299,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
             stream: FirebaseFirestore.instance
                 .collection("subscriptions")
                 .where("nutritionistId", isEqualTo: user?.uid)
-                .where("status", isEqualTo: "active")
+                .where("status", whereIn: ["active", "trialing"])
                 .snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
@@ -1744,7 +1747,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
     );
   }
 
-  void _showSelectClientSheet(Map<String, dynamic> planData, String planId) {
+  void _showSelectClientSheet(Map<String, dynamic> planData, String planId, {String? benefitTitle}) {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
     const Color actionOrange = Color(0xFFE48E5B);
@@ -1766,11 +1769,14 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
               width: 50, height: 5,
               decoration: BoxDecoration(color: actionOrange, borderRadius: BorderRadius.circular(3)),
             ),
-            Text("Select Client to Share With", style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              benefitTitle != null ? "Share $benefitTitle" : "Select Client to Share With",
+              style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 16),
             Expanded(
               child: FutureBuilder<List<Map<String, dynamic>>>(
-                future: _fetchClientsForShare(user.uid),
+                future: _fetchClientsForShare(user.uid, requiredBenefit: benefitTitle ?? "InChat meal plans"),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(child: CircularProgressIndicator(color: actionOrange));
@@ -1819,13 +1825,11 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
 
                              if (context.mounted) {
                                Navigator.pop(context); // Close client selection
-                               Toaster.show(context, "Meal plan sent to $otherUserName");
+                               Toaster.show(context, planId == "supplement_guide" ? "Supplement request sent to $otherUserName" : "Meal plan sent to $otherUserName");
                              }
                            } catch (e) {
                              if (context.mounted) {
-                               ScaffoldMessenger.of(context).showSnackBar(
-                                 SnackBar(content: Text("Error sharing meal plan: $e")),
-                               );
+                               Toaster.show(context, "Error sharing meal plan: $e", isError: true);
                              }
                            }
                         },
@@ -1862,20 +1866,48 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
     );
   }
 
-  Future<List<Map<String, dynamic>>> _fetchClientsForShare(String nutritionistId) async {
+  Future<List<Map<String, dynamic>>> _fetchClientsForShare(String nutritionistId, {String? requiredBenefit}) async {
     final Map<String, Map<String, dynamic>> clientMap = {};
 
     // 1. Get all active subscribers
     final subsSnap = await FirebaseFirestore.instance
         .collection("subscriptions")
         .where("nutritionistId", isEqualTo: nutritionistId)
-        .where("status", isEqualTo: "active")
+        .where("status", whereIn: ["active", "trialing"])
         .get();
 
     for (var doc in subsSnap.docs) {
       final data = doc.data();
       final userId = data["userId"] as String?;
+      final planId = data["planId"] as String?;
+
       if (userId == null || userId == nutritionistId) continue;
+
+      // Filter by benefit if required
+      if (requiredBenefit != null && planId != null) {
+        bool hasBenefit = false;
+        try {
+          final planDoc = await FirebaseFirestore.instance
+              .collection("nutritionists")
+              .doc(nutritionistId)
+              .collection("subscription_plans")
+              .doc(planId)
+              .get();
+          
+          if (planDoc.exists) {
+            final List? benefits = planDoc.data()?["benefits"];
+            if (benefits != null) {
+              hasBenefit = benefits.any((b) {
+                final String title = (b is Map ? (b["title"] ?? b["text"] ?? "") : b).toString().toLowerCase();
+                return title.contains(requiredBenefit.toLowerCase());
+              });
+            }
+          }
+        } catch (e) {
+          debugPrint("Error checking benefit $requiredBenefit for plan $planId: $e");
+        }
+        if (!hasBenefit) continue;
+      }
 
       final chatId = "chat_${userId}_$nutritionistId";
       clientMap[userId] = {

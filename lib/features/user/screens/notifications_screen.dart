@@ -8,7 +8,8 @@ import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 
 class NotificationsScreen extends StatelessWidget {
-  const NotificationsScreen({super.key});
+  final bool isNutritionist;
+  const NotificationsScreen({super.key, this.isNutritionist = false});
 
   @override
   Widget build(BuildContext context) {
@@ -17,89 +18,95 @@ class NotificationsScreen extends StatelessWidget {
     final Color bg = const Color(0xFFFFF3EB);
 
     return Scaffold(
-      backgroundColor: bg,
-      body: Stack(
-        children: [
-          const PatternBackground(),
-          
-          SafeArea(
-            child: Column(
-              children: [
-                const SizedBox(height: 80), // Space for header
-                Expanded(
-                  child: StreamBuilder<List<AppNotification>>(
-                    stream: NotificationService().streamNotifications(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) return Center(child: Text("Error: ${snapshot.error}", style: TextStyle(color: purple, fontFamily: "Satoshi")));
-                      if (!snapshot.hasData) return Center(child: CircularProgressIndicator(color: orange));
-
-                      final notifications = snapshot.data!;
-                      if (notifications.isEmpty) {
-                        return _buildEmptyState(purple, orange);
-                      }
-
-                      final grouped = _groupNotifications(notifications);
-
-                      return ListView.builder(
-                        itemCount: grouped.keys.length,
-                        padding: const EdgeInsets.only(bottom: 20),
-                        itemBuilder: (context, index) {
-                          final section = grouped.keys.elementAt(index);
-                          final items = grouped[section]!;
-
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.fromLTRB(22, 20, 22, 10),
-                                child: Text(
-                                  section,
-                                  style: TextStyle(
-                                    color: purple,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                    fontFamily: "Satoshi",
+      backgroundColor: isNutritionist ? Colors.white : bg,
+      body: ClipRRect(
+        borderRadius: isNutritionist ? BorderRadius.circular(30) : BorderRadius.zero,
+        child: Container(
+          color: bg,
+          child: Stack(
+            children: [
+              const PatternBackground(),
+              
+              SafeArea(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 80), // Space for header
+                    Expanded(
+                      child: StreamBuilder<List<AppNotification>>(
+                        stream: NotificationService().streamNotifications(),
+                        builder: (context, snapshot) {
+                          if (snapshot.hasError) return Center(child: Text("Error: ${snapshot.error}", style: TextStyle(color: purple, fontFamily: "Satoshi")));
+                          if (!snapshot.hasData) return Center(child: CircularProgressIndicator(color: orange));
+    
+                          final notifications = snapshot.data!;
+                          if (notifications.isEmpty) {
+                            return _buildEmptyState(purple, orange);
+                          }
+    
+                          final grouped = _groupNotifications(notifications);
+    
+                          return ListView.builder(
+                            itemCount: grouped.keys.length,
+                            padding: const EdgeInsets.only(bottom: 20),
+                            itemBuilder: (context, index) {
+                              final section = grouped.keys.elementAt(index);
+                              final items = grouped[section]!;
+    
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.fromLTRB(22, 20, 22, 10),
+                                    child: Text(
+                                      section,
+                                      style: TextStyle(
+                                        color: purple,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                        fontFamily: "Satoshi",
+                                      ),
+                                    ),
                                   ),
-                                ),
-                              ),
-                              ...items.map((notif) => _buildNotificationItem(context, notif, purple, orange)).toList(),
-                            ],
+                                  ...items.map((notif) => _buildNotificationItem(context, notif, purple, orange)).toList(),
+                                ],
+                              );
+                            },
                           );
                         },
-                      );
-                    },
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              
+              // Fixed Header
+              Positioned(
+                top: 51,
+                left: 22,
+                right: 22,
+                child: Row(
+                  children: [
+                    BackButtonWidget(
+                      color: purple,
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    const Spacer(),
+                    Text(
+                      "Notifications",
+                      style: TextStyle(
+                        color: purple,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: "Satoshi",
+                      ),
+                    ),
+                    const Spacer(flex: 2),
+                  ],
+                ),
+              ),
+            ],
           ),
-          
-          // Fixed Header
-          Positioned(
-            top: 51,
-            left: 22,
-            right: 22,
-            child: Row(
-              children: [
-                BackButtonWidget(
-                  color: purple,
-                  onPressed: () => Navigator.pop(context),
-                ),
-                const Spacer(),
-                Text(
-                  "Notifications",
-                  style: TextStyle(
-                    color: purple,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: "Satoshi",
-                  ),
-                ),
-                const Spacer(flex: 2),
-              ],
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

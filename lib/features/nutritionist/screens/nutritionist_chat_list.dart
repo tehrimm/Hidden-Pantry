@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -18,6 +19,8 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
 
   bool _isSubsLoading = true;
   List<String> _activeSubscriberIds = [];
+  final Map<String, bool> _prioritySupportMap = {};
+  StreamSubscription? _subsSubscription;
 
   @override
   void initState() {
@@ -25,33 +28,85 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
     _loadActiveSubscribers();
   }
 
-  Future<void> _loadActiveSubscribers() async {
+  void _loadActiveSubscribers() {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    try {
-      final subsSnap = await FirebaseFirestore.instance
-          .collection("subscriptions")
-          .where("nutritionistId", isEqualTo: user.uid)
-          .where("status", isEqualTo: "active")
-          .get();
-
+    _subsSubscription?.cancel();
+    _subsSubscription = FirebaseFirestore.instance
+        .collection("subscriptions")
+        .where("nutritionistId", isEqualTo: user.uid)
+        .snapshots()
+        .listen((subsSnap) async {
       final List<String> ids = [];
+      final Map<String, bool> accessMap = {};
+
       for (var doc in subsSnap.docs) {
-        final userId = doc.data()["userId"] as String?;
-        if (userId != null && userId != user.uid) ids.add(userId);
+        final data = doc.data();
+        final userId = data["userId"] as String?;
+        final planId = data["planId"] as String?;
+
+        if (userId != null && userId != user.uid) {
+          final String status = data["status"]?.toString() ?? "";
+          final Timestamp? expiryDate = data["expiryDate"] as Timestamp?;
+          final DateTime now = DateTime.now();
+          
+          bool isActive = status == "active" || status == "trialing";
+          if (!isActive && expiryDate != null) {
+            isActive = expiryDate.toDate().isAfter(now);
+          }
+
+          if (isActive) {
+            // Check if the plan has "Priority Support"
+            bool hasPriority = false;
+            // Fallback: If it's a Gold or Platinum tier, we often assume priority support
+            final int tier = (data["tierLevel"] is num ? (data["tierLevel"] as num).toInt() : 0);
+            if (tier >= 2) hasPriority = true;
+
+            if (planId != null) {
+              try {
+                final planDoc = await FirebaseFirestore.instance
+                    .collection("nutritionists")
+                    .doc(user.uid)
+                    .collection("subscription_plans")
+                    .doc(planId)
+                    .get();
+                if (planDoc.exists) {
+                  final List? benefits = planDoc.data()?["benefits"];
+                  if (benefits != null) {
+                    final found = benefits.any((b) {
+                      final String title = (b is Map ? (b["title"] ?? b["text"] ?? "") : b).toString().toLowerCase();
+                      return title.contains("priority support") || title.contains("chat access") || title.contains("direct chat") || title.contains("message access");
+                    });
+                    if (found) hasPriority = true;
+                  }
+                }
+              } catch (e) {
+                debugPrint("Error checking plan $planId: $e");
+              }
+            }
+
+            if (hasPriority) {
+              ids.add(userId);
+              accessMap[userId] = true;
+            }
+          }
+        }
       }
 
       if (mounted) {
         setState(() {
           _activeSubscriberIds = ids;
+          _prioritySupportMap
+            ..clear()
+            ..addAll(accessMap);
           _isSubsLoading = false;
         });
       }
-    } catch (e) {
+    }, onError: (e) {
       debugPrint("Error loading subscribers: $e");
       if (mounted) setState(() => _isSubsLoading = false);
-    }
+    });
   }
 
   Future<Map<String, dynamic>> _getUserDetails(String userId) async {
@@ -127,13 +182,19 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
       if (mounted) {
         Toaster.show(context, "Chat with ${client["name"]} deleted.");
       }
-      _loadActiveSubscribers();
+      // No need to manually refresh, stream handles it
     } catch (e) {
       if (mounted) {
         Toaster.show(context, "Error deleting chat: $e", isError: true);
         setState(() => _isSubsLoading = false);
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _subsSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -175,6 +236,9 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
                       final participants = List<String>.from(data["participants"] ?? []);
                       final otherUserId = participants.firstWhere((id) => id != user.uid, orElse: () => "");
                       if (otherUserId.isEmpty) continue;
+
+                      // FIX: Only show the chat if the user has an active plan with Priority Support
+                      if (_prioritySupportMap[otherUserId] != true) continue;
 
                       chatUserIds.add(otherUserId);
                       chatsData.add({

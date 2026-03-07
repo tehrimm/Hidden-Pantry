@@ -13,6 +13,8 @@ import 'package:hidden_pantry_app/features/user/models/notification_model.dart';
 import 'package:hidden_pantry_app/features/user/screens/notifications_screen.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/help_support.dart';
+import 'package:hidden_pantry_app/features/user/screens/my_favourites.dart';
+import 'package:hidden_pantry_app/features/user/screens/user_network_screen.dart';
 
 class NutritionistSettingsScreen extends StatefulWidget {
   const NutritionistSettingsScreen({super.key});
@@ -190,6 +192,26 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
                                       );
                                     },
                                   ),
+                                  _tile(
+                                    iconData: Icons.favorite_border_rounded,
+                                    title: "My Favourites",
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => const MyFavouritesScreen(isNutritionist: true)),
+                                      );
+                                    },
+                                  ),
+                                  _tile(
+                                    icon: "assets/icons/users.png",
+                                    title: "My Network",
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(builder: (_) => const UserNetworkScreen(isNutritionist: true)),
+                                      );
+                                    },
+                                  ),
                                   StreamBuilder<List<AppNotification>>(
                                     stream: NotificationService().streamNotifications(),
                                     builder: (context, snapshot) {
@@ -210,7 +232,7 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
                                         onTap: () {
                                           Navigator.push(
                                             context,
-                                            MaterialPageRoute(builder: (_) => NotificationsScreen()),
+                                            MaterialPageRoute(builder: (_) => const NotificationsScreen(isNutritionist: true)),
                                           );
                                         },
                                       );
@@ -322,7 +344,8 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
   }
 
   Widget _tile({
-    required String icon,
+    String? icon,
+    IconData? iconData,
     required String title,
     required VoidCallback onTap,
     Widget? trailingIcon,
@@ -340,7 +363,10 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
           child: Row(
             children: [
               const SizedBox(width: 20),
-              Image.asset(icon, width: 18, height: 18, fit: BoxFit.contain),
+              if (icon != null)
+                Image.asset(icon, width: 18, height: 18, fit: BoxFit.contain)
+              else if (iconData != null)
+                Icon(iconData, color: purple, size: 20),
               const SizedBox(width: 16),
               Expanded(
                 child: Text(

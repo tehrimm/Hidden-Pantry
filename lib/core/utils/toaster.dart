@@ -7,9 +7,9 @@ class Toaster {
     final Color orange = const Color(0xFFEF8A54);
 
     final mediaQuery = MediaQuery.of(context);
-    final scaffoldHeight = mediaQuery.size.height - mediaQuery.viewInsets.bottom;
-    // ensure margin doesn't push the snackbar off the top of the short scaffold
-    final safeBottomMargin = (scaffoldHeight - 120).clamp(0.0, mediaQuery.size.height);
+    final bottomInset = mediaQuery.viewInsets.bottom;
+    final bottomPadding = mediaQuery.viewPadding.bottom;
+    final safeBottomMargin = 16.0 + bottomInset + bottomPadding;
 
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -41,8 +41,8 @@ class Toaster {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         margin: EdgeInsets.only(
           bottom: safeBottomMargin,
-          left: 20,
-          right: 20,
+          left: 16,
+          right: 16,
         ),
         duration: const Duration(seconds: 3),
       ),

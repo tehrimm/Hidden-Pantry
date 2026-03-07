@@ -69,6 +69,11 @@ class _HiddenPantryAppState extends State<HiddenPantryApp> {
     super.initState();
     // Start global notification listener for foreground sounds/vibration
     NotificationService().startGlobalListener();
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      systemNavigationBarColor: Colors.transparent,
+    ));
   }
 
   @override
@@ -80,6 +85,15 @@ class _HiddenPantryAppState extends State<HiddenPantryApp> {
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: 'Satoshi',
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: ZoomPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+            TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+          },
+        ),
       ),
       home: const StartingScreen(),
     );

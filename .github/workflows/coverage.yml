@@ -1,0 +1,116 @@
+name: Per-Suite Coverage Gates
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  unit-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+      - run: sudo apt-get update && sudo apt-get install -y lcov
+      - run: flutter pub get
+      - name: Run unit tests with coverage
+        run: |
+          rm -rf coverage
+          flutter test --coverage test/unit
+          lcov --extract coverage/lcov.info "*/lib/*" -o coverage/filtered.info
+          lcov --summary coverage/filtered.info | tee unit_summary.txt
+          pct=$(lcov --summary coverage/filtered.info | awk '/lines/ {print $2}' | sed 's/%//')
+          awk -v p="$pct" 'BEGIN { if (p+0 < 80) exit 1 }'
+      - name: Upload unit coverage summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-summary
+          path: unit_summary.txt
+
+  business-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+      - run: sudo apt-get update && sudo apt-get install -y lcov
+      - run: flutter pub get
+      - name: Run business tests with coverage
+        run: |
+          rm -rf coverage
+          if [ -d "test/business" ]; then
+            flutter test --coverage test/business
+            lcov --extract coverage/lcov.info "*/lib/core/utils/*" "*/lib/**/models/*" "*/lib/core/services/*" -o coverage/filtered.info
+            lcov --summary coverage/filtered.info | tee business_summary.txt
+            pct=$(lcov --summary coverage/filtered.info | awk '/lines/ {print $2}' | sed 's/%//')
+            awk -v p="$pct" 'BEGIN { if (p+0 < 80) exit 1 }'
+          else
+            echo "No business tests found, failing gate"
+            exit 1
+          fi
+      - name: Upload business coverage summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: business-summary
+          path: business_summary.txt
+
+  functional-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+      - run: sudo apt-get update && sudo apt-get install -y lcov
+      - run: flutter pub get
+      - name: Run functional tests with coverage
+        run: |
+          rm -rf coverage
+          if [ -d "test/functional" ]; then
+            flutter test --coverage test/functional --concurrency=1
+            lcov --extract coverage/lcov.info "*/lib/**/screens/*" "*/lib/**/widgets/*" "*/lib/core/widgets/*" "*/lib/core/utils/*" -o coverage/filtered.info
+            lcov --summary coverage/filtered.info | tee functional_summary.txt
+            pct=$(lcov --summary coverage/filtered.info | awk '/lines/ {print $2}' | sed 's/%//')
+            awk -v p="$pct" 'BEGIN { if (p+0 < 80) exit 1 }'
+          else
+            echo "No functional tests found, failing gate"
+            exit 1
+          fi
+      - name: Upload functional coverage summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: functional-summary
+          path: functional_summary.txt
+
+  integration-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 'stable'
+      - run: sudo apt-get update && sudo apt-get install -y lcov
+      - run: flutter pub get
+      - name: Run integration tests with coverage
+        run: |
+          rm -rf coverage
+          if [ -d "test/integration" ]; then
+            flutter test --coverage test/integration --concurrency=1
+            lcov --extract coverage/lcov.info "*/lib/**/services/*" "*/lib/**/models/*" "*/lib/core/utils/*" -o coverage/filtered.info
+            lcov --summary coverage/filtered.info | tee integration_summary.txt
+            pct=$(lcov --summary coverage/filtered.info | awk '/lines/ {print $2}' | sed 's/%//')
+            awk -v p="$pct" 'BEGIN { if (p+0 < 80) exit 1 }'
+          else
+            echo "No integration tests found, failing gate"
+            exit 1
+          fi
+      - name: Upload integration coverage summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-summary
+          path: integration_summary.txt

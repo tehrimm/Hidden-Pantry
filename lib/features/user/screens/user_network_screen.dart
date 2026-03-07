@@ -7,7 +7,8 @@ import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 
 class UserNetworkScreen extends StatefulWidget {
   final int initialIndex;
-  const UserNetworkScreen({super.key, this.initialIndex = 0});
+  final bool isNutritionist;
+  const UserNetworkScreen({super.key, this.initialIndex = 0, this.isNutritionist = false});
 
   @override
   State<UserNetworkScreen> createState() => _UserNetworkScreenState();
@@ -28,8 +29,12 @@ class _UserNetworkScreenState extends State<UserNetworkScreen> {
       length: 2,
       initialIndex: widget.initialIndex,
       child: Scaffold(
-        backgroundColor: bg,
-        body: Stack(
+        backgroundColor: widget.isNutritionist ? Colors.white : bg,
+        body: ClipRRect(
+          borderRadius: widget.isNutritionist ? BorderRadius.circular(30) : BorderRadius.zero,
+          child: Container(
+            color: bg,
+            child: Stack(
           children: [
             const PatternBackground(),
             SafeArea(
@@ -109,6 +114,8 @@ class _UserNetworkScreenState extends State<UserNetworkScreen> {
           ],
         ),
       ),
+    ),
+    ),
     );
   }
 }

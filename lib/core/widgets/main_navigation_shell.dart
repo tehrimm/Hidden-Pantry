@@ -22,10 +22,11 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   @override
   void initState() {
     super.initState();
-    _checkNutritionistStatus();
+    _checkNutritionist();
+    debugPrint('[MainNavigationShell] Initialized with index $_currentIndex');
   }
 
-  Future<void> _checkNutritionistStatus() async {
+  Future<void> _checkNutritionist() async {
     final isNutr = await ViewModeService().isNutritionist();
     if (mounted) {
       setState(() => _isNutritionist = isNutr);
@@ -33,6 +34,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   }
 
   void _onTap(int index) async {
+    debugPrint('[MainNavigationShell] Tab tapped: $index');
     if (index == 2) {
       // Plus button (Upload) usually opens a full screen flow
       Navigator.push(
@@ -43,6 +45,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     }
 
     if (index == 4 && _isNutritionist) {
+      debugPrint('[MainNavigationShell] Switching to Nutritionist Dashboard');
       await ViewModeService().setUserView(false);
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(

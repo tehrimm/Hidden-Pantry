@@ -8,6 +8,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hidden_pantry_app/features/auth/screens/nutritionist_signup_wrapper.dart';
 import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'loading_five.dart';
 
 
 
@@ -30,8 +32,8 @@ class _StartingScreenState extends State<StartingScreen>
 
   @override
   void initState() {
-    
     super.initState();
+    debugPrint('[StartingScreen] initState - App Start / Splash');
 
      // Hide system navigation & status bars
   SystemChrome.setEnabledSystemUIMode(
@@ -72,6 +74,7 @@ Future.delayed(const Duration(seconds: 1), () {
 
     // After 6 seconds -> Check Session -> Home OR LoadingOne
     _navTimer = Timer(const Duration(seconds: 4), () async {
+      debugPrint('[StartingScreen] Timer elapsed - checking auth state');
       if (!mounted) return;
 
       final user = FirebaseAuth.instance.currentUser;
@@ -91,21 +94,34 @@ Future.delayed(const Duration(seconds: 1), () {
         if (!mounted) return;
 
         if (isNutritionist) {
-           // Nutritionist -> Go to Wrapper (handles pending/approved)
+           debugPrint('[StartingScreen] User is nutritionist - navigating to Wrapper');
            Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const NutritionistSignupWrapper()),
           );
         } else {
-          // Regular User -> Go to Main Shell (was HomeScreen)
+          debugPrint('[StartingScreen] Regular user - navigating to MainNavigationShell');
           Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const MainNavigationShell()),
+            MaterialPageRoute(builder: (_) => MainNavigationShell()),
           );
         }
       } else {
-        // No user -> Go LoadingOne
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoadingOne()),
-        );
+        debugPrint('[StartingScreen] No user found - checking if onboarding seen');
+        final prefs = await SharedPreferences.getInstance();
+        final seenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
+
+        if (!mounted) return;
+
+        if (seenOnboarding) {
+          debugPrint('[StartingScreen] Onboarding seen - navigating to LoadingFive');
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const LoadingFive()),
+          );
+        } else {
+          debugPrint('[StartingScreen] Onboarding NOT seen - navigating to LoadingOne');
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => const LoadingOne()),
+          );
+        }
       }
     });
   }

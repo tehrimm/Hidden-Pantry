@@ -114,7 +114,7 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
 
   void _skip() {
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const MainNavigationShell()),
+        MaterialPageRoute(builder: (_) => MainNavigationShell()),
     );
   }
 
@@ -143,7 +143,7 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
 
       // Signup mode goes home (shell)
       Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const MainNavigationShell()),
+          MaterialPageRoute(builder: (_) => MainNavigationShell()),
       );
     } catch (e) {
       if (!mounted) return;

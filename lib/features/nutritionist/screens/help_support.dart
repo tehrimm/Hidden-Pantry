@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:hidden_pantry_app/core/utils/toaster.dart';
 
 class HelpSupportScreen extends StatefulWidget {
   const HelpSupportScreen({super.key});
@@ -328,11 +329,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
   Future<void> _launchUrl(String urlString) async {
     final Uri url = Uri.parse(urlString);
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not launch $urlString')),
-        );
-      }
+      if (mounted) Toaster.show(context, 'Could not launch $urlString', isError: true);
     }
   }
 

@@ -16,13 +16,10 @@ void main() {
       final email = 'newuser@example.com';
       final password = 'password123';
 
-      final userCredential = await authService.registerWithEmail(
-        email: email,
-        password: password,
-      );
+      final userCredential = await authService.registerWithEmail(email, password);
 
-      expect(userCredential.user, isNotNull);
-      expect(userCredential.user!.email, email);
+      expect(userCredential?.user, isNotNull);
+      expect(userCredential?.user!.email, email);
     });
 
     test('loginWithEmail should sign in an existing user', () async {
@@ -32,13 +29,10 @@ void main() {
       // Pre-seed a user
       await mockAuth.createUserWithEmailAndPassword(email: email, password: password);
       
-      final userCredential = await authService.loginWithEmail(
-        email: email,
-        password: password,
-      );
+      final userCredential = await authService.loginWithEmail(email, password);
 
-      expect(userCredential.user, isNotNull);
-      expect(userCredential.user!.email, email);
+      expect(userCredential?.user, isNotNull);
+      expect(userCredential?.user!.email, email);
       expect(authService.currentUser, isNotNull);
     });
 

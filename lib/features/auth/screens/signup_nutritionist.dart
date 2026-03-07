@@ -12,7 +12,9 @@ import 'signup_nutritionist_step2.dart';
 import 'nutritionist_signup_wrapper.dart';
 import 'package:hidden_pantry_app/features/onboarding/screens/loading_five.dart';
 import 'package:hidden_pantry_app/features/onboarding/screens/terms_and_condition.dart';
+import 'package:hidden_pantry_app/core/utils/auth_validator.dart';
 import 'login_nutritionist.dart';
+import 'package:hidden_pantry_app/core/utils/toaster.dart';
 
 class SignupNutritionistScreen extends StatefulWidget {
   const SignupNutritionistScreen({super.key});
@@ -82,10 +84,11 @@ class _SignupNutritionistScreenState extends State<SignupNutritionistScreen> {
       ok = false;
     }
 
-    if (emailUser.isEmpty ||
-        emailUser.length < 3 ||
-        !RegExp(r"^[a-zA-Z0-9._]+$").hasMatch(emailUser)) {
-      _emailErr = "*invalid email";
+    _emailErr = AuthValidator.validateEmail(emailUser);
+    if (_emailErr != null) {
+      if (_emailErr == "*email field is required") {
+        _emailErr = "*field is required";
+      }
       ok = false;
     }
 
@@ -118,7 +121,7 @@ class _SignupNutritionistScreenState extends State<SignupNutritionistScreen> {
   // ---------------- HELPERS ----------------
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    Toaster.show(context, msg);
   }
 
   void _goLoadingFive() {

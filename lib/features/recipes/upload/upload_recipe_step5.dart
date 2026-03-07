@@ -51,6 +51,7 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
   final RecipeService _recipeService = RecipeService();
   
   bool _isSubmitting = false;
+  bool _isPublic = false;
 
   @override
   void dispose() {
@@ -80,11 +81,12 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
         prepTime: widget.prepTime,
         cookTime: widget.cookTime,
         servings: widget.servings,
-        difficulty: widget.difficulty,
+        difficulty: widget.difficulty ?? 'Easy',
         tags: widget.tags,
         ingredients: widget.ingredients,
         steps: widget.steps,
         nutrition: nutrition,
+        isPublic: _isPublic,
       );
 
       if (mounted) {
@@ -157,7 +159,7 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
                         child: Text(
                           '5/5',
                           style: TextStyle(
-                            color: Color(0xFFFFF2EA),
+                            color: const Color(0xFFFFF2EA),
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Satoshi',
@@ -200,7 +202,61 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
                       ),
                     ),
                     const SizedBox(height: 30),
+                    _buildVisibilityToggle(),
+                    const SizedBox(height: 30),
                     ..._controllers.keys.map((key) => _buildNutritionField(key)).toList(),
+
+                    // Navigation buttons inside the scrollable area
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(30, 42, 29, 42),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              width: 52,
+                              height: 53,
+                              decoration: BoxDecoration(
+                                color: cardBg,
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: Icon(Icons.arrow_back_ios_new, size: 16, color: purple),
+                            ),
+                          ),
+                          const SizedBox(width: 60),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: _isSubmitting ? null : _submit,
+                              child: Container(
+                                height: 62,
+                                decoration: BoxDecoration(
+                                  color: orange,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Center(
+                                  child: _isSubmitting
+                                      ? const SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                        )
+                                      : const Text(
+                                          'Submit Recipe',
+                                          style: TextStyle(
+                                            color: Color(0xFFFFF2EA),
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: 'Satoshi',
+                                          ),
+                                        ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -214,59 +270,54 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
                 child: CircularProgressIndicator(color: orange),
               ),
             ),
+        ],
+      ),
+    );
+  }
 
-          // Bottom Buttons
-          Positioned(
-            bottom: 42,
-            left: 30,
-            right: 29,
-            child: Row(
+  Widget _buildVisibilityToggle() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _isPublic ? orange.withValues(alpha: 0.3) : Colors.transparent),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _isPublic ? orange.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.5),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              _isPublic ? Icons.public_rounded : Icons.public_off_rounded,
+              color: _isPublic ? orange : purple.withValues(alpha: 0.3),
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    width: 52,
-                    height: 53,
-                    decoration: BoxDecoration(
-                      color: cardBg,
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: Icon(Icons.arrow_back_ios_new, size: 16, color: purple),
-                  ),
+                Text(
+                  "Public Visibility",
+                  style: TextStyle(color: purple, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Satoshi'),
                 ),
-                const SizedBox(width: 20),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: _isSubmitting ? null : _submit,
-                    child: Container(
-                      height: 62,
-                      decoration: BoxDecoration(
-                        color: orange,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            _isSubmitting ? 'Uploading...' : 'Submit Recipe',
-                            style: const TextStyle(
-                              color: Color(0xFFFFF2EA),
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Satoshi',
-                            ),
-                          ),
-                          if (!_isSubmitting) ...[
-                            const SizedBox(width: 10),
-                            const Icon(Icons.check_circle_outline, color: Colors.white, size: 18),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
+                Text(
+                  _isPublic ? "Visible to everyone" : "Private (Author only)",
+                  style: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 12, fontFamily: 'Satoshi'),
                 ),
               ],
             ),
+          ),
+          Switch(
+            value: _isPublic,
+            onChanged: (v) => setState(() => _isPublic = v),
+            activeThumbColor: orange,
+            activeTrackColor: orange.withValues(alpha: 0.1),
           ),
         ],
       ),
@@ -355,6 +406,3 @@ class _BackgroundPatterns extends StatelessWidget {
     );
   }
 }
-
-
-

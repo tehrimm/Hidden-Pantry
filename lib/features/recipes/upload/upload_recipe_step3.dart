@@ -57,7 +57,7 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: const Color(0xFFFFF3EB),
       body: Stack(
         children: [
           const _BackgroundPatterns(),
@@ -91,7 +91,7 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
                         child: Text(
                           '3/5',
                           style: TextStyle(
-                            color: Color(0xFFFFF2EA),
+                            color: const Color(0xFFFFF2EA),
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Satoshi',
@@ -200,7 +200,7 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
                     // Add button
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 8),
-                      child: GestureDetector(
+                       child: GestureDetector(
                         onTap: _addIngredient,
                         child: Container(
                           height: 62,
@@ -230,78 +230,77 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
                         ),
                       ),
                     ),
+
+                    // Bottom buttons inside the scrollable area
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(30, 42, 29, 42),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          GestureDetector(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              width: 52,
+                              height: 53,
+                              decoration: BoxDecoration(
+                                color: cardBg,
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              child: const Icon(Icons.arrow_back_ios_new, size: 16, color: Color(0xFF462F4D)),
+                            ),
+                          ),
+                          const SizedBox(width: 60),
+                          Expanded(
+                            child: GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => UploadRecipeStep4(
+                                      title: widget.title,
+                                      image: widget.image,
+                                      prepTime: widget.prepTime,
+                                      cookTime: widget.cookTime,
+                                      servings: widget.servings,
+                                      difficulty: widget.difficulty,
+                                      tags: widget.tags,
+                                      ingredients: _ingredients,
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                height: 62,
+                                decoration: BoxDecoration(
+                                  color: orange,
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: const [
+                                    Text(
+                                      'Next',
+                                      style: TextStyle(
+                                        color: Color(0xFFFFF2EA),
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: 'Satoshi',
+                                      ),
+                                    ),
+                                    SizedBox(width: 10),
+                                    Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
             ],
-          ),
-
-          // Bottom Buttons
-          Positioned(
-            bottom: 42,
-            left: 30,
-            right: 29,
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    width: 52,
-                    height: 53,
-                    decoration: BoxDecoration(
-                      color: cardBg,
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: const Icon(Icons.arrow_back_ios_new, size: 16, color: Color(0xFF462F4D)),
-                  ),
-                ),
-                const SizedBox(width: 60),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => UploadRecipeStep4(
-                            title: widget.title,
-                            image: widget.image,
-                            prepTime: widget.prepTime,
-                            cookTime: widget.cookTime,
-                            servings: widget.servings,
-                            difficulty: widget.difficulty,
-                            tags: widget.tags,
-                            ingredients: _ingredients,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      height: 62,
-                      decoration: BoxDecoration(
-                        color: orange,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Text(
-                            'Next',
-                            style: TextStyle(
-                              color: Color(0xFFFFF2EA),
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Satoshi',
-                            ),
-                          ),
-                          SizedBox(width: 10),
-                          Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
@@ -352,6 +351,3 @@ class _BackgroundPatterns extends StatelessWidget {
     );
   }
 }
-
-
-

@@ -84,26 +84,37 @@ class UserService {
     if (fullName != null || photoUrl != null) await user.reload();
   }
 
-  Future<void> ensureUserDoc(User user) async {
-    // Only write if we really need to, otherwise we risk overwriting custom fields
-    // relying on merge: true to save us, but let's be minimal.
-    await _users.doc(user.uid).set({
+  Future<void> _ensureUserDoc(User user) async {
+    final docRef = _users.doc(user.uid);
+    final docSnap = await docRef.get();
+    
+    final existingData = docSnap.data();
+    final existingName = existingData?['fullName'];
+    final existingCreatedAt = existingData?['createdAt'];
+
+    String finalName = "User";
+    if (existingName != null && existingName != "User") {
+      finalName = existingName;
+    } else if (user.displayName != null && user.displayName!.isNotEmpty) {
+      finalName = user.displayName!;
+    }
+
+    await docRef.set({
       "uid": user.uid,
       "email": user.email ?? "",
-      "fullName": user.displayName ?? "User",
-      // Don't overwrite existing phone/bio/allergies if they exist, 
-      // but merge: true will keep them if we don't send them.
-      // Wait, if we send "phone": "", it WILL overwrite.
-      // So ensureUserDoc should probably check existence first or ONLY set minimal fields.
-      // For now, aligning with previous logic but adding new fields as optional/default.
-      "role": "homecook",
+      "fullName": finalName,
+      "role": existingData?['role'] ?? "homecook",
       "provider": user.providerData.isNotEmpty
           ? user.providerData.first.providerId
           : "password",
-      "photoUrl": user.photoURL,
+      "photoUrl": user.photoURL ?? existingData?['photoUrl'],
       "updatedAt": FieldValue.serverTimestamp(),
+      if (existingCreatedAt == null) "createdAt": FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
   }
+
+  // Renaming to public if needed by login_user.dart
+  Future<void> ensureUserDoc(User user) => _ensureUserDoc(user);
 
   Future<void> updateAllergies(List<String> allergies) async {
     final user = _auth.currentUser;

@@ -189,7 +189,7 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
                         child: Text(
                           '4/5',
                           style: TextStyle(
-                            color: Color(0xFFFFF2EA),
+                            color: const Color(0xFFFFF2EA),
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Satoshi',
@@ -228,10 +228,13 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
                   ),
                   child: ReorderableListView.builder(
                     padding: const EdgeInsets.only(top: 20, bottom: 120),
-                    itemCount: _steps.length + 1, // +1 for "Add Direction" button
+                    itemCount: _steps.length + 2, // +1 for "Add Direction", +1 for Buttons
                     itemBuilder: (context, index) {
                       if (index == _steps.length) {
                         return _buildAddButton(index);
+                      }
+                      if (index == _steps.length + 1) {
+                        return _buildNavigationButtons(index);
                       }
                       return _buildStepItem(index);
                     },
@@ -250,73 +253,74 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
 
-          // Bottom Buttons
-          Positioned(
-            bottom: 42,
-            left: 30,
-            right: 29,
-            child: Row(
-              children: [
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: Container(
-                    width: 52,
-                    height: 53,
-                    decoration: BoxDecoration(
-                      color: cardBg,
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: const Icon(Icons.arrow_back_ios_new, size: 16, color: Color(0xFF462F4D)),
-                  ),
-                ),
-                const SizedBox(width: 60),
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => UploadRecipeStep5(
-                            title: widget.title,
-                            image: widget.image,
-                            prepTime: widget.prepTime,
-                            cookTime: widget.cookTime,
-                            servings: widget.servings,
-                            difficulty: widget.difficulty,
-                            tags: widget.tags,
-                            ingredients: widget.ingredients,
-                            steps: _steps,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      height: 62,
-                      decoration: BoxDecoration(
-                        color: orange,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          Text(
-                            'Next',
-                            style: TextStyle(
-                              color: Color(0xFFFFF2EA),
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Satoshi',
-                            ),
-                          ),
-                          SizedBox(width: 10),
-                          Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
-                        ],
-                      ),
+  Widget _buildNavigationButtons(int index) {
+    return Container(
+      key: const ValueKey('nav_buttons'),
+      padding: const EdgeInsets.fromLTRB(30, 42, 29, 42),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          GestureDetector(
+            onTap: () => Navigator.pop(context),
+            child: Container(
+              width: 52,
+              height: 53,
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: const Icon(Icons.arrow_back_ios_new, size: 16, color: Color(0xFF462F4D)),
+            ),
+          ),
+          const SizedBox(width: 60),
+          Expanded(
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => UploadRecipeStep5(
+                      title: widget.title,
+                      image: widget.image,
+                      prepTime: widget.prepTime,
+                      cookTime: widget.cookTime,
+                      servings: widget.servings,
+                      difficulty: widget.difficulty,
+                      tags: widget.tags,
+                      ingredients: widget.ingredients,
+                      steps: _steps,
                     ),
                   ),
+                );
+              },
+              child: Container(
+                height: 62,
+                decoration: BoxDecoration(
+                  color: orange,
+                  borderRadius: BorderRadius.circular(20),
                 ),
-              ],
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Text(
+                      'Next',
+                      style: TextStyle(
+                        color: Color(0xFFFFF2EA),
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Satoshi',
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
@@ -538,6 +542,3 @@ class _BackgroundPatterns extends StatelessWidget {
     );
   }
 }
-
-
-

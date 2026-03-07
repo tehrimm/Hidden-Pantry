@@ -4,6 +4,7 @@ import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'payment_method.dart';
 import 'add_wallet_screen.dart';
+import 'package:hidden_pantry_app/core/utils/toaster.dart';
 
 class PaymentSettingScreen extends StatefulWidget {
   const PaymentSettingScreen({super.key});
@@ -42,9 +43,7 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error loading methods: $e")),
-      );
+      Toaster.show(context, "Error loading methods: $e", isError: true);
     }
   }
 
@@ -54,9 +53,7 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
       _loadMethods();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      Toaster.show(context, "Error: $e", isError: true);
     }
   }
 
@@ -143,9 +140,7 @@ class _PaymentSettingScreenState extends State<PaymentSettingScreen> {
       _loadMethods();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e")),
-      );
+      Toaster.show(context, "Error: $e", isError: true);
     }
   }
 

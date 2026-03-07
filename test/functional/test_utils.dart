@@ -102,12 +102,9 @@ class FakeUserCredential extends Mock implements UserCredential {
 
 class MockAuthService extends Mock implements AuthService {
   @override
-  Future<UserCredential> registerWithEmail({
-    required String email,
-    required String password,
-  }) =>
+  Future<UserCredential> registerWithEmail(String email, String password) =>
       super.noSuchMethod(
-        Invocation.method(#registerWithEmail, [], {#email: email, #password: password}),
+        Invocation.method(#registerWithEmail, [email, password]),
         returnValue: Future.value(FakeUserCredential()),
       );
 

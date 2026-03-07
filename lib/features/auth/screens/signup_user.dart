@@ -95,10 +95,14 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
 
     setState(() {
       _nameErr = AuthValidator.validateFullName(name);
-      _gmailErr = AuthValidator.validateGmailUsername(gmailUser);
+      _gmailErr = AuthValidator.validateEmail(gmailUser);
       _phoneErr = AuthValidator.validatePhone(phoneDigits);
       _passErr = AuthValidator.validatePassword(pass);
     });
+
+    if (_gmailErr == "*email field is required") {
+      _gmailErr = "*field is required";
+    }
 
     if (_nameErr != null || _gmailErr != null || _phoneErr != null || _passErr != null) {
       if (_gmailErr != null) {
@@ -148,7 +152,7 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
       return;
     }
 
-    final email = "${_gmailCtrl.text.trim()}@gmail.com";
+    final email = _gmailCtrl.text.trim();
     
     // Normalizing phone (exactly like login)
     var rawPhone = _phoneCtrl.text.trim().replaceAll(RegExp(r'[^0-9]'), '');
@@ -167,11 +171,8 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
     try {
       // 1) Auth create
       debugPrint("Creating user in Firebase Auth...");
-      final cred = await _authService.registerWithEmail(
-        email: email,
-        password: pass,
-      );
-      debugPrint("Auth success: ${cred.user?.uid}");
+      final cred = await _authService.registerWithEmail(email, pass);
+      debugPrint("Auth success: ${cred?.user?.uid}");
 
       // 2) Firestore save (don’t block user forever)
       try {
@@ -379,7 +380,7 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
       child: Scaffold(
         backgroundColor: bg,
         resizeToAvoidBottomInset: false,
-        body: Center(
+        body: SafeArea(
           child: SizedBox(
             width: sx(_baseW),
             child: ClipRRect(
@@ -905,12 +906,12 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
                     ),
                   ],
                 ),
-                ],
-              ),
+              ],
             ),
           ),
         ),
       ),
+    ),
     );
   }
 }

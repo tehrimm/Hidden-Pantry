@@ -211,57 +211,58 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                         ],
                       ),
                     ),
+                    // Next Button at the end of scrollable content
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(29, 42, 29, 42),
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: GestureDetector(
+                          onTap: () {
+                            if (_titleController.text.isEmpty || _image == null) {
+                              Toaster.show(context, 'Please enter a title and select an image', isError: true);
+                              return;
+                            }
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => UploadRecipeStep2(
+                                  title: _titleController.text,
+                                  image: _image,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: 220,
+                            height: 62,
+                            decoration: BoxDecoration(
+                              color: orange,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: const [
+                                Text(
+                                  'Next',
+                                  style: TextStyle(
+                                    color: Color(0xFFFFF2EA),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Satoshi',
+                                  ),
+                                ),
+                                SizedBox(width: 10),
+                                Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
             ],
-          ),
-
-          // Fixed Next Button
-          Positioned(
-            right: 29,
-            bottom: 42,
-            child: GestureDetector(
-              onTap: () {
-                if (_titleController.text.isEmpty || _image == null) {
-                  Toaster.show(context, 'Please enter a title and select an image', isError: true);
-                  return;
-                }
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => UploadRecipeStep2(
-                      title: _titleController.text,
-                      image: _image,
-                    ),
-                  ),
-                );
-              },
-              child: Container(
-                width: 220,
-                height: 62,
-                decoration: BoxDecoration(
-                  color: orange,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Text(
-                      'Next',
-                      style: TextStyle(
-                        color: Color(0xFFFFF2EA),
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Satoshi',
-                      ),
-                    ),
-                    SizedBox(width: 10),
-                    Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
-                  ],
-                ),
-              ),
-            ),
           ),
         ],
       ),

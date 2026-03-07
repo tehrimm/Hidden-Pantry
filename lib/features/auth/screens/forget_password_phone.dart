@@ -11,6 +11,7 @@ import 'forget_password.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'forget_password_phone_otp.dart';
 import 'package:hidden_pantry_app/core/utils/auth_validator.dart';
+import 'package:hidden_pantry_app/core/utils/toaster.dart';
 
 import 'package:hidden_pantry_app/core/services/auth_service.dart';
 
@@ -73,7 +74,7 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
 
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    Toaster.show(context, msg);
   }
 
   bool _inCooldown() =>

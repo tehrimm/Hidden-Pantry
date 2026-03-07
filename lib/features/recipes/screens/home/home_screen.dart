@@ -863,6 +863,3 @@ class _HomeBackgroundPattern extends StatelessWidget {
     );
   }
 }
-
-
-

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:hidden_pantry_app/core/utils/toaster.dart';
 
 class AddIngredientScreen extends StatefulWidget {
   const AddIngredientScreen({super.key});
@@ -68,9 +69,7 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
     final quantity = _quantityController.text.trim();
     
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter an ingredient name')),
-      );
+      Toaster.show(context, 'Please enter an ingredient name', isError: true);
       return;
     }
     

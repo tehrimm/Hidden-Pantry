@@ -1,12 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'terms_and_condition.dart';
 import 'package:hidden_pantry_app/features/auth/screens/signup_user.dart';
 import 'package:hidden_pantry_app/features/auth/screens/login_user.dart';
 import 'package:hidden_pantry_app/features/auth/screens/nutritionist_signup_wrapper.dart';
 
-class LoadingFive extends StatelessWidget {
+class LoadingFive extends StatefulWidget {
   const LoadingFive({super.key});
+
+  @override
+  State<LoadingFive> createState() => _LoadingFiveState();
+}
+
+class _LoadingFiveState extends State<LoadingFive> {
+  @override
+  void initState() {
+    super.initState();
+    _markOnboardingSeen();
+  }
+
+  Future<void> _markOnboardingSeen() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('has_seen_onboarding', true);
+  }
 
   @override
   Widget build(BuildContext context) {

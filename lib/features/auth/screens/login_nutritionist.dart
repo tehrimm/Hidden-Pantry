@@ -16,6 +16,8 @@ import 'nutritionist_signup_wrapper.dart';
 import 'signup_nutritionist_step2.dart';
 import 'forget_password.dart';
 import 'login_user.dart';
+import 'package:hidden_pantry_app/core/utils/auth_validator.dart';
+import 'package:hidden_pantry_app/core/utils/toaster.dart';
 
 class LoginNutritionistScreen extends StatefulWidget {
   const LoginNutritionistScreen({super.key});
@@ -50,7 +52,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
   @override
   void initState() {
     super.initState();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   }
 
   @override
@@ -62,7 +64,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
 
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    Toaster.show(context, msg);
   }
 
   void _setLoading(bool v) {
@@ -75,14 +77,15 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
     _passErr = null;
 
     final email = _emailCtrl.text.trim();
-    final pass = _passwordCtrl.text.trim();
+    final pass = _passwordCtrl.text;
 
     bool ok = true;
 
-    if (email.isEmpty ||
-        email.length < 3 ||
-        !RegExp(r"^[a-zA-Z0-9._]+$").hasMatch(email)) {
-      _emailErr = "*incorrect email";
+    _emailErr = AuthValidator.validateEmail(email);
+    if (_emailErr != null) {
+      if (_emailErr == "*email field is required") {
+        _emailErr = "*field is required";
+      }
       ok = false;
     }
 
@@ -110,7 +113,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
     if (!_validate()) return;
 
     final email = _emailCtrl.text.trim();
-    final pass = _passwordCtrl.text.trim();
+    final pass = _passwordCtrl.text;
 
     _setLoading(true);
     try {
@@ -153,8 +156,10 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
           _passErr = "*wrong password";
         } else if (e.code == "invalid-email") {
           _emailErr = "*invalid email";
+        } else if (e.code == "invalid-credential") {
+           _passErr = "*invalid credentials";
         } else {
-          _snack("${e.message ?? "Login failed"}");
+          _snack("${e.message ?? "Login failed (Error: ${e.code})"}");
         }
       });
     } catch (e) {
@@ -320,7 +325,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                             SizedBox(height: s(45)),
 
                             Text(
-                              "Nutritionist\nLogin",
+                              "Login",
                               style: TextStyle(
                                 color: purple,
                                 fontSize: s(40),
@@ -330,57 +335,10 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                               ),
                             ),
 
-                            SizedBox(height: s(32)),
-
-                            // Google + Apple buttons
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: _loading ? null : _onGoogleLogin,
-                                    child: Container(
-                                      height: s(59),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF9E3D5),
-                                        borderRadius: BorderRadius.circular(s(15)),
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: Image.asset(
-                                        "assets/Logos/google.png",
-                                        width: s(48),
-                                        height: s(27),
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: s(12)),
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: _loading ? null : _onAppleLogin,
-                                    child: Container(
-                                      height: s(59),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF9E3D5),
-                                        borderRadius: BorderRadius.circular(s(15)),
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: Image.asset(
-                                        "assets/Logos/apple.png",
-                                        width: s(70),
-                                        height: s(44),
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            SizedBox(height: s(24)),
+                            SizedBox(height: s(10)),
 
                             Text(
-                              "Or login to your professional account",
+                              "Login to your professional account",
                               style: TextStyle(
                                 color: purple,
                                 fontSize: s(15),
@@ -553,7 +511,54 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                               ),
                             ),
 
-                            SizedBox(height: s(40)),
+                            SizedBox(height: s(16)),
+
+                            // Google + Apple buttons
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: _loading ? null : _onGoogleLogin,
+                                    child: Container(
+                                      height: s(59),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF9E3D5),
+                                        borderRadius: BorderRadius.circular(s(15)),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Image.asset(
+                                        "assets/Logos/google.png",
+                                        width: s(48),
+                                        height: s(27),
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: s(12)),
+                                Expanded(
+                                  child: GestureDetector(
+                                    onTap: _loading ? null : _onAppleLogin,
+                                    child: Container(
+                                      height: s(59),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF9E3D5),
+                                        borderRadius: BorderRadius.circular(s(15)),
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Image.asset(
+                                        "assets/Logos/apple.png",
+                                        width: s(70),
+                                        height: s(44),
+                                        fit: BoxFit.contain,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            SizedBox(height: s(32)),
                           ],
                         ),
                       ),

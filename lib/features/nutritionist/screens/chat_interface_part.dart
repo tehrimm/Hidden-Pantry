@@ -41,6 +41,9 @@ class _ChatInterfaceState extends State<ChatInterface> {
 
   Timer? _typingTimer;
   bool _isTyping = false;
+  bool _canShareMealPlans = false;
+  bool _canShareSupplements = false;
+
 
   @override
   void initState() {
@@ -48,6 +51,53 @@ class _ChatInterfaceState extends State<ChatInterface> {
     _resetUnreadCount();
     _clearRelatedNotifications();
     _msgCtrl.addListener(_onTextChanged);
+    if (_isNutritionist) {
+      _checkClientBenefits();
+    } else {
+    }
+  }
+
+  Future<void> _checkClientBenefits() async {
+    if (!_isNutritionist || widget.clientId == null) {
+      return;
+    }
+
+    try {
+      final subsSnap = await FirebaseFirestore.instance
+          .collection("subscriptions")
+          .where("userId", isEqualTo: widget.clientId)
+          .where("nutritionistId", isEqualTo: widget.nutritionistId)
+          .where("status", whereIn: ["active", "trialing"])
+          .get();
+
+      if (subsSnap.docs.isNotEmpty) {
+        final subData = subsSnap.docs.first.data();
+        final planId = subData["planId"];
+        
+        if (planId != null) {
+          final planDoc = await FirebaseFirestore.instance
+              .collection("nutritionists")
+              .doc(widget.nutritionistId)
+              .collection("subscription_plans")
+              .doc(planId)
+              .get();
+
+          if (planDoc.exists) {
+            final List? benefits = planDoc.data()?["benefits"];
+            if (benefits != null) {
+              for (var b in benefits) {
+                final String title = (b is Map ? (b["title"] ?? b["text"] ?? "") : b).toString().toLowerCase();
+                if (title.contains("inchat meal plans")) _canShareMealPlans = true;
+                if (title.contains("supplement guide")) _canShareSupplements = true;
+              }
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint("Error checking client benefits: $e");
+    } finally {
+    }
   }
 
   void _clearRelatedNotifications() {
@@ -420,8 +470,12 @@ class _ChatInterfaceState extends State<ChatInterface> {
     const Color subTextColor = Color(0xFFBFA89A);
 
     final actions = [
-      {"icon": Icons.restaurant_menu_rounded, "title": "Create New Meal Plan", "subtitle": "Design a custom plan for your client"},
-      {"icon": Icons.bookmark_rounded, "title": "Share Saved Meal Plans", "subtitle": "Send from your existing plans library"},
+      if (_canShareMealPlans) ...[
+        {"icon": Icons.restaurant_menu_rounded, "title": "Create New Meal Plan", "subtitle": "Design a custom plan for your client"},
+        {"icon": Icons.bookmark_rounded, "title": "Share Saved Meal Plans", "subtitle": "Send from your existing plans library"},
+      ],
+      if (_canShareSupplements)
+        {"icon": Icons.medical_services_rounded, "title": "Share Supplement Guide", "subtitle": "Send personalized recommendations"},
       {"icon": Icons.calendar_month_rounded, "title": "Schedule Meeting", "subtitle": "Set up a consultation session"},
       {"icon": Icons.attach_file_rounded, "title": "Attach File", "subtitle": "Send documents, images, or reports"},
     ];
@@ -482,6 +536,8 @@ class _ChatInterfaceState extends State<ChatInterface> {
                         _showScheduleMeetingDialog();
                       } else if (action["title"] == "Share Saved Meal Plans") {
                         _showSavedPlansSheet();
+                      } else if (action["title"] == "Share Supplement Guide") {
+                        _sendSupplementGuide();
                       } else {
                         Toaster.show(context, "${action["title"]} coming soon!");
                       }
@@ -1174,6 +1230,30 @@ class _ChatInterfaceState extends State<ChatInterface> {
       "mealPlanData": planData,
       "timestamp": FieldValue.serverTimestamp(),
     });
+  }
+
+  void _sendSupplementGuide() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    final chatRef = FirebaseFirestore.instance.collection("chats").doc(_chatId);
+
+    final Map<String, dynamic> updateData = {
+      "lastMessage": "💊 Shared Supplement Guide",
+      "lastMessageTime": FieldValue.serverTimestamp(),
+      "userUnread": FieldValue.increment(1),
+      "nutritionistUnread": 0,
+    };
+
+    await chatRef.set(updateData, SetOptions(merge: true));
+
+    await chatRef.collection("messages").add({
+      "type": "supplement_guide",
+      "senderId": user.uid,
+      "text": "Sent a supplement guide request",
+      "timestamp": FieldValue.serverTimestamp(),
+    });
+
+    if (mounted) Toaster.show(context, "Supplement guide request sent");
   }
 
   Widget _buildMealPlanCard(Map<String, dynamic> data, bool isMe) {

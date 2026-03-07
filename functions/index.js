@@ -112,6 +112,30 @@ exports.onNutritionistStatusChange = functions.firestore
             return null;
         }
 
+        const uid = context.params.uid;
+
+        // NEW: Delete certificate immediately if approved or rejected
+        if ((after.verificationStatus === 'approved' || after.verificationStatus === 'rejected') && after.certificateUrl) {
+            try {
+                const storage = admin.storage();
+                const bucket = storage.bucket();
+                // Extract file path from Firebase Storage URL
+                const filePath = decodeURIComponent(
+                    after.certificateUrl.split('/o/')[1].split('?')[0]
+                );
+                await bucket.file(filePath).delete();
+                console.log(`Deleted certificate for ${uid} on status: ${after.verificationStatus}`);
+
+                // Clear URL in Firestore
+                await change.after.ref.update({
+                    certificateUrl: admin.firestore.FieldValue.delete()
+                });
+            } catch (error) {
+                console.error(`Error deleting certificate for ${uid}:`, error);
+                // Notification flow continues even if deletion fails
+            }
+        }
+
         const fcmToken = after.fcmToken;
         if (!fcmToken) {
             console.log(`No FCM token for user ${context.params.uid}`);
@@ -333,9 +357,6 @@ exports.createNutritionistCheckout = functions.https.onCall(async (data, context
         }
 
         // 1. Create a pending subscription doc
-        const subExpiry = new Date();
-        subExpiry.setMonth(subExpiry.getMonth() + 1);
-
         const subDoc = await db.collection('subscriptions').add({
             userId: uid,
             nutritionistId,
@@ -345,7 +366,8 @@ exports.createNutritionistCheckout = functions.https.onCall(async (data, context
             tierLevel: tierLevel || 1,
             interval: interval || 'Monthly',
             status: 'pending',
-            expiryDate: admin.firestore.Timestamp.fromDate(subExpiry),
+            // FIX: Don't grant future access for pending subs
+            expiryDate: admin.firestore.FieldValue.serverTimestamp(),
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             type: 'direct_subscription',
             userName,
@@ -1013,10 +1035,10 @@ exports.getNutritionistStats = functions.https.onCall(async (data, context) => {
         const plansCountSnap = await db.collection('nutritionists').doc(nutritionistId).collection('meal_plans').count().get();
         totalPosts += plansCountSnap.data().count || 0;
 
-        // 3. Get Unique Subscribers
+        // 3. Get Unique Subscribers (including trialing)
         const subsSnap = await db.collection('subscriptions')
             .where('nutritionistId', '==', nutritionistId)
-            .where('status', '==', 'active')
+            .where('status', 'in', ['active', 'trialing'])
             .get();
 
         const uniqueUserIds = new Set();

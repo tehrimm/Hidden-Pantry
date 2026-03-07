@@ -7,6 +7,7 @@ import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'recipe_details.dart';
+import 'package:hidden_pantry_app/core/utils/toaster.dart';
 
 class MyRecipesScreen extends StatefulWidget {
   const MyRecipesScreen({super.key});
@@ -101,27 +102,87 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
         
         if (mounted) {
           ScaffoldMessenger.of(context).hideCurrentSnackBar();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Recipe deleted successfully', style: TextStyle(fontFamily: 'Satoshi'))),
-          );
+          Toaster.show(context, 'Recipe deleted successfully');
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e', style: const TextStyle(fontFamily: 'Satoshi'))),
-          );
+          Toaster.show(context, 'Error: $e', isError: true);
         }
       }
     }
+  }
+
+  Future<void> _toggleVisibility(Recipe recipe) async {
+    try {
+      final newStatus = !recipe.isPublic;
+      await FirebaseFirestore.instance
+          .collection('recipes')
+          .doc(recipe.id)
+          .update({'isPublic': newStatus});
+      
+      if (mounted) {
+        Toaster.show(context, newStatus ? 'Recipe is now public' : 'Recipe is now private');
+      }
+    } catch (e) {
+      if (mounted) {
+        Toaster.show(context, 'Error updating visibility: $e', isError: true);
+      }
+    }
+  }
+
+  void _showShareOptions(Recipe recipe) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 50, height: 5,
+              decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(3)),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              "Share Recipe",
+              style: TextStyle(color: purple, fontSize: 20, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+            ),
+            const SizedBox(height: 24),
+            ListTile(
+              leading: Icon(Icons.chat_bubble_outline_rounded, color: orange),
+              title: Text("Share with Clients", style: TextStyle(color: purple, fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                _showSelectClientSheet(recipe);
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.dynamic_feed_rounded, color: orange),
+              title: Text("Post to Wall", style: TextStyle(color: purple, fontWeight: FontWeight.bold)),
+              onTap: () {
+                Navigator.pop(context);
+                _shareToWall(recipe);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return const Scaffold(body: Center(child: Text("Please login")));
+    final double topPad = MediaQuery.of(context).padding.top;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: bg,
       body: ClipRRect(
         borderRadius: BorderRadius.circular(30),
         child: Container(
@@ -133,7 +194,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                 // Standardized Header - Back Button
                 Positioned(
                   left: 30,
-                  top: 51,
+                  top: topPad + 20,
                   child: BackButtonWidget(color: purple),
                 ),
 
@@ -141,7 +202,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                 Positioned(
                   left: 0,
                   right: 0,
-                  top: 51,
+                  top: topPad + 20,
                   height: 50,
                   child: Center(
                     child: Text(
@@ -161,7 +222,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                 SafeArea(
                   child: Column(
                     children: [
-                      const SizedBox(height: 50), // Gap for standardized header
+                      SizedBox(height: topPad + 70), // Responsive gap for header
                     Expanded(
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.symmetric(horizontal: 30),
@@ -197,6 +258,226 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
     );
   }
 
+
+  void _showSelectClientSheet(Recipe recipe) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.75,
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: const EdgeInsets.only(top: 10, bottom: 20),
+              width: 50, height: 5,
+              decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(3)),
+            ),
+            Text("Select Client to Share With", style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 16),
+            Expanded(
+              child: FutureBuilder<List<Map<String, dynamic>>>(
+                future: _fetchClientsForShare(user.uid),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator(color: orange));
+                  }
+                  if (snapshot.hasError) {
+                    return const Center(child: Text("Error loading clients"));
+                  }
+
+                  final clients = snapshot.data ?? [];
+                  if (clients.isEmpty) return const Center(child: Text("No clients found with matching benefits."));
+
+                  return ListView.separated(
+                    padding: const EdgeInsets.all(20),
+                    itemCount: clients.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (context, index) {
+                      final client = clients[index];
+                      final otherUserId = client["userId"] as String;
+                      final otherUserName = client["name"] as String;
+                      final otherUserPhoto = client["photoUrl"] as String?;
+                      final chatId = client["chatId"] as String;
+
+                      return ListTile(
+                        onTap: () async {
+                           try {
+                             await FirebaseFirestore.instance
+                               .collection("chats")
+                               .doc(chatId)
+                               .collection("messages")
+                               .add({
+                                 "senderId": user.uid,
+                                 "type": "recipe_share",
+                                 "recipeId": recipe.id,
+                                 "recipeName": recipe.name,
+                                 "recipeImage": recipe.imageUrl,
+                                 "timestamp": FieldValue.serverTimestamp(),
+                                 "read": false,
+                               });
+                             
+                             await FirebaseFirestore.instance.collection("chats").doc(chatId).set({
+                               "lastMessage": "Shared a recipe: ${recipe.name}",
+                               "lastMessageTime": FieldValue.serverTimestamp(),
+                               "userUnread": FieldValue.increment(1),
+                               "nutritionistUnread": 0,
+                               "participants": FieldValue.arrayUnion([user.uid, otherUserId]),
+                             }, SetOptions(merge: true));
+
+                             if (context.mounted) {
+                               Navigator.pop(context);
+                               Toaster.show(context, "Recipe sent to $otherUserName");
+                             }
+                           } catch (e) {
+                             if (context.mounted) {
+                               Toaster.show(context, "Error sharing recipe: $e", isError: true);
+                             }
+                           }
+                        },
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(color: purple.withValues(alpha:0.05)),
+                        ),
+                        tileColor: Colors.white,
+                        leading: CircleAvatar(
+                          radius: 24,
+                          backgroundColor: purple.withValues(alpha:0.1),
+                          backgroundImage: otherUserPhoto != null ? NetworkImage(otherUserPhoto) : null,
+                          child: otherUserPhoto == null ? Icon(Icons.person, color: purple) : null,
+                        ),
+                        title: Text(otherUserName, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16)),
+                        trailing: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: orange.withValues(alpha:0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.send_rounded, color: orange, size: 20),
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchClientsForShare(String nutritionistId) async {
+    final Map<String, Map<String, dynamic>> clientMap = {};
+    final String requiredBenefit = "nutritionist approved recipes";
+
+    final subsSnap = await FirebaseFirestore.instance
+        .collection("subscriptions")
+        .where("nutritionistId", isEqualTo: nutritionistId)
+        .where("status", whereIn: ["active", "trialing"])
+        .get();
+
+    for (var doc in subsSnap.docs) {
+      final data = doc.data();
+      final userId = data["userId"] as String?;
+      final planId = data["planId"] as String?;
+
+      if (userId == null || userId == nutritionistId) continue;
+
+      bool hasBenefit = false;
+      if (planId != null) {
+        try {
+          final planDoc = await FirebaseFirestore.instance
+              .collection("nutritionists")
+              .doc(nutritionistId)
+              .collection("subscription_plans")
+              .doc(planId)
+              .get();
+          
+          if (planDoc.exists) {
+            final List? benefits = planDoc.data()?["benefits"];
+            if (benefits != null) {
+              hasBenefit = benefits.any((b) {
+                final String title = (b is Map ? (b["title"] ?? b["text"] ?? "") : b).toString().toLowerCase();
+                return title.contains(requiredBenefit);
+              });
+            }
+          }
+        } catch (_) {}
+      }
+      if (!hasBenefit) continue;
+
+      final chatId = "chat_${userId}_$nutritionistId";
+      clientMap[userId] = {
+        "userId": userId,
+        "chatId": chatId,
+      };
+    }
+
+    final List<Map<String, dynamic>> clients = [];
+    for (var entry in clientMap.values) {
+      final userId = entry["userId"] as String;
+      try {
+        final userDoc = await FirebaseFirestore.instance.collection("users").doc(userId).get();
+        if (userDoc.exists) {
+          final userData = userDoc.data() as Map<String, dynamic>;
+          entry["name"] = userData["fullName"] ?? "User";
+          entry["photoUrl"] = userData["photoUrl"];
+        } else {
+          entry["name"] = "User";
+        }
+      } catch (_) {
+        entry["name"] = "User";
+      }
+      clients.add(entry);
+    }
+    
+    clients.sort((a, b) => (a["name"] as String).compareTo(b["name"] as String));
+    return clients;
+  }
+
+  Future<void> _shareToWall(Recipe recipe) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final Map<String, dynamic> postData = {
+        "content": "Check out my new recipe: ${recipe.name}",
+        "recipeId": recipe.id,
+        "recipeName": recipe.name,
+        "imageUrl": recipe.imageUrl,
+        "timestamp": FieldValue.serverTimestamp(),
+        "minTier": 0, // Public by default if on wall
+        "likes": 0,
+        "commentCount": 0,
+        "likedBy": [],
+        "type": "unified_post",
+        "hasRecipe": true,
+      };
+
+      await FirebaseFirestore.instance
+          .collection("nutritionists")
+          .doc(user.uid)
+          .collection("tips")
+          .add(postData);
+
+      if (mounted) {
+        Toaster.show(context, "Recipe posted to your wall!");
+      }
+    } catch (e) {
+      if (mounted) {
+        Toaster.show(context, "Error posting to wall: $e", isError: true);
+      }
+    }
+  }
 
   Widget _buildProfileSection() {
     return Column(
@@ -287,14 +568,15 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
               },
               onLongPress: () => _confirmDelete(recipe),
               child: Container(
-                decoration: const BoxDecoration(
-                  color: Colors.transparent,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha:0.5),
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Stack(
                   children: [
                     // Image
                     Positioned.fill(
-                      bottom: 50,
+                      bottom: 70, // Increased to accommodate visibility label
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(20),
                         child: (recipe.imageUrl != null && recipe.imageUrl!.trim().isNotEmpty)
@@ -347,6 +629,36 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                           fontSize: 11,
                           fontFamily: 'Satoshi',
                         ),
+                      ),
+                    ),
+                    // Visibility Indicator (Nutritionist only)
+                    Positioned(
+                      top: 10,
+                      right: 10,
+                      child: GestureDetector(
+                        onTap: () => _toggleVisibility(recipe),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: recipe.isPublic ? Colors.green.withValues(alpha:0.8) : Colors.red.withValues(alpha:0.8),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            recipe.isPublic ? "Public" : "Private",
+                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Share Button (Nutritionist only)
+                    Positioned(
+                      bottom: 5,
+                      right: 5,
+                      child: IconButton(
+                        icon: Icon(Icons.share_rounded, color: orange, size: 18),
+                        onPressed: () => _showShareOptions(recipe),
+                        constraints: const BoxConstraints(),
+                        padding: const EdgeInsets.all(8),
                       ),
                     ),
                   ],

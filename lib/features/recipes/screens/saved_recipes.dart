@@ -9,10 +9,12 @@ import 'package:hidden_pantry_app/features/recipes/services/local_recipe_service
 import 'package:hidden_pantry_app/core/widgets/create_cookbook_bottom_sheet.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
+import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
 import 'package:hidden_pantry_app/core/widgets/home_bottom_nav.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/search/search.dart';
 import 'package:hidden_pantry_app/features/recipes/upload/upload_recipe_step1.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/discovery.dart';
+import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
 import 'package:hidden_pantry_app/core/services/view_mode_service.dart';
 import 'recipe_details.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
@@ -46,6 +48,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
   @override
   void initState() {
     super.initState();
+    debugPrint('[SavedRecipesScreen] Initialized (inShell: ${widget.inShell})');
     _loadProfile();
     _checkNutritionistStatus();
     _initDefaultSelection();
@@ -144,10 +147,20 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
   }
 
   void _onBottomTap(int i) {
+    debugPrint('[SavedRecipesScreen] _onBottomTap: $i');
+    if (widget.inShell) {
+      debugPrint('[SavedRecipesScreen] inShell is true, ignoring internal tap logic');
+      return;
+    }
     if (i == 3) return; // Already here
 
     if (i == 0) {
-      Navigator.popUntil(context, (route) => route.isFirst);
+      // If we got here, we are NOT in shell, so we should probably go TO the shell
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => MainNavigationShell()),
+        (route) => false,
+      );
     } else if (i == 1) {
       Navigator.pushReplacement(
         context,
@@ -218,6 +231,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return const Scaffold(body: Center(child: Text("Please login")));
+    final double topPad = MediaQuery.of(context).padding.top;
 
     return Scaffold(
       backgroundColor: bg,
@@ -229,13 +243,17 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
 
                 // Removed Back Button to make it a top-level tab
                 if (!widget.inShell)
-                  const BackButtonWidget(),
+                  Positioned(
+                    left: 30,
+                    top: topPad + 20,
+                    child: const BackButtonWidget(),
+                  ),
 
                 // Standardized Header - Title
                 Positioned(
                   left: 0,
                   right: 0,
-                  top: 51,
+                  top: topPad + 20,
                   height: 50,
                   child: Center(
                     child: Text(
@@ -256,7 +274,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
                   bottom: false,
                   child: Column(
                     children: [
-                      const SizedBox(height: 50), // Gap for standardized header
+                      SizedBox(height: topPad + 70), // Responsive gap for header
                     Expanded(
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.symmetric(horizontal: 30),
@@ -466,7 +484,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 157 / 231,
+        childAspectRatio: 0.65,
         crossAxisSpacing: 15,
         mainAxisSpacing: 15,
       ),
@@ -479,7 +497,8 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
   }
 
   Widget _recipeCard(Recipe recipe) {
-    return GestureDetector(
+    return RecipeCard(
+      recipe: recipe,
       onTap: () {
         Navigator.push(
           context,
@@ -488,60 +507,6 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
           ),
         ).then((_) => _refreshCurrentData());
       },
-      child: Container(
-        decoration: const BoxDecoration(color: Colors.transparent),
-        child: Stack(
-          children: [
-            Positioned.fill(
-              bottom: 50,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: (recipe.imageUrl != null && recipe.imageUrl!.trim().isNotEmpty)
-                    ? Image.network(
-                        recipe.imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Image.asset(
-                          'assets/Logos/recipe_placeholder.jpg',
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                    : Image.asset(
-                        'assets/Logos/recipe_placeholder.jpg',
-                        fit: BoxFit.cover,
-                      ),
-              ),
-            ),
-            Positioned(
-              left: 12,
-              bottom: 28,
-              right: 12,
-              child: Text(
-                recipe.name,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: purple,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'Satoshi',
-                ),
-              ),
-            ),
-            Positioned(
-              left: 12,
-              bottom: 10,
-              child: Text(
-                '${recipe.minutes} min  •  ⭐ ${recipe.avgRating.toStringAsFixed(1)}',
-                style: TextStyle(
-                  color: purple.withValues(alpha:0.75),
-                  fontSize: 11,
-                  fontFamily: 'Satoshi',
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 

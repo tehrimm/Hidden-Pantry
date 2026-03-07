@@ -44,6 +44,8 @@ class Recipe {
   /// Number of steps in the recipe
   final int nSteps;
   final int? totalSteps;
+  final bool isNutritionistRecipe;
+  final bool isPublic;
 
   double getServingMultiplier(int targetServings) {
     if (baseServings <= 0) return 1.0;
@@ -117,6 +119,8 @@ class Recipe {
     this.stepsDetailed,
     this.nSteps = 0,
     this.totalSteps,
+    this.isNutritionistRecipe = false,
+    this.isPublic = true,
   })  : _prepMinutes = prepMinutes,
         _cookMinutes = cookMinutes;
 
@@ -363,66 +367,105 @@ class Recipe {
   // Factory
   // =======================
   factory Recipe.fromJson(Map<String, dynamic> json) {
-    final img = _cleanNullableString(json['image_url'] ?? json['imageUrl'] ?? json['recipe_image']);
+    // Some APIs wrap the recipe in a 'recipe' or 'data' key.
+    final data = (json['recipe'] is Map<String, dynamic>) 
+        ? json['recipe'] as Map<String, dynamic>
+        : (json['data'] is Map<String, dynamic>)
+            ? json['data'] as Map<String, dynamic>
+            : json;
+
+    final img = _cleanNullableString(
+      data['image'] ?? 
+      data['imageUrl'] ?? 
+      data['image_url'] ?? 
+      data['recipe_image'] ?? 
+      data['recipe_imageUrl'] ??
+      data['recipe_image_url']
+    );
 
     return Recipe(
-      id: (json['id'] ?? json['recipe_id'] ?? json['recipeId']).toString(),
-      name: (json['title'] ?? json['name'] ?? json['recipe_name'] ?? "").toString(),
-      description: _cleanNullableString(json['description'] ?? json['recipe_description']),
-      category: _cleanNullableString(json['category'] ?? json['recipe_category']),
-      allergens: _toStringList(json['allergens']),
+      id: (data['id'] ?? data['recipe_id'] ?? data['recipeId'] ?? data['_id'] ?? "").toString(),
+      name: (
+        data['name'] ?? 
+        data['title'] ?? 
+        data['recipe_name'] ?? 
+        data['recipeName'] ?? 
+        data['label'] ?? 
+        data['recipe_title'] ??
+        ""
+      ).toString(),
+      description: _cleanNullableString(data['description'] ?? data['recipe_description'] ?? data['summary']),
+      category: _cleanNullableString(data['category'] ?? data['recipe_category']),
+      allergens: _toStringList(data['allergens']),
       servingSize: _cleanNullableString(
-        json['serving_size'] ?? 
-        json['servingSize'] ?? 
-        json['servings'] ??
-        json['serves'] ??
-        json['yields']
+        data['serving_size'] ?? 
+        data['servingSize'] ?? 
+        data['servings'] ??
+        data['serves'] ??
+        data['yields']
       ),
-      minutes: _toInt(json['minutes'] ?? json['total_time'], fallback: 0),
-      prepMinutes: (json['prep_minutes'] != null || json['prep_time'] != null) 
-          ? _toInt(json['prep_minutes'] ?? json['prep_time']) 
+      minutes: _toInt(
+        data['readyInMinutes'] ?? 
+        data['minutes'] ?? 
+        data['total_time'] ?? 
+        data['totalTime'] ?? 
+        data['cook_time'] ?? 
+        data['cookTime'] ??
+        data['prep_time'], 
+        fallback: 0
+      ),
+      prepMinutes: (data['prep_minutes'] != null || data['prep_time'] != null) 
+          ? _toInt(data['prep_minutes'] ?? data['prep_time']) 
           : null,
-      cookMinutes: (json['cook_minutes'] != null || json['cook_time'] != null)
-          ? _toInt(json['cook_minutes'] ?? json['cook_time'])
+      cookMinutes: (data['cook_minutes'] != null || data['cook_time'] != null)
+          ? _toInt(data['cook_minutes'] ?? data['cook_time'])
           : null,
-      avgRating: _toDouble(json['avg_rating'] ?? json['avgRating'] ?? json['recipe_average_rating'], fallback: 0.0),
-      reviewCount: _toInt(json['review_count'] ?? json['reviews']),
+      avgRating: _toDouble(
+        data['avg_rating'] ?? 
+        data['avgRating'] ?? 
+        data['aggregateRating'] ?? 
+        data['recipe_average_rating'] ?? 
+        data['rating'], 
+        fallback: 0.0
+      ),
+      reviewCount: _toInt(data['review_count'] ?? data['reviews'] ?? data['ratingsCount'] ?? data['reviewCount']),
       imageUrl: img,
-      authorId: (json['author_id'] ?? json['authorId'] ?? "").toString(),
-      authorName: _cleanNullableString(json['author_name'] ?? json['authorName']),
+      authorId: (data['author_id'] ?? data['authorId'] ?? "").toString(),
+      authorName: _cleanNullableString(data['author_name'] ?? data['authorName'] ?? data['sourceName']),
       authorProfileImageUrl: _cleanNullableString(
-        json['author_profile_image_url'] ??
-            json['author_profile'] ??
-            json['authorProfileImageUrl'],
+        data['author_profile_image_url'] ??
+            data['author_profile'] ??
+            data['authorProfileImageUrl'],
       ),
       baseServings: () {
-        // Prioritize fields that often have descriptive strings (e.g. "16 servings")
-        // over fields that might be defaulted to 1 in the backend.
         final keys = [
           'serving_size', 'servingSize', 'servings', 'n_servings',
           'yields', 'yield', 'serves', 'base_servings', 'baseServings'
         ];
         dynamic val;
         for (final k in keys) {
-          if (json.containsKey(k) && json[k] != null) {
-            final int parsed = _toInt(json[k], fallback: 0);
+          if (data.containsKey(k) && data[k] != null) {
+            final int parsed = _toInt(data[k], fallback: 0);
             if (parsed > 0) {
-              val = json[k];
-              // If we found a value > 1, it's likely the real serving size.
-              // If it's just 1, we keep looking in case another field has a better value.
+              val = data[k];
               if (parsed > 1) break;
             }
           }
         }
         return _toInt(val, fallback: 1);
       }(),
-      ingredients: _parseIngredients(json),
-      directions: _parseDirections(json),
-      nutrition: _parseNutrition(json),
-      tags: _toStringList(json['tags']),
-      stepsDetailed: (json['steps_detailed'] as List?)?.cast<Map<String, dynamic>>(),
-      nSteps: _toInt(json['n_steps'] ?? json['total_steps'], fallback: 0),
-      totalSteps: _toInt(json['total_steps']),
+      ingredients: _parseIngredients(data),
+      directions: _parseDirections(data),
+      nutrition: _parseNutrition(data),
+      tags: _toStringList(data['tags'] ?? data['cuisines'] ?? data['dishTypes'] ?? data['tags_parsed']),
+      stepsDetailed: (data['steps_detailed'] as List?)?.cast<Map<String, dynamic>>() ?? 
+                     (data['analyzedInstructions'] != null && (data['analyzedInstructions'] as List).isNotEmpty 
+                        ? (data['analyzedInstructions'][0]['steps'] as List?)?.cast<Map<String, dynamic>>() 
+                        : null),
+      nSteps: _toInt(data['n_steps'] ?? data['total_steps'] ?? data['instructions']?.toString().split('.').length, fallback: 0),
+      totalSteps: _toInt(data['total_steps']),
+      isNutritionistRecipe: data['is_nutritionist_recipe'] == true,
+      isPublic: data['is_public'] ?? true,
     );
   }
 
@@ -443,6 +486,8 @@ class Recipe {
       'tags': tags,
       'steps_detailed': stepsDetailed,
       'n_steps': nSteps,
+      'is_nutritionist_recipe': isNutritionistRecipe,
+      'is_public': isPublic,
     };
   }
 
@@ -456,6 +501,7 @@ class Recipe {
     String? authorProfileImageUrl,
     List<IngredientItem>? ingredients,
     List<String>? directions,
+    bool? isPublic,
   }) {
     return Recipe(
       id: id ?? this.id,
@@ -481,6 +527,8 @@ class Recipe {
       stepsDetailed: stepsDetailed,
       nSteps: nSteps,
       totalSteps: totalSteps,
+      isNutritionistRecipe: isNutritionistRecipe,
+      isPublic: isPublic ?? this.isPublic,
     );
   }
 }

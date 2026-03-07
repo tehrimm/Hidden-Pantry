@@ -99,7 +99,7 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
     if (i == 0) {
        Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (_) => const MainNavigationShell()),
+          MaterialPageRoute(builder: (_) => MainNavigationShell()),
           (route) => false,
         );
     } else if (i == 1) {

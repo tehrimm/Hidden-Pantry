@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:math' as math;
 import 'package:flutter/services.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
@@ -11,6 +12,13 @@ class IngredientRecognitionService {
 
   static const int _inputSize = 224;
   
+  String _canonicalizeLabel(String s) {
+    var out = s.replaceAll('\r', '').trim();
+    out = out.replaceAll('_', ' ').replaceAll('-', ' ').trim();
+    out = out.replaceAll(RegExp(r'\s+\d+$'), '').trim(); // drop trailing numbers
+    out = out.replaceAll(RegExp(r'\s+'), ' '); // collapse spaces
+    return out;
+  }
 
   Future<void> init() async {
     if (_interpreter != null) return;
@@ -28,14 +36,58 @@ class IngredientRecognitionService {
       // Load labels
       print("Loading labels from assets/model/class_names.txt...");
       final labelData = await rootBundle.loadString('assets/model/class_names.txt');
-      _labels = labelData.split('\n').where((l) => l.trim().isNotEmpty).toList();
-      print("Labels loaded: ${_labels.length}");
+      // Preserve line positions to keep indices aligned with the model output.
+      final rawLines = labelData.split('\n');
+      _labels = rawLines.map(_canonicalizeLabel).toList();
+
+      // Align label count with model output classes if needed
+      try {
+        final outShape = _interpreter!.getOutputTensor(0).shape;
+        final numClasses = outShape.reduce((a, b) => a * b);
+        if (_labels.length != numClasses) {
+          // Common cases:
+          // 1) Leading blank line removed earlier → labels shorter by 1
+          // 2) Trailing blank line present → labels longer by 1
+          if (_labels.length == numClasses + 1 && (_labels.last.isEmpty || _labels.last.trim().isEmpty)) {
+            _labels = _labels.sublist(0, numClasses);
+          } else if (_labels.length == numClasses + 1 && (_labels.first.isEmpty || _labels.first.trim().isEmpty)) {
+            _labels = _labels.sublist(1);
+          } else if (_labels.length == numClasses - 1) {
+            // Insert a placeholder background at index 0 if missing
+            _labels = [''] + _labels;
+          }
+        }
+      } catch (_) {}
+      print("Labels loaded (aligned): ${_labels.length}");
       
     } catch (e) {
       print("Error initializing IngredientRecognitionService: $e");
     } finally {
       _isLoading = false;
     }
+  }
+
+  List<double> _getRgb(img.Image image, int x, int y) {
+    final p = image.getPixel(x, y);
+    return [p.r.toDouble(), p.g.toDouble(), p.b.toDouble()];
+  }
+
+  List<double> _run(List<double> input, List<int> shape) {
+    final outputAttributes = _interpreter!.getOutputTensor(0);
+    final outputShape = outputAttributes.shape;
+    final outputBuffer = Float32List(outputShape.reduce((a, b) => a * b));
+    final output = outputBuffer.reshape(outputShape);
+    _interpreter!.run(Float32List.fromList(input).reshape(shape), output);
+    final probs = (output[0] as List<double>).toList();
+    return probs;
+  }
+
+  ({List<double> probs, double top1, double margin}) _score(List<double> probs) {
+    final indexed = List.generate(probs.length, (i) => (i, probs[i]));
+    indexed.sort((a, b) => b.$2.compareTo(a.$2));
+    final top1 = indexed.isNotEmpty ? indexed.first.$2 : 0.0;
+    final top2 = indexed.length > 1 ? indexed[1].$2 : 0.0;
+    return (probs: probs, top1: top1, margin: top1 - top2);
   }
 
   Future<List<({String label, double confidence})>> predict(File imageFile) async {
@@ -50,47 +102,47 @@ class IngredientRecognitionService {
       final image = img.decodeImage(bytes);
       if (image == null) return [];
 
-      // 2. Resize to 224x224 (Squash to fit - robust for MobileNet)
-      final resized = img.copyResize(image, width: _inputSize, height: _inputSize);
+      // 2. Center-crop square then resize -> more robust for classifiers trained on crops
+      final side = math.min(image.width, image.height);
+      final x = ((image.width - side) / 2).round();
+      final y = ((image.height - side) / 2).round();
+      final square = img.copyCrop(image, x: x, y: y, width: side, height: side);
+      final resized = img.copyResize(square, width: _inputSize, height: _inputSize);
 
-      // 3. Convert to Float32 input buffer (normalized [-1, 1])
-      final input = Float32List(1 * _inputSize * _inputSize * 3);
-      var pixelIndex = 0;
+      // 3. Build two input variants: [-1,1] and [0,1]
+      final total = _inputSize * _inputSize * 3;
+      final a = List<double>.filled(total, 0.0); // [-1, 1]
+      final b = List<double>.filled(total, 0.0); // [0, 1]
+      var idx = 0;
       for (var y = 0; y < _inputSize; y++) {
         for (var x = 0; x < _inputSize; x++) {
-          final pixel = resized.getPixel(x, y);
-          final r = pixel.r;
-          final g = pixel.g;
-          final b = pixel.b;
-          input[pixelIndex++] = (r / 127.5) - 1.0;
-          input[pixelIndex++] = (g / 127.5) - 1.0;
-          input[pixelIndex++] = (b / 127.5) - 1.0;
+          final rgb = _getRgb(resized, x, y);
+          a[idx] = (rgb[0] / 127.5) - 1.0;
+          b[idx++] = rgb[0] / 255.0;
+          a[idx] = (rgb[1] / 127.5) - 1.0;
+          b[idx++] = rgb[1] / 255.0;
+          a[idx] = (rgb[2] / 127.5) - 1.0;
+          b[idx++] = rgb[2] / 255.0;
         }
       }
 
-      // 4. Run inference
-      final outputAttributes = _interpreter!.getOutputTensor(0);
-      final outputShape = outputAttributes.shape; 
-      final outputBuffer = Float32List(outputShape.reduce((a, b) => a * b));
-      final output = outputBuffer.reshape(outputShape);
-
-      _interpreter!.run(input.reshape([1, _inputSize, _inputSize, 3]), output);
+      // 4. Run both and choose the more confident distribution
+      final probsA = _run(a, [1, _inputSize, _inputSize, 3]);
+      final probsB = _run(b, [1, _inputSize, _inputSize, 3]);
+      final sA = _score(probsA);
+      final sB = _score(probsB);
+      final chosen = (sA.top1 + sA.margin) >= (sB.top1 + sB.margin) ? probsA : probsB;
 
       // 5. Parse results
-      final probabilities = output[0] as List<double>;
-      
-      final indexedProbs = List.generate(probabilities.length, (i) => (index: i, prob: probabilities[i]));
+      final indexedProbs = List.generate(chosen.length, (i) => (index: i, prob: chosen[i]));
       indexedProbs.sort((a, b) => b.prob.compareTo(a.prob));
-      
       final top3 = indexedProbs.take(3).toList();
       final List<({String label, double confidence})> results = [];
-
       for (var p in top3) {
-        if (p.index < _labels.length && p.prob > 0.1) { // Lower threshold for alternatives
-           results.add((label: _labels[p.index], confidence: p.prob));
+        if (p.index < _labels.length && p.prob > 0.1) {
+          results.add((label: _labels[p.index], confidence: p.prob));
         }
       }
-      
       return results;
 
     } catch (e) {

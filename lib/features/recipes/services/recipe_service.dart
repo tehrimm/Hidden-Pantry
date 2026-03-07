@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/core/services/notification_service.dart';
 import 'package:hidden_pantry_app/features/user/models/notification_model.dart';
+import 'package:hidden_pantry_app/core/services/view_mode_service.dart';
 
 class RecipeService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -82,14 +83,15 @@ class RecipeService {
   Future<void> uploadFullRecipe({
     required String title,
     required File? mainImage,
+    required List<Map<String, dynamic>> ingredients,
     required int prepTime,
     required int cookTime,
     required int servings,
-    required String? difficulty,
+    required String difficulty,
     required List<String> tags,
-    required List<Map<String, String>> ingredients,
     required List<DirectionStep> steps,
     required Map<String, String> nutrition,
+    bool isPublic = false,
   }) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception("User must be logged in to upload");
@@ -163,12 +165,27 @@ class RecipeService {
       'nutrition': nutrition,
       'avg_rating': 0.0,
       'n_steps': steps.length,
+      'is_nutritionist_recipe': await ViewModeService().isNutritionist(),
+      'is_public': isPublic,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     };
 
     // 4. Save to Firestore
     await _firestore.collection('recipes').doc(recipeId).set(recipeData);
+
+    // 5. Increment recipe_count on Author Profile
+    try {
+      final isNutr = recipeData['is_nutritionist_recipe'] as bool? ?? false;
+      final coll = isNutr ? 'nutritionists' : 'users';
+      await _firestore.collection(coll).doc(user.uid).set({
+        'recipe_count': FieldValue.increment(1),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      print("[RecipeService] Author recipe_count incremented in $coll");
+    } catch (e) {
+      print("[RecipeService] Failed to increment author recipe_count: $e");
+    }
   }
 
   // --- Reviews Logic ---
@@ -243,6 +260,21 @@ class RecipeService {
           'base_count': initialCount ?? 0,
           'updatedAt': FieldValue.serverTimestamp(),
         }, SetOptions(merge: true));
+
+        // 3. Update Author Stats
+        if (recipeDoc != null && recipeDoc.exists) {
+          final rData = recipeDoc.data() as Map<String, dynamic>;
+          final authorId = rData['author_id'];
+          final isNutr = rData['is_nutritionist_recipe'] as bool? ?? false;
+          if (authorId != null) {
+            final authorRef = _firestore.collection(isNutr ? 'nutritionists' : 'users').doc(authorId);
+            transaction.set(authorRef, {
+              'total_rating_sum': FieldValue.increment(rating),
+              'total_review_count': FieldValue.increment(1),
+              'updatedAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
+          }
+        }
       }
     });
 
@@ -304,6 +336,19 @@ class RecipeService {
             'review_count': newCount,
             'updatedAt': FieldValue.serverTimestamp(),
           });
+
+          // 3. Update Author Stats
+          final rData = recipeDoc.data() as Map<String, dynamic>;
+          final authorId = rData['author_id'];
+          final isNutr = rData['is_nutritionist_recipe'] as bool? ?? false;
+          if (authorId != null) {
+            final authorRef = _firestore.collection(isNutr ? 'nutritionists' : 'users').doc(authorId);
+            transaction.set(authorRef, {
+              'total_rating_sum': FieldValue.increment(-rating),
+              'total_review_count': FieldValue.increment(-1),
+              'updatedAt': FieldValue.serverTimestamp(),
+            }, SetOptions(merge: true));
+          }
         }
       }
 
@@ -610,7 +655,7 @@ class RecipeService {
           .collection('recipes')
           .doc(recipeId)
           .get()
-          .timeout(const Duration(seconds: 3)); // Fail fast if offline
+          .timeout(const Duration(milliseconds: 150));
       if (!doc.exists) return null;
       return Recipe.fromJson(doc.data()!);
     } catch (e) {
@@ -659,24 +704,65 @@ class RecipeService {
   }
 
   /// Searches Firestore recipes by name (case-insensitive substring)
-  Future<List<Recipe>> searchRecipes(String query, {int limit = 20}) async {
-    if (query.isEmpty) return [];
+  /// Excludes nutritionist recipes from public search.
+  Future<List<Recipe>> searchRecipes(
+    String query, {
+    int limit = 20,
+    List<String>? ingredients,
+    int? maxMinutes,
+    List<String>? tags,
+  }) async {
+    if (query.isEmpty && (ingredients == null || ingredients.isEmpty) && (tags == null || tags.isEmpty)) {
+      return [];
+    }
     
     final searchKey = query.toLowerCase();
     
     try {
-      // Note: Firestore doesn't support native partial string matching without an external indexer like Algolia.
-      // However, for small/medium datasets, we can use the \uf8ff prefix trick or just startsWith.
-      // For more robust "contains" search, we'd normally need Algolia, but here 
-      // we'll implement a 'starts with' query which is often sufficient for search.
-      final snap = await _firestore
-          .collection('recipes')
-          .where('name_search', isGreaterThanOrEqualTo: searchKey)
-          .where('name_search', isLessThanOrEqualTo: '$searchKey\uf8ff')
-          .limit(limit)
-          .get();
+      // 1. Initial query by name if provided
+      Query<Map<String, dynamic>> baseQuery = _firestore.collection('recipes');
+      
+      if (searchKey.isNotEmpty) {
+        baseQuery = baseQuery
+            .where('name_search', isGreaterThanOrEqualTo: searchKey)
+            .where('name_search', isLessThanOrEqualTo: '$searchKey\uf8ff');
+      }
+
+      // 2. Filter out nutritionist recipes
+      // Note: We do this locally to avoid hiding recipes where the field is missing
+      final snap = await baseQuery.limit(limit * 5).get(); // Fetch more for local filtering
           
-      return snap.docs.map((doc) => Recipe.fromJson(doc.data())).toList();
+      var results = snap.docs
+          .map((doc) => Recipe.fromJson(doc.data()))
+          .where((r) {
+            // Only show nutritionist recipes if they are public
+            if (r.isNutritionistRecipe && !r.isPublic) return false;
+            // Always show non-nutritionist recipes (legacy/user) OR filter them too?
+            // User said: "no other user cna search the recipe from regular search bar" refers to nutritionist's private recipes.
+            return true;
+          })
+          .toList();
+
+      // 3. Local filtering for ingredients/tags/maxMinutes
+      if (maxMinutes != null) {
+        results = results.where((r) => r.minutes > 0 && r.minutes <= maxMinutes).toList();
+      }
+
+      if (tags != null && tags.isNotEmpty) {
+        results = results.where((r) {
+          final rTags = r.tags.map((t) => t.toLowerCase()).toList();
+          return tags.any((st) => rTags.contains(st.toLowerCase()));
+        }).toList();
+      }
+
+      if (ingredients != null && ingredients.isNotEmpty) {
+        results = results.where((r) {
+          final rIngs = r.ingredients.map((i) => i.name.toLowerCase()).toList();
+          return ingredients.every((si) => rIngs.any((ri) => ri.contains(si.toLowerCase())));
+        }).toList();
+      }
+          
+      return results.take(limit).toList();
     } catch (e) {
       print("[RecipeService] Error searching Firestore recipes: $e");
       return [];
@@ -687,9 +773,24 @@ class RecipeService {
   Future<void> deleteRecipe(String recipeId) async {
     print("[RecipeService] Requesting deletion of recipe: $recipeId");
     try {
+      // 0. Fetch metadata before deletion
+      final doc = await _firestore.collection('recipes').doc(recipeId).get();
+      final data = doc.data();
+      final authorId = data?['author_id'];
+      final isNutr = data?['is_nutritionist_recipe'] as bool? ?? false;
+
       // 1. Delete Firestore Document
       await _firestore.collection('recipes').doc(recipeId).delete();
       print("[RecipeService] Firestore document deleted.");
+
+      // 2. Decrement recipe_count on Author Profile
+      if (authorId != null) {
+        final coll = isNutr ? 'nutritionists' : 'users';
+        await _firestore.collection(coll).doc(authorId).update({
+          'recipe_count': FieldValue.increment(-1),
+          'updatedAt': FieldValue.serverTimestamp(),
+        }).catchError((e) => print("[RecipeService] Error decrementing recipe_count: $e"));
+      }
 
       // 2. Delete images from Storage
       final storageRef = FirebaseStorage.instance.ref().child('recipe_photos/$recipeId');
@@ -719,6 +820,5 @@ class RecipeService {
     }
   }
 }
-
 
 

@@ -7,10 +7,11 @@ import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_api_service.dart';
 import 'package:hidden_pantry_app/core/constants/api_constants.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
-import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
+import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
 
 class MyFavouritesScreen extends StatefulWidget {
-  const MyFavouritesScreen({super.key});
+  final bool isNutritionist;
+  const MyFavouritesScreen({super.key, this.isNutritionist = false});
 
   @override
   State<MyFavouritesScreen> createState() => _MyFavouritesScreenState();
@@ -93,55 +94,59 @@ class _MyFavouritesScreenState extends State<MyFavouritesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: bg,
-      body: Stack(
-        children: [
-          const PatternBackground(),
+    Widget content = Scaffold(
+      backgroundColor: widget.isNutritionist ? Colors.white : bg,
+      body: ClipRRect(
+        borderRadius: widget.isNutritionist ? BorderRadius.circular(30) : BorderRadius.zero,
+        child: Container(
+          color: bg,
+          child: Stack(
+            children: [
+              const PatternBackground(),
 
-          SafeArea(
-            child: Column(
-              children: [
-                // Fixed Header
-                SizedBox(
-                  height: 60,
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        left: 20,
-                        top: 10,
-                        child: BackButtonWidget(
-                          onPressed: () => Navigator.pop(context),
-                          color: brown,
-                        ),
-                      ),
-                      Positioned.fill(
-                        child: Center(
-                          child: Text(
-                            "My Favourites",
-                            style: const TextStyle(
-                              color: purple, // Consistent title color
-                              fontSize: 24,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: "Satoshi",
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+              SafeArea(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 80), // Space for header
+                    Expanded(
+                      child: _buildBody(),
+                    ),
+                  ],
                 ),
+              ),
 
-                // Content
-                Expanded(
-                  child: _buildBody(),
+              // Fixed Header
+              Positioned(
+                top: 51,
+                left: 22,
+                right: 22,
+                child: Row(
+                  children: [
+                    BackButtonWidget(
+                      color: brown,
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    const Spacer(),
+                    const Text(
+                      "My Favourites",
+                      style: TextStyle(
+                        color: purple,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: "Satoshi",
+                      ),
+                    ),
+                    const Spacer(flex: 2),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
+
+    return content;
   }
 
   Widget _buildBody() {
@@ -202,75 +207,18 @@ class _MyFavouritesScreenState extends State<MyFavouritesScreen> {
       ),
       itemCount: _recipes.length,
       itemBuilder: (context, index) {
-        return _recipeCard(_recipes[index]);
-      },
-    );
-  }
-
-  Widget _recipeCard(Recipe r) {
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => RecipeDetailsScreen(recipe: r)),
+        final r = _recipes[index];
+        return RecipeCard(
+          recipe: r,
+          isNutritionist: false,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => RecipeDetailsScreen(recipe: r)),
+            );
+          },
         );
       },
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: (r.imageUrl != null && r.imageUrl!.isNotEmpty)
-                        ? Image.network(
-                            r.imageUrl!,
-                            fit: BoxFit.cover,
-                            loadingBuilder: (context, child, event) {
-                              if (event == null) return child;
-                              return const SkeletonBox(width: double.infinity, height: double.infinity);
-                            },
-                            errorBuilder: (_, __, ___) => Image.asset(
-                              'assets/Logos/recipe_placeholder.jpg',
-                              fit: BoxFit.cover,
-                            ),
-                          )
-                        : Image.asset(
-                            'assets/Logos/recipe_placeholder.jpg',
-                            fit: BoxFit.cover,
-                          ),
-                  ),
-                  
-                  // Gradient for text legibility if needed, or just keep clean
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            r.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: purple,
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Satoshi',
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${r.minutes} min  •  ⭐ ${r.avgRating.toStringAsFixed(1)}',
-            style: TextStyle(
-              color: purple.withValues(alpha:0.75),
-              fontSize: 11,
-              fontFamily: 'Satoshi',
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

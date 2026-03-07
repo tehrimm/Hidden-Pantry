@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/features/recipes/services/ingredient_recognition_service.dart';
+import 'package:hidden_pantry_app/features/recipes/screens/search/pantry_screen.dart';
 
 class IngredientCameraScreen extends StatefulWidget {
   const IngredientCameraScreen({super.key});
@@ -23,6 +24,8 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
 
   // CSV Loading & Validation
   final Set<String> _validIngredients = {};
+  bool _debug = false;
+  List<({String label, double confidence})> _lastResults = const [];
 
   @override
   void initState() {
@@ -50,8 +53,12 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
   }
 
   String _cleanAndValidate(String rawLabel) {
-    // 1. Remove trailing numbers (e.g. "Tomato 1" -> "Tomato")
-    String clean = rawLabel.replaceAll(RegExp(r'\s*\d+$'), '').trim();
+    // 1. Canonicalize label: underscores/hyphens to spaces, remove trailing numbers
+    String clean = rawLabel
+        .replaceAll('_', ' ')
+        .replaceAll('-', ' ')
+        .replaceAll(RegExp(r'\s+\d+$'), '')
+        .trim();
     
     // 2. Check if simple clean exists
     if (_validIngredients.contains(clean.toLowerCase())) {
@@ -126,21 +133,60 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
 
       // Run inference
       final results = await _recognitionService.predict(file);
+      _lastResults = results;
       
       if (!mounted) return;
 
-      if (results.isNotEmpty) {
-        if (results.length == 1 || results.first.confidence > 0.8) {
-           _showResultDialog(results.first.label, results.first.confidence, file);
-        } else {
-           // Show selection dialog for ambiguous results
-           _showSelectionDialog(results, file);
-        }
-      } else {
+      if (results.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Could not recognize ingredient. Try again.")),
+          SnackBar(
+            content: const Text("Ingredient not recognized."),
+            action: SnackBarAction(
+              label: "Manual Add",
+              onPressed: () => _openManualPantry(),
+            ),
+          ),
         );
         setState(() => _isProcessing = false);
+        return;
+      }
+
+      final top1 = results.first.confidence;
+      final top2 = results.length > 1 ? results[1].confidence : 0.0;
+      final margin = top1 - top2;
+
+      final top1LabelClean = _cleanAndValidate(results.first.label);
+      final inCsv = _validIngredients.contains(top1LabelClean.toLowerCase());
+
+      // Extra guardrail for miscalibrated models that over-predict "peach"
+      final isPeach = top1LabelClean == 'peach';
+      final strictPeach = isPeach && (top1 < 0.92 || margin < 0.35);
+
+      final isUnknown = strictPeach || (top1 < 0.6) || (margin < 0.2) || (!inCsv && top1 < 0.75);
+
+      if (isUnknown) {
+        // If we have multiple options, let user pick, otherwise fallback to manual
+        if (results.length > 1) {
+          _showSelectionDialog(results, file);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text("Ingredient not recognized."),
+              action: SnackBarAction(
+                label: "Manual Add",
+                onPressed: () => _openManualPantry(),
+              ),
+            ),
+          );
+          setState(() => _isProcessing = false);
+        }
+        return;
+      }
+
+      if (results.length == 1 || results.first.confidence > 0.8) {
+        _showResultDialog(top1LabelClean, results.first.confidence, file);
+      } else {
+        _showSelectionDialog(results, file);
       }
 
     } catch (e) {
@@ -161,6 +207,18 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
     } catch (e) {
       print("Error toggling flash: $e");
     }
+  }
+
+  Future<void> _openManualPantry() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PantryScreen(
+          initialSelectedIngredients: _recognizedIngredients,
+          showSelectedSection: true,
+        ),
+      ),
+    );
   }
 
   void _showSelectionDialog(List<({String label, double confidence})> results, File imageFile) {
@@ -191,14 +249,15 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
                   itemCount: results.length,
                   itemBuilder: (context, index) {
                     final item = results[index];
+                    final pretty = _cleanAndValidate(item.label);
                     return ListTile(
-                      title: Text(item.label, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      title: Text(pretty, style: const TextStyle(fontWeight: FontWeight.bold)),
                       subtitle: Text("${(item.confidence * 100).toStringAsFixed(0)}% confidence"),
                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
                       onTap: () {
                          Navigator.pop(dialogContext);
                          // Proceed with selected item
-                         _showResultDialog(item.label, item.confidence, imageFile); 
+                         _showResultDialog(pretty, item.confidence, imageFile); 
                       },
                     );
                   },
@@ -239,7 +298,7 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              "Found: $label", // Show RAW label initially
+              "Found: ${_cleanAndValidate(label)}",
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF462F4D)),
             ),
             const SizedBox(height: 8),
@@ -323,14 +382,27 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
                           Navigator.pop(context, _recognizedIngredients.isNotEmpty ? _recognizedIngredients : null);
                         },
                       ),
-                      // Flash toggle
-                      IconButton(
-                        icon: Icon(
-                          _isFlashOn ? Icons.flash_on : Icons.flash_off,
-                          color: Colors.white,
-                          size: 30,
-                        ),
-                        onPressed: _toggleFlash,
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              _debug ? Icons.bug_report : Icons.bug_report_outlined,
+                              color: Colors.white,
+                              size: 26,
+                            ),
+                            onPressed: () {
+                              setState(() => _debug = !_debug);
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(
+                              _isFlashOn ? Icons.flash_on : Icons.flash_off,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                            onPressed: _toggleFlash,
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -384,6 +456,31 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
                   child: Text(
                     "${_recognizedIngredients.length} Items",
                     style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ),
+          if (_debug && _lastResults.isNotEmpty)
+            Positioned(
+              bottom: 20,
+              left: 20,
+              child: SafeArea(
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: _lastResults
+                        .take(3)
+                        .map((e) => Text(
+                              "${e.label} ${(e.confidence * 100).toStringAsFixed(1)}%",
+                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                            ))
+                        .toList(),
                   ),
                 ),
               ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
@@ -63,6 +64,7 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
           print("[AuthorProfile] Firestore stats error: $e");
           return {'followers': 0, 'following': 0};
         }),
+        _fetchFirestoreAuthorStats(widget.authorId),
       ]);
 
       if (mounted) {
@@ -71,17 +73,56 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
           _recipes = results[1] as List<Recipe>;
           _isFollowing = results[2] as bool;
           
-          final firestoreStats = results[3] as Map<String, int>;
+          final firestoreFollowStats = results[3] as Map<String, int>;
+          final firestoreMetricStats = results[4] as Map<String, dynamic>;
+
           // Override API mocked stats with real Firestore stats
-          _stats['followers'] = firestoreStats['followers'];
-          _stats['following'] = firestoreStats['following'];
+          _stats['followers'] = firestoreFollowStats['followers'];
+          _stats['following'] = firestoreFollowStats['following'];
           
+          // NEW: Add live aggregate metrics
+          if (firestoreMetricStats.containsKey('recipe_count')) {
+            _stats['recipe_count'] = firestoreMetricStats['recipe_count'];
+          }
+          if (firestoreMetricStats.containsKey('avg_rating')) {
+            _stats['avg_rating'] = firestoreMetricStats['avg_rating'];
+          }
+
           _loading = false;
         });
       }
     } catch (e) {
       print("[AuthorProfile] Error loading data: $e");
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<Map<String, dynamic>> _fetchFirestoreAuthorStats(String authorId) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      var doc = await firestore.collection('nutritionists').doc(authorId).get();
+      if (!doc.exists) {
+        doc = await firestore.collection('users').doc(authorId).get();
+      }
+      if (!doc.exists) return {};
+      
+      final data = doc.data()!;
+      final int recipeCount = int.tryParse(data['recipe_count']?.toString() ?? '0') ?? 0;
+      final double ratingSum = double.tryParse(data['total_rating_sum']?.toString() ?? '0') ?? 0.0;
+      final int reviewCount = int.tryParse(data['total_review_count']?.toString() ?? '0') ?? 0;
+      
+      double avgRating = 0.0;
+      if (reviewCount > 0) {
+        avgRating = ratingSum / reviewCount;
+      }
+      
+      return {
+        'recipe_count': recipeCount,
+        'avg_rating': avgRating > 0 ? avgRating.toStringAsFixed(1) : "0.0",
+      };
+    } catch (e) {
+      print("[AuthorProfile] Error fetching Firestore metrics: $e");
+      return {};
     }
   }
 

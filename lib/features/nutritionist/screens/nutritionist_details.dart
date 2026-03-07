@@ -46,6 +46,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
   bool _isLoadingSubscription = true; // Prevents UI flicker
   bool _isMeNutritionist = false;
   bool _hasInitialCheck = false;
+  bool _hasPrioritySupport = false; 
   
   int _subscriberCount = 0;
   int _postCount = 0;
@@ -117,6 +118,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
       int highestTier = 0;
       QueryDocumentSnapshot? bestDoc;
       DateTime? bestExpiry;
+      bool prioritySupportFound = false;
 
       for (var doc in query.docs) {
         final data = doc.data();
@@ -124,46 +126,66 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
         final expiry = (data["expiryDate"] as Timestamp?)?.toDate();
         
 
-        bool isActive = (status == "active") || (status == "trialing") || (expiry != null && expiry.isAfter(now));
+        // FIX: Tighten active check (status must be active/trialing AND not expired)
+        bool isActive = ((status == "active") || (status == "trialing")) && (expiry == null || expiry.isAfter(now));
 
-        if (isActive) {
-          int currentDocTier = 0;
-          dynamic rawTier = data["tierLevel"];
-          if (rawTier is num) currentDocTier = rawTier.toInt();
-          else if (rawTier is String) currentDocTier = int.tryParse(rawTier) ?? 0;
+          if (isActive) {
+            int currentDocTier = 0;
+            dynamic rawTier = data["tierLevel"];
+            if (rawTier is num) {
+              currentDocTier = rawTier.toInt();
+            } else if (rawTier is String) {
+              currentDocTier = int.tryParse(rawTier) ?? 0;
+            }
 
-          if (currentDocTier == 0 && data["planId"] != null) {
-            try {
-              final planDoc = await FirebaseFirestore.instance
-                  .collection("nutritionists")
-                  .doc(widget.nutritionistId)
-                  .collection("subscription_plans")
-                  .doc(data["planId"])
-                  .get();
-              if (planDoc.exists) {
-                final pData = planDoc.data();
-                if (pData != null) {
-                  dynamic pTier = pData["tierLevel"];
-                  if (pTier is num) currentDocTier = pTier.toInt();
-                  else if (pTier == null) {
-                    final title = (pData["title"] ?? "").toString().toLowerCase();
-                    if (title.contains("platinum")) currentDocTier = 3;
-                    else if (title.contains("gold")) currentDocTier = 2;
-                    else currentDocTier = 1;
+            // Fetch plan details to check for Priority Support benefit
+            if (data["planId"] != null) {
+              try {
+                final planDoc = await FirebaseFirestore.instance
+                    .collection("nutritionists")
+                    .doc(widget.nutritionistId)
+                    .collection("subscription_plans")
+                    .doc(data["planId"])
+                    .get();
+                if (planDoc.exists) {
+                  final pData = planDoc.data();
+                  if (pData != null) {
+                    // Check for Priority Support in benefits
+                    final List? benefits = pData["benefits"];
+                    if (benefits != null) {
+                      final hasChat = benefits.any((b) {
+                        final String title = (b is Map ? (b["title"] ?? b["text"] ?? "") : b).toString().toLowerCase();
+                        return title.contains("priority support") || title.contains("chat access") || title.contains("direct chat");
+                      });
+                      if (hasChat) prioritySupportFound = true;
+                    }
+
+                    dynamic pTier = pData["tierLevel"];
+                    if (pTier is num) {
+                      currentDocTier = pTier.toInt();
+                    } else if (pTier == null) {
+                      final title = (pData["title"] ?? "").toString().toLowerCase();
+                      if (title.contains("platinum")) {
+                        currentDocTier = 3;
+                      } else if (title.contains("gold")) {
+                        currentDocTier = 2;
+                      } else {
+                        currentDocTier = 1;
+                      }
+                    }
                   }
                 }
-              }
-            } catch (_) {}
-          }
-          if (currentDocTier == 0) currentDocTier = 1;
+              } catch (_) {}
+            }
 
-          if (currentDocTier > highestTier) {
-            highestTier = currentDocTier;
-            bestDoc = doc;
-            
-            bestExpiry = expiry;
+            if (currentDocTier == 0) currentDocTier = 1;
+
+            if (currentDocTier > highestTier) {
+              highestTier = currentDocTier;
+              bestDoc = doc;
+              bestExpiry = expiry;
+            }
           }
-        }
       }
 
       if (mounted) {
@@ -175,6 +197,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
             _currentTier = highestTier;
             _subscriptionDocId = bestDoc!.id;
             _expiryDate = bestExpiry;
+            _hasPrioritySupport = prioritySupportFound;
             _isLoadingSubscription = false;
             _hasInitialCheck = true;
           });
@@ -182,6 +205,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
           setState(() {
             _isSubscribed = false;
             _currentTier = 0;
+            _hasPrioritySupport = false;
             _isLoadingSubscription = false;
             _hasInitialCheck = true;
           });
@@ -294,7 +318,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
               ),
             ],
           ),
-          floatingActionButton: (!_isLoadingSubscription && _isSubscribed)
+          floatingActionButton: (!_isLoadingSubscription && _isSubscribed && _hasPrioritySupport)
               ? FloatingActionButton(
                   onPressed: _openChat,
                   backgroundColor: orange,
@@ -1149,7 +1173,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
          nutritionistId: widget.nutritionistId,
          nutritionistName: widget.nutritionistData['fullName'] ?? 'Nutritionist',
          existingSubscriptionId: _subscriptionDocId,
-         tierLevel: plan['tierLevel'] ?? 1,
+         tierLevel: (plan['tierLevel'] as num?)?.toInt() ?? 1,
        );
 
        if (mounted) {

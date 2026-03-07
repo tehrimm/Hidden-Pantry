@@ -6,10 +6,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/features/user/screens/notifications_screen.dart';
 
+import 'package:hidden_pantry_app/features/onboarding/screens/loading_five.dart';
 import 'profile_setting.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/my_recipes.dart';
 // import 'notifications.dart'; // Removed duplicate
-import 'package:hidden_pantry_app/features/onboarding/screens/starting_screen.dart' hide PatternBackground;
 import 'package:hidden_pantry_app/features/admin/screens/admin_certificate_review.dart';
 import 'package:hidden_pantry_app/features/user/services/user_service.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
@@ -123,7 +123,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     if (!mounted) return;
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const StartingScreen()),
+      MaterialPageRoute(builder: (_) => const LoadingFive()),
     );
     try {
       await FirebaseAuth.instance.signOut()
@@ -169,7 +169,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       
       // Redirect to starting screen and clear stack
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const StartingScreen()),
+        MaterialPageRoute(builder: (_) => const LoadingFive()),
         (route) => false,
       );
     } catch (e) {
@@ -218,6 +218,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final double topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: bg,
       body: Container(
@@ -399,11 +400,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             // Fixed Header (Top Layer)
             Positioned(
               left: 30,
-              top: 51,
+              top: topPad + 20,
               child: BackButtonWidget(
                 onPressed: () {
                   Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const MainNavigationShell()),
+                    MaterialPageRoute(builder: (_) => MainNavigationShell()),
                     (route) => false,
                   );
                 },
@@ -413,7 +414,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             Positioned(
               left: 0,
               right: 0,
-              top: 51,
+              top: topPad + 20,
               height: 50,
               child: Center(
                 child: Text(

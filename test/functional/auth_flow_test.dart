@@ -42,10 +42,8 @@ void main() {
     final fakeUserCredential = FakeUserCredential();
 
     // 1. Signup Screen setup
-    when(mockAuthService.registerWithEmail(
-      email: 'test@gmail.com',
-      password: 'Password123!',
-    )).thenAnswer((_) async => fakeUserCredential);
+    when(mockAuthService.registerWithEmail('test@gmail.com', 'Password123!'))
+        .thenAnswer((_) async => fakeUserCredential);
 
     when(mockUserService.upsertCurrentUserProfile(
       fullName: 'Test User',

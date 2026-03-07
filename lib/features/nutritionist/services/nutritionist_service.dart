@@ -35,7 +35,7 @@ class NutritionistService {
       "certificateUrl": certificateUrl,
       "organizationName": organizationName,
       "expiryDate": expiryDate,
-      "verificationStatus": email.trim().toLowerCase() == "testnutritionist@gmail.com" ? "approved" : "pending",
+      "verificationStatus": (email.trim().toLowerCase() == "testnutritionist@gmail.com" || email.trim().toLowerCase() == "testnutrionist@gmail.com") ? "approved" : "pending",
       "rejectionReason": null,
       "rejectionDate": null,
       "hasLoggedInAfterRejection": false,

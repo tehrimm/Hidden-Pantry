@@ -194,7 +194,7 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                   // Scrollable Content
                   Expanded(
                     child: ListView(
-                      padding: EdgeInsets.only(top: 20 * s, bottom: 20 * s),
+                      padding: EdgeInsets.only(top: 20 * s, bottom: 120),
                       children: [
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 27 * s),
@@ -249,40 +249,44 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                               ),
                               Container(
                                 width: 176 * s,
-                                height: 60 * s,
-                                padding: EdgeInsets.symmetric(horizontal: 12 * s),
+                                height: 61 * s,
                                 decoration: BoxDecoration(
                                   color: cardBg,
-                                  borderRadius: BorderRadius.circular(8 * s),
+                                  borderRadius: BorderRadius.circular(20 * s),
                                 ),
+                                padding: EdgeInsets.symmetric(horizontal: 20 * s),
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButton<String>(
                                     value: _difficulty,
                                     hint: Text(
-                                      'Select Status',
+                                      'Select',
                                       style: TextStyle(
-                                        color: textBrown,
-                                        fontSize: 12 * s,
+                                        color: purple.withValues(alpha: 0.5),
+                                        fontSize: 15 * s,
                                         fontFamily: 'Satoshi',
                                       ),
                                     ),
-                                    icon: Icon(Icons.keyboard_arrow_down, size: 20 * s),
-                                    items: ['Easy', 'Medium', 'Difficult'].map((String value) {
+                                    icon: Icon(Icons.keyboard_arrow_down, color: purple, size: 24 * s),
+                                    items: ['Easy', 'Medium', 'Hard'].map((String level) {
                                       return DropdownMenuItem<String>(
-                                        value: value,
+                                        value: level,
                                         child: Text(
-                                          value,
+                                          level,
                                           style: TextStyle(
-                                            color: textBrown,
-                                            fontSize: 12 * s,
+                                            color: purple,
+                                            fontSize: 15 * s,
                                             fontFamily: 'Satoshi',
                                           ),
                                         ),
                                       );
                                     }).toList(),
-                                    onChanged: (v) {
-                                      setState(() => _difficulty = v);
+                                    onChanged: (String? newValue) {
+                                      setState(() {
+                                        _difficulty = newValue;
+                                      });
                                     },
+                                    dropdownColor: cardBg,
+                                    borderRadius: BorderRadius.circular(20 * s),
                                   ),
                                 ),
                               ),
@@ -348,24 +352,25 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                           );
                         }).toList(),
 
-                        // Bottom buttons moved inside the scrollable area to avoid keyboard overlap
+                        // Bottom buttons inside the scrollable area
                         Padding(
-                          padding: EdgeInsets.fromLTRB(30 * s, 42 * s, 29 * s, 42 * s),
+                          padding: const EdgeInsets.fromLTRB(30, 42, 29, 42),
                           child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
                             children: [
                               GestureDetector(
                                 onTap: () => Navigator.pop(context),
                                 child: Container(
-                                  width: 52 * s,
-                                  height: 53 * s,
+                                  width: 52,
+                                  height: 53,
                                   decoration: BoxDecoration(
                                     color: cardBg,
-                                    borderRadius: BorderRadius.circular(15 * s),
+                                    borderRadius: BorderRadius.circular(15),
                                   ),
-                                  child: Icon(Icons.arrow_back_ios_new, size: 16 * s, color: const Color(0xFF462F4D)),
+                                  child: const Icon(Icons.arrow_back_ios_new, size: 16, color: Color(0xFF462F4D)),
                                 ),
                               ),
-                              SizedBox(width: 60 * s),
+                              const SizedBox(width: 60),
                               Expanded(
                                 child: GestureDetector(
                                   onTap: () {
@@ -385,25 +390,25 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                                     );
                                   },
                                   child: Container(
-                                    height: 62 * s,
+                                    height: 62,
                                     decoration: BoxDecoration(
                                       color: orange,
-                                      borderRadius: BorderRadius.circular(20 * s),
+                                      borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
+                                      children: const [
                                         Text(
                                           'Next',
                                           style: TextStyle(
-                                            color: const Color(0xFFFFF2EA),
-                                            fontSize: 15 * s,
+                                            color: Color(0xFFFFF2EA),
+                                            fontSize: 15,
                                             fontWeight: FontWeight.bold,
                                             fontFamily: 'Satoshi',
                                           ),
                                         ),
-                                        SizedBox(width: 10 * s),
-                                        Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16 * s),
+                                        SizedBox(width: 10),
+                                        Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
                                       ],
                                     ),
                                   ),
@@ -571,6 +576,5 @@ class _BackgroundPatterns extends StatelessWidget {
 extension on TextEditingValue {
   T let<T>(T Function(TextEditingValue) block) => block(this);
 }
-
 
 
