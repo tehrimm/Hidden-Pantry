@@ -672,8 +672,19 @@ class RecipeService {
           .doc(recipeId)
           .get()
           .timeout(const Duration(seconds: 5));
+
+      if (!doc.exists) return null;
+      
       final data = doc.data()!;
       data['id'] = doc.id;
+      
+      // Check if this is a partial document (like we do in getRecipesByIds)
+      final hasName = data['name'] != null || data['title'] != null;
+      if (!hasName) {
+        print("[RecipeService] Found partial doc for $recipeId in single fetch, ignoring to allow API fallback.");
+        return null;
+      }
+      
       return Recipe.fromJson(data);
     } catch (e) {
       print("[RecipeService] Error fetching recipe $recipeId: $e");
@@ -698,14 +709,28 @@ class RecipeService {
             .where(FieldPath.documentId, whereIn: chunk)
             .get();
             
-        results.addAll(snap.docs.map((doc) {
+        // 1. Process valid docs from Firestore
+        final List<String> validFetchedIds = [];
+        
+        for (var doc in snap.docs) {
           final data = doc.data();
           data['id'] = doc.id;
-          return Recipe.fromJson(data);
-        }));
-        // 2. Identify missing IDs (likely from API)
-        final fetchedIds = snap.docs.map((doc) => doc.id).toSet();
-        final missingIds = chunk.where((id) => !fetchedIds.contains(id)).toList();
+          
+          // Check if this is a partial document (e.g. created by merge operations for reviews)
+          final hasName = data['name'] != null || data['title'] != null;
+          final hasIngredients = data['ingredients'] != null || data['ingredients_parsed'] != null;
+          
+          if (hasName) {
+            results.add(Recipe.fromJson(data));
+            validFetchedIds.add(doc.id);
+          } else {
+            // It's a partial doc. Don't add to results, let it be fetched from API
+            print("[RecipeService] Found partial doc for ${doc.id}, will fetch from API.");
+          }
+        }
+        
+        // 2. Identify missing IDs (likely from API or partial docs)
+        final missingIds = chunk.where((id) => !validFetchedIds.contains(id)).toList();
         
         // 3. Fetch missing from API
         for (var id in missingIds) {

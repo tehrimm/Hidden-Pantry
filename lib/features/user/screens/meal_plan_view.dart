@@ -8,6 +8,7 @@ import 'package:hidden_pantry_app/features/recipes/models/recipe.dart' as hidden
 import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart' as hidden_pantry_recipe_details;
 import 'package:hidden_pantry_app/features/recipes/services/recipe_api_service.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
+import 'package:hidden_pantry_app/core/constants/api_constants.dart';
 
 class MealPlanViewScreen extends StatefulWidget {
   final Map<String, dynamic> planData;
@@ -100,6 +101,29 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
   }
 
   int _selectedDay = 1;
+
+  Future<hidden_pantry_recipe.Recipe?> _fetchLiveRecipe(String? recipeId) async {
+    if (recipeId == null || recipeId.isEmpty) return null;
+    if (widget.recipeService != null) {
+      final r = await widget.recipeService!.getRecipeById(recipeId);
+      if (r != null) return r;
+    }
+    if (widget.apiService != null) {
+      try {
+        final r = await widget.apiService!.getRecipeById(recipeId);
+        if (r != null) return r;
+      } catch (_) {}
+    }
+    try {
+      final r = await RecipeService().getRecipeById(recipeId);
+      if (r != null) return r;
+    } catch (_) {}
+    try {
+      final r = await const RecipeApiService(baseUrl: ApiConstants.baseUrl).getRecipeById(recipeId);
+      if (r != null) return r;
+    } catch (_) {}
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -417,19 +441,50 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
               Icon(Icons.restaurant_menu_rounded, size: 48, color: purple.withValues(alpha:0.1)),
               const SizedBox(height: 16),
               Text("Rest day. No meals planned.", style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 16)),
-
             ],
           ),
         ),
       );
     }
 
+    int dailyTotal = 0;
+    for (var m in meals) {
+      if (m['isNote'] == true) continue;
+      final cals = m['calories'];
+      if (cals is int) dailyTotal += cals;
+      else if (cals is String) dailyTotal += int.tryParse(cals.replaceAll(RegExp(r'[^0-9]'), '')) ?? 0;
+    }
+
     return Stack(
       children: [
+        // Daily Total Header
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 24),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: purple.withValues(alpha:0.05),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Total for Day $_selectedDay",
+                style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14),
+              ),
+              Text(
+                "$dailyTotal kcal",
+                style: TextStyle(color: orange, fontWeight: FontWeight.w900, fontSize: 18),
+              ),
+            ],
+          ),
+        ),
+        
         // Faint vertical chronology line
         Positioned(
           left: 19, // Align with the center of the timeline icons
-          top: 20,
+          top: 60, // Push down slightly to align beneath the total header
           bottom: 20,
           child: Container(
             width: 2,
@@ -438,8 +493,11 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
         ),
         
         // Meal Items
-        Column(
-          children: meals.map((m) => _buildMealCard(m as Map<String, dynamic>)).toList(),
+        Padding(
+          padding: const EdgeInsets.only(top: 80), // Push meal cards down beneath the total header
+          child: Column(
+            children: meals.map((m) => _buildMealCard(m as Map<String, dynamic>)).toList(),
+          ),
         ),
       ],
     );
@@ -449,11 +507,18 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
   Widget _buildMealCard(Map<String, dynamic> meal) {
     final title = meal["title"] ?? meal["name"] ?? "Recipe";
     final type = meal["type"]?.toString().toUpperCase() ?? "MEAL";
-    // Simulated macros if real ones aren't present
-    final itemCals = meal["calories"] ?? "450"; 
-    final p = meal["protein"] ?? "30g";
-    final c = meal["carbs"] ?? "40g";
-    final f = meal["fats"] ?? "15g";
+
+    // Real nutrients from meal object
+    final pRaw = meal["protein"] ?? meal["Protein"];
+    final cRaw = meal["carbs"] ?? meal["Carbs"];
+    final fRaw = meal["fats"] ?? meal["Fats"] ?? meal["Total Fat"];
+    
+    final bool hasMacros = pRaw != null && cRaw != null && fRaw != null;
+
+    final itemCals = meal["calories"]?.toString() ?? "450"; 
+    final p = pRaw?.toString() ?? "30g";
+    final c = cRaw?.toString() ?? "40g";
+    final f = fRaw?.toString() ?? "15g";
     final imageUrl = meal["imageUrl"];
     
     // Choose appropriate icon based on meal type
@@ -595,23 +660,29 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                       ),
                       
                       // Macro Footer
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: purple.withValues(alpha:0.02),
-
-                          border: Border(top: BorderSide(color: purple.withValues(alpha:0.05))),
-
+                      if (hasMacros)
+                        _buildMacroFooterRow(p, c, f)
+                      else
+                        FutureBuilder<hidden_pantry_recipe.Recipe?>(
+                          future: _fetchLiveRecipe(meal["recipeId"]),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: purple.withValues(alpha:0.02),
+                                  border: Border(top: BorderSide(color: purple.withValues(alpha:0.05))),
+                                ),
+                                child: Center(child: SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: orange))),
+                              );
+                            }
+                            final recipe = snapshot.data;
+                            final liveP = recipe?.getNutrient("protein") ?? "0g";
+                            final liveC = recipe?.getNutrient("carbs") ?? "0g";
+                            final liveF = recipe?.getNutrient("fats") ?? "0g";
+                            return _buildMacroFooterRow(liveP, liveC, liveF);
+                          },
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _buildMacroTag("Protein", p, const Color(0xFF4CAF50)),
-                            _buildMacroTag("Carbs", c, const Color(0xFF2196F3)),
-                            _buildMacroTag("Fats", f, const Color(0xFFFFC107)),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                 ),
@@ -619,6 +690,24 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildMacroFooterRow(String p, String c, String f) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: purple.withValues(alpha:0.02),
+        border: Border(top: BorderSide(color: purple.withValues(alpha:0.05))),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildMacroTag("Protein", p, const Color(0xFF4CAF50)),
+          _buildMacroTag("Carbs", c, const Color(0xFF2196F3)),
+          _buildMacroTag("Fats", f, const Color(0xFFFFC107)),
+        ],
       ),
     );
   }

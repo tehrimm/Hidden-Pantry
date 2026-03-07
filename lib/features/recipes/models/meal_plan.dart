@@ -49,12 +49,18 @@ class MealItem {
   final String type;
   final String? recipeId;
   final String? calories;
+  final String? protein;
+  final String? carbs;
+  final String? fats;
 
   MealItem({
     required this.title,
     required this.type,
     this.recipeId,
     this.calories,
+    this.protein,
+    this.carbs,
+    this.fats,
   });
 
   factory MealItem.fromJson(Map<String, dynamic> json) {
@@ -63,6 +69,9 @@ class MealItem {
       type: json['type'] ?? 'meal',
       recipeId: json['recipeId'],
       calories: json['calories']?.toString(),
+      protein: json['protein']?.toString(),
+      carbs: json['carbs']?.toString(),
+      fats: json['fats']?.toString(),
     );
   }
 }

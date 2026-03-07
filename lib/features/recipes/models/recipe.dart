@@ -97,6 +97,34 @@ class Recipe {
   int get prepMinutes => _prepMinutes ?? (minutes < 20 ? minutes : 15);
   int get cookMinutes => _cookMinutes ?? (minutes < 20 ? 0 : (minutes - 15));
 
+  String getNutrient(String name) {
+    if (nutrition == null) return "0g";
+    final keyLower = name.toLowerCase();
+    
+    // 1. Direct case-insensitive match
+    for (final entry in nutrition!.entries) {
+      if (entry.key.toLowerCase() == keyLower) return entry.value;
+    }
+    
+    // 2. Common aliases
+    final aliases = {
+      'protein': ['p', 'proteins'],
+      'carbs': ['carbohydrates', 'carb', 'c', 'total carbohydrates'],
+      'fats': ['fat', 'total fat', 'fats', 'f'],
+      'calories': ['kcal', 'energy', 'cal'],
+    };
+    
+    if (aliases.containsKey(keyLower)) {
+      for (final alias in aliases[keyLower]!) {
+        for (final entry in nutrition!.entries) {
+          if (entry.key.toLowerCase() == alias) return entry.value;
+        }
+      }
+    }
+    
+    return "0g";
+  }
+
   const Recipe({
     required this.id,
     required this.name,
