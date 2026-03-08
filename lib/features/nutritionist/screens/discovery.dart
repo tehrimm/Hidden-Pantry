@@ -29,7 +29,7 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
   String _selectedDomain = "All";
   int _bottomIndex = 4; // Expert tab
   
-  final List<String> _domains = ["All", "Weight Loss", "Clinical", "Sports", "Pediatric", "General", "Keto", "Vegan"];
+  final List<String> _domains = ["⭐ Top Rated", "All", "Weight Loss", "Clinical", "Sports", "Pediatric", "General", "Keto", "Vegan"];
 
   // Cache subscriptions
   Set<String> _subscribedIds = {};
@@ -192,67 +192,88 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
         final docs = snapshot.data?.docs ?? [];
         if (docs.isEmpty) return _emptyState("No nutritionists found.");
 
-        // 1. Split into Subscribed and Others
-        final subscribedList = <DocumentSnapshot>[];
-        final othersList = <DocumentSnapshot>[];
+        final bool isTopRated = _selectedDomain == "⭐ Top Rated";
 
-        for (var doc in docs) {
-          final data = doc.data() as Map<String, dynamic>?;
-          final saasStatus = data?["saasStatus"] ?? "unpaid";
-          
-          if (_subscribedIds.contains(doc.id)) {
-            subscribedList.add(doc);
-          } else if (saasStatus == "active") {
-            othersList.add(doc);
+        // Compute avgRating for every doc and inject it into the data map
+        List<Map<String, dynamic>> enriched = docs.map((doc) {
+          final data = Map<String, dynamic>.from(doc.data() as Map<String, dynamic>);
+          data['_id'] = doc.id;
+          final int count = (data['total_review_count'] as num?)?.toInt() ?? 0;
+          final double sum = (data['total_rating_sum'] as num?)?.toDouble() ?? 0.0;
+          data['avgRating'] = count > 0 ? sum / count : 0.0;
+          data['_reviewCount'] = count;
+          return data;
+        }).toList();
+
+        // Split subscribed vs others
+        final subscribedList = <Map<String, dynamic>>[];
+        final othersList = <Map<String, dynamic>>[];
+
+        for (final data in enriched) {
+          final id = data['_id'] as String;
+          final saasStatus = data['saasStatus'] ?? 'unpaid';
+          if (_subscribedIds.contains(id)) {
+            subscribedList.add(data);
+          } else if (saasStatus == 'active') {
+            othersList.add(data);
           }
         }
 
-        // 2. Apply Filters ONLY to "Others"
-        final filteredOthers = othersList.where((doc) {
-          final data = doc.data() as Map<String, dynamic>?;
-          final name = (data?["fullName"] ?? "").toString().toLowerCase();
-          final domain = (data?["domain"] ?? "All").toString();
-
+        // Apply filters to Others
+        var filteredOthers = othersList.where((data) {
+          final name = (data['fullName'] ?? '').toString().toLowerCase();
+          final domain = (data['domain'] ?? 'All').toString();
           final matchesSearch = _searchQuery.isEmpty || name.contains(_searchQuery.toLowerCase());
-          final matchesDomain = _selectedDomain == "All" || domain == _selectedDomain;
-
+          final matchesDomain = isTopRated || _selectedDomain == 'All' || domain == _selectedDomain;
           return matchesSearch && matchesDomain;
         }).toList();
+
+        // Sort by avgRating descending when Top Rated is selected
+        if (isTopRated) {
+          filteredOthers.sort((a, b) {
+            final ra = (a['avgRating'] as double);
+            final rb = (b['avgRating'] as double);
+            return rb.compareTo(ra);
+          });
+          subscribedList.sort((a, b) {
+            final ra = (a['avgRating'] as double);
+            final rb = (b['avgRating'] as double);
+            return rb.compareTo(ra);
+          });
+        }
 
         return ListView(
           padding: const EdgeInsets.only(left: 22, right: 22, top: 10, bottom: 120),
           children: [
-            // Section: Subscribed (Visible if any exist)
-            if (subscribedList.isNotEmpty && _searchQuery.isEmpty && _selectedDomain == "All") ...[
+            if (subscribedList.isNotEmpty && _searchQuery.isEmpty && (_selectedDomain == 'All' || _selectedDomain == '⭐ Top Rated')) ...[
               Text(
                 "Your Nutritionists",
                 style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
               ),
               const SizedBox(height: 12),
-              ...subscribedList.map((doc) => _nutritionistCard(
-                doc.id, 
-                doc.data() as Map<String, dynamic>, 
+              ...subscribedList.map((data) => _nutritionistCard(
+                data['_id'] as String,
+                data,
                 isSubscribed: true,
-                isCancelled: _cancelledIds.contains(doc.id),
+                isCancelled: _cancelledIds.contains(data['_id']),
               )),
               const SizedBox(height: 24),
               Divider(color: purple.withValues(alpha: 0.1)),
               const SizedBox(height: 24),
             ],
 
-            // Section: Others
             Text(
-              "Available Nutritionists",
+              isTopRated ? "Top Rated Nutritionists" : "Available Nutritionists",
               style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
             ),
             const SizedBox(height: 12),
-            
+
             if (filteredOthers.isEmpty)
               _emptyState("No results found for your search.")
             else
-              ...filteredOthers.map((doc) => _nutritionistCard(
-                doc.id, 
-                doc.data() as Map<String, dynamic>, 
+              ...filteredOthers.map((data) => _nutritionistCard(
+                data['_id'] as String,
+                data,
                 isSubscribed: false,
                 isCancelled: false,
               )),
@@ -358,12 +379,15 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
     final String? photo = data["photoUrl"];
     final String bio = data["bio"] ?? "Experienced nutritionist ready to help you reach your goals.";
     final String? domain = data["domain"];
+    final double avgRating = (data['avgRating'] as num?)?.toDouble() ?? 0.0;
+    final int reviewCount = (data['_reviewCount'] as int?) ?? 0;
+    final bool isTop = avgRating >= 4.5 && reviewCount >= 3;
 
     return GestureDetector(
       onTap: () => Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => NutritionistDetailsScreen(nutritionistId: id, nutritionistData: data)),
-      ).then((_) => _fetchSubscriptions()), // Refresh on return in case they subscribed
+      ).then((_) => _fetchSubscriptions()),
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
@@ -375,11 +399,11 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-             Container(
+            Container(
               width: 70,
               height: 70,
               decoration: BoxDecoration(
-                color: const Color(0xFFF9E3D5), // Match Search placeholder bg
+                color: const Color(0xFFF9E3D5),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: ClipRRect(
@@ -402,24 +426,41 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
                           style: TextStyle(color: purple, fontSize: 16, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
                         ),
                       ),
-                       if (isSubscribed) 
+                      if (isTop)
+                        Container(
+                          margin: const EdgeInsets.only(left: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFDAA520).withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.star_rounded, color: Color(0xFFDAA520), size: 11),
+                              SizedBox(width: 3),
+                              Text("TOP", style: TextStyle(color: Color(0xFFDAA520), fontSize: 10, fontWeight: FontWeight.w900)),
+                            ],
+                          ),
+                        )
+                      else if (isSubscribed)
                         Icon(
-                          isCancelled ? Icons.timer_outlined : Icons.star_rounded, 
-                          color: isCancelled ? Colors.red : orange, 
-                          size: 18
+                          isCancelled ? Icons.timer_outlined : Icons.star_rounded,
+                          color: isCancelled ? Colors.red : orange,
+                          size: 18,
                         ),
                     ],
                   ),
                   const SizedBox(height: 4),
                   if (domain != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 6),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(color: orange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                      child: Text(domain.toUpperCase(), style: TextStyle(color: orange, fontSize: 9, fontWeight: FontWeight.w900)),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(color: orange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
+                        child: Text(domain.toUpperCase(), style: TextStyle(color: orange, fontSize: 9, fontWeight: FontWeight.w900)),
+                      ),
                     ),
-                  ),
                   Text(
                     bio,
                     maxLines: 2,
@@ -429,12 +470,12 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      if (data["avgRating"] != null && (data["avgRating"] as num) > 0) ...[
+                      if (avgRating > 0) ...[
                         Icon(Icons.star_rounded, color: Colors.amber[700], size: 16),
                         const SizedBox(width: 4),
                         Text(
-                          (data["avgRating"] as num).toStringAsFixed(1), 
-                          style: TextStyle(color: purple, fontSize: 12, fontWeight: FontWeight.bold)
+                          "${avgRating.toStringAsFixed(1)} ($reviewCount)",
+                          style: TextStyle(color: purple, fontSize: 12, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(width: 12),
                       ],

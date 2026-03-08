@@ -46,51 +46,79 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
         final userId = data["userId"] as String?;
         final planId = data["planId"] as String?;
 
-        if (userId != null && userId != user.uid) {
-          final String status = data["status"]?.toString() ?? "";
-          final Timestamp? expiryDate = data["expiryDate"] as Timestamp?;
-          final DateTime now = DateTime.now();
-          
-          bool isActive = status == "active" || status == "trialing";
-          if (!isActive && expiryDate != null) {
-            isActive = expiryDate.toDate().isAfter(now);
-          }
+        if (userId == null || userId == user.uid) continue;
 
-          if (isActive) {
-            // Check if the plan has "Priority Support"
-            bool hasPriority = false;
-            // Fallback: If it's a Gold or Platinum tier, we often assume priority support
-            final int tier = (data["tierLevel"] is num ? (data["tierLevel"] as num).toInt() : 0);
-            if (tier >= 2) hasPriority = true;
+        final String status = data["status"]?.toString() ?? "";
+        final Timestamp? expiryDate = data["expiryDate"] as Timestamp?;
+        final DateTime now = DateTime.now();
 
-            if (planId != null) {
-              try {
-                final planDoc = await FirebaseFirestore.instance
-                    .collection("nutritionists")
-                    .doc(user.uid)
-                    .collection("subscription_plans")
-                    .doc(planId)
-                    .get();
-                if (planDoc.exists) {
-                  final List? benefits = planDoc.data()?["benefits"];
-                  if (benefits != null) {
-                    final found = benefits.any((b) {
-                      final String title = (b is Map ? (b["title"] ?? b["text"] ?? "") : b).toString().toLowerCase();
-                      return title.contains("priority support") || title.contains("chat access") || title.contains("direct chat") || title.contains("message access");
-                    });
-                    if (found) hasPriority = true;
-                  }
-                }
-              } catch (e) {
-                debugPrint("Error checking plan $planId: $e");
+        // A subscription is active if status is active/trialing AND either
+        // has no expiry date (perpetual) or the expiry is still in the future.
+        final bool isActive = (status == "active" || status == "trialing") &&
+            (expiryDate == null || expiryDate.toDate().isAfter(now));
+
+        if (!isActive) continue;
+
+        // Default: show ALL active subscribers in the chat list.
+        // The plan-benefit check below only determines the priority label.
+        bool hasPriority = true;
+
+        // Try to refine using tier level — tier 2+ typically has priority support.
+        final int tier = (data["tierLevel"] is num
+            ? (data["tierLevel"] as num).toInt()
+            : int.tryParse(data["tierLevel"]?.toString() ?? "0") ?? 0);
+
+        // Look up the actual plan benefits if available
+        if (planId != null && planId.isNotEmpty) {
+          try {
+            var planDoc = await FirebaseFirestore.instance
+                .collection("nutritionists")
+                .doc(user.uid)
+                .collection("subscription_plans")
+                .doc(planId)
+                .get();
+
+            // Fallback: match by title if planId was stored as the title
+            if (!planDoc.exists) {
+              final q = await FirebaseFirestore.instance
+                  .collection("nutritionists")
+                  .doc(user.uid)
+                  .collection("subscription_plans")
+                  .where("title", isEqualTo: planId)
+                  .limit(1)
+                  .get();
+              if (q.docs.isNotEmpty) planDoc = q.docs.first;
+            }
+
+            if (planDoc.exists) {
+              final List? benefits = planDoc.data()?["benefits"];
+              if (benefits != null && benefits.isNotEmpty) {
+                // Only restrict if the plan explicitly has NO chat benefit
+                // and tier is low. Otherwise default to showing.
+                final hasChatBenefit = benefits.any((b) {
+                  final String t = (b is Map
+                          ? (b["title"] ?? b["text"] ?? "")
+                          : b)
+                      .toString()
+                      .toLowerCase();
+                  return t.contains("priority support") ||
+                      t.contains("chat access") ||
+                      t.contains("direct chat") ||
+                      t.contains("message access");
+                });
+                // Only hide if tier is 1 AND no chat benefit found in plan
+                if (!hasChatBenefit && tier < 2) hasPriority = false;
               }
             }
-
-            if (hasPriority) {
-              ids.add(userId);
-              accessMap[userId] = true;
-            }
+          } catch (e) {
+            debugPrint("Error checking plan $planId: $e");
+            // On error, keep hasPriority = true so subscriber still shows
           }
+        }
+
+        if (hasPriority) {
+          ids.add(userId);
+          accessMap[userId] = true;
         }
       }
 
@@ -108,6 +136,7 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
       if (mounted) setState(() => _isSubsLoading = false);
     });
   }
+
 
   Future<Map<String, dynamic>> _getUserDetails(String userId) async {
     try {
@@ -348,7 +377,7 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: const Color(0xFFF9E3D5),
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10, offset: const Offset(0, 4)),

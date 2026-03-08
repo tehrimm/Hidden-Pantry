@@ -64,6 +64,7 @@ class StripeService {
   /// Create a Checkout session for a user to subscribe to a nutritionist.
   /// Returns the checkout URL.
   Future<String> createNutritionistCheckout({
+    required String planId,
     required String planTitle,
     required double price,
     required String interval,
@@ -80,6 +81,7 @@ class StripeService {
     final String tierStr = (tierLevel ?? 1).toString();
     
     final result = await callable.call({
+      'planId': planId,
       'planTitle': planTitle,
       'price': priceStr,
       'interval': interval,

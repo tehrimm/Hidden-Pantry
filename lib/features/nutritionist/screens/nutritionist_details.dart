@@ -14,6 +14,7 @@ import 'package:hidden_pantry_app/features/user/screens/tier_comparison_screen.d
 import 'package:hidden_pantry_app/features/user/screens/meal_plan_view.dart';
 import 'package:hidden_pantry_app/core/services/view_mode_service.dart';
 import 'package:flutter/services.dart';
+import 'package:hidden_pantry_app/features/nutritionist/services/nutritionist_service.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
@@ -61,7 +62,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _checkSubscription();
     _checkUserRole();
     _countsFuture = _fetchCountsDetailed(); // Initialize once
@@ -143,12 +144,28 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
             // Fetch plan details to check for Priority Support benefit
             if (data["planId"] != null) {
               try {
-                final planDoc = await FirebaseFirestore.instance
+                var planDoc = await FirebaseFirestore.instance
                     .collection("nutritionists")
                     .doc(widget.nutritionistId)
                     .collection("subscription_plans")
                     .doc(data["planId"])
                     .get();
+                    
+                // Fallback for older subscriptions that saved the title instead of the ID
+                if (!planDoc.exists) {
+                  final querySnap = await FirebaseFirestore.instance
+                      .collection("nutritionists")
+                      .doc(widget.nutritionistId)
+                      .collection("subscription_plans")
+                      .where("title", isEqualTo: data["planId"])
+                      .limit(1)
+                      .get();
+                  if (querySnap.docs.isNotEmpty) {
+                    // Force cast to DocumentSnapshot (QueryDocumentSnapshot implements it)
+                    planDoc = querySnap.docs.first;
+                  }
+                }
+
                 if (planDoc.exists) {
                   final pData = planDoc.data();
                   if (pData != null) {
@@ -296,9 +313,12 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
                           labelColor: orange,
                           unselectedLabelColor: purple.withValues(alpha:0.4),
                           indicatorColor: orange,
+                          isScrollable: true,
+                          tabAlignment: TabAlignment.start,
                           labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, fontFamily: "Satoshi"),
                           tabs: const [
                             Tab(text: "Feed"),
+                            Tab(text: "Reviews"),
                             Tab(text: "Recipes"),
                             Tab(text: "Plans"),
                           ],
@@ -313,7 +333,8 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
                   controller: _tabController,
                   children: [
                     _feedTab(),
-                    _placeholderTab("Recipes coming soon!", icon: Icons.restaurant_menu_rounded), 
+                    _reviewsTab(),
+                    _placeholderTab("Recipes coming soon!", icon: Icons.restaurant_menu_rounded),
                     _plansTab(),
                   ],
                 ),
@@ -354,7 +375,14 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
               ),
             ),
           ),
-          const SizedBox(width: 40), // Balance back button
+          if (_isSubscribed)
+            IconButton(
+              onPressed: _showRatingDialog,
+              icon: const Icon(Icons.star_rounded, color: Color(0xFFDAA520)),
+              tooltip: 'Rate Nutritionist',
+            )
+          else
+            const SizedBox(width: 40), // Balance back button
         ],
       ),
     );
@@ -386,7 +414,74 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
     );
   }
 
+  Widget _reviewsTab() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: NutritionistService().getReviews(widget.nutritionistId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final docs = snapshot.data?.docs ?? [];
+        if (docs.isEmpty) {
+          return _placeholderTab("No reviews yet. Be the first!", icon: Icons.rate_review_rounded);
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+          itemCount: docs.length,
+          itemBuilder: (context, index) {
+            final d = docs[index].data() as Map<String, dynamic>;
+            final double rating = (d['rating'] as num?)?.toDouble() ?? 0.0;
+            final String name = d['userName'] ?? 'User';
+            final String text = d['reviewText'] ?? '';
+            final Timestamp? ts = d['timestamp'] as Timestamp?;
+            final String time = ts != null ? _timeAgo(ts.toDate()) : '';
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 14),
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: cardBg,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(radius: 16, backgroundColor: cardInner, child: Icon(Icons.person, size: 16, color: orange)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(name, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14)),
+                      ),
+                      // Stars
+                      Row(
+                        children: List.generate(5, (i) => Icon(
+                          i < rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                          color: const Color(0xFFDAA520),
+                          size: 14,
+                        )),
+                      ),
+                    ],
+                  ),
+                  if (text.isNotEmpty) ...[
+                    const SizedBox(height: 10),
+                    Text(text, style: TextStyle(color: purple.withValues(alpha: 0.75), fontSize: 13, height: 1.5)),
+                  ],
+                  if (time.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Text(time, style: TextStyle(color: purple.withValues(alpha: 0.35), fontSize: 11)),
+                  ],
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
   Widget _tipCard(Map<String, dynamic> data) {
+
     // 0=Free, 1=Silver, 2=Gold
     final int minTier = data["minTier"] ?? 0;
     final String type = data["type"] ?? "tip";
@@ -1037,21 +1132,38 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
                 FutureBuilder<Map<String, int>>(
                   future: _countsFuture,
                   builder: (context, snapshot) {
-                    // Start with what's in nutritionistData, upgrade to _fetchCounts if available
                     int finalSubs = displaySubs > 0 ? displaySubs : (data['subscriberCount'] ?? 0);
                     int finalPosts = displayPosts > 0 ? displayPosts : (data['recipeCount'] ?? 0);
-
                     if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
                       final dataMap = snapshot.data!;
                       if (dataMap["subs"]! >= 0) finalSubs = dataMap["subs"]!;
                       if (dataMap["posts"]! > 0) finalPosts = dataMap["posts"]!;
                     }
 
+                    // Compute avg rating live from StreamBuilder data
+                    final int reviewCount = (data['total_review_count'] as num?)?.toInt() ?? 0;
+                    final double ratingSum = (data['total_rating_sum'] as num?)?.toDouble() ?? 0.0;
+                    final double avgRating = reviewCount > 0 ? ratingSum / reviewCount : 0.0;
+
                     return Row(
                       children: [
                         _inlineStat(Icons.people_alt_rounded, "$finalSubs", "Sub"),
                         const SizedBox(width: 12),
                         _inlineStat(Icons.article_rounded, "$finalPosts", "Posts"),
+                        if (avgRating > 0) ...[
+                          const SizedBox(width: 12),
+                          Icon(Icons.star_rounded, color: const Color(0xFFDAA520), size: 14),
+                          const SizedBox(width: 4),
+                          Text(
+                            avgRating.toStringAsFixed(1),
+                            style: TextStyle(color: purple, fontSize: 14, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            "($reviewCount)",
+                            style: TextStyle(color: purple.withValues(alpha: 0.45), fontSize: 11, fontWeight: FontWeight.w600),
+                          ),
+                        ],
                       ],
                     );
                   },
@@ -1253,6 +1365,106 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
     _startStripeCheckout(plan);
   }
 
+  void _showRatingDialog() async {
+    // Pre-fetch the user's existing review (if any)
+    final existingReview = await NutritionistService().getMyReview(widget.nutritionistId);
+    final existingData = existingReview?.data() as Map<String, dynamic>?;
+    final isUpdate = existingData != null;
+
+    double currentRating = (existingData?['rating'] as num?)?.toDouble() ?? 0.0;
+    final commentCtrl = TextEditingController(text: existingData?['reviewText'] ?? '');
+    bool isSubmitting = false;
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text(
+              isUpdate ? "Update Your Review" : "Rate Nutritionist",
+              style: const TextStyle(color: Color(0xFF462F4D), fontWeight: FontWeight.w900, fontFamily: "Satoshi", fontSize: 20),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  isUpdate ? "You already reviewed this nutritionist. Update below." : "How was your experience?",
+                  style: const TextStyle(color: Color(0xFF462F4D)),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (index) {
+                    return IconButton(
+                      onPressed: () => setDialogState(() => currentRating = index + 1.0),
+                      icon: Icon(
+                        index < currentRating ? Icons.star_rounded : Icons.star_outline_rounded,
+                        color: const Color(0xFFDAA520),
+                        size: 32,
+                      ),
+                    );
+                  }),
+                ),
+                TextField(
+                  controller: commentCtrl,
+                  decoration: InputDecoration(
+                    hintText: "Write a review (optional)",
+                    hintStyle: TextStyle(color: const Color(0xFF462F4D).withValues(alpha: 0.5)),
+                    filled: true,
+                    fillColor: const Color(0xFFF6F6F6),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                  ),
+                  maxLines: 3,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("Cancel", style: TextStyle(color: const Color(0xFF462F4D).withValues(alpha: 0.5))),
+              ),
+              ElevatedButton(
+                onPressed: (currentRating == 0.0 || isSubmitting)
+                    ? null
+                    : () async {
+                        setDialogState(() => isSubmitting = true);
+                        try {
+                          await NutritionistService().submitRating(
+                            nutritionistId: widget.nutritionistId,
+                            rating: currentRating,
+                            reviewText: commentCtrl.text.trim(),
+                          );
+                          if (mounted) {
+                            Navigator.pop(context);
+                            Toaster.show(context, isUpdate ? "Review updated!" : "Thank you for your review!");
+                          }
+                        } catch (e) {
+                          setDialogState(() => isSubmitting = false);
+                          if (mounted) Toaster.show(context, "Error: $e", isError: true);
+                        }
+                      },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEF8A54),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: isSubmitting
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : Text(isUpdate ? "Update" : "Submit", style: const TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> _startStripeCheckout(Map<String, dynamic> plan) async {
      setState(() => _isLoadingSubscription = true);
      try {
@@ -1279,6 +1491,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
 
        final stripe = StripeService();
        final url = await stripe.createNutritionistCheckout(
+         planId: plan['id'] ?? '',
          planTitle: plan['title'] ?? 'Plan',
          price: price,
          interval: plan['interval'] ?? 'month',

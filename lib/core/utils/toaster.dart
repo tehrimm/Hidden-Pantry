@@ -41,7 +41,7 @@ class Toaster {
                   mainAxisSize: MainAxisSize.max,
                   children: [
                     Icon(
-                      isError ? Icons.error_outline : Icons.info_outline,
+                      isError ? Icons.error_outline : Icons.check_circle_outline,
                       color: isError ? Colors.red : orange,
                       size: 20,
                     ),

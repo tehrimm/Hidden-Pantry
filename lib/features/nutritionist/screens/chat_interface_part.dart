@@ -58,9 +58,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
   }
 
   Future<void> _checkClientBenefits() async {
-    if (!_isNutritionist || widget.clientId == null) {
-      return;
-    }
+    if (!_isNutritionist || widget.clientId == null) return;
 
     try {
       final subsSnap = await FirebaseFirestore.instance
@@ -70,35 +68,70 @@ class _ChatInterfaceState extends State<ChatInterface> {
           .where("status", whereIn: ["active", "trialing"])
           .get();
 
-      if (subsSnap.docs.isNotEmpty) {
-        final subData = subsSnap.docs.first.data();
-        final planId = subData["planId"];
-        
-        if (planId != null) {
-          final planDoc = await FirebaseFirestore.instance
+      if (subsSnap.docs.isEmpty) return;
+
+      bool mealPlans = false;
+      bool supplements = false;
+
+      for (final subDoc in subsSnap.docs) {
+        final subData = subDoc.data();
+        var planId = subData["planId"];
+
+        if (planId == null) continue;
+
+        // Try by doc ID first, then by title (planId may be stored as title)
+        var planDoc = await FirebaseFirestore.instance
+            .collection("nutritionists")
+            .doc(widget.nutritionistId)
+            .collection("subscription_plans")
+            .doc(planId.toString())
+            .get();
+
+        if (!planDoc.exists) {
+          final q = await FirebaseFirestore.instance
               .collection("nutritionists")
               .doc(widget.nutritionistId)
               .collection("subscription_plans")
-              .doc(planId)
+              .where("title", isEqualTo: planId)
+              .limit(1)
               .get();
+          if (q.docs.isNotEmpty) planDoc = q.docs.first;
+        }
 
-          if (planDoc.exists) {
-            final List? benefits = planDoc.data()?["benefits"];
-            if (benefits != null) {
-              for (var b in benefits) {
-                final String title = (b is Map ? (b["title"] ?? b["text"] ?? "") : b).toString().toLowerCase();
-                if (title.contains("inchat meal plans")) _canShareMealPlans = true;
-                if (title.contains("supplement guide")) _canShareSupplements = true;
-              }
-            }
+        if (!planDoc.exists) continue;
+
+        final List? benefits = planDoc.data()?["benefits"];
+        if (benefits == null) continue;
+
+        for (var b in benefits) {
+          final String t = (b is Map
+                  ? (b["title"] ?? b["text"] ?? "")
+                  : b)
+              .toString()
+              .toLowerCase();
+
+          // Broad matching — covers "In-Chat Meal Plans", "inchat meal plan", "meal plan sharing" etc.
+          if (t.contains("meal plan") || t.contains("inchat") || t.contains("in-chat")) {
+            mealPlans = true;
+          }
+          if (t.contains("supplement")) {
+            supplements = true;
           }
         }
       }
+
+      // setState is required so the UI rebuilds and the + options appear
+      if (mounted) {
+        setState(() {
+          _canShareMealPlans = mealPlans;
+          _canShareSupplements = supplements;
+        });
+      }
     } catch (e) {
       debugPrint("Error checking client benefits: $e");
-    } finally {
     }
   }
+
 
   void _clearRelatedNotifications() {
     NotificationService().markNotificationsForTargetAsRead(_chatId);
@@ -618,14 +651,15 @@ class _ChatInterfaceState extends State<ChatInterface> {
     
     // If we are nutritionist, we set userUnread + 1, and reset nutritionistUnread
     // If we are user, we set nutritionistUnread + 1, and reset userUnread
+    // Always ensure participants are properly set/merged for both parties
+    updateData["participants"] = FieldValue.arrayUnion([user.uid, widget.nutritionistId, widget.clientId ?? ""]);
+
     if (_isNutritionist) {
        updateData["userUnread"] = FieldValue.increment(1);
        updateData["nutritionistUnread"] = 0;
     } else {
        updateData["nutritionistUnread"] = FieldValue.increment(1);
        updateData["userUnread"] = 0;
-       // Also ensure participants are set if creating for the first time by user
-       updateData["participants"] = FieldValue.arrayUnion([user.uid, widget.nutritionistId]); 
     }
 
     await chatRef.set(updateData, SetOptions(merge: true));
@@ -663,6 +697,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
         body: text,
         type: NotificationType.chat_message,
         targetId: _chatId,
+        recipientRole: _isNutritionist ? 'user' : 'nutritionist',
       );
     }
   }
@@ -1072,6 +1107,22 @@ class _ChatInterfaceState extends State<ChatInterface> {
       "notes": notes,
       "timestamp": FieldValue.serverTimestamp(),
     });
+
+    // Trigger Notification for meeting
+    final recipientId = _isNutritionist ? widget.clientId : widget.nutritionistId;
+    if (recipientId != null && recipientId.isNotEmpty) {
+      String senderName = user.displayName ?? "";
+      if (senderName.isEmpty) senderName = _isNutritionist ? "Nutritionist" : "User";
+
+      NotificationService().sendNotification(
+        recipientId: recipientId,
+        title: "Meeting Scheduled with $senderName",
+        body: notes.isNotEmpty ? notes : "A new consultation was scheduled.",
+        type: NotificationType.chat_message,
+        targetId: _chatId,
+        recipientRole: _isNutritionist ? 'user' : 'nutritionist',
+      );
+    }
   }
 
 
@@ -1123,7 +1174,48 @@ class _ChatInterfaceState extends State<ChatInterface> {
                       final id = docs[index].id;
                       final title = data["title"] ?? "Untitled Plan";
                       final days = data["duration"] ?? 0;
-                      final cals = data["targetCalories"] ?? 0;
+
+                      // Compute avg daily calories from actual days data
+                      int avgCals = 0;
+                      final List daysList = data["days"] is List ? data["days"] as List : [];
+                      if (daysList.isNotEmpty) {
+                        int totalCals = 0;
+                        int dayCount = 0;
+                        for (final day in daysList) {
+                          if (day is Map) {
+                            final List meals = day["meals"] is List ? day["meals"] as List : [];
+                            int dayCals = 0;
+                            for (final meal in meals) {
+                              if (meal is Map) {
+                                // Prefer nutrition['Calories'] string (per-serving, e.g. "250 kcal")
+                                int mealCal = 0;
+                                final nutrition = meal["nutrition"];
+                                if (nutrition is Map) {
+                                  final calStr = (nutrition["Calories"] ?? nutrition["calories"] ?? "").toString();
+                                  final match = RegExp(r'(\d+\.?\d*)').firstMatch(calStr);
+                                  if (match != null) mealCal = double.tryParse(match.group(1)!)?.round() ?? 0;
+                                }
+                                // Fallback: raw calories field ÷ servings
+                                if (mealCal == 0) {
+                                  final rawCal = ((meal["calories"] as num?) ?? 0).toDouble();
+                                  final servings = ((meal["base_servings"] ?? meal["baseServings"] ?? meal["servings"] ?? 1) as num).toInt().clamp(1, 100);
+                                  mealCal = (rawCal / servings).round();
+                                }
+                                dayCals += mealCal;
+                              }
+                            }
+                            if (dayCals > 0) {
+                              totalCals += dayCals;
+                              dayCount++;
+                            }
+                          }
+                        }
+                        if (dayCount > 0) avgCals = (totalCals / dayCount).round();
+                      }
+                      // Fallback to targetCalories if no per-meal cal data
+                      if (avgCals == 0) avgCals = (data["targetCalories"] as num?)?.toInt() ?? 0;
+                      final String calLabel = avgCals > 0 ? "~ $avgCals kcal/day avg" : "Calories not set";
+
 
                       return GestureDetector(
                         onTap: () {
@@ -1133,7 +1225,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: const Color(0xFFF9E3D5),
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 4, offset:const Offset(0, 2))],
                           ),
@@ -1152,7 +1244,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
                                   children: [
                                     Text(title, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16)),
                                     const SizedBox(height: 4),
-                                    Text("$days Days • ~ $cals kcal", style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 13)),
+                                    Text("$days Days • $calLabel", style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 13)),
                                   ],
                                 ),
                               ),
@@ -1230,6 +1322,22 @@ class _ChatInterfaceState extends State<ChatInterface> {
       "mealPlanData": planData,
       "timestamp": FieldValue.serverTimestamp(),
     });
+
+    // Trigger Notification for meal plan
+    final recipientId = _isNutritionist ? widget.clientId : widget.nutritionistId;
+    if (recipientId != null && recipientId.isNotEmpty) {
+      String senderName = user.displayName ?? "";
+      if (senderName.isEmpty) senderName = _isNutritionist ? "Nutritionist" : "User";
+
+      NotificationService().sendNotification(
+        recipientId: recipientId,
+        title: "New Meal Plan from $senderName",
+        body: planData["title"] ?? "Meal Plan",
+        type: NotificationType.chat_message,
+        targetId: _chatId,
+        recipientRole: _isNutritionist ? 'user' : 'nutritionist',
+      );
+    }
   }
 
   void _sendSupplementGuide() async {

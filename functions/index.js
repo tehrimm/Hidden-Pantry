@@ -297,7 +297,7 @@ exports.createNutritionistCheckout = functions.https.onCall(async (data, context
         throw new functions.https.HttpsError('unauthenticated', 'Must be logged in');
     }
 
-    let { planTitle, price, interval, nutritionistId, nutritionistName, tierLevel, existingSubscriptionId } = data;
+    let { planId, planTitle, price, interval, nutritionistId, nutritionistName, tierLevel, existingSubscriptionId } = data;
 
     // Robustly parse price and tierLevel
     price = parseFloat(String(price || 0).replace(/[^\d.-]/g, ''));
@@ -370,7 +370,8 @@ exports.createNutritionistCheckout = functions.https.onCall(async (data, context
             userId: uid,
             nutritionistId,
             nutritionistName,
-            planId: planTitle,
+            planId: planId || planTitle,
+            planTitle: planTitle,
             price: price || 0,
             tierLevel: tierLevel || 1,
             interval: interval || 'Monthly',

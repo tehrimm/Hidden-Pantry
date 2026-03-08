@@ -66,17 +66,32 @@ class HiddenPantryApp extends StatefulWidget {
   State<HiddenPantryApp> createState() => _HiddenPantryAppState();
 }
 
-class _HiddenPantryAppState extends State<HiddenPantryApp> {
+class _HiddenPantryAppState extends State<HiddenPantryApp> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Start global notification listener for foreground sounds/vibration
     NotificationService().startGlobalListener();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      systemNavigationBarColor: Colors.transparent,
-    ));
+    _hideSystemUI();
+  }
+
+  void _hideSystemUI() {
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Re-apply when user returns to the app (Android drops immersive on swipe)
+    if (state == AppLifecycleState.resumed) {
+      _hideSystemUI();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   @override

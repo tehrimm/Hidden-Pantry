@@ -363,6 +363,77 @@ class NutritionistService {
 
     await _nutritionists.doc(nutritionistId).collection("tips").add(postData);
   }
+
+  Future<void> submitRating({
+    required String nutritionistId,
+    required double rating,
+    required String reviewText,
+  }) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) throw Exception("Must be logged in to review.");
+
+    final docRef = _nutritionists.doc(nutritionistId);
+    final reviewRef = docRef.collection('reviews').doc(user.uid);
+
+    // Read the existing review BEFORE the transaction to avoid the
+    // "Future already completed" crash from multiple async gets inside
+    // a single Firestore transaction on the mobile SDK.
+    final existingReview = await reviewRef.get();
+    final hasPreviousReview = existingReview.exists;
+    final oldRating = hasPreviousReview
+        ? (existingReview.data()?['rating'] as num?)?.toDouble() ?? 0.0
+        : 0.0;
+
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      final nutSnapshot = await transaction.get(docRef);
+      if (!nutSnapshot.exists) throw Exception("Nutritionist does not exist.");
+
+      final nutData = nutSnapshot.data()!;
+      int reviewCount = (nutData['total_review_count'] as num?)?.toInt() ?? 0;
+      double ratingSum = (nutData['total_rating_sum'] as num?)?.toDouble() ?? 0.0;
+
+      if (hasPreviousReview) {
+        ratingSum = ratingSum - oldRating + rating;
+      } else {
+        reviewCount += 1;
+        ratingSum += rating;
+      }
+
+      transaction.update(docRef, {
+        'total_review_count': reviewCount,
+        'total_rating_sum': ratingSum,
+      });
+
+      transaction.set(reviewRef, {
+        'userId': user.uid,
+        'userName': user.displayName ?? "User",
+        'rating': rating,
+        'reviewText': reviewText,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
+  /// Fetch the current user's existing review for a nutritionist (null if none).
+  Future<DocumentSnapshot?> getMyReview(String nutritionistId) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return null;
+    final doc = await _nutritionists
+        .doc(nutritionistId)
+        .collection('reviews')
+        .doc(user.uid)
+        .get();
+    return doc.exists ? doc : null;
+  }
+
+  /// Stream all reviews for a nutritionist (for the Reviews tab).
+  Stream<QuerySnapshot> getReviews(String nutritionistId) {
+    return _nutritionists
+        .doc(nutritionistId)
+        .collection('reviews')
+        .orderBy('timestamp', descending: true)
+        .snapshots();
+  }
 }
 
 
