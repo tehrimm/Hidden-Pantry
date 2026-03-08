@@ -804,7 +804,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                       ),
                     ),
                     Text(
-                      "per ${r.servingSize?.isNotEmpty == true ? r.servingSize : 'dash'} serving",
+                      "scaled for $_servings ${_servings > 1 ? 'servings' : 'serving'}",
                       style: TextStyle(
                         color: textColor.withValues(alpha: 0.5),
                         fontSize: 12,
@@ -1225,7 +1225,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   }
 
   Widget _nutritionBlock(Recipe r) {
-    final n = r.nutrition;
+    final n = r.getScaledNutrition(_servings) ?? r.nutrition;
     if (n == null || n.isEmpty) {
       return Container(
         width: double.infinity,
