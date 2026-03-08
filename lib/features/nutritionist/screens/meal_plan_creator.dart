@@ -137,36 +137,15 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
           BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
-      child: Column(
-        children: [
-          TextField(
-            controller: _titleCtrl,
-            style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.bold),
-            decoration: InputDecoration(
-              hintText: "Plan Title (e.g., Weight Loss Week 1)",
-              hintStyle: TextStyle(color: purple.withValues(alpha:0.4)),
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.zero,
-            ),
-          ),
-          const Divider(height: 24),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _caloriesCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: "Target Calories / Day",
-                    labelStyle: TextStyle(color: purple.withValues(alpha:0.6)),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+      child: TextField(
+        controller: _titleCtrl,
+        style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.bold),
+        decoration: InputDecoration(
+          hintText: "Plan Title (e.g., Weight Loss Week 1)",
+          hintStyle: TextStyle(color: purple.withValues(alpha:0.4)),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
+        ),
       ),
     );
   }
@@ -474,13 +453,22 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
       return;
     }
 
-    
-
     try {
+      // Calculate average calories per day
+      int totalCalories = 0;
+      for (var dayMeals in _dayMeals.values) {
+        for (var meal in dayMeals) {
+          if (meal["isNote"] != true) {
+            totalCalories += (meal["calories"] as num?)?.toInt() ?? 0;
+          }
+        }
+      }
+      final computedTargetCalories = _durationDays > 0 ? (totalCalories / _durationDays).round() : 0;
+
       final planData = {
         "title": _titleCtrl.text.trim(),
         "duration": _durationDays,
-        "targetCalories": int.tryParse(_caloriesCtrl.text) ?? 2000,
+        "targetCalories": computedTargetCalories, // Save dynamically computed avg
         "notes": _notesCtrl.text.trim(),
         "updatedAt": FieldValue.serverTimestamp(),
         "days": _dayMeals.entries.map((e) => {

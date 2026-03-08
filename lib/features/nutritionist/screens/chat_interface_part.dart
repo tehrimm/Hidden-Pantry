@@ -775,11 +775,11 @@ class _ChatInterfaceState extends State<ChatInterface> {
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: const Color(0xFFEF8A54), // Apps orange
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: Center(
-                    child: Text("Cancel", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16)),
+                    child: Text("Cancel", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),
               ),
@@ -791,20 +791,24 @@ class _ChatInterfaceState extends State<ChatInterface> {
   }
 
   Widget _deleteOptionButton(String label, IconData icon, VoidCallback onTap, {bool isRed = false}) {
+    // Apps orange color = 0xFFEF8A54
+    final Color mainColor = isRed ? Colors.red : const Color(0xFFEF8A54);
+    
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
         decoration: BoxDecoration(
-          color: isRed ? Colors.red.withValues(alpha:0.1) : Colors.white,
+          color: Colors.transparent,
+          border: Border.all(color: mainColor, width: 1.5),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Row(
           children: [
-            Icon(icon, color: isRed ? Colors.red : purple, size: 22),
+            Icon(icon, color: mainColor, size: 22),
             const SizedBox(width: 12),
-            Text(label, style: TextStyle(color: isRed ? Colors.red : purple, fontWeight: FontWeight.bold, fontSize: 16)),
+            Text(label, style: TextStyle(color: mainColor, fontWeight: FontWeight.bold, fontSize: 16)),
           ],
         ),
       ),

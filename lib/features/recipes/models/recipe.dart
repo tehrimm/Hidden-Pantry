@@ -418,6 +418,14 @@ class Recipe {
       data['imagePath']
     );
 
+    final servingSizeText = _cleanNullableString(
+      data['serving_size'] ?? 
+      data['servingSize'] ?? 
+      data['servings'] ??
+      data['serves'] ??
+      data['yields']
+    );
+
     return Recipe(
       id: (data['id'] ?? data['recipe_id'] ?? data['recipeId'] ?? data['_id'] ?? "").toString(),
       name: (
@@ -435,13 +443,7 @@ class Recipe {
       category: _cleanNullableString(data['category'] ?? data['recipe_category']),
       allergens: _toStringList(data['allergens']),
       difficulty: _cleanNullableString(data['difficulty']),
-      servingSize: _cleanNullableString(
-        data['serving_size'] ?? 
-        data['servingSize'] ?? 
-        data['servings'] ??
-        data['serves'] ??
-        data['yields']
-      ),
+      servingSize: servingSizeText,
       minutes: _toInt(
         data['readyInMinutes'] ?? 
         data['minutes'] ?? 
@@ -472,13 +474,33 @@ class Recipe {
             data['authorProfileImageUrl'],
       ),
       baseServings: () {
+        // 1. Try to extract from the textual serving size first (e.g. "4 servings")
+        if (servingSizeText != null && servingSizeText.isNotEmpty) {
+           final match = RegExp(r'\d+').firstMatch(servingSizeText);
+           if (match != null) {
+             final parsed = int.parse(match.group(0)!);
+             if (parsed > 0) return parsed;
+           }
+        }
+        
+        // 2. Fallback to other possible numeric keys (which might include a cached 1)
         final keys = [
-          'base_servings', 'baseServings', 'servings', 'serving_size', 'servingSize', 'n_servings',
-          'yields', 'yield', 'serves'
+          'base_servings', 'baseServings', 'servings', 'n_servings'
         ];
         for (final k in keys) {
           if (data.containsKey(k) && data[k] != null) {
-            final int parsed = _toInt(data[k], fallback: 0);
+            final val = data[k];
+            int parsed = 0;
+            if (val is int) {
+               parsed = val;
+            } else if (val is double) {
+               parsed = val.round();
+            } else if (val is String) {
+               final match = RegExp(r'\d+').firstMatch(val);
+               if (match != null) {
+                 parsed = int.parse(match.group(0)!);
+               }
+            }
             if (parsed > 0) return parsed;
           }
         }
