@@ -218,6 +218,8 @@ exports.onNotificationCreated = functions.firestore
                 type: data.type || '',
                 id: data.targetId || '',
                 senderId: data.senderId || '',
+                senderName: data.senderName || '',
+                senderPhotoUrl: data.senderPhotoUrl || '',
             },
             token: fcmToken,
         };

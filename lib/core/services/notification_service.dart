@@ -274,7 +274,7 @@ class NotificationService {
   /// Play a notification sound and vibrate
   Future<void> playNotificationSound() async {
     try {
-      await _player.play(AssetSource('sounds/notification.mp3'));
+      await _player.play(UrlSource('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3'));
       // Add vibration
       await HapticFeedback.vibrate();
     } catch (e) {

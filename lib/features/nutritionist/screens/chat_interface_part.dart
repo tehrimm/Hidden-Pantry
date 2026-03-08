@@ -742,56 +742,49 @@ class _ChatInterfaceState extends State<ChatInterface> {
   }
 
   void _showDeleteOptions(String docId, bool isMe) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        decoration: const BoxDecoration(
-          color: Color(0xFFF9E3D5),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 50, height: 5,
-              decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(3)),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              "Delete Message",
-              style: TextStyle(color: purple, fontSize: 20, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
-            ),
-            const SizedBox(height: 24),
-            _deleteOptionButton("Delete for me", Icons.delete_outline_rounded, () {
-              Navigator.pop(context);
-              _deleteMessageForMe(docId);
-            }),
-            if (isMe) ...[
-              const SizedBox(height: 12),
-              _deleteOptionButton("Delete for everyone", Icons.delete_forever_rounded, () {
+      builder: (context) => Dialog(
+        backgroundColor: const Color(0xFFF9E3D5),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Delete Message",
+                style: TextStyle(color: purple, fontSize: 20, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+              ),
+              const SizedBox(height: 24),
+              _deleteOptionButton("Delete for me", Icons.delete_outline_rounded, () {
                 Navigator.pop(context);
-                _deleteMessageForEveryone(docId);
-              }, isRed: true),
-            ],
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Center(
-                  child: Text("Cancel", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16)),
+                _deleteMessageForMe(docId);
+              }),
+              if (isMe) ...[
+                const SizedBox(height: 12),
+                _deleteOptionButton("Delete for everyone", Icons.delete_forever_rounded, () {
+                  Navigator.pop(context);
+                  _deleteMessageForEveryone(docId);
+                }, isRed: true),
+              ],
+              const SizedBox(height: 12),
+              GestureDetector(
+                onTap: () => Navigator.pop(context),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Center(
+                    child: Text("Cancel", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: MediaQuery.of(context).padding.bottom),
-          ],
+            ],
+          ),
         ),
       ),
     );

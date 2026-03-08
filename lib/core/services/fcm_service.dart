@@ -102,18 +102,21 @@ class FCMService {
   }
 
   void _handleDeepLinkFromMessage(RemoteMessage message) {
-    final payload = "${message.data['type'] ?? ''}|${message.data['id'] ?? ''}|${message.data['senderId'] ?? ''}";
-    if (message.data['type'] != null) { // Check if type is present before handling
+    // Append the new data to the payload string separated by |
+    final payload = "${message.data['type'] ?? ''}|${message.data['id'] ?? ''}|${message.data['senderId'] ?? ''}|${message.data['senderName'] ?? ''}|${message.data['senderPhotoUrl'] ?? ''}";
+    if (message.data['type'] != null) { 
        _handleDeepLink(payload);
     }
   }
 
   void _handleDeepLink(String payload) {
-    // Parsing payload like "chat_message|chat_123|sender_uid"
+    // Parsing payload
     final parts = payload.split('|');
     final typeStr = parts[0];
     final id = parts.length > 1 ? parts[1] : "";
     final senderId = parts.length > 2 ? parts[2] : "";
+    final senderName = parts.length > 3 && parts[3].isNotEmpty ? parts[3] : "User";
+    final senderPhotoUrl = parts.length > 4 ? parts[4] : "";
 
     if (id.isEmpty) return;
 
@@ -132,7 +135,8 @@ class FCMService {
         id: "temp",
         recipientId: "", 
         senderId: senderId,
-        senderName: "User", // Placeholder
+        senderName: senderName,
+        senderPhotoUrl: senderPhotoUrl.isNotEmpty ? senderPhotoUrl : null,
         title: "",
         body: "",
         type: type,
