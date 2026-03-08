@@ -171,224 +171,16 @@ class _ClientPlansScreenState extends State<ClientPlansScreen> {
     required List<Map<String, dynamic>> benefits,
     required bool isActive,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9E3D5),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: purple.withValues(alpha: 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  color: purple,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  fontFamily: "Satoshi",
-                ),
-              ),
-              PopupMenuButton<String>(
-                icon: Icon(Icons.more_horiz_rounded, color: purple.withValues(alpha: 0.3)),
-                onSelected: (value) {
-                  if (value == "edit") _editPlan(plan, planId);
-                  if (value == "delete") _confirmDelete(planId);
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(value: "edit", child: Text("Edit")),
-                  const PopupMenuItem(value: "delete", child: Text("Delete", style: TextStyle(color: Colors.red))),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: (plan["tierLevel"] == 3 
-                    ? const Color(0xFF4B0082) 
-                    : plan["tierLevel"] == 2 
-                      ? const Color(0xFFDAA520) 
-                      : const Color(0xFF708090)).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      plan["tierLevel"] == 3 
-                        ? Icons.diamond_rounded 
-                        : plan["tierLevel"] == 2 
-                          ? Icons.star_rounded 
-                          : Icons.star_half_rounded, 
-                      size: 12, 
-                      color: plan["tierLevel"] == 3 
-                        ? const Color(0xFF4B0082) 
-                        : plan["tierLevel"] == 2 
-                          ? const Color(0xFFDAA520) 
-                          : const Color(0xFF708090)
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      plan["tierLevel"] == 3 ? "PLATINUM" : plan["tierLevel"] == 2 ? "GOLD" : "SILVER",
-                      style: TextStyle(
-                        color: plan["tierLevel"] == 3 
-                          ? const Color(0xFF4B0082) 
-                          : plan["tierLevel"] == 2 
-                            ? const Color(0xFFDAA520) 
-                            : const Color(0xFF708090),
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              if (!isActive)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Text("HIDDEN", style: TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold)),
-                ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                "Rs. $price",
-                style: TextStyle(
-                  color: orange,
-                  fontSize: 30,
-                  fontWeight: FontWeight.w900,
-                  fontFamily: "Satoshi",
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 6, left: 4),
-                child: Text(
-                  "/ $interval",
-                  style: TextStyle(
-                    color: purple.withValues(alpha: 0.4),
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          ...benefits.map((b) => _benefitRow(b["title"] ?? b["text"] ?? "", true)),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection("subscriptions")
-                      .where("nutritionistId", isEqualTo: FirebaseAuth.instance.currentUser?.uid)
-                      .where("tierLevel", isEqualTo: plan["tierLevel"] ?? 1)
-                      .where("status", isEqualTo: "active")
-                      .snapshots(),
-                  builder: (context, subSnap) {
-                    final int count = subSnap.data?.docs.length ?? 0;
-                    double tierRevenue = 0;
-                    if (subSnap.hasData && subSnap.data != null) {
-                      for (var d in subSnap.data!.docs) {
-                        final dData = d.data() as Map<String, dynamic>;
-                        tierRevenue += (dData["price"] ?? 0.0).toDouble();
-                      }
-                    }
-                    return Row(
-                      children: [
-                        Text(
-                          "$count ACTIVE CLIENTS",
-                          style: TextStyle(
-                            color: purple.withValues(alpha: 0.4),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          "VAL: Rs. ${tierRevenue.toInt()}",
-                          style: TextStyle(
-                            color: orange.withValues(alpha: 0.6),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
-                    );
-                  }
-                ),
-              ),
-              Switch(
-                value: isActive,
-                onChanged: (v) async {
-                  try {
-                    final user = FirebaseAuth.instance.currentUser;
-                    if (user == null) return;
-                    await FirebaseFirestore.instance
-                        .collection("nutritionists")
-                        .doc(user.uid)
-                        .collection("subscription_plans")
-                        .doc(planId)
-                        .update({"isActive": v, "updatedAt": FieldValue.serverTimestamp()});
-                  } catch (e) {
-                    if (mounted) {
-                      Toaster.show(context, "Error: $e", isError: true);
-                    }
-                  }
-                },
-                activeThumbColor: orange,
-                activeTrackColor: orange.withValues(alpha: 0.1),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _benefitRow(String text, bool active) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              text,
-              style: TextStyle(
-                color: purple,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                fontFamily: "Satoshi",
-              ),
-            ),
-          ),
-        ],
-      ),
+    return _PlanCardItem(
+      planId: planId,
+      plan: plan,
+      title: title,
+      price: price,
+      interval: interval,
+      benefits: benefits,
+      isActive: isActive,
+      onEdit: () => _editPlan(plan, planId),
+      onDelete: () => _confirmDelete(planId),
     );
   }
 
@@ -471,6 +263,278 @@ class _ClientPlansScreenState extends State<ClientPlansScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PlanCardItem extends StatefulWidget {
+  final String planId;
+  final Map<String, dynamic> plan;
+  final String title;
+  final String price;
+  final String interval;
+  final List<Map<String, dynamic>> benefits;
+  final bool isActive;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  const _PlanCardItem({
+    required this.planId,
+    required this.plan,
+    required this.title,
+    required this.price,
+    required this.interval,
+    required this.benefits,
+    required this.isActive,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  State<_PlanCardItem> createState() => _PlanCardItemState();
+}
+
+class _PlanCardItemState extends State<_PlanCardItem> {
+  late bool _currentActive;
+  final Color purple = const Color(0xFF462F4D);
+  final Color orange = const Color(0xFFEF8A54);
+
+  @override
+  void initState() {
+    super.initState();
+    _currentActive = widget.isActive;
+  }
+
+  @override
+  void didUpdateWidget(_PlanCardItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.isActive != widget.isActive) {
+      _currentActive = widget.isActive;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9E3D5),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: purple.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                widget.title,
+                style: TextStyle(
+                  color: purple,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: "Satoshi",
+                ),
+              ),
+              PopupMenuButton<String>(
+                icon: Icon(Icons.more_horiz_rounded, color: purple.withValues(alpha: 0.3)),
+                onSelected: (value) {
+                  if (value == "edit") widget.onEdit();
+                  if (value == "delete") widget.onDelete();
+                },
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: "edit", child: Text("Edit")),
+                  const PopupMenuItem(value: "delete", child: Text("Delete", style: TextStyle(color: Colors.red))),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+               Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: (widget.plan["tierLevel"] == 3 
+                    ? const Color(0xFF4B0082) 
+                    : widget.plan["tierLevel"] == 2 
+                      ? const Color(0xFFDAA520) 
+                      : const Color(0xFF708090)).withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      widget.plan["tierLevel"] == 3 
+                        ? Icons.diamond_rounded 
+                        : widget.plan["tierLevel"] == 2 
+                          ? Icons.star_rounded 
+                          : Icons.star_half_rounded, 
+                      size: 12, 
+                      color: widget.plan["tierLevel"] == 3 
+                        ? const Color(0xFF4B0082) 
+                        : widget.plan["tierLevel"] == 2 
+                          ? const Color(0xFFDAA520) 
+                          : const Color(0xFF708090)
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      widget.plan["tierLevel"] == 3 ? "PLATINUM" : widget.plan["tierLevel"] == 2 ? "GOLD" : "SILVER",
+                      style: TextStyle(
+                        color: widget.plan["tierLevel"] == 3 
+                          ? const Color(0xFF4B0082) 
+                          : widget.plan["tierLevel"] == 2 
+                            ? const Color(0xFFDAA520) 
+                            : const Color(0xFF708090),
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (!_currentActive)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Text("HIDDEN", style: TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                "Rs. ${widget.price}",
+                style: TextStyle(
+                  color: orange,
+                  fontSize: 30,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: "Satoshi",
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6, left: 4),
+                child: Text(
+                  "/ ${widget.interval}",
+                  style: TextStyle(
+                    color: purple.withValues(alpha: 0.4),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          ...widget.benefits.map((b) => _benefitRow(b["title"] ?? b["text"] ?? "", true)),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection("subscriptions")
+                      .where("nutritionistId", isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                      .where("tierLevel", isEqualTo: widget.plan["tierLevel"] ?? 1)
+                      .where("status", isEqualTo: "active")
+                      .snapshots(),
+                  builder: (context, subSnap) {
+                    final int count = subSnap.data?.docs.length ?? 0;
+                    double tierRevenue = 0;
+                    if (subSnap.hasData && subSnap.data != null) {
+                      for (var d in subSnap.data!.docs) {
+                        final dData = d.data() as Map<String, dynamic>;
+                        tierRevenue += (dData["price"] ?? 0.0).toDouble();
+                      }
+                    }
+                    return Row(
+                      children: [
+                        Text(
+                          "$count ACTIVE CLIENTS",
+                          style: TextStyle(
+                            color: purple.withValues(alpha: 0.4),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        const Spacer(),
+                        Text(
+                          "VAL: Rs. ${tierRevenue.toInt()}",
+                          style: TextStyle(
+                            color: orange.withValues(alpha: 0.6),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                ),
+              ),
+              Switch(
+                value: _currentActive,
+                onChanged: (v) async {
+                  setState(() => _currentActive = v);
+                  try {
+                    final user = FirebaseAuth.instance.currentUser;
+                    if (user == null) return;
+                    await FirebaseFirestore.instance
+                        .collection("nutritionists")
+                        .doc(user.uid)
+                        .collection("subscription_plans")
+                        .doc(widget.planId)
+                        .update({"isActive": v, "updatedAt": FieldValue.serverTimestamp()});
+                  } catch (e) {
+                    setState(() => _currentActive = !v);
+                    if (mounted) {
+                      Toaster.show(context, "Error: $e", isError: true);
+                    }
+                  }
+                },
+                activeThumbColor: orange,
+                activeTrackColor: orange.withValues(alpha: 0.1),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _benefitRow(String text, bool active) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: purple,
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                fontFamily: "Satoshi",
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

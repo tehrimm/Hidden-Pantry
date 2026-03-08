@@ -38,5 +38,5 @@ class SubscriptionModel {
     return expiryDate.difference(now).inDays;
   }
 
-  bool get isActive => status == 'active' && daysRemaining > 0;
+  bool get isActive => (status == 'active' || status == 'trialing') && daysRemaining > 0;
 }

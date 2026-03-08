@@ -221,6 +221,21 @@ exports.onNotificationCreated = functions.firestore
                 senderName: data.senderName || '',
                 senderPhotoUrl: data.senderPhotoUrl || '',
             },
+            android: {
+                priority: 'high',
+                notification: {
+                    sound: 'default',
+                    channel_id: 'high_importance_channel'
+                }
+            },
+            apns: {
+                payload: {
+                    aps: {
+                        sound: 'default',
+                        contentAvailable: true
+                    }
+                }
+            },
             token: fcmToken,
         };
 

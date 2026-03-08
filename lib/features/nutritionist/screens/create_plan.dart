@@ -65,21 +65,28 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     // If editing, map the benefits
     if (widget.initialPlan?['benefits'] != null) {
       final List incoming = widget.initialPlan!['benefits'];
-      // We need to preserve icons if they exist in our default list
+      
+      // 1. Mark existing default benefits as enabled/disabled
       for (var b in _benefits) {
-        final found = incoming.any((element) => element['title'] == b['title']);
+        final found = incoming.any((element) => 
+          element['title']?.toString().toLowerCase().trim() == b['title'].toString().toLowerCase().trim()
+        );
         b['enabled'] = found;
       }
       
-      // Also add any custom benefits that aren't in the default list
+      // 2. Add custom benefits (those not in the default list)
+      final List<String> defaultTitles = ["InChat meal plans", "Priority Support", "Supplement Guide", "Nutritionist Approved Recipes"]
+          .map((e) => e.toLowerCase()).toList();
+
       for (var element in incoming) {
-        final isDefault = _benefits.any((b) => b['title'] == element['title']);
-        if (!isDefault) {
+        final title = element['title']?.toString() ?? "";
+        if (!defaultTitles.contains(title.toLowerCase().trim())) {
           _benefits.add({
             "icon": Icons.star_outline_rounded,
-            "title": element["title"],
+            "title": title,
             "subtitle": element["subtitle"] ?? "Custom benefit",
-            "enabled": true
+            "enabled": true,
+            "isCustom": true,
           });
         }
       }
@@ -475,6 +482,8 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
 
   Widget _benefitToggle(int index, Map<String, dynamic> benefit) {
     bool enabled = benefit["enabled"];
+    bool isCustom = benefit["isCustom"] == true;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -509,6 +518,15 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
               ],
             ),
           ),
+          if (isCustom)
+            IconButton(
+              icon: const Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20),
+              onPressed: () {
+                setState(() {
+                  _benefits.removeAt(index);
+                });
+              },
+            ),
           Switch(
             value: enabled,
             onChanged: (v) => setState(() => _benefits[index]["enabled"] = v),
@@ -586,7 +604,8 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                     "icon": Icons.star_outline_rounded,
                     "title": controller.text,
                     "subtitle": "Custom benefit",
-                    "enabled": true
+                    "enabled": true,
+                    "isCustom": true,
                   });
                 });
                 Navigator.pop(context);

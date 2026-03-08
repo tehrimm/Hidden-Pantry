@@ -282,7 +282,10 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
                   icon: Icon(Icons.close, size: 18, color: purple.withValues(alpha:0.4)),
                   onPressed: () {
                     setState(() {
-                      _dayMeals[_selectedDay]?.remove(m);
+                      _dayMeals[_selectedDay]?.removeWhere((element) => 
+                          element["isNote"] == true && 
+                          element["note"] == m["note"] && 
+                          element["type"] == m["type"]);
                     });
                   },
                 ),
@@ -296,7 +299,9 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
                 icon: Icon(Icons.close, size: 18, color: purple.withValues(alpha:0.4)),
                 onPressed: () {
                   setState(() {
-                    _dayMeals[_selectedDay]?.remove(m);
+                    _dayMeals[_selectedDay]?.removeWhere((element) => 
+                        (element["recipeId"] == m["recipeId"] || element["id"] == m["id"] || element["id"] == m["recipeId"]) &&
+                        element["type"] == m["type"]);
                   });
                 },
               ),
