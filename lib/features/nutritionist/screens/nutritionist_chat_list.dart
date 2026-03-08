@@ -42,9 +42,9 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
       final DateTime now = DateTime.now();
 
       // Collect subscriptions to process
-      final List<QueryDocumentSnapshot> activeDocs = [];
+      final List<QueryDocumentSnapshot<Map<String, dynamic>>> activeDocs = [];
       for (var doc in subsSnap.docs) {
-        final data = doc.data() as Map<String, dynamic>;
+        final data = doc.data();
         final String status = data["status"]?.toString() ?? "";
         final Timestamp? expiryDate = data["expiryDate"] as Timestamp?;
 
@@ -59,7 +59,7 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
 
       // Process in parallel
       await Future.wait(activeDocs.map((doc) async {
-        final data = doc.data() as Map<String, dynamic>;
+        final data = doc.data();
         final userId = data["userId"] as String?;
         final planId = data["planId"] as String?;
         if (userId == null || userId == user.uid) return;
@@ -245,7 +245,7 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
         Expanded(
           child: _isSubsLoading
               ? const Center(child: CircularProgressIndicator())
-              : StreamBuilder<QuerySnapshot>(
+              : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
                   stream: FirebaseFirestore.instance
                       .collection("chats")
                       .where("participants", arrayContains: user.uid)
@@ -260,7 +260,7 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
                     final Set<String> chatUserIds = {};
 
                     for (var doc in snapshot.data!.docs) {
-                      final data = doc.data() as Map<String, dynamic>;
+                      final data = doc.data();
                       final participants = List<String>.from(data["participants"] ?? []);
                       final otherUserId = participants.firstWhere((id) => id != user.uid, orElse: () => "");
                       if (otherUserId.isEmpty) continue;
