@@ -298,7 +298,7 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
                             ),
                             SizedBox(width: 10.sw),
                             Image.asset(
-                              'assets/icons/nextButton.png',
+                              'assets/icons/next_button.png',
                               width: 18.sw,
                               height: 18.sh,
                               fit: BoxFit.contain,

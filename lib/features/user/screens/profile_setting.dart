@@ -581,7 +581,7 @@ void _openPreferences() {
   Widget _placeholderImage() {
     return Center(
       child: Image.asset(
-        'assets/Logos/profile_placeholder.png',
+        'assets/logos/profile_placeholder.png',
         width: 22.sw,
         height: 22.sw,
         fit: BoxFit.contain,

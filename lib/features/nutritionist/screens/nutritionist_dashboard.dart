@@ -708,7 +708,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                 color: const Color(0xFFD9D9D9),
                 child: photoUrl != null && photoUrl!.startsWith("http")
                     ? Image.network(photoUrl!, fit: BoxFit.cover)
-                    : Image.asset("assets/Logos/mainLogo.png", fit: BoxFit.cover),
+                    : Image.asset("assets/logos/main_logo.png", fit: BoxFit.cover),
               ),
             ),
           ),

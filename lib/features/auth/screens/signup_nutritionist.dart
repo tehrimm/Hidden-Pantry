@@ -604,7 +604,7 @@ class _SignupNutritionistScreenState extends State<SignupNutritionistScreen> {
                                           padding: EdgeInsets.only(right: 16.sw),
                                           child: Image.asset(
                                             _obscurePassword
-                                                ? "assets/icons/eye-disable.png"
+                                                ? "assets/icons/eye_disable.png"
                                                 : "assets/icons/eye.png",
                                             width: 19.sw,
                                             height: 20.sw,
@@ -725,7 +725,7 @@ class _SignupNutritionistScreenState extends State<SignupNutritionistScreen> {
                                     ),
                                     alignment: Alignment.center,
                                     child: Image.asset(
-                                      "assets/Logos/google.png",
+                                      "assets/logos/google.png",
                                       width: 48.sw,
                                       height: 27.sh,
                                       fit: BoxFit.contain,
@@ -745,7 +745,7 @@ class _SignupNutritionistScreenState extends State<SignupNutritionistScreen> {
                                     ),
                                     alignment: Alignment.center,
                                     child: Image.asset(
-                                      "assets/Logos/apple.png",
+                                      "assets/logos/apple.png",
                                       width: 70.sw,
                                       height: 44.sh,
                                       fit: BoxFit.contain,

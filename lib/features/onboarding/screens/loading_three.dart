@@ -58,7 +58,7 @@ class LoadingThree extends StatelessWidget {
                     right: 0,
                     child: Center(
                       child: Image.asset(
-                        'assets/Logos/logo.png',
+                        'assets/logos/logo.png',
                         width: 113 * wScale,
                         height: 26 * hScale,
                         fit: BoxFit.contain,
@@ -133,7 +133,7 @@ class LoadingThree extends StatelessWidget {
                         );
                       },
                       child: Image.asset(
-                        'assets/icons/nextButton.png',
+                        'assets/icons/next_button.png',
                         width: 40 * wScale,
                         height: 27 * hScale,
                         fit: BoxFit.contain,

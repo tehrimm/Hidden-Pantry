@@ -637,7 +637,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
 
   Widget _placeholder(double width) {
     return Image.asset(
-      'assets/Logos/recipe_placeholder.jpg',
+      'assets/logos/recipe_placeholder.jpg',
       width: width,
       height: 180.sh,
       fit: BoxFit.cover,

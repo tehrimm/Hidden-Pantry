@@ -1096,7 +1096,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
             backgroundColor: Colors.white,
             backgroundImage: photo != null && photo.startsWith("http")
                 ? NetworkImage(photo)
-                : const AssetImage("assets/Logos/mainLogo.png") as ImageProvider,
+                : const AssetImage("assets/logos/main_logo.png") as ImageProvider,
           ),
           SizedBox(width: 20.sw),
           Expanded(

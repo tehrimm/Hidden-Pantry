@@ -167,7 +167,7 @@ class _StartingScreenState extends State<StartingScreen>
                   child: Transform.rotate(
                     angle: 4 * math.pi / 180,
                     child: Image.asset(
-                      'assets/Logos/knife.png',
+                      'assets/logos/knife.png',
                       width: 253.sw,
                       height: 210.sw,
                       fit: BoxFit.contain,
@@ -283,7 +283,7 @@ class _LogoText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      'assets/Logos/name.png',
+      'assets/logos/name.png',
       width: 258.sw,
       height: 115.sh,
       fit: BoxFit.contain,

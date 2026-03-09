@@ -48,46 +48,46 @@ dev_dependencies:
   mockito: ^5.4.4
   firebase_auth_mocks: ^0.14.2
 
-# ✅ MUST BE HERE (root level)
+
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: assets/Logos/mainLogo.png
+  image_path: assets/logos/main_logo.png
   adaptive_icon_background: "#FFF3EB"
-  adaptive_icon_foreground: assets/Logos/mainLogo.png
+  adaptive_icon_foreground: assets/logos/main_logo.png
 
 flutter:
-  uses-material-design: true
+  uses-material-design: true  
   assets:
-    - assets/Logos/name.png
-    - assets/Logos/knife.png
-    - assets/Logos/logo.png
-    - assets/Logos/logo2.png
-    - assets/Logos/mainLogo.png
+    - assets/logos/name.png
+    - assets/logos/knife.png
+    - assets/logos/logo.png
+    - assets/logos/logo2.png
+    - assets/logos/main_logo.png
     - assets/bg/1.png
     - assets/bg/2.png
     - assets/bg/3.jpg
     - assets/bg/4.png
-    - assets/icons/nextButton.png
+    - assets/icons/next_button.png
     - assets/icons/apple.png
     - assets/icons/chef.png
     - assets/icons/question.png
-    - assets/icons/eye-disable.png
+    - assets/icons/eye_disable.png
     - assets/icons/eye.png
-    - assets/Logos/apple.png
-    - assets/Logos/google.png
-    - assets/icons/Bookmark_active.png
-    - assets/icons/Bookmark_inactive.png
+    - assets/logos/apple.png
+    - assets/logos/google.png
+    - assets/icons/bookmark_active.png
+    - assets/icons/bookmark_inactive.png
     - assets/icons/search_inactive.png
-    - assets/icons/Search_active.png
-    - assets/icons/Search.png
-    - assets/icons/Plus.png
-    - assets/icons/User_active.png
-    - assets/icons/User_inactive.png
+    - assets/icons/search_active.png
+    - assets/icons/search.png
+    - assets/icons/plus.png
+    - assets/icons/user_active.png
+    - assets/icons/user_inactive.png
     - assets/icons/home_active.png
     - assets/icons/home_inactive.png
-    - assets/Logos/profile_placeholder.png
-    - assets/Logos/recipe_placeholder.jpg
+    - assets/logos/profile_placeholder.png
+    - assets/logos/recipe_placeholder.jpg
     - assets/bg/nav_bar.png
     - assets/icons/next_brown.png
     - assets/icons/card.png
@@ -108,11 +108,11 @@ flutter:
     - assets/food/treenuts.png
     - assets/food/wheat.png
     - assets/icons/camera.png
-    - assets/icons/backButton.png
+    - assets/icons/back_button.png
     - assets/bg/5.png
-    - assets/Logos/master.png
-    - assets/Logos/visa.png
-    - assets/Logos/card.png
+    - assets/logos/master.png
+    - assets/logos/visa.png
+    - assets/logos/card.png
     - assets/icons/heart.png
     - assets/icons/heart_filled.png
     - assets/icons/bookmark.png
@@ -124,10 +124,10 @@ flutter:
     - assets/icons/star.png
     - assets/icons/gmail.png
     - assets/icons/call.png
-    - assets/icons/Camera_brown.png
+    - assets/icons/camera_brown.png
     - assets/food/pantry.png
-    - assets/food/GrainsAndCereals.png
-    - assets/food/LegumesPlantProtein.png
+    - assets/food/grains_and_cereals.png
+    - assets/food/legumes_and_pulses.png
     - assets/food/baking.png
     - assets/food/beverages.png
     - assets/food/cheese.png
@@ -135,7 +135,7 @@ flutter:
     - assets/food/dairy_free.png
     - assets/food/fruits.png
     - assets/food/mushroom.png
-    - assets/food/nutsAndSeed.png
+    - assets/food/nuts_and_seeds.png
     - assets/food/oil.png
     - assets/food/packed_food.png
     - assets/food/pasta.png

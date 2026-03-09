@@ -59,7 +59,7 @@ class _LoadingFiveState extends State<LoadingFive> {
                   right: 0,
                   child: Center(
                     child: Image.asset(
-                      'assets/Logos/logo2.png',
+                      'assets/logos/logo2.png',
                       width: 113.sw,
                       height: 26.sh,
                       fit: BoxFit.contain,

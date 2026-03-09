@@ -637,7 +637,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
               child: _netImage(
                 url: r.imageUrl,
                 fallback: Image.asset(
-                  'assets/Logos/recipe_placeholder.jpg',
+                  'assets/logos/recipe_placeholder.jpg',
                   fit: BoxFit.cover,
                 ),
               ),
@@ -1053,7 +1053,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                               aspectRatio: 1,
                               child: _netImage(
                                 url: ar.imageUrl,
-                                fallback: Image.asset('assets/Logos/recipe_placeholder.jpg', fit: BoxFit.cover),
+                                fallback: Image.asset('assets/logos/recipe_placeholder.jpg', fit: BoxFit.cover),
                               ),
                             ),
                           ),

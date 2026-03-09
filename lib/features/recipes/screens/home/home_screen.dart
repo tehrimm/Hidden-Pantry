@@ -603,7 +603,7 @@ void _openUserProfile() {
           const Spacer(),
           GestureDetector(
             onTap: _openSearch,
-            child: Image.asset("assets/icons/Search.png", width: 22.sw, height: 22.sw),
+            child: Image.asset("assets/icons/search.png", width: 22.sw, height: 22.sw),
           ),
         ],
       ),

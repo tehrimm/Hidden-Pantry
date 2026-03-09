@@ -329,7 +329,7 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
         padding: EdgeInsets.symmetric(horizontal: 20.sw),
         child: Row(
           children: [
-            Image.asset("assets/icons/Search.png", width: 20.sw, height: 20.sw),
+            Image.asset("assets/icons/search.png", width: 20.sw, height: 20.sw),
             SizedBox(width: 12.sw),
             Expanded(
               child: TextField(
@@ -425,7 +425,7 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
                 borderRadius: BorderRadius.circular(20.sw),
                 child: photo != null && photo.startsWith("http")
                     ? Image.network(photo, fit: BoxFit.cover)
-                    : Image.asset("assets/Logos/mainLogo.png", fit: BoxFit.cover),
+                    : Image.asset("assets/logos/main_logo.png", fit: BoxFit.cover),
               ),
             ),
             const SizedBox(width: 16),

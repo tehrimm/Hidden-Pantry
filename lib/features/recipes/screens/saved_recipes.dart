@@ -318,7 +318,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
             color: const Color(0xFFD9D9D9),
             child: _photoUrl != null
                 ? Image.network(_photoUrl!, fit: BoxFit.cover)
-                : Image.asset('assets/Logos/profile_placeholder.png', scale: 2),
+                : Image.asset('assets/logos/profile_placeholder.png', scale: 2),
           ),
         ),
         SizedBox(height: 10.sh),

@@ -78,7 +78,7 @@ class NbBottomNav extends StatelessWidget {
                   ),
                   child: Center(
                     child: Image.asset(
-                      "assets/icons/Plus.png",
+                      "assets/icons/plus.png",
                       width: 22,
                       height: 22,
                       fit: BoxFit.contain,

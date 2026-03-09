@@ -191,7 +191,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                       ),
                       child: Center(
                         child: Image.asset(
-                          'assets/icons/backButton.png',
+                          'assets/icons/back_button.png',
                           width: 18.sw,
                           height: 18.sw,
                           fit: BoxFit.contain,

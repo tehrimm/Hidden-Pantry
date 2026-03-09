@@ -47,14 +47,14 @@ class HpBottomNav extends StatelessWidget {
                   ),
                   _navIcon(
                     index: 1,
-                    active: "assets/icons/Search_active.png",
+                    active: "assets/icons/search_active.png",
                     inactive: "assets/icons/search_inactive.png",
                   ),
                   SizedBox(width: 48.sw), // space for plus
                   _navIcon(
                     index: 3,
-                    active: "assets/icons/Bookmark_active.png",
-                    inactive: "assets/icons/Bookmark_inactive.png",
+                    active: "assets/icons/bookmark_active.png",
+                    inactive: "assets/icons/bookmark_inactive.png",
                   ),
 
                   // Nutritionist tab
@@ -62,8 +62,8 @@ class HpBottomNav extends StatelessWidget {
                       ? _expertIcon()
                       : _navIcon(
                           index: 4,
-                          active: "assets/icons/User_active.png",
-                          inactive: "assets/icons/User_inactive.png",
+                          active: "assets/icons/user_active.png",
+                          inactive: "assets/icons/user_inactive.png",
                         ),
                 ],
               ),
@@ -86,7 +86,7 @@ class HpBottomNav extends StatelessWidget {
                   ),
                   child: Center(
                     child: Image.asset(
-                      "assets/icons/Plus.png",
+                      "assets/icons/plus.png",
                       width: 22.sp,
                       height: 22.sp,
                       fit: BoxFit.contain,

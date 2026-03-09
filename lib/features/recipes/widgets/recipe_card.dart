@@ -66,13 +66,13 @@ class RecipeCard extends StatelessWidget {
                         errorBuilder: (context, error, stackTrace) {
                           print("RecipeCard Image Error: $error for $imageUrl");
                           return Image.asset(
-                            'assets/Logos/recipe_placeholder.jpg',
+                            'assets/logos/recipe_placeholder.jpg',
                             fit: BoxFit.cover,
                           );
                         },
                       )
                     : Image.asset(
-                        'assets/Logos/recipe_placeholder.jpg',
+                        'assets/logos/recipe_placeholder.jpg',
                         fit: BoxFit.cover,
                       ),
               ),

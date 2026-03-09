@@ -464,7 +464,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Center(
                   child: Image.asset(
-                    "assets/Logos/profile_placeholder.png",
+                    "assets/logos/profile_placeholder.png",
                     width: 21.sw,
                     height: 21.sh,
                     fit: BoxFit.contain,
@@ -473,7 +473,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               )
             : Center(
                 child: Image.asset(
-                  "assets/Logos/profile_placeholder.png",
+                  "assets/logos/profile_placeholder.png",
                   width: 21.sw,
                   height: 21.sh,
                   fit: BoxFit.contain,

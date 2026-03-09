@@ -152,7 +152,7 @@ class _CreateCookbookBottomSheetState extends State<CreateCookbookBottomSheet> {
                 ),
                 child: Center(
                   child: Image.asset(
-                    'assets/icons/backButton.png',
+                    'assets/icons/back_button.png',
                     width: 18,
                     height: 18,
                     fit: BoxFit.contain,

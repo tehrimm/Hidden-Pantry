@@ -219,8 +219,8 @@ class _UserListState extends State<_UserList> {
                   ),
                   child: ClipOval(
                     child: photoUrl != null
-                        ? Image.network(photoUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Image.asset("assets/Logos/profile_placeholder.png", fit: BoxFit.cover))
-                        : Image.asset("assets/Logos/profile_placeholder.png", fit: BoxFit.cover),
+                        ? Image.network(photoUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Image.asset("assets/logos/profile_placeholder.png", fit: BoxFit.cover))
+                        : Image.asset("assets/logos/profile_placeholder.png", fit: BoxFit.cover),
                   ),
                 ),
                 SizedBox(width: 16.sw),
