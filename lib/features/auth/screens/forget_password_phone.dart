@@ -1,10 +1,9 @@
 // lib/screens/Authorization/forget_password_phone.dart
 import 'dart:async';
-import 'dart:math' as math;
-
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:flutter/material.dart';
 
 import 'forget_password.dart';
@@ -65,12 +64,7 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
   }
 
   // ===== Responsive scaling =====
-  double _scale(BuildContext context, double v) {
-    final size = MediaQuery.of(context).size;
-    final base = math.min(size.width / 393.0, size.height / 852.0);
-    final clamped = base.clamp(0.85, 1.20);
-    return v * clamped;
-  }
+  // Removed manual scale function
 
   void _snack(String msg) {
     if (!mounted) return;
@@ -222,8 +216,8 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     final mq = MediaQuery.of(context);
-    final s = (double v) => _scale(context, v);
 
     return Scaffold(
       backgroundColor: bg,
@@ -233,7 +227,7 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
         child: SafeArea(
           top: false,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(s(30)),
+            borderRadius: BorderRadius.circular(30.sw),
             child: Stack(
               children: [
                 const PatternBackground(),
@@ -241,10 +235,10 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
                 // Main scroll content
                 SingleChildScrollView(
                   padding: EdgeInsets.only(
-                    left: s(30),
-                    right: s(30),
-                    top: mq.padding.top + s(51),
-                    bottom: s(14) + mq.padding.bottom,
+                    left: 30.sw,
+                    right: 30.sw,
+                    top: mq.padding.top + 36.sh,
+                    bottom: 14.sh + mq.padding.bottom,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -261,15 +255,15 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
                       },
                     ),
 
-                      SizedBox(height: s(38)),
+                      SizedBox(height: 38.sh),
 
                       SizedBox(
-                        width: s(235),
+                        width: 235.sw,
                         child: Text(
                           "Reset\nPassword",
                           style: TextStyle(
                             color: purple,
-                            fontSize: s(40),
+                            fontSize: 40.sp,
                             fontWeight: FontWeight.w900,
                             height: 1.1,
                             fontFamily: "Satoshi",
@@ -277,38 +271,38 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
                         ),
                       ),
 
-                      SizedBox(height: s(18)),
+                      SizedBox(height: 18.sh),
 
                       SizedBox(
-                        width: s(260),
+                        width: 260.sw,
                         child: Text(
                           "Please enter your phone number to reset the password",
                           style: TextStyle(
                             color: purple,
-                            fontSize: s(15),
+                            fontSize: 15.sp,
                             fontFamily: "Satoshi",
                           ),
                         ),
                       ),
 
-                      SizedBox(height: s(26)),
+                      SizedBox(height: 26.sh),
 
                       // Phone field
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Container(
-                            height: s(70),
+                            height: 70.sh,
                             decoration: BoxDecoration(
                               color: _err == null
                                   ? fieldBg
                                   : const Color(0xFFFFE0DD),
-                              borderRadius: BorderRadius.circular(s(20)),
+                              borderRadius: BorderRadius.circular(20.sw),
                             ),
                             child: Row(
                               children: [
                                 Padding(
-                                  padding: EdgeInsets.only(left: s(12)),
+                                  padding: EdgeInsets.only(left: 12.sw),
                                   child: CountryCodePicker(
                                     onChanged: (code) {
                                       setState(() {
@@ -324,7 +318,7 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
                                     padding: EdgeInsets.zero,
                                     textStyle: TextStyle(
                                       color: hint,
-                                      fontSize: s(12),
+                                      fontSize: 12.sp,
                                       fontWeight: FontWeight.w600,
                                       letterSpacing: 0.2,
                                       fontFamily: "Satoshi",
@@ -336,11 +330,11 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
 
                                 Container(
                                   width: 1,
-                                  height: s(36),
+                                  height: 36.sh,
                                   color: const Color(0xFFEAD2C6),
                                 ),
 
-                                SizedBox(width: s(12)),
+                                SizedBox(width: 12.sw),
 
                                 Expanded(
                                   child: TextField(
@@ -349,7 +343,7 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
                                     cursorColor: purple,
                                     style: TextStyle(
                                       color: purple,
-                                      fontSize: s(12),
+                                      fontSize: 12.sp,
                                       fontWeight: FontWeight.w600,
                                       letterSpacing: 0.2,
                                       fontFamily: "Satoshi",
@@ -359,30 +353,30 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
                                       hintText: "Phone Number",
                                       hintStyle: TextStyle(
                                         color: hint,
-                                        fontSize: s(12),
+                                        fontSize: 12.sp,
                                         fontWeight: FontWeight.w500,
                                         letterSpacing: 0.2,
                                         fontFamily: "Satoshi",
                                       ),
                                       contentPadding: EdgeInsets.symmetric(
-                                        vertical: s(20),
+                                        vertical: 20.sh,
                                       ),
                                     ),
                                   ),
                                 ),
 
-                                SizedBox(width: s(12)),
+                                SizedBox(width: 12.sw),
                               ],
                             ),
                           ),
 
                           if (_err != null) ...[
-                            SizedBox(height: s(6)),
+                            SizedBox(height: 6.sh),
                             Text(
                               _err!,
                               style: TextStyle(
                                 color: const Color(0xFFFD3250),
-                                fontSize: s(10),
+                                fontSize: 10.sp,
                                 fontWeight: FontWeight.w500,
                                 letterSpacing: 0.2,
                                 fontFamily: "Satoshi",
@@ -391,12 +385,12 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
                           ],
 
                           if (_inCooldown()) ...[
-                            SizedBox(height: s(8)),
+                            SizedBox(height: 8.sh),
                             Text(
                               "Try again in $_cooldownLeft seconds",
                               style: TextStyle(
                                 color: hint,
-                                fontSize: s(11),
+                                fontSize: 11.sp,
                                 fontWeight: FontWeight.w600,
                                 fontFamily: "Satoshi",
                               ),
@@ -405,7 +399,7 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
                         ],
                       ),
 
-                      SizedBox(height: s(40)),
+                      SizedBox(height: 40.sh),
 
                       // Next button
                       Align(
@@ -417,17 +411,17 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
                           child: Opacity(
                             opacity: (_loading || _inCooldown()) ? 0.7 : 1,
                             child: Container(
-                              width: s(221),
-                              height: s(62),
+                              width: 221.sw,
+                              height: 62.sh,
                               decoration: BoxDecoration(
                                 color: orange,
-                                borderRadius: BorderRadius.circular(s(20)),
+                                borderRadius: BorderRadius.circular(20.sw),
                               ),
                               alignment: Alignment.center,
                               child: _loading
                                   ? SizedBox(
-                                      width: s(18),
-                                      height: s(18),
+                                      width: 18.sw,
+                                      height: 18.sw,
                                       child: const CircularProgressIndicator(
                                         color: Colors.white,
                                         strokeWidth: 2,
@@ -441,15 +435,15 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
                                           _inCooldown() ? "Wait..." : "Next",
                                           style: TextStyle(
                                             color: btnText,
-                                            fontSize: s(12),
+                                            fontSize: 12.sp,
                                             fontWeight: FontWeight.bold,
                                             fontFamily: "Satoshi",
                                           ),
                                         ),
-                                        SizedBox(width: s(8)),
+                                        SizedBox(width: 8.sw),
                                         Icon(
                                           Icons.arrow_forward_ios,
-                                          size: s(12),
+                                          size: 12.sw,
                                           color: btnText,
                                         ),
                                       ],
@@ -459,7 +453,7 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
                         ),
                       ),
 
-                      SizedBox(height: s(14)),
+                      SizedBox(height: 14.sh),
                     ],
                   ),
                 ),

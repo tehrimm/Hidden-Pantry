@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
@@ -6,6 +6,7 @@ import 'login_user.dart';
 import 'forget_password_email.dart';
 import 'forget_password_phone.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
  // (create later or comment for now)
 
 
@@ -27,25 +28,18 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
   static const Color orange = Color(0xFFF2894F);
   static const Color btnText = Color(0xFFFFF2EA);
 
-  double _scale(BuildContext context, double v) {
-    final size = MediaQuery.of(context).size;
-    final base = math.min(size.width / 393.0, size.height / 852.0);
-    final clamped = base.clamp(0.85, 1.20);
-    return v * clamped;
-  }
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     final mq = MediaQuery.of(context);
-
-    final s = (double v) => _scale(context, v);
 
     return Scaffold(
       backgroundColor: bg,
       body: SafeArea(
         top: false,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(s(30)),
+          borderRadius: BorderRadius.circular(30.sw),
           child: Stack(
             children: [
               const PatternBackground(),
@@ -53,10 +47,10 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
               // Main content
               Padding(
                 padding: EdgeInsets.only(
-                  left: s(30),
-                  right: s(30),
-                  top: mq.padding.top + s(51),
-                  bottom: s(22),
+                  left: 30.sw,
+                  right: 30.sw,
+                  top: mq.padding.top + 36.sh,
+                  bottom: 22.sh,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,16 +63,16 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                         );
                       },
                     ),
-                    SizedBox(height: s(38)),
+                    SizedBox(height: 38.sh),
 
 
                     SizedBox(
-                      width: s(260),
+                      width: 260.sw,
                       child: Text(
                         "Verification Method",
                         style: TextStyle(
                           color: purple,
-                          fontSize: s(40),
+                          fontSize: 40.sp,
                           fontWeight: FontWeight.w900,
                           height: 1.1,
                           fontFamily: "Satoshi",
@@ -86,49 +80,47 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                       ),
                     ),
 
-                    SizedBox(height: s(12)),
+                    SizedBox(height: 12.sh),
 
                     SizedBox(
-                      width: s(280),
+                      width: 280.sw,
                       child: Text(
                         "Choose one way where you want us to send an OTP",
                         style: TextStyle(
                           color: purple,
-                          fontSize: s(15),
+                          fontSize: 15.sp,
                           fontFamily: "Satoshi",
                         ),
                       ),
                     ),
 
-                    SizedBox(height: s(28)),
+                    SizedBox(height: 28.sh),
 
                     // Option cards (responsive row)
                     Row(
                       children: [
                         Expanded(
-                          child: _OptionCard(
-                            scale: s,
+                           child: _OptionCard(
                             title: "Email",
                             subtitle: "your@email.com",
                             icon: Image.asset(
                               "assets/icons/gmail.png",
-                              width: s(18),
-                              height: s(18),
+                              width: 18.sw,
+                              height: 18.sw,
                               fit: BoxFit.contain,
                             ),
                             selected: _selected == 0,
                             onTap: () => setState(() => _selected = 0),
                           ),
                         ),
-                        SizedBox(width: s(16)),
+                        SizedBox(width: 16.sw),
                         Expanded(
                           child: _OptionCard(
-                            scale: s,
                             title: "Phone",
                             subtitle: "+Areacode \nXXX XXXXXXX",
                             icon: Icon(
                               Icons.phone_in_talk_rounded,
-                              size: s(18),
+                              size: 18.sw,
                               color: Colors.white,
                             ),
                             selected: _selected == 1,
@@ -138,7 +130,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> {
                       ],
                     ),
 
-                    SizedBox(height: s(40)),
+                    SizedBox(height: 40.sh),
 
                     // Next button aligned right (like your UI)
                     Align(
@@ -165,11 +157,11 @@ onTap: () {
 },
 
                         child: Container(
-                          width: s(221),
-                          height: s(62),
+                          width: 221.sw,
+                          height: 62.sh,
                           decoration: BoxDecoration(
                             color: orange,
-                            borderRadius: BorderRadius.circular(s(20)),
+                            borderRadius: BorderRadius.circular(20.sw),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -178,15 +170,15 @@ onTap: () {
                                 "Next",
                                 style: TextStyle(
                                   color: btnText,
-                                  fontSize: s(12),
+                                  fontSize: 12.sp,
                                   fontWeight: FontWeight.bold,
                                   fontFamily: "Satoshi",
                                 ),
                               ),
-                              SizedBox(width: s(8)),
+                              SizedBox(width: 8.sw),
                               Icon(
                                 Icons.arrow_forward_ios,
-                                size: s(12),
+                                size: 12.sp,
                                 color: btnText,
                               ),
                             ],
@@ -195,7 +187,7 @@ onTap: () {
                       ),
                     ),
 
-                    SizedBox(height: s(14)),
+                    SizedBox(height: 14.sh),
                   ],
                 ),
               ),
@@ -208,7 +200,6 @@ onTap: () {
 }
 
 class _OptionCard extends StatelessWidget {
-  final double Function(double) scale;
   final String title;
   final String subtitle;
   final Widget icon;
@@ -216,7 +207,6 @@ class _OptionCard extends StatelessWidget {
   final VoidCallback onTap;
 
   const _OptionCard({
-    required this.scale,
     required this.title,
     required this.subtitle,
     required this.icon,
@@ -231,55 +221,54 @@ class _OptionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = scale;
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: s(173),
+        height: 173.sh,
         decoration: BoxDecoration(
           color: cardBg,
-          borderRadius: BorderRadius.circular(s(30)),
+          borderRadius: BorderRadius.circular(30.sw),
           border: Border.all(
             color: selected ? selectRing : Colors.transparent,
-            width: s(2),
+            width: 2.sw,
           ),
         ),
-        padding: EdgeInsets.all(s(16)),
+        padding: EdgeInsets.all(16.sw),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Icon box
             Container(
-              width: s(46),
-              height: s(47),
+              width: 46.sw,
+              height: 47.sh,
               decoration: BoxDecoration(
                 color: orange,
-                borderRadius: BorderRadius.circular(s(10)),
+                borderRadius: BorderRadius.circular(10.sw),
               ),
               alignment: Alignment.center,
               child: icon,
             ),
 
-            SizedBox(height: s(22)),
+            SizedBox(height: 22.sh),
 
             Text(
               title,
               style: TextStyle(
                 color: brown,
-                fontSize: s(20),
+                fontSize: 20.sp,
                 fontWeight: FontWeight.bold,
                 fontFamily: "Satoshi",
               ),
             ),
-            SizedBox(height: s(6)),
+            SizedBox(height: 6.sh),
             Text(
               subtitle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: brown,
-                fontSize: s(12),
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w500,
                 fontFamily: "Satoshi",
               ),

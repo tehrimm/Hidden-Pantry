@@ -6,6 +6,8 @@ import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class UploadRecipeStep5 extends StatefulWidget {
   final String title;
@@ -142,13 +144,14 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false,
       body: Container(
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(30.sw),
         ),
         child: Stack(
           children: [
@@ -156,9 +159,9 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
             SafeArea(
               child: Column(
                 children: [
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12.sh),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 29),
+                    padding: EdgeInsets.symmetric(horizontal: 29.sw),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -167,24 +170,24 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
                           widget.editingRecipe != null ? 'Edit Recipe' : 'Add Recipe',
                           style: TextStyle(
                             color: purple,
-                            fontSize: 20,
+                            fontSize: 20.sp,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Satoshi',
                           ),
                         ),
                         Container(
-                          width: 69,
-                          height: 42,
+                          width: 69.sw,
+                          height: 42.sh,
                           decoration: BoxDecoration(
                             color: purple,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(10.sw),
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Text(
                               '5/5',
                               style: TextStyle(
-                                color: Color(0xFFFFF2EA),
-                                fontSize: 12,
+                                color: const Color(0xFFFFF2EA),
+                                fontSize: 12.sp,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Satoshi',
                               ),
@@ -195,16 +198,16 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
                     ),
                   ),
  
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20.sh),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 27),
+                    padding: EdgeInsets.symmetric(horizontal: 27.sw),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
                         'Nutrition',
                         style: TextStyle(
                           color: purple,
-                          fontSize: 40,
+                          fontSize: 40.sp,
                           fontWeight: FontWeight.w900,
                           height: 1.1,
                           fontFamily: 'Satoshi',
@@ -215,23 +218,23 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
  
                   Expanded(
                     child: ListView(
-                      padding: const EdgeInsets.only(top: 20, bottom: 120, left: 30, right: 30),
+                      padding: EdgeInsets.only(top: 20.sh, bottom: 120.sh, left: 30.sw, right: 30.sw),
                       children: [
                         Text(
                           'Enter nutritional information per serving (optional).',
                           style: TextStyle(
                             color: purple.withValues(alpha:0.6),
-                            fontSize: 14,
+                            fontSize: 14.sp,
                             fontFamily: 'Satoshi',
                           ),
                         ),
-                        const SizedBox(height: 30),
+                        SizedBox(height: 30.sh),
                         _buildVisibilityToggle(),
-                        const SizedBox(height: 30),
+                        SizedBox(height: 30.sh),
                         ..._controllers.keys.map((key) => _buildNutritionField(key)).toList(),
  
                         Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 42),
+                          padding: EdgeInsets.symmetric(vertical: 42.sh),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             mainAxisAlignment: MainAxisAlignment.end,
@@ -240,33 +243,33 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
                                 child: GestureDetector(
                                   onTap: _isSubmitting ? null : _submit,
                                   child: Container(
-                                    height: 62,
+                                    height: 62.sh,
                                     decoration: BoxDecoration(
                                       color: orange,
-                                      borderRadius: BorderRadius.circular(20),
+                                      borderRadius: BorderRadius.circular(20.sw),
                                     ),
                                     child: _isSubmitting
-                                        ? const Center(
+                                        ? Center(
                                             child: SizedBox(
-                                              width: 24,
-                                              height: 24,
-                                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                              width: 24.sw,
+                                              height: 24.sh,
+                                              child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                                             ),
                                           )
                                         : Row(
                                             mainAxisAlignment: MainAxisAlignment.center,
-                                            children: const [
+                                            children: [
                                               Text(
                                                 'Submit',
                                                 style: TextStyle(
-                                                  color: Color(0xFFFFF2EA),
-                                                  fontSize: 15,
+                                                  color: const Color(0xFFFFF2EA),
+                                                  fontSize: 15.sp,
                                                   fontWeight: FontWeight.bold,
                                                   fontFamily: 'Satoshi',
                                                 ),
                                               ),
-                                              SizedBox(width: 10),
-                                              Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                                              SizedBox(width: 10.sw),
+                                              Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16.sw),
                                             ],
                                           ),
                                   ),
@@ -297,16 +300,16 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
 
   Widget _buildVisibilityToggle() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20.sw),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.sw),
         border: Border.all(color: _isPublic ? orange.withValues(alpha: 0.3) : Colors.transparent),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12.sw),
             decoration: BoxDecoration(
               color: _isPublic ? orange.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.5),
               shape: BoxShape.circle,
@@ -314,21 +317,21 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
             child: Icon(
               _isPublic ? Icons.public_rounded : Icons.public_off_rounded,
               color: _isPublic ? orange : purple.withValues(alpha: 0.3),
-              size: 20,
+              size: 20.sw,
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16.sw),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   "Public Visibility",
-                  style: TextStyle(color: purple, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Satoshi'),
+                  style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.bold, fontFamily: 'Satoshi'),
                 ),
                 Text(
                   _isPublic ? "Visible to everyone" : "Private (Author only)",
-                  style: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 12, fontFamily: 'Satoshi'),
+                  style: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 12.sp, fontFamily: 'Satoshi'),
                 ),
               ],
             ),
@@ -350,31 +353,31 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
     if (label == 'Sodium') unit = 'mg';
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(bottom: 16.sh),
       child: Container(
-        height: 62,
+        height: 62.sh,
         decoration: BoxDecoration(
           color: cardBg,
-          borderRadius: BorderRadius.circular(15),
+          borderRadius: BorderRadius.circular(15.sw),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: EdgeInsets.symmetric(horizontal: 20.sw),
         child: Row(
           children: [
             Expanded(
               child: TextField(
                 controller: _controllers[label],
                 keyboardType: TextInputType.number,
-                style: TextStyle(color: purple, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: 'Satoshi'),
+                style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.bold, fontFamily: 'Satoshi'),
                 decoration: InputDecoration(
                   hintText: label,
-                  hintStyle: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 16, fontFamily: 'Satoshi'),
+                  hintStyle: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 16.sp, fontFamily: 'Satoshi'),
                   border: InputBorder.none,
                 ),
               ),
             ),
             Text(
               unit,
-              style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'Satoshi'),
+              style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 14.sp, fontWeight: FontWeight.bold, fontFamily: 'Satoshi'),
             ),
           ],
         ),
@@ -392,31 +395,31 @@ class _BackgroundPatterns extends StatelessWidget {
       child: Stack(
         children: [
           Positioned(
-            left: -154,
-            top: -14,
+            left: -154.sw,
+            top: -14.sh,
             child: Transform.rotate(
               angle: 21 * math.pi / 180,
               child: Container(
-                width: 271,
-                height: 159,
+                width: 271.sw,
+                height: 159.sh,
                 decoration: BoxDecoration(
                   border: Border.all(color: const Color(0xFFF5DDCE)),
-                  borderRadius: const BorderRadius.all(Radius.elliptical(136, 80)),
+                  borderRadius: BorderRadius.all(Radius.elliptical(136.sw, 80.sh)),
                 ),
               ),
             ),
           ),
           Positioned(
-            left: -149,
-            top: -100,
+            left: -149.sw,
+            top: -100.sh,
             child: Transform.rotate(
               angle: 4 * math.pi / 180,
               child: Container(
-                width: 303,
-                height: 329,
+                width: 303.sw,
+                height: 329.sh,
                 decoration: BoxDecoration(
                   border: Border.all(color: const Color(0xFFF5DDCE)),
-                  borderRadius: const BorderRadius.all(Radius.elliptical(152, 165)),
+                  borderRadius: BorderRadius.all(Radius.elliptical(152.sw, 165.sh)),
                 ),
               ),
             ),

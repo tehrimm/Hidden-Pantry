@@ -7,6 +7,8 @@ import 'post_review.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class ReviewsScreen extends StatelessWidget {
   final Recipe recipe;
@@ -15,6 +17,7 @@ class ReviewsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     final RecipeService recipeService = RecipeService();
     const Color bg = Color(0xFFFFF3EB);
     const Color purple = Color(0xFF462F4D);
@@ -28,36 +31,36 @@ class ReviewsScreen extends StatelessWidget {
           
           // Custom Header
           Positioned(
-            left: 30,
-            top: 51,
+            left: 30.sw,
+            top: 51.sh,
             child: BackButtonWidget(color: purple),
           ),
           
           Positioned(
-            left: 90,
-            top: 51,
-            right: 30,
-            height: 50,
+            left: 90.sw,
+            top: 51.sh,
+            right: 30.sw,
+            height: 50.sh,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   "Tips & Photos",
-                  style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 18, fontFamily: "Satoshi"),
+                  style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 18.sp, fontFamily: "Satoshi"),
                 ),
                 Text(
                   recipe.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 12, fontFamily: "Satoshi"),
+                  style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 12.sp, fontFamily: "Satoshi"),
                 ),
               ],
             ),
           ),
 
           Positioned.fill(
-            top: 110,
+            top: 110.sh,
             child: SafeArea(
               child: Column(
                 children: [
@@ -75,10 +78,10 @@ class ReviewsScreen extends StatelessWidget {
                         
                         if (docs.isEmpty) {
                           return ListView(
-                            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+                            padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 10.sh),
                             children: [
                               Padding(
-                                padding: const EdgeInsets.only(top: 40),
+                                padding: EdgeInsets.only(top: 40.sh),
                                 child: _buildEmptyState(context, orange, purple),
                               ),
                             ],
@@ -86,13 +89,13 @@ class ReviewsScreen extends StatelessWidget {
                         }
 
                         return ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+                          padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 10.sh),
                           itemCount: docs.length,
                           itemBuilder: (context, index) {
                             final doc = docs[index];
                             final data = doc.data() as Map<String, dynamic>;
                             return Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
+                              padding: EdgeInsets.only(bottom: 16.sh),
                               child: _ReviewCard(
                                 reviewId: doc.id,
                                 data: data,
@@ -109,13 +112,13 @@ class ReviewsScreen extends StatelessWidget {
                   
                   // Sticky Add Review Bar
                   Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(16.sw),
                     decoration: BoxDecoration(
                       color: bg,
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha:0.05),
-                          blurRadius: 10,
+                          blurRadius: 10.sw,
                           offset: const Offset(0, -5),
                         ),
                       ],
@@ -142,7 +145,7 @@ class ReviewsScreen extends StatelessWidget {
       stream: reviewDocStream,
       builder: (context, reviewSnap) {
         if (reviewSnap.connectionState == ConnectionState.waiting) {
-          return const SizedBox(height: 50, child: Center(child: CircularProgressIndicator(strokeWidth: 2)));
+          return SizedBox(height: 50.sh, child: const Center(child: CircularProgressIndicator(strokeWidth: 2)));
         }
         final hasReviewed = reviewSnap.data?.exists ?? false;
 
@@ -165,18 +168,18 @@ class ReviewsScreen extends StatelessWidget {
               child: Row(
                 children: [
                   CircleAvatar(
-                    radius: 18,
+                    radius: 18.sw,
                     backgroundColor: purple.withValues(alpha:0.1),
                     backgroundImage: (userImageUrl.trim().isNotEmpty && userImageUrl.startsWith("http")) ? NetworkImage(userImageUrl) : null,
-                    child: (userImageUrl.trim().isEmpty || !userImageUrl.startsWith("http")) ? Icon(Icons.person, color: purple, size: 18) : null,
+                    child: (userImageUrl.trim().isEmpty || !userImageUrl.startsWith("http")) ? Icon(Icons.person, color: purple, size: 18.sp) : null,
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: 12.sw),
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 10.sh),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(20.sw),
                         border: Border.all(color: purple.withValues(alpha:0.1)),
                       ),
                       child: Text(
@@ -187,7 +190,7 @@ class ReviewsScreen extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           color: hasReviewed ? purple.withValues(alpha:0.7) : purple.withValues(alpha:0.4), 
-                          fontSize: 12, 
+                          fontSize: 12.sp, 
                           fontFamily: "Satoshi",
                           fontWeight: hasReviewed ? FontWeight.bold : FontWeight.normal,
                         ),
@@ -208,16 +211,16 @@ class ReviewsScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.mode_comment_outlined, size: 64, color: purple.withValues(alpha:0.3)),
-          const SizedBox(height: 16),
+          Icon(Icons.mode_comment_outlined, size: 64.sp, color: purple.withValues(alpha:0.3)),
+          SizedBox(height: 16.sh),
           Text(
             "No reviews yet.",
-            style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+            style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.sh),
           Text(
             "Be the first to share your thoughts!",
-            style: TextStyle(color: purple.withValues(alpha:0.6), fontFamily: "Satoshi"),
+            style: TextStyle(color: purple.withValues(alpha:0.6), fontFamily: "Satoshi", fontSize: 14.sp),
           ),
         ],
       ),
@@ -301,23 +304,23 @@ class _ReviewCardState extends State<_ReviewCard> {
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: const Color(0xFFF9E3D5),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.sw)),
         title: Text(
           "Delete Review",
-          style: TextStyle(color: widget.purple, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+          style: TextStyle(color: widget.purple, fontWeight: FontWeight.bold, fontFamily: "Satoshi", fontSize: 18.sp),
         ),
         content: Text(
           "Are you sure you want to delete your review? This will also revert your rating for this recipe.",
-          style: TextStyle(color: widget.purple.withValues(alpha:0.8), fontFamily: "Satoshi"),
+          style: TextStyle(color: widget.purple.withValues(alpha:0.8), fontFamily: "Satoshi", fontSize: 14.sp),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text("Cancel", style: TextStyle(color: widget.purple, fontWeight: FontWeight.bold)),
+            child: Text("Cancel", style: TextStyle(color: widget.purple, fontWeight: FontWeight.bold, fontSize: 14.sp)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text("Delete", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: Text("Delete", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14.sp)),
           ),
         ],
       ),
@@ -382,10 +385,10 @@ class _ReviewCardState extends State<_ReviewCard> {
     final isLiked = user != null && likedBy.contains(user.uid);
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.sw),
       decoration: BoxDecoration(
         color: const Color(0xFFF9E3D5),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.sw),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -394,16 +397,16 @@ class _ReviewCardState extends State<_ReviewCard> {
           Row(
             children: [
               CircleAvatar(
-                radius: 18,
+                radius: 18.sw,
                 backgroundColor: widget.purple.withValues(alpha:0.1),
                 backgroundImage: (userImageUrl != null && userImageUrl.toString().trim().isNotEmpty && userImageUrl.toString().startsWith("http"))
                     ? NetworkImage(userImageUrl.toString())
                     : null,
                 child: (userImageUrl == null || userImageUrl.toString().trim().isEmpty || !userImageUrl.toString().startsWith("http"))
-                    ? Icon(Icons.person, color: widget.purple, size: 18)
+                    ? Icon(Icons.person, color: widget.purple, size: 18.sp)
                     : null,
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12.sw),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -412,11 +415,11 @@ class _ReviewCardState extends State<_ReviewCard> {
                       userName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: widget.purple, fontWeight: FontWeight.bold, fontSize: 14, fontFamily: "Satoshi"),
+                      style: TextStyle(color: widget.purple, fontWeight: FontWeight.bold, fontSize: 14.sp, fontFamily: "Satoshi"),
                     ),
                     Text(
                       dateStr,
-                      style: TextStyle(color: widget.purple.withValues(alpha:0.5), fontSize: 11, fontFamily: "Satoshi"),
+                      style: TextStyle(color: widget.purple.withValues(alpha:0.5), fontSize: 11.sp, fontFamily: "Satoshi"),
                     ),
                   ],
                 ),
@@ -426,7 +429,7 @@ class _ReviewCardState extends State<_ReviewCard> {
                   return Icon(
                     i < rating.floor() ? Icons.star : (i < rating ? Icons.star_half : Icons.star_border),
                     color: widget.orange,
-                    size: 14,
+                    size: 14.sp,
                   );
                 }),
               ),
@@ -434,18 +437,18 @@ class _ReviewCardState extends State<_ReviewCard> {
           ),
               
           if (comment.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _buildCommentWithMentions(comment, widget.purple, widget.orange, 14),
+            SizedBox(height: 12.sh),
+            _buildCommentWithMentions(comment, widget.purple, widget.orange, 14.sp),
           ],
           
           if (imageUrl != null && imageUrl.isNotEmpty) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: 12.sh),
             ClipRRect(
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(15.sw),
               child: Image.network(
                 imageUrl,
                 width: double.infinity,
-                height: 180,
+                height: 180.sh,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => _placeholder(),
               ),
@@ -454,9 +457,9 @@ class _ReviewCardState extends State<_ReviewCard> {
           
           // Only add this gap if we had content above to push away from the action row
           if (comment.isNotEmpty || (imageUrl != null && imageUrl.isNotEmpty))
-            const SizedBox(height: 12)
+            SizedBox(height: 12.sh)
           else
-            const SizedBox(height: 4), // Much smaller gap if minimal review
+            SizedBox(height: 4.sh), // Much smaller gap if minimal review
           
           // Actions: Like, Reply & Delete
           Row(
@@ -467,15 +470,15 @@ class _ReviewCardState extends State<_ReviewCard> {
                   children: [
                     Icon(
                       isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
-                      size: 18,
+                      size: 18.sp,
                       color: isLiked ? widget.orange : widget.purple.withValues(alpha:0.6),
                     ),
-                    const SizedBox(width: 6),
+                    SizedBox(width: 6.sw),
                     Text(
                       likes > 0 ? likes.toString() : "Like",
                       style: TextStyle(
                         color: isLiked ? widget.orange : widget.purple.withValues(alpha:0.6),
-                        fontSize: 12,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.bold,
                         fontFamily: "Satoshi",
                       ),
@@ -483,18 +486,18 @@ class _ReviewCardState extends State<_ReviewCard> {
                   ],
                 ),
               ),
-              const SizedBox(width: 24),
+              SizedBox(width: 24.sw),
               GestureDetector(
                 onTap: () => setState(() => _showReplyInput = !_showReplyInput),
                 child: Row(
                   children: [
-                    Icon(Icons.chat_bubble_outline, size: 18, color: widget.purple.withValues(alpha:0.6)),
-                    const SizedBox(width: 6),
+                    Icon(Icons.chat_bubble_outline, size: 18.sp, color: widget.purple.withValues(alpha:0.6)),
+                    SizedBox(width: 6.sw),
                     Text(
                       "Reply",
                       style: TextStyle(
                         color: widget.purple.withValues(alpha:0.6),
-                        fontSize: 12,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.bold,
                         fontFamily: "Satoshi",
                       ),
@@ -508,13 +511,13 @@ class _ReviewCardState extends State<_ReviewCard> {
                   onTap: () => _confirmDelete(context),
                   child: Row(
                     children: [
-                      Icon(Icons.delete_outline, color: widget.purple.withValues(alpha:0.6), size: 18),
-                      const SizedBox(width: 6),
+                      Icon(Icons.delete_outline, color: widget.purple.withValues(alpha:0.6), size: 18.sp),
+                      SizedBox(width: 6.sw),
                       Text(
                         "Delete",
                         style: TextStyle(
                           color: widget.purple.withValues(alpha:0.6),
-                          fontSize: 12,
+                          fontSize: 12.sp,
                           fontWeight: FontWeight.bold,
                           fontFamily: "Satoshi",
                         ),
@@ -528,7 +531,7 @@ class _ReviewCardState extends State<_ReviewCard> {
           
           // Reply Input
           if (_showReplyInput) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: 12.sh),
             Row(
               children: [
                 Expanded(
@@ -537,17 +540,17 @@ class _ReviewCardState extends State<_ReviewCard> {
                     focusNode: _focusNode,
                     decoration: InputDecoration(
                       hintText: "Write a reply...",
-                      hintStyle: TextStyle(fontSize: 12, color: widget.purple.withValues(alpha:0.4)),
+                      hintStyle: TextStyle(fontSize: 12.sp, color: widget.purple.withValues(alpha:0.4)),
                       isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: widget.purple.withValues(alpha:0.1))),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 8.sh),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.sw), borderSide: BorderSide(color: widget.purple.withValues(alpha:0.1))),
                     ),
-                    style: const TextStyle(fontSize: 13, fontFamily: "Satoshi"),
+                    style: TextStyle(fontSize: 13.sp, fontFamily: "Satoshi"),
                   ),
                 ),
                 IconButton(
                   onPressed: _submitReply,
-                  icon: Icon(Icons.send, color: widget.orange, size: 20),
+                  icon: Icon(Icons.send, color: widget.orange, size: 20.sp),
                 ),
               ],
             ),
@@ -563,12 +566,12 @@ class _ReviewCardState extends State<_ReviewCard> {
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12.sh),
                   GestureDetector(
                     onTap: () => setState(() => _showReplies = !_showReplies),
                     child: Text(
                       _showReplies ? "Hide replies" : "View ${replies.length} replies",
-                      style: TextStyle(color: widget.orange, fontWeight: FontWeight.bold, fontSize: 12, fontFamily: "Satoshi"),
+                      style: TextStyle(color: widget.orange, fontWeight: FontWeight.bold, fontSize: 12.sp, fontFamily: "Satoshi"),
                     ),
                   ),
                   if (_showReplies) 
@@ -602,9 +605,9 @@ class _ReviewCardState extends State<_ReviewCard> {
   Widget _placeholder() {
     return Container(
       width: double.infinity,
-      height: 180,
+      height: 180.sh,
       color: Colors.black12,
-      child: Icon(Icons.broken_image_outlined, color: widget.purple.withValues(alpha:0.2)),
+      child: Icon(Icons.broken_image_outlined, color: widget.purple.withValues(alpha:0.2), size: 24.sp),
     );
   }
 
@@ -646,21 +649,21 @@ class _ReplyItem extends StatelessWidget {
     final isLiked = user != null && likedBy.contains(user.uid);
 
     return Padding(
-      padding: const EdgeInsets.only(top: 12, left: 12),
+      padding: EdgeInsets.only(top: 12.sh, left: 12.sw),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CircleAvatar(
-            radius: 12,
+            radius: 12.sw,
             backgroundColor: purple.withValues(alpha:0.1),
             backgroundImage: (userImageUrl != null && userImageUrl.trim().isNotEmpty && userImageUrl.startsWith("http"))
                 ? NetworkImage(userImageUrl)
                 : null,
             child: (userImageUrl == null || userImageUrl.trim().isEmpty || !userImageUrl.startsWith("http"))
-                ? Icon(Icons.person, color: purple, size: 12)
+                ? Icon(Icons.person, color: purple, size: 12.sp)
                 : null,
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: 10.sw),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -672,19 +675,19 @@ class _ReplyItem extends StatelessWidget {
                         userName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13, fontFamily: "Satoshi"),
+                        style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13.sp, fontFamily: "Satoshi"),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: 8.sw),
                     Text(
                       dateStr,
-                      style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 10, fontFamily: "Satoshi"),
+                      style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 10.sp, fontFamily: "Satoshi"),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
-                _buildCommentWithMentions(comment, purple, orange, 13),
-                const SizedBox(height: 6),
+                SizedBox(height: 4.sh),
+                _buildCommentWithMentions(comment, purple, orange, 13.sp),
+                SizedBox(height: 6.sh),
                 Row(
                   children: [
                     GestureDetector(
@@ -694,15 +697,15 @@ class _ReplyItem extends StatelessWidget {
                         children: [
                           Icon(
                             isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
-                            size: 14,
+                            size: 14.sp,
                             color: isLiked ? orange : purple.withValues(alpha:0.6),
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: 4.sw),
                           Text(
                             likes > 0 ? likes.toString() : "Like",
                             style: TextStyle(
                               color: isLiked ? orange : purple.withValues(alpha:0.6),
-                              fontSize: 10,
+                              fontSize: 10.sp,
                               fontWeight: FontWeight.bold,
                               fontFamily: "Satoshi",
                             ),
@@ -710,19 +713,19 @@ class _ReplyItem extends StatelessWidget {
                         ],
                       ),
                     ),
-                    const SizedBox(width: 24),
+                    SizedBox(width: 24.sw),
                     GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: onReply,
                       child: Row(
                         children: [
-                          Icon(Icons.chat_bubble_outline, size: 14, color: purple.withValues(alpha:0.6)),
-                          const SizedBox(width: 4),
+                          Icon(Icons.chat_bubble_outline, size: 14.sp, color: purple.withValues(alpha:0.6)),
+                          SizedBox(width: 4.sw),
                           Text(
                             "Reply",
                             style: TextStyle(
                               color: purple.withValues(alpha:0.6),
-                              fontSize: 10,
+                              fontSize: 10.sp,
                               fontWeight: FontWeight.bold,
                               fontFamily: "Satoshi",
                             ),
@@ -754,19 +757,19 @@ Widget _buildCommentWithMentions(String text, Color purple, Color orange, double
     onMatch: (m) {
       spans.add(TextSpan(
         text: m.group(0),
-        style: TextStyle(color: orange, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+        style: TextStyle(color: orange, fontWeight: FontWeight.bold, fontFamily: "Satoshi", fontSize: fontSize),
       ));
       return "";
     },
     onNonMatch: (s) {
-      spans.add(TextSpan(text: s));
+      spans.add(TextSpan(text: s, style: TextStyle(fontSize: fontSize)));
       return "";
     },
   );
 
   return RichText(
     text: TextSpan(
-      style: TextStyle(color: purple, fontSize: fontSize, height: 1.4, fontFamily: "Satoshi"),
+      style: TextStyle(color: purple, height: 1.4, fontFamily: "Satoshi"),
       children: spans,
     ),
   );

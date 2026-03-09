@@ -66,8 +66,12 @@ class RecipeMatcher {
 
   static Set<String> _synsFor(String allergen) {
     final a = normalize(allergen);
-    final base = {a, '$a' 's'};
-    final extra = _allergenSynonyms[a] ?? {};
+    final base = {a, '$a' 's', '${a}es'};
+    final extra = {
+      ...(_allergenSynonyms[a] ?? {}),
+      ...(_allergenSynonyms['${a}s'] ?? {}),
+      ...(_allergenSynonyms['${a}es'] ?? {}),
+    };
     return {...base, ...extra}.map(normalize).toSet();
   }
 
@@ -131,6 +135,22 @@ class RecipeMatcher {
 
     if (totalWeight == 0) return 0.0;
     return matchedWeight / totalWeight;
+  }
+
+  /// Checks if a recipe is safe given a list of allergies (Total Omission logic).
+  static bool isSafe(Recipe recipe, List<String> allergies) {
+    if (allergies.isEmpty) return true;
+    final normAllergies = allergies.map(normalize).toSet();
+    
+    for (final ing in recipe.ingredients) {
+      final name = ing.name;
+      final normName = normalize(name);
+      
+      if (normAllergies.contains(normName) || _containsAllergen(name, normAllergies)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   /// Sorts a list of recipes by match percentage, then by tie-breakers.

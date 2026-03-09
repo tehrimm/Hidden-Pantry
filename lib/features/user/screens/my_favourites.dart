@@ -6,6 +6,8 @@ import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class MyFavouritesScreen extends StatefulWidget {
   final bool isNutritionist;
@@ -73,12 +75,13 @@ class _MyFavouritesScreenState extends State<MyFavouritesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     final double topPad = MediaQuery.of(context).padding.top;
 
     return Scaffold(
       backgroundColor: widget.isNutritionist ? Colors.white : bg,
       body: ClipRRect(
-        borderRadius: widget.isNutritionist ? BorderRadius.circular(30) : BorderRadius.zero,
+        borderRadius: widget.isNutritionist ? BorderRadius.circular(30.sw) : BorderRadius.zero,
         child: Container(
           color: bg,
           child: Stack(
@@ -87,8 +90,8 @@ class _MyFavouritesScreenState extends State<MyFavouritesScreen> {
 
               // Standardized Header - Back Button
               Positioned(
-                left: 30,
-                top: topPad + 20,
+                left: 30.sw,
+                top: topPad + 36.sh,
                 child: BackButtonWidget(
                   color: brown,
                   onPressed: () => Navigator.pop(context),
@@ -99,14 +102,14 @@ class _MyFavouritesScreenState extends State<MyFavouritesScreen> {
               Positioned(
                 left: 0,
                 right: 0,
-                top: topPad + 20,
-                height: 50,
-                child: const Center(
+                top: topPad + 36.sh,
+                height: 50.sh,
+                child: Center(
                   child: Text(
                     "My Favourites",
                     style: TextStyle(
                       color: purple,
-                      fontSize: 24,
+                      fontSize: 24.sp,
                       fontWeight: FontWeight.bold,
                       fontFamily: "Satoshi",
                     ),
@@ -117,7 +120,7 @@ class _MyFavouritesScreenState extends State<MyFavouritesScreen> {
               SafeArea(
                 child: Column(
                   children: [
-                    SizedBox(height: topPad + 70), // Responsive gap for header
+                    SizedBox(height: 96.sh), // Standardized gap for fixed header
                     Expanded(
                       child: _buildBody(),
                     ),
@@ -155,23 +158,23 @@ class _MyFavouritesScreenState extends State<MyFavouritesScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.favorite_border, size: 60, color: purple.withValues(alpha:0.3)),
-            const SizedBox(height: 16),
+            Icon(Icons.favorite_border, size: 60.sp, color: purple.withValues(alpha:0.3)),
+            SizedBox(height: 16.sh),
             Text(
               "No favourites yet.",
               style: TextStyle(
                 color: purple.withValues(alpha:0.6),
                 fontFamily: "Satoshi",
-                fontSize: 16,
+                fontSize: 16.sp,
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: 8.sh),
             Text(
               "Heart recipes to save them here!",
               style: TextStyle(
                 color: purple.withValues(alpha:0.4),
                 fontFamily: "Satoshi",
-                fontSize: 14,
+                fontSize: 14.sp,
               ),
             ),
           ],
@@ -180,29 +183,29 @@ class _MyFavouritesScreenState extends State<MyFavouritesScreen> {
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 30),
+      padding: EdgeInsets.symmetric(horizontal: 30.sw),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 20),
-          const Text(
+          SizedBox(height: 20.sh),
+          Text(
             "My Favourites",
             style: TextStyle(
               color: purple,
-              fontSize: 20,
+              fontSize: 20.sp,
               fontWeight: FontWeight.bold,
               fontFamily: 'Satoshi',
             ),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20.sh),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               childAspectRatio: 157 / 231,
-              crossAxisSpacing: 15,
-              mainAxisSpacing: 15,
+              crossAxisSpacing: 15.sw,
+              mainAxisSpacing: 15.sh,
             ),
             itemCount: _recipes.length,
             itemBuilder: (context, index) {
@@ -219,7 +222,7 @@ class _MyFavouritesScreenState extends State<MyFavouritesScreen> {
               );
             },
           ),
-          const SizedBox(height: 30),
+          SizedBox(height: 30.sh),
         ],
       ),
     );

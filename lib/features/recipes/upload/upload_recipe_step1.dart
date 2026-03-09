@@ -6,6 +6,8 @@ import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'upload_recipe_step2.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class UploadRecipeStep1 extends StatefulWidget {
   final Recipe? editingRecipe;
@@ -36,16 +38,16 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFFF9E3D5),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30.sw)),
       ),
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.camera_alt, color: Color(0xFF462F4D)),
-              title: const Text('Take a Photo', style: TextStyle(color: Color(0xFF462F4D), fontFamily: 'Satoshi')),
+              leading: Icon(Icons.camera_alt, color: Color(0xFF462F4D), size: 24.sw),
+              title: Text('Take a Photo', style: TextStyle(color: Color(0xFF462F4D), fontFamily: 'Satoshi', fontSize: 16.sp)),
               onTap: () async {
                 Navigator.pop(context);
                 final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
@@ -55,8 +57,8 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.photo_library, color: Color(0xFF462F4D)),
-              title: const Text('Choose from Gallery', style: TextStyle(color: Color(0xFF462F4D), fontFamily: 'Satoshi')),
+              leading: Icon(Icons.photo_library, color: Color(0xFF462F4D), size: 24.sw),
+              title: Text('Choose from Gallery', style: TextStyle(color: Color(0xFF462F4D), fontFamily: 'Satoshi', fontSize: 16.sp)),
               onTap: () async {
                 Navigator.pop(context);
                 final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
@@ -77,6 +79,7 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     return Scaffold(
       backgroundColor: const Color(0xFFFFF3EB),
       resizeToAvoidBottomInset: false,
@@ -87,10 +90,10 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
 
           Column(
             children: [
-              const SizedBox(height: 50),
+              SizedBox(height: 50.sh),
               // Fixed Header area
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 29),
+                padding: EdgeInsets.symmetric(horizontal: 29.sw),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -99,24 +102,24 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                       widget.editingRecipe != null ? 'Edit Recipe' : 'Add Recipe',
                       style: TextStyle(
                         color: purple,
-                        fontSize: 20,
+                        fontSize: 20.sp,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Satoshi',
                       ),
                     ),
                     Container(
-                      width: 69,
-                      height: 42,
+                      width: 69.sw,
+                      height: 42.sh,
                       decoration: BoxDecoration(
                         color: purple,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(10.sw),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
                           '1/5',
                           style: TextStyle(
                             color: Color(0xFFFFF2EA),
-                            fontSize: 12,
+                            fontSize: 12.sp,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Satoshi',
                           ),
@@ -130,10 +133,10 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
               // Scrollable Content
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.only(top: 20, bottom: 120),
+                  padding: EdgeInsets.only(top: 20.sh, bottom: 120.sh),
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 29),
+                      padding: EdgeInsets.symmetric(horizontal: 29.sw),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -146,38 +149,38 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                               fontFamily: 'Satoshi',
                             ),
                           ),
-                          const SizedBox(height: 32),
+                          SizedBox(height: 32.sh),
                           Container(
-                            height: 70,
+                            height: 70.sh,
                             decoration: BoxDecoration(
                               color: cardBg,
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(20.sw),
                             ),
-                            padding: const EdgeInsets.symmetric(horizontal: 25),
+                            padding: EdgeInsets.symmetric(horizontal: 25.sw),
                             alignment: Alignment.centerLeft,
                             child: TextField(
                               controller: _titleController,
                               style: TextStyle(
                                 color: purple,
-                                fontSize: 15,
+                                fontSize: 15.sp,
                                 fontFamily: 'Satoshi',
                               ),
-                              decoration: const InputDecoration(
+                              decoration: InputDecoration(
                                 hintText: 'Enter recipe title',
                                 border: InputBorder.none,
-                                hintStyle: TextStyle(color: Color(0x66462F4D)),
+                                hintStyle: TextStyle(color: Color(0x66462F4D), fontSize: 15.sp),
                               ),
                             ),
                           ),
-                          const SizedBox(height: 23),
+                          SizedBox(height: 23.sh),
                           GestureDetector(
                             onTap: _pickImage,
                             child: Container(
                               width: double.infinity,
-                              height: 294,
+                              height: 294.sh,
                               decoration: BoxDecoration(
                                 color: cardBg,
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(20.sw),
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(20),
@@ -188,24 +191,24 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                                         : Column(
                                             mainAxisAlignment: MainAxisAlignment.center,
                                             children: [
-                                              Icon(Icons.file_upload_outlined, size: 40, color: purple),
-                                              const SizedBox(height: 15),
+                                              Icon(Icons.file_upload_outlined, size: 40.sw, color: purple),
+                                              SizedBox(height: 15.sh),
                                               Text(
                                                 'Upload your recipe picture',
                                                 style: TextStyle(
                                                   color: purple,
-                                                  fontSize: 12,
+                                                  fontSize: 12.sp,
                                                   fontWeight: FontWeight.w500,
                                                   letterSpacing: 0.2,
                                                   fontFamily: 'Satoshi',
                                                 ),
                                               ),
-                                              const SizedBox(height: 5),
+                                              SizedBox(height: 5.sh),
                                               Text(
                                                 '*maximum size 2MB',
                                                 style: TextStyle(
                                                   color: purple,
-                                                  fontSize: 9,
+                                                  fontSize: 9.sp,
                                                   fontFamily: 'Satoshi',
                                                 ),
                                               ),
@@ -219,7 +222,7 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                     ),
                     // Next Button at the end of scrollable content
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(29, 42, 29, 42),
+                      padding: EdgeInsets.fromLTRB(29.sw, 42.sh, 29.sw, 42.sh),
                       child: Align(
                         alignment: Alignment.centerRight,
                         child: GestureDetector(
@@ -240,26 +243,26 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                             );
                           },
                           child: Container(
-                            width: 220,
-                            height: 62,
+                            width: 220.sw,
+                            height: 62.sh,
                             decoration: BoxDecoration(
                               color: orange,
-                              borderRadius: BorderRadius.circular(20),
+                              borderRadius: BorderRadius.circular(20.sw),
                             ),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
+                              children: [
                                 Text(
                                   'Next',
                                   style: TextStyle(
                                     color: Color(0xFFFFF2EA),
-                                    fontSize: 15,
+                                    fontSize: 15.sp,
                                     fontWeight: FontWeight.bold,
                                     fontFamily: 'Satoshi',
                                   ),
                                 ),
-                                SizedBox(width: 10),
-                                Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                                SizedBox(width: 10.sw),
+                                Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16.sw),
                               ],
                             ),
                           ),

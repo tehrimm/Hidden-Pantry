@@ -3,6 +3,8 @@ import 'package:hidden_pantry_app/features/nutritionist/services/nutritionist_se
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class AdminCertificateReviewScreen extends StatelessWidget {
   const AdminCertificateReviewScreen({super.key});
@@ -15,6 +17,7 @@ class AdminCertificateReviewScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     const NutritionistService nutritionistService = NutritionistService();
 
     return Scaffold(
@@ -29,7 +32,7 @@ class AdminCertificateReviewScreen extends StatelessWidget {
             SafeArea(
               child: Column(
                 children: [
-                  const SizedBox(height: 80),
+                  SizedBox(height: 80.sh),
                   Expanded(
                     child: StreamBuilder<List<Map<String, dynamic>>>(
                       stream: nutritionistService.getPendingNutritionists(),
@@ -42,25 +45,25 @@ class AdminCertificateReviewScreen extends StatelessWidget {
                         if (snapshot.hasError) {
                           return Center(
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 40),
+                              padding: EdgeInsets.symmetric(horizontal: 40.sw),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Container(
-                                    width: 80,
-                                    height: 80,
+                                    width: 80.sw,
+                                    height: 80.sw,
                                     decoration: BoxDecoration(
                                       color: tileBg,
-                                      borderRadius: BorderRadius.circular(40),
+                                      borderRadius: BorderRadius.circular(40.sw),
                                     ),
-                                    child: const Icon(Icons.error_outline, size: 40, color: Colors.red),
+                                    child: Icon(Icons.error_outline, size: 40.sp, color: Colors.red),
                                   ),
-                                  const SizedBox(height: 20),
+                                  SizedBox(height: 20.sh),
                                   Text(
                                     "Error loading certificates",
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       color: purple,
-                                      fontSize: 18,
+                                      fontSize: 18.sp,
                                       fontWeight: FontWeight.bold,
                                       fontFamily: "Satoshi",
                                     ),
@@ -75,38 +78,38 @@ class AdminCertificateReviewScreen extends StatelessWidget {
                         if (list.isEmpty) {
                           return Center(
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 40),
+                              padding: EdgeInsets.symmetric(horizontal: 40.sw),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Container(
-                                    width: 80,
-                                    height: 80,
+                                    width: 80.sw,
+                                    height: 80.sw,
                                     decoration: BoxDecoration(
                                       color: tileBg,
-                                      borderRadius: BorderRadius.circular(40),
+                                      borderRadius: BorderRadius.circular(40.sw),
                                     ),
-                                    child: const Icon(Icons.check_circle_outline, size: 40, color: orange),
+                                    child: Icon(Icons.check_circle_outline, size: 40.sp, color: orange),
                                   ),
-                                  const SizedBox(height: 20),
-                                  const Text(
+                                  SizedBox(height: 20.sh),
+                                  Text(
                                     "All Clear!",
                                     style: TextStyle(
                                       color: purple,
-                                      fontSize: 22,
+                                      fontSize: 22.sp,
                                       fontWeight: FontWeight.w900,
                                       fontFamily: "Satoshi",
                                     ),
                                   ),
-                                  const SizedBox(height: 10),
-                                  const Opacity(
+                                  SizedBox(height: 10.sh),
+                                  Opacity(
                                     opacity: 0.6,
                                     child: Text(
                                       "No pending certificates to review.",
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         color: purple,
-                                        fontSize: 14,
+                                        fontSize: 14.sp,
                                         fontWeight: FontWeight.w500,
                                         fontFamily: "Satoshi",
                                       ),
@@ -119,9 +122,9 @@ class AdminCertificateReviewScreen extends StatelessWidget {
                         }
 
                         return ListView.separated(
-                          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
+                          padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 8.sh),
                           itemCount: list.length,
-                          separatorBuilder: (_, __) => const SizedBox(height: 16),
+                          separatorBuilder: (_, __) => SizedBox(height: 16.sh),
                           itemBuilder: (context, index) {
                             final data = list[index];
                             return _PendingNutritionistCard(
@@ -140,25 +143,25 @@ class AdminCertificateReviewScreen extends StatelessWidget {
 
             // Fixed header – back button
             Positioned(
-              left: 30,
-              top: 51,
+              left: 30.sw,
+              top: 51.sh,
               child: BackButtonWidget(
                 onPressed: () => Navigator.pop(context),
                 color: brown,
               ),
             ),
             // Fixed header – title
-            const Positioned(
+            Positioned(
               left: 0,
               right: 0,
-              top: 51,
-              height: 50,
+              top: 51.sh,
+              height: 50.sh,
               child: Center(
                 child: Text(
                   "Review Certificates",
                   style: TextStyle(
                     color: purple,
-                    fontSize: 24,
+                    fontSize: 24.sp,
                     fontWeight: FontWeight.bold,
                     fontFamily: "Satoshi",
                   ),
@@ -195,25 +198,26 @@ class AdminCertificateReviewScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: bg,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.sw)),
+        title: Text(
           "Reject Application",
           style: TextStyle(
             color: purple,
             fontWeight: FontWeight.bold,
             fontFamily: "Satoshi",
+            fontSize: 18.sp,
           ),
         ),
         content: TextField(
           controller: reasonController,
-          style: const TextStyle(color: purple, fontFamily: "Satoshi"),
+          style: TextStyle(color: purple, fontFamily: "Satoshi", fontSize: 14.sp),
           decoration: InputDecoration(
             hintText: "Reason for rejection (min 10 chars)",
-            hintStyle: TextStyle(color: purple.withValues(alpha:0.4), fontFamily: "Satoshi"),
+            hintStyle: TextStyle(color: purple.withValues(alpha:0.4), fontFamily: "Satoshi", fontSize: 14.sp),
             filled: true,
             fillColor: tileBg,
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(14.sw),
               borderSide: BorderSide.none,
             ),
           ),
@@ -222,9 +226,9 @@ class AdminCertificateReviewScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
+            child: Text(
               "Cancel",
-              style: TextStyle(color: purple, fontFamily: "Satoshi"),
+              style: TextStyle(color: purple, fontFamily: "Satoshi", fontSize: 14.sp),
             ),
           ),
           TextButton(
@@ -233,9 +237,9 @@ class AdminCertificateReviewScreen extends StatelessWidget {
                 Navigator.pop(context, reasonController.text.trim());
               }
             },
-            child: const Text(
+            child: Text(
               "Reject",
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontFamily: "Satoshi", fontSize: 14.sp),
             ),
           ),
         ],
@@ -279,10 +283,10 @@ class _PendingNutritionistCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20.sw),
       decoration: BoxDecoration(
         color: tileBg,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.sw),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,34 +296,34 @@ class _PendingNutritionistCard extends StatelessWidget {
             children: [
               // Avatar placeholder
               Container(
-                width: 48,
-                height: 48,
+                width: 48.sw,
+                height: 48.sw,
                 decoration: BoxDecoration(
                   color: purple.withValues(alpha:0.1),
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(24.sw),
                 ),
-                child: const Icon(Icons.person, color: purple, size: 24),
+                child: Icon(Icons.person, color: purple, size: 24.sp),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: 14.sw),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       data['fullName'] ?? "Unnamed User",
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: purple,
-                        fontSize: 16,
+                        fontSize: 16.sp,
                         fontWeight: FontWeight.bold,
                         fontFamily: "Satoshi",
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: 2.sh),
                     Text(
                       data['email'] ?? "",
                       style: TextStyle(
                         color: purple.withValues(alpha:0.6),
-                        fontSize: 13,
+                        fontSize: 13.sp,
                         fontFamily: "Satoshi",
                       ),
                     ),
@@ -329,25 +333,25 @@ class _PendingNutritionistCard extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 14),
+          SizedBox(height: 14.sh),
 
           // License number
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            padding: EdgeInsets.symmetric(horizontal: 14.sw, vertical: 10.sh),
             decoration: BoxDecoration(
               color: purple.withValues(alpha:0.06),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(12.sw),
             ),
             child: Row(
               children: [
-                const Icon(Icons.badge_outlined, color: purple, size: 18),
-                const SizedBox(width: 10),
+                Icon(Icons.badge_outlined, color: purple, size: 18.sp),
+                SizedBox(width: 10.sw),
                 Text(
                   "License: ${data['licenseNumber'] ?? "N/A"}",
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: purple,
-                    fontSize: 13,
+                    fontSize: 13.sp,
                     fontWeight: FontWeight.w600,
                     fontFamily: "Satoshi",
                   ),
@@ -356,7 +360,7 @@ class _PendingNutritionistCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: 16.sh),
 
           // View Certificate button
           GestureDetector(
@@ -368,22 +372,22 @@ class _PendingNutritionistCard extends StatelessWidget {
             },
             child: Container(
               width: double.infinity,
-              height: 48,
+              height: 48.sh,
               decoration: BoxDecoration(
                 color: purple,
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(14.sw),
               ),
               alignment: Alignment.center,
-              child: const Row(
+              child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.description_outlined, color: Colors.white, size: 18),
-                  SizedBox(width: 8),
+                  Icon(Icons.description_outlined, color: Colors.white, size: 18.sp),
+                  SizedBox(width: 8.sw),
                   Text(
                     "View Certificate",
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 13,
+                      fontSize: 13.sp,
                       fontWeight: FontWeight.w700,
                       fontFamily: "Satoshi",
                     ),
@@ -393,7 +397,7 @@ class _PendingNutritionistCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 12),
+          SizedBox(height: 12.sh),
 
           // Approve / Reject row
           Row(
@@ -402,17 +406,17 @@ class _PendingNutritionistCard extends StatelessWidget {
                 child: GestureDetector(
                   onTap: onApprove,
                   child: Container(
-                    height: 48,
+                    height: 48.sh,
                     decoration: BoxDecoration(
                       color: const Color(0xFF4CAF50),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(14.sw),
                     ),
                     alignment: Alignment.center,
-                    child: const Text(
+                    child: Text(
                       "Approve",
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 13,
+                        fontSize: 13.sp,
                         fontWeight: FontWeight.w700,
                         fontFamily: "Satoshi",
                       ),
@@ -420,22 +424,22 @@ class _PendingNutritionistCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12.sw),
               Expanded(
                 child: GestureDetector(
                   onTap: onReject,
                   child: Container(
-                    height: 48,
+                    height: 48.sh,
                     decoration: BoxDecoration(
                       color: Colors.red,
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(14.sw),
                     ),
                     alignment: Alignment.center,
-                    child: const Text(
+                    child: Text(
                       "Reject",
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 13,
+                        fontSize: 13.sp,
                         fontWeight: FontWeight.w700,
                         fontFamily: "Satoshi",
                       ),

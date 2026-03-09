@@ -126,13 +126,17 @@ void main() {
 
   group('ForgetPasswordPhoneScreen Validation Tests', () {
     testWidgets('shows error for invalid phone number', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
       await tester.pumpWidget(createWidgetForTesting(
         child: ForgetPasswordPhoneScreen(authService: mockAuthService),
       ));
 
       await tester.enterText(find.byType(TextField), '123'); // Too short
       await tester.tap(find.text('Next'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.text('*enter valid number'), findsOneWidget);
     });

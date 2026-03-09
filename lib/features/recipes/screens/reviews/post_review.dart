@@ -10,6 +10,8 @@ import 'package:hidden_pantry_app/core/utils/toaster.dart';
 
 import '../../models/recipe.dart';
 import '../../services/recipe_service.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class PostReviewScreen extends StatefulWidget {
   final Recipe recipe;
@@ -119,6 +121,7 @@ class _PostReviewScreenState extends State<PostReviewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     const bgColor = Color(0xFFFFF3EB);
     const textColor = Color(0xFF462F4D);
     const orange = Color(0xFFEF8A54);
@@ -132,36 +135,36 @@ class _PostReviewScreenState extends State<PostReviewScreen> {
           children: [
               const PatternBackground(),
               Positioned(
-                left: 30,
-                top: 51,
+                left: 30.sw,
+                top: 51.sh,
                 child: BackButtonWidget(color: textColor),
               ),
               SafeArea(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 12.sh),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 60),
-                      const SizedBox(height: 20),
+                      SizedBox(height: 60.sh),
+                      SizedBox(height: 20.sh),
                       if (!_checkedReviewed)
-                        const Center(child: Padding(
-                          padding: EdgeInsets.only(top: 40),
-                          child: CircularProgressIndicator(),
+                        Center(child: Padding(
+                          padding: EdgeInsets.only(top: 40.sh),
+                          child: const CircularProgressIndicator(),
                         )),
                       if (_checkedReviewed && _hasReviewed)
                         Padding(
-                          padding: const EdgeInsets.only(top: 20, bottom: 12),
+                          padding: EdgeInsets.only(top: 20.sh, bottom: 12.sh),
                           child: Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.all(12),
+                            padding: EdgeInsets.all(12.sw),
                             decoration: BoxDecoration(
-                              color: Color(0xFFFFE2D2),
-                              borderRadius: BorderRadius.circular(12),
+                              color: const Color(0xFFFFE2D2),
+                              borderRadius: BorderRadius.circular(12.sw),
                             ),
-                            child: const Text(
+                            child: Text(
                               "You have already reviewed this recipe.",
-                              style: TextStyle(color: textColor, fontFamily: "Satoshi"),
+                              style: TextStyle(color: textColor, fontFamily: "Satoshi", fontSize: 14.sp),
                             ),
                           ),
                         ),
@@ -175,12 +178,12 @@ class _PostReviewScreenState extends State<PostReviewScreen> {
                           return Row(
                             children: [
                               CircleAvatar(
-                                radius: 20,
+                                radius: 20.sw,
                                 backgroundColor: orange.withValues(alpha:0.1),
                                 backgroundImage: (userImageUrl.trim().isNotEmpty && userImageUrl.startsWith("http")) ? NetworkImage(userImageUrl) : null,
-                                child: (userImageUrl.trim().isEmpty || !userImageUrl.startsWith("http")) ? const Icon(Icons.person, color: orange) : null,
+                                child: (userImageUrl.trim().isEmpty || !userImageUrl.startsWith("http")) ? Icon(Icons.person, color: orange, size: 24.sp) : null,
                               ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: 12.sw),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,11 +192,11 @@ class _PostReviewScreenState extends State<PostReviewScreen> {
                                       userName,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontWeight: FontWeight.bold, color: textColor, fontFamily: "Satoshi"),
+                                      style: TextStyle(fontWeight: FontWeight.bold, color: textColor, fontFamily: "Satoshi", fontSize: 14.sp),
                                     ),
-                                    const Text(
+                                    Text(
                                       "Is posting a review",
-                                      style: TextStyle(fontSize: 12, color: Colors.black38, fontFamily: "Satoshi"),
+                                      style: TextStyle(fontSize: 12.sp, color: Colors.black38, fontFamily: "Satoshi"),
                                     ),
                                   ],
                                 ),
@@ -202,17 +205,17 @@ class _PostReviewScreenState extends State<PostReviewScreen> {
                           );
                         },
                       ),
-                      const SizedBox(height: 30),
+                      SizedBox(height: 30.sh),
                       Text(
                         "Rate ${widget.recipe.name}",
-                        style: const TextStyle(
-                          fontSize: 18,
+                        style: TextStyle(
+                          fontSize: 18.sp,
                           fontWeight: FontWeight.bold,
                           fontFamily: "Satoshi",
                           color: textColor,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12.sh),
                       LayoutBuilder(
                         builder: (_, constraints) {
                           return GestureDetector(
@@ -225,62 +228,64 @@ class _PostReviewScreenState extends State<PostReviewScreen> {
                                       ? Icons.star
                                       : (i < _rating ? Icons.star_half : Icons.star_border),
                                   color: orange,
-                                  size: 32,
+                                  size: 32.sp,
                                 );
                               }),
                             ),
                           );
                         },
                       ),
-                      const SizedBox(height: 24),
-                      const Text("Your Review",
-                          style: TextStyle(fontFamily: "Satoshi", fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 24.sh),
+                      Text("Your Review",
+                          style: TextStyle(fontFamily: "Satoshi", fontWeight: FontWeight.bold, fontSize: 16.sp)),
+                      SizedBox(height: 12.sh),
                       TextField(
                         controller: _controller,
                         maxLines: 5,
                         enabled: !_isSubmitting && !_hasReviewed,
+                        style: TextStyle(fontSize: 14.sp),
                         decoration: InputDecoration(
                           hintText: _hasReviewed ? "You already reviewed this recipe" : "Share your experience...",
+                          hintStyle: TextStyle(fontSize: 14.sp),
                           filled: true,
                           fillColor: const Color(0xFFF9E3D5),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(15),
+                            borderRadius: BorderRadius.circular(15.sw),
                             borderSide: BorderSide.none,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24.sh),
                       GestureDetector(
                         onTap: _isSubmitting || _hasReviewed ? null : _showImageSourceDialog,
                         child: Container(
-                          height: 180,
+                          height: 180.sh,
                           decoration: BoxDecoration(
                             color: const Color(0xFFF9E3D5),
-                            borderRadius: BorderRadius.circular(15),
+                            borderRadius: BorderRadius.circular(15.sw),
                           ),
                           child: _image != null
                               ? Image.file(File(_image!.path), fit: BoxFit.cover)
-                              : const Center(child: Icon(Icons.add_a_photo_outlined)),
+                              : Center(child: Icon(Icons.add_a_photo_outlined, size: 30.sp)),
                         ),
                       ),
-                      const SizedBox(height: 32),
+                      SizedBox(height: 32.sh),
                       GestureDetector(
                         onTap: _isSubmitting || _hasReviewed ? () {} : _submitReview,
                         child: Container(
-                          height: 60,
+                          height: 60.sh,
                           decoration: BoxDecoration(
                             color: _hasReviewed ? Colors.grey : orange,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(20.sw),
                           ),
                           child: Center(
                             child: _isSubmitting
-                                ? CircularProgressIndicator(color: Colors.white)
-                                : const Text(
+                                ? const CircularProgressIndicator(color: Colors.white)
+                                : Text(
                                     "Submit Review",
                                     style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 18,
+                                      fontSize: 18.sp,
                                       fontWeight: FontWeight.bold,
                                       fontFamily: "Satoshi",
                                     ),

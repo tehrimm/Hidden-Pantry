@@ -5,6 +5,7 @@ import 'package:hidden_pantry_app/features/nutritionist/screens/meal_plan_creato
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 class NutritionistMealPlansScreen extends StatefulWidget {
   const NutritionistMealPlansScreen({super.key});
@@ -21,6 +22,7 @@ class _NutritionistMealPlansScreenState extends State<NutritionistMealPlansScree
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return const Scaffold(body: Center(child: Text("Not logged in")));
 
@@ -32,18 +34,18 @@ class _NutritionistMealPlansScreenState extends State<NutritionistMealPlansScree
           SafeArea(
             child: Column(
               children: [
-                const SizedBox(height: 12),
+                SizedBox(height: 12.sh),
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 22),
+                  padding: EdgeInsets.symmetric(horizontal: 22.sw),
                   child: Row(
                     children: [
                       const BackButtonWidget(),
-                      const SizedBox(width: 16),
+                      SizedBox(width: 16.sw),
                       Text(
                         "My Meal Plans",
                         style: TextStyle(
                           color: purple,
-                          fontSize: 24,
+                          fontSize: 24.sp,
                           fontWeight: FontWeight.bold,
                           fontFamily: "Satoshi",
                         ),
@@ -51,7 +53,7 @@ class _NutritionistMealPlansScreenState extends State<NutritionistMealPlansScree
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20.sh),
                 Expanded(
                   child: StreamBuilder<QuerySnapshot>(
                     stream: FirebaseFirestore.instance
@@ -72,9 +74,9 @@ class _NutritionistMealPlansScreenState extends State<NutritionistMealPlansScree
                       }
 
                       return ListView.separated(
-                        padding: const EdgeInsets.only(left: 22, right: 22, top: 10, bottom: 120),
+                        padding: EdgeInsets.only(left: 22.sw, right: 22.sw, top: 10.sh, bottom: 120.sh),
                         itemCount: docs.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 16),
+                        separatorBuilder: (_, __) => SizedBox(height: 16.sh),
                         itemBuilder: (context, index) {
                           final data = docs[index].data() as Map<String, dynamic>;
                           final id = docs[index].id;
@@ -89,10 +91,10 @@ class _NutritionistMealPlansScreenState extends State<NutritionistMealPlansScree
           ),
           // Positioned "Create New Plan" button - moved "up and left"
           Positioned(
-            bottom: 40,
-            right: 30,
+            bottom: 40.sh,
+            right: 30.sw,
             child: FloatingActionButton.extended(
-              elevation: 4,
+              elevation: 4.sw,
               onPressed: () {
                 Navigator.push(
                   context,
@@ -100,8 +102,8 @@ class _NutritionistMealPlansScreenState extends State<NutritionistMealPlansScree
                 );
               },
               backgroundColor: purple,
-              label: const Text("Create New Plan", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontFamily: "Satoshi")),
-              icon: const Icon(Icons.add_rounded, color: Colors.white),
+              label: Text("Create New Plan", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white, fontFamily: "Satoshi", fontSize: 14.sp)),
+              icon: Icon(Icons.add_rounded, color: Colors.white, size: 24.sw),
             ),
           ),
         ],
@@ -115,40 +117,40 @@ class _NutritionistMealPlansScreenState extends State<NutritionistMealPlansScree
     final cals = data["targetCalories"] ?? 0;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.sw),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.sw),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12.sw),
             decoration: BoxDecoration(
               color: orange.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(15.sw),
             ),
-            child: Icon(Icons.restaurant_menu_rounded, color: orange, size: 24),
+            child: Icon(Icons.restaurant_menu_rounded, color: orange, size: 24.sw),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16.sw),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16, fontFamily: "Satoshi"),
+                  style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp, fontFamily: "Satoshi"),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.sh),
                 Text(
                   "$days Days • ~ $cals kcal",
-                  style: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 13),
+                  style: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 13.sp),
                 ),
               ],
             ),
           ),
           IconButton(
-            icon: Icon(Icons.edit_rounded, color: orange, size: 22),
+            icon: Icon(Icons.edit_rounded, color: orange, size: 22.sw),
             onPressed: () {
               Navigator.push(
                 context,
@@ -162,7 +164,7 @@ class _NutritionistMealPlansScreenState extends State<NutritionistMealPlansScree
             },
           ),
           IconButton(
-            icon: Icon(Icons.delete_outline_rounded, color: Colors.red.withValues(alpha: 0.6), size: 22),
+            icon: Icon(Icons.delete_outline_rounded, color: Colors.red.withValues(alpha: 0.6), size: 22.sw),
             onPressed: () => _confirmDelete(id),
           ),
         ],
@@ -175,13 +177,14 @@ class _NutritionistMealPlansScreenState extends State<NutritionistMealPlansScree
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: bg,
-        title: const Text("Delete Meal Plan?"),
-        content: const Text("This action cannot be undone."),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.sw)),
+        title: Text("Delete Meal Plan?", style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.bold, color: purple)),
+        content: Text("This action cannot be undone.", style: TextStyle(fontSize: 14.sp, color: purple)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text("Cancel", style: TextStyle(color: purple))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text("Cancel", style: TextStyle(color: purple, fontSize: 14.sp))),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Delete", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: Text("Delete", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14.sp)),
           ),
         ],
       ),
@@ -209,16 +212,16 @@ class _NutritionistMealPlansScreenState extends State<NutritionistMealPlansScree
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.restaurant_rounded, size: 64, color: purple.withValues(alpha: 0.1)),
-          const SizedBox(height: 16),
+          Icon(Icons.restaurant_rounded, size: 64.sw, color: purple.withValues(alpha: 0.1)),
+          SizedBox(height: 16.sh),
           Text(
             "No Meal Plans Yet",
-            style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.sh),
           Text(
             "Create plans to share with your subscribers.",
-            style: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 14),
+            style: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 14.sp),
           ),
         ],
       ),

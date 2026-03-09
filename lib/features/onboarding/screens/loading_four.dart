@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'loading_one.dart'; // Ensure OnboardingProgressBar is available
 import 'loading_three.dart';
 import 'terms_and_condition.dart';
 
@@ -7,22 +8,16 @@ class LoadingFour extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-return PopScope(
-  canPop: false, // prevent app from closing
-  onPopInvokedWithResult: (didPop, result) {
-    if (didPop) return;
-
-
-    Navigator.pushReplacement(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const LoadingThree (),
-        transitionDuration: const Duration(milliseconds: 400),
-        transitionsBuilder: (_, anim, __, child) =>
-          FadeTransition(opacity: anim, child: child),
-      ),
-    );
-  },
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const LoadingThree(),
+          ),
+        );
+      },
       child: Scaffold(
         backgroundColor: const Color(0xFFFFF3EB),
         body: LayoutBuilder(
@@ -30,11 +25,9 @@ return PopScope(
             final double screenWidth = constraints.maxWidth;
             final double screenHeight = constraints.maxHeight;
 
-            // Design dimensions
             const double designWidth = 393.0;
             const double designHeight = 852.0;
 
-            // Scale factors
             final double wScale = screenWidth / designWidth;
             final double hScale = screenHeight / designHeight;
 
@@ -43,7 +36,6 @@ return PopScope(
               height: screenHeight,
               child: Stack(
                 children: [
-                  // Background Image
                   Positioned(
                     left: 26 * wScale,
                     top: 34 * hScale,
@@ -60,7 +52,6 @@ return PopScope(
                     ),
                   ),
 
-                  // Logo (Centered horizontally)
                   Positioned(
                     top: 62 * hScale,
                     left: 0,
@@ -75,7 +66,6 @@ return PopScope(
                     ),
                   ),
 
-                  // Title Text
                   Positioned(
                     left: 52 * wScale,
                     top: 555 * hScale,
@@ -94,12 +84,11 @@ return PopScope(
                     ),
                   ),
 
-                  // Subtitle Text
                   Positioned(
                     left: 52 * wScale,
                     top: 648 * hScale,
                     child: SizedBox(
-                      width: 260 * wScale,
+                      width: 290 * wScale,
                       child: Text(
                         'Connect with health-conscious \nusers looking for personalized \nnutrition guidance .',
                         style: TextStyle(
@@ -114,7 +103,6 @@ return PopScope(
                     ),
                   ),
 
-                  // Progress Bar
                   Positioned(
                     left: 26 * wScale,
                     top: 776 * hScale,
@@ -125,9 +113,8 @@ return PopScope(
                     ),
                   ),
 
-                  // Next Button
                   Positioned(
-                    right: 46 * wScale, // Adjusted from left: 307
+                    right: 46 * wScale,
                     top: 749 * hScale,
                     child: GestureDetector(
                       onTap: () {
@@ -135,9 +122,9 @@ return PopScope(
                           context,
                           PageRouteBuilder(
                             pageBuilder: (_, __, ___) => const TermsAndConditionScreen(),
-                            transitionDuration: const Duration(milliseconds: 400),
+                            transitionDuration: const Duration(milliseconds: 500),
                             transitionsBuilder: (_, anim, __, child) =>
-                              FadeTransition(opacity: anim, child: child),
+                                FadeTransition(opacity: anim, child: child),
                           ),
                         );
                       },
@@ -158,52 +145,3 @@ return PopScope(
     );
   }
 }
-
-class OnboardingProgressBar extends StatelessWidget {
-  final int currentStep;
-  final int totalSteps;
-  final double wScale;
-
-  const OnboardingProgressBar({
-    super.key,
-    required this.currentStep,
-    required this.totalSteps,
-    this.wScale = 1.0,
-  });
-
-  double _filledWidth() {
-    final widths = [37.5 * wScale, 75.0 * wScale, 112.5 * wScale, 150.0 * wScale];
-    final idx = (currentStep - 1).clamp(0, widths.length - 1);
-    return widths[idx];
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final baseWidth = 150.0 * wScale;
-    const height = 11.0;
-
-    return Stack(
-      children: [
-        Container(
-          width: baseWidth,
-          height: height,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF9E3D5),
-            borderRadius: BorderRadius.circular(20),
-          ),
-        ),
-        Container(
-          width: _filledWidth(),
-          height: height,
-          decoration: BoxDecoration(
-            color: const Color(0xFFFF9453),
-            borderRadius: BorderRadius.circular(20),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-
-

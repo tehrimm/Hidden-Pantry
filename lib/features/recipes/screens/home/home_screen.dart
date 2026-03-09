@@ -8,7 +8,10 @@ import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
 import 'package:hidden_pantry_app/core/widgets/home_bottom_nav.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
+
 import 'package:hidden_pantry_app/features/recipes/screens/category_screen.dart';
 import 'package:hidden_pantry_app/features/user/screens/user_profile.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/search/search.dart';
@@ -22,6 +25,7 @@ import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_das
 import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_settings.dart';
 import 'package:hidden_pantry_app/features/user/services/follow_service.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_rating_widget.dart';
+import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool inShell;
@@ -148,11 +152,45 @@ class _HomeScreenState extends State<HomeScreen> {
         minRating: 0.0,
       );
 
-      // 3. Fetch Following Feed
-      final feed = await api.fetchFollowingFeed(followedIds).catchError((e) {
-        log("Home: Following Feed error: $e");
-        return <Recipe>[];
-      });
+      // 3. Fetch Following Feed — try API first, fall back to Firestore
+      List<Recipe> feed = [];
+      if (followedIds.isNotEmpty) {
+        try {
+          feed = await api.fetchFollowingFeed(followedIds).catchError((e) {
+            log("Home: Following Feed API error: $e");
+            return <Recipe>[];
+          });
+        } catch (_) {}
+
+        // API returned nothing — fetch directly from Firestore (same as CategoriesScreen)
+        if (feed.isEmpty) {
+          try {
+            // Firestore 'whereIn' supports max 30 items per query
+            final chunks = <List<String>>[];
+            for (var i = 0; i < followedIds.length; i += 10) {
+              chunks.add(followedIds.sublist(i, i + 10 < followedIds.length ? i + 10 : followedIds.length));
+            }
+            final allDocs = <Recipe>[];
+            for (final chunk in chunks) {
+              final snap = await FirebaseFirestore.instance
+                  .collection('recipes')
+                  .where('author_id', whereIn: chunk)
+                  .where('is_public', isEqualTo: true)
+                  .limit(30)
+                  .get();
+              allDocs.addAll(snap.docs.map((d) => Recipe.fromJson(d.data())));
+            }
+            // Deduplicate and sort by newest
+            final byId = <String, Recipe>{};
+            for (final r in allDocs) {
+              if (r.id.isNotEmpty) byId[r.id] = r;
+            }
+            feed = byId.values.toList();
+          } catch (e) {
+            log("Home: Following Feed Firestore fallback error: $e");
+          }
+        }
+      }
 
       if (!mounted) return;
       setState(() {
@@ -417,11 +455,12 @@ void _openUserProfile() {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: bg,
       extendBody: true,
       body: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(30.sw),
         child: Container(
           color: bg,
           child: Stack(
@@ -434,10 +473,10 @@ void _openUserProfile() {
                 bottom: false,
                 child: Column(
                   children: [
-                    const SizedBox(height: 10),
+                    SizedBox(height: 36.sh),
                     // Fixed Header
                     _topRow(),
-                    const SizedBox(height: 10),
+                    SizedBox(height: 10.sh),
 
                     // Scrollable Content
                     Expanded(
@@ -446,55 +485,55 @@ void _openUserProfile() {
                         color: orange,
                         backgroundColor: Colors.white,
                         child: ListView(
-                          padding: const EdgeInsets.only(bottom: 180),
+                          padding: EdgeInsets.only(bottom: 180.sh),
                           children: [
-                            const SizedBox(height: 10),
+                            SizedBox(height: 10.sh),
                             _headline(),
-                            const SizedBox(height: 18),
+                            SizedBox(height: 18.sh),
                             _tagRow(),
-                            const SizedBox(height: 22),
+                            SizedBox(height: 22.sh),
 
                             _sectionHeader(
                               selectedTag == "All" ? "Recommendation" : _beautify(selectedTag),
                               onSeeAll: _openCategoryView,
                             ),
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12.sh),
                             _horizontalCards(loading ? null : recommendations),
 
-                            const SizedBox(height: 18),
+                            SizedBox(height: 18.sh),
                             _sectionHeader("Recipes of the Week", onSeeAll: _openWeeklyRecipes),
-                            const SizedBox(height: 12),
+                            SizedBox(height: 12.sh),
                             _horizontalCards(loading ? null : weekly),
 
-                            if (followingFeed.isNotEmpty) ...[
-                              const SizedBox(height: 24),
+                            if (_followedAuthorIds.isNotEmpty) ...[
+                              SizedBox(height: 24.sh),
                               _sectionHeader("From People You Follow", onSeeAll: _openFollowingFeed),
-                              const SizedBox(height: 12),
-                              _horizontalCards(followingFeed),
+                              SizedBox(height: 12.sh),
+                              _horizontalCards(loading ? null : followingFeed),
                             ],
 
                             if (loadError != null) ...[
-                              const SizedBox(height: 16),
+                              SizedBox(height: 16.sh),
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 22),
+                                padding: EdgeInsets.symmetric(horizontal: 22.sw),
                                 child: Text(
                                   "API error: $loadError",
                                   style: TextStyle(
                                     color: purple.withValues(alpha: .8),
                                     fontFamily: "Satoshi",
-                                    fontSize: 12,
+                                    fontSize: 12.sp,
                                   ),
                                 ),
                               ),
-                              const SizedBox(height: 10),
+                              SizedBox(height: 10.sh),
                               Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 22),
+                                padding: EdgeInsets.symmetric(horizontal: 22.sw),
                                 child: ElevatedButton(
                                   onPressed: _loadHome,
                                   child: const Text("Retry"),
                                 ),
                               ),
-                              const SizedBox(height: 16),
+                              SizedBox(height: 16.sh),
                             ],
                           ],
                         ),
@@ -525,24 +564,24 @@ void _openUserProfile() {
     final hasPhoto = displayUrl != null && displayUrl.trim().isNotEmpty;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 22),
+      padding: EdgeInsets.symmetric(horizontal: 22.sw),
       child: Row(
         children: [
           GestureDetector(
             behavior: HitTestBehavior.opaque,
             onTap: _openUserProfile,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(50),
+              borderRadius: BorderRadius.circular(50.sw),
               child: Container(
-                width: 50,
-                height: 50,
+                width: 50.sw,
+                height: 50.sw,
                 color: const Color(0xFFD9D9D9),
                 child: hasPhoto && displayUrl.startsWith("http")
                     ? Image.network(
                         displayUrl,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => Padding(
-                          padding: const EdgeInsets.all(12.0),
+                          padding: EdgeInsets.all(12.sw),
                           child: Image.asset(
                             "assets/icons/users.png", 
                              color: purple,
@@ -551,7 +590,7 @@ void _openUserProfile() {
                         ),
                       )
                     : Padding(
-                        padding: const EdgeInsets.all(12.0),
+                        padding: EdgeInsets.all(12.sw),
                         child: Image.asset(
                           "assets/icons/users.png",
                           color: purple,
@@ -564,7 +603,7 @@ void _openUserProfile() {
           const Spacer(),
           GestureDetector(
             onTap: _openSearch,
-            child: Image.asset("assets/icons/Search.png", width: 22, height: 22),
+            child: Image.asset("assets/icons/Search.png", width: 22.sw, height: 22.sw),
           ),
         ],
       ),
@@ -573,12 +612,12 @@ void _openUserProfile() {
 
   Widget _headline() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 22),
+      padding: EdgeInsets.symmetric(horizontal: 22.sw),
       child: Text(
         "What would you\nlike to cook?",
         style: TextStyle(
           color: purple,
-          fontSize: 40,
+          fontSize: 40.sp,
           fontWeight: FontWeight.w900,
           height: 1.1,
           fontFamily: "Satoshi",
@@ -593,9 +632,9 @@ void _openUserProfile() {
         : tags;
 
     return SizedBox(
-      height: 44,
+      height: 44.sh,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 22),
+        padding: EdgeInsets.symmetric(horizontal: 22.sw),
         scrollDirection: Axis.horizontal,
         itemBuilder: (_, i) {
           final t = chips[i];
@@ -604,16 +643,16 @@ void _openUserProfile() {
           return GestureDetector(
             onTap: () => _onTagTap(t),
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              padding: EdgeInsets.symmetric(horizontal: 18.sw, vertical: 10.sh),
               decoration: BoxDecoration(
                 color: isSelected ? orange : chipBg,
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(20.sw),
               ),
               child: Text(
                 _beautify(t),
                 style: TextStyle(
                   color: isSelected ? Colors.white : purple,
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
                   fontFamily: "Satoshi",
                 ),
@@ -621,7 +660,7 @@ void _openUserProfile() {
             ),
           );
         },
-        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        separatorBuilder: (_, __) => SizedBox(width: 10.sw),
         itemCount: chips.length,
       ),
     );
@@ -629,7 +668,7 @@ void _openUserProfile() {
 
   Widget _sectionHeader(String title, {required VoidCallback onSeeAll}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 22),
+      padding: EdgeInsets.symmetric(horizontal: 22.sw),
       child: Row(
         children: [
           Expanded(
@@ -637,20 +676,20 @@ void _openUserProfile() {
               title,
               style: TextStyle(
                 color: purple,
-                fontSize: 24,
+                fontSize: 24.sp,
                 fontWeight: FontWeight.bold,
                 fontFamily: "Satoshi",
               ),
             ),
           ),
-          const SizedBox(width: 8),
+          SizedBox(width: 8.sw),
           GestureDetector(
             onTap: onSeeAll,
             child: Text(
               "See all",
               style: TextStyle(
                 color: brown,
-                fontSize: 12,
+                fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.2,
                 fontFamily: "Satoshi",
@@ -665,12 +704,12 @@ void _openUserProfile() {
   Widget _horizontalCards(List<Recipe>? list) {
     if (list == null) {
       return SizedBox(
-        height: 270,
+        height: 270.sh,
         child: ListView.separated(
-          padding: const EdgeInsets.symmetric(horizontal: 22),
+          padding: EdgeInsets.symmetric(horizontal: 22.sw),
           scrollDirection: Axis.horizontal,
           itemBuilder: (_, __) => _recipeCardSkeleton(),
-          separatorBuilder: (_, __) => const SizedBox(width: 16),
+          separatorBuilder: (_, __) => SizedBox(width: 16.sw),
           itemCount: 3,
         ),
       );
@@ -678,24 +717,25 @@ void _openUserProfile() {
 
     if (list.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 22),
+        padding: EdgeInsets.symmetric(horizontal: 22.sw),
         child: Text(
           "No recipes found for this filter.",
           style: TextStyle(
             color: purple.withValues(alpha: 0.8),
             fontFamily: "Satoshi",
+            fontSize: 14.sp,
           ),
         ),
       );
     }
 
     return SizedBox(
-      height: 270,
+      height: 231.sh,
       child: ListView.separated(
-        padding: const EdgeInsets.symmetric(horizontal: 22),
+        padding: EdgeInsets.symmetric(horizontal: 22.sw),
         scrollDirection: Axis.horizontal,
         itemBuilder: (_, i) => _recipeCard(list[i]),
-        separatorBuilder: (_, __) => const SizedBox(width: 16),
+        separatorBuilder: (_, __) => SizedBox(width: 16.sw),
         itemCount: list.length,
       ),
     );
@@ -703,26 +743,26 @@ void _openUserProfile() {
 
   Widget _recipeCardSkeleton() {
     return SizedBox(
-      width: 160,
+      width: 160.sw,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: const [
+        children: [
           SkeletonBox(
-            width: 160,
-            height: 180,
-            borderRadius: BorderRadius.all(Radius.circular(20)),
+            width: 160.sw,
+            height: 180.sh,
+            borderRadius: BorderRadius.all(Radius.circular(20.sw)),
           ),
-          SizedBox(height: 10),
+          SizedBox(height: 10.sh),
           SkeletonBox(
-            width: 110,
-            height: 14,
-            borderRadius: BorderRadius.all(Radius.circular(10)),
+            width: 110.sw,
+            height: 14.sh,
+            borderRadius: BorderRadius.all(Radius.circular(10.sw)),
           ),
-          SizedBox(height: 8),
+          SizedBox(height: 8.sh),
           SkeletonBox(
-            width: 70,
-            height: 10,
-            borderRadius: BorderRadius.all(Radius.circular(10)),
+            width: 70.sw,
+            height: 10.sh,
+            borderRadius: BorderRadius.all(Radius.circular(10.sw)),
           ),
         ],
       ),
@@ -730,78 +770,13 @@ void _openUserProfile() {
   }
 
   Widget _recipeCard(Recipe r) {
-    final imageUrl = r.imageUrl;
-    final hasImage = imageUrl != null && imageUrl.trim().isNotEmpty;
-
-    return GestureDetector(
-      onTap: () => _openRecipe(r),
-      child: SizedBox(
-        width: 160,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: AspectRatio(
-                aspectRatio: 160 / 180,
-                child: hasImage && imageUrl.startsWith("http")
-                    ? Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, progress) {
-                          if (progress == null) return child;
-                          return const SkeletonBox(
-                            width: double.infinity,
-                            height: double.infinity,
-                          );
-                        },
-                        errorBuilder: (_, __, ___) => Image.asset(
-                          "assets/Logos/recipe_placeholder.jpg",
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                    : Image.asset(
-                        "assets/Logos/recipe_placeholder.jpg",
-                        fit: BoxFit.cover,
-                      ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              r.name,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: purple,
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                fontFamily: "Satoshi",
-              ),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                Text(
-                  "${r.minutes} min  •  ",
-                  style: TextStyle(
-                    color: purple.withValues(alpha: 0.75),
-                    fontSize: 11,
-                    fontFamily: "Satoshi",
-                  ),
-                ),
-                RecipeRatingWidget(
-                  recipeId: r.id,
-                  initialRating: r.avgRating,
-                  style: TextStyle(
-                    color: purple.withValues(alpha: 0.75),
-                    fontSize: 11,
-                    fontFamily: "Satoshi",
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+    return SizedBox(
+      width: 161.sw,
+      child: RecipeCard(
+        recipe: r,
+        width: 161.sw,
+        aspectRatio: 161 / 231,
+        onTap: () => _openRecipe(r),
       ),
     );
   }
@@ -812,12 +787,7 @@ class _HomeBackgroundPattern extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const baseW = 393.0;
-    const baseH = 852.0;
-
-    final size = MediaQuery.of(context).size;
-    double sx(double v) => v * (size.width / baseW);
-    double sy(double v) => v * (size.height / baseH);
+    
 
     final stroke = const Color(0xFFF5DDCE);
 
@@ -825,34 +795,34 @@ class _HomeBackgroundPattern extends StatelessWidget {
       child: Stack(
         children: [
           Positioned(
-            left: sx(-154),
-            top: sy(-14),
+            left: (-154).sw,
+            top: (-14).sh,
             child: Transform.rotate(
               angle: 21 * math.pi / 180,
               child: Container(
-                width: sx(271),
-                height: sy(159),
+                width: 271.sw,
+                height: 159.sh,
                 decoration: BoxDecoration(
                   border: Border.all(color: stroke),
                   borderRadius: BorderRadius.all(
-                    Radius.elliptical(sx(136), sy(80)),
+                    Radius.elliptical(136.sw, 80.sh),
                   ),
                 ),
               ),
             ),
           ),
           Positioned(
-            left: sx(-149),
-            top: sy(-100),
+            left: (-149).sw,
+            top: (-100).sh,
             child: Transform.rotate(
               angle: 4 * math.pi / 180,
               child: Container(
-                width: sx(303),
-                height: sy(329),
+                width: 303.sw,
+                height: 329.sh,
                 decoration: BoxDecoration(
                   border: Border.all(color: stroke),
                   borderRadius: BorderRadius.all(
-                    Radius.elliptical(sx(152), sy(165)),
+                    Radius.elliptical(152.sw, 165.sh),
                   ),
                 ),
               ),

@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'upload_recipe_step5.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class UploadRecipeStep4 extends StatefulWidget {
   final String title;
@@ -124,13 +126,14 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false,
       body: Container(
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(30.sw),
         ),
         child: Stack(
           children: [
@@ -138,9 +141,9 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
             SafeArea(
               child: Column(
                 children: [
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12.sh),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 29),
+                    padding: EdgeInsets.symmetric(horizontal: 29.sw),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -149,24 +152,24 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
                           widget.editingRecipe != null ? 'Edit Recipe' : 'Add Recipe',
                           style: TextStyle(
                             color: purple,
-                            fontSize: 20,
+                            fontSize: 20.sp,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Satoshi',
                           ),
                         ),
                         Container(
-                          width: 69,
-                          height: 42,
+                          width: 69.sw,
+                          height: 42.sh,
                           decoration: BoxDecoration(
                             color: purple,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(10.sw),
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Text(
                               '4/5',
                               style: TextStyle(
-                                color: Color(0xFFFFF2EA),
-                                fontSize: 12,
+                                color: const Color(0xFFFFF2EA),
+                                fontSize: 12.sp,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Satoshi',
                               ),
@@ -177,16 +180,16 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
                     ),
                   ),
  
-                  const SizedBox(height: 20),
+                  SizedBox(height: 20.sh),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 27),
+                    padding: EdgeInsets.symmetric(horizontal: 27.sw),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
                         'Direction',
                         style: TextStyle(
                           color: purple,
-                          fontSize: 40,
+                          fontSize: 40.sp,
                           fontWeight: FontWeight.w900,
                           height: 1.1,
                           fontFamily: 'Satoshi',
@@ -202,7 +205,7 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
                         shadowColor: Colors.transparent,
                       ),
                       child: ReorderableListView.builder(
-                        padding: const EdgeInsets.only(top: 20, bottom: 120),
+                        padding: EdgeInsets.only(top: 20.sh, bottom: 120.sh),
                         itemCount: _steps.length + 2,
                         itemBuilder: (context, index) {
                           if (index == _steps.length) {
@@ -238,7 +241,7 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
   Widget _buildNavigationButtons(int index) {
     return Container(
       key: const ValueKey('nav_buttons'),
-      padding: const EdgeInsets.fromLTRB(30, 42, 29, 42),
+      padding: EdgeInsets.fromLTRB(30.sw, 42.sh, 29.sw, 42.sh),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.end,
@@ -265,25 +268,25 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
                 );
               },
               child: Container(
-                height: 62,
+                height: 62.sh,
                 decoration: BoxDecoration(
                   color: orange,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(20.sw),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
+                  children: [
                     Text(
                       'Next',
                       style: TextStyle(
                         color: Color(0xFFFFF2EA),
-                        fontSize: 15,
+                        fontSize: 15.sp,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Satoshi',
                       ),
                     ),
-                    SizedBox(width: 10),
-                    Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                    SizedBox(width: 10.sw),
+                    Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16.sw),
                   ],
                 ),
               ),
@@ -298,37 +301,37 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
     final step = _steps[index];
     return Container(
       key: ValueKey(step.id),
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      margin: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 10.sh),
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           // Drag handle area (Implicitly handled by ReorderableListView but we add dummy icon)
           Positioned(
-            left: 10,
-            top: 40,
+            left: 10.sw,
+            top: 40.sh,
             child: ReorderableDragStartListener(
               index: index,
-              child: const Icon(Icons.drag_handle, color: Color(0xFFD9D9D9), size: 24),
+              child: Icon(Icons.drag_handle, color: const Color(0xFFD9D9D9), size: 24.sw),
             ),
           ),
 
           // Circle with number
           Positioned(
-            left: 10,
-            top: 5,
+            left: 10.sw,
+            top: 5.sh,
             child: Container(
-              width: 22,
-              height: 22,
+              width: 22.sw,
+              height: 22.sh,
               decoration: BoxDecoration(
                 color: cardBg,
-                borderRadius: BorderRadius.circular(11),
+                borderRadius: BorderRadius.circular(11.sw),
               ),
               child: Center(
                 child: Text(
                   '${index + 1}',
                   style: TextStyle(
                     color: purple,
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w500,
                     fontFamily: 'Satoshi',
                   ),
@@ -339,28 +342,28 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
 
           // Actual Content Box
           Padding(
-            padding: const EdgeInsets.only(left: 44, right: 30),
+            padding: EdgeInsets.only(left: 44.sw, right: 30.sw),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Direction Text Input
                 Container(
-                  constraints: const BoxConstraints(minHeight: 70),
+                  constraints: BoxConstraints(minHeight: 70.sh),
                   decoration: BoxDecoration(
                     color: cardBg,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(20.sw),
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 12.sh),
                   child: TextField(
                     onChanged: (val) => setState(() => step.text = val),
                     maxLines: null,
                     maxLength: 500,
-                    style: TextStyle(color: purple, fontSize: 15, fontFamily: 'Satoshi'),
+                    style: TextStyle(color: purple, fontSize: 15.sp, fontFamily: 'Satoshi'),
                     decoration: InputDecoration(
                       hintText: 'Direction ${index + 1}',
                       hintStyle: TextStyle(
                         color: purple.withValues(alpha: 0.5),
-                        fontSize: 15,
+                        fontSize: 15.sp,
                         fontFamily: 'Satoshi',
                       ),
                       border: InputBorder.none,
@@ -370,14 +373,14 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
                 ),
 
                 // Character Counter
-                const SizedBox(height: 4),
+                SizedBox(height: 4.sh),
                 Align(
                   alignment: Alignment.centerRight,
                   child: Text(
                     '${step.text.length}/500',
                     style: TextStyle(
                       color: purple,
-                      fontSize: 12,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
                       fontFamily: 'Satoshi',
                     ),
@@ -385,15 +388,15 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
                 ),
 
                 // Optional Image
-                const SizedBox(height: 10),
+                SizedBox(height: 10.sh),
                 GestureDetector(
                   onTap: () => _pickStepImage(index),
                   child: Container(
-                    width: 107,
-                    height: 85,
+                    width: 107.sw,
+                    height: 85.sh,
                     decoration: BoxDecoration(
                       color: cardBg,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(20.sw),
                       image: step.image != null
                           ? DecorationImage(image: FileImage(step.image!), fit: BoxFit.cover)
                           : (step.imageUrl != null
@@ -401,7 +404,7 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
                               : null),
                     ),
                     child: step.image == null && step.imageUrl == null
-                        ? Center(child: Icon(Icons.camera_alt_outlined, color: purple, size: 24))
+                        ? Center(child: Icon(Icons.camera_alt_outlined, color: purple, size: 24.sw))
                         : null,
                   ),
                 ),
@@ -412,7 +415,7 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
           // 3 dots menu (Delete)
           Positioned(
             right: 0,
-            top: 15,
+            top: 15.sh,
             child: PopupMenuButton<String>(
               onSelected: (val) {
                 if (val == 'delete') _removeStep(index);
@@ -423,7 +426,7 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
                   child: Text('Delete Step'),
                 ),
               ],
-              icon: Icon(Icons.more_vert, color: purple, size: 20),
+              icon: Icon(Icons.more_vert, color: purple, size: 20.sw),
             ),
           ),
         ],
@@ -434,26 +437,26 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
   Widget _buildAddButton(int index) {
     return Container(
       key: const ValueKey('add_button'),
-      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+      padding: EdgeInsets.symmetric(horizontal: 30.sw, vertical: 10.sh),
       child: GestureDetector(
         onTap: _addStep,
         child: Container(
-          height: 62,
+          height: 62.sh,
           decoration: BoxDecoration(
             color: cardBg,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(20.sw),
           ),
           child: Center(
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.add, color: purple, size: 18),
-                const SizedBox(width: 8),
+                Icon(Icons.add, color: purple, size: 18.sw),
+                SizedBox(width: 8.sw),
                 Text(
                   'Add Direction',
                   style: TextStyle(
                     color: purple,
-                    fontSize: 15,
+                    fontSize: 15.sp,
                     fontWeight: FontWeight.w500,
                     fontFamily: 'Satoshi',
                   ),
@@ -476,31 +479,31 @@ class _BackgroundPatterns extends StatelessWidget {
       child: Stack(
         children: [
           Positioned(
-            left: -154,
-            top: -14,
+            left: -154.sw,
+            top: -14.sh,
             child: Transform.rotate(
               angle: 21 * math.pi / 180,
               child: Container(
-                width: 271,
-                height: 159,
+                width: 271.sw,
+                height: 159.sh,
                 decoration: BoxDecoration(
                   border: Border.all(color: const Color(0xFFF5DDCE)),
-                  borderRadius: const BorderRadius.all(Radius.elliptical(136, 80)),
+                  borderRadius: BorderRadius.all(Radius.elliptical(136.sw, 80.sh)),
                 ),
               ),
             ),
           ),
           Positioned(
-            left: -149,
-            top: -100,
+            left: -149.sw,
+            top: -100.sh,
             child: Transform.rotate(
               angle: 4 * math.pi / 180,
               child: Container(
-                width: 303,
-                height: 329,
+                width: 303.sw,
+                height: 329.sh,
                 decoration: BoxDecoration(
                   border: Border.all(color: const Color(0xFFF5DDCE)),
-                  borderRadius: const BorderRadius.all(Radius.elliptical(152, 165)),
+                  borderRadius: BorderRadius.all(Radius.elliptical(152.sw, 165.sh)),
                 ),
               ),
             ),

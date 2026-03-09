@@ -1,7 +1,7 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 import 'package:hidden_pantry_app/features/onboarding/screens/loading_five.dart';
 import 'package:hidden_pantry_app/features/nutritionist/services/nutritionist_service.dart';
@@ -30,8 +30,8 @@ class _NutritionistRejectedScreenState extends State<NutritionistRejectedScreen>
   static const Color btnRed = Color(0xFFFD3250);
   static const Color btnText = Color(0xFFFFF2EA);
 
-  static const double _baseW = 393;
-  static const double _baseH = 852;
+  // Base size
+  // Removed manual scaling constants
 
   @override
   void initState() {
@@ -128,22 +128,16 @@ class _NutritionistRejectedScreenState extends State<NutritionistRejectedScreen>
 
   @override
   Widget build(BuildContext context) {
-    final mq = MediaQuery.of(context);
-    final w = mq.size.width;
-    final h = mq.size.height;
-
-    final s = math.min(w / _baseW, h / _baseH);
-    double sx(double v) => v * s;
-    double sy(double v) => v * s;
+    ResponsiveUtils.init(context);
 
     return Scaffold(
       backgroundColor: bg,
       body: Center(
         child: SizedBox(
-          width: sx(_baseW),
-          height: sy(_baseH),
+          width: 393.sw,
+          height: 852.sh,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(sx(30)),
+            borderRadius: BorderRadius.circular(30.sw),
             child: Stack(
               clipBehavior: Clip.hardEdge,
               children: [
@@ -151,34 +145,34 @@ class _NutritionistRejectedScreenState extends State<NutritionistRejectedScreen>
 
                 // Back button
                 Positioned(
-                  left: sx(30),
-                  top: sy(51),
+                  left: 30.sw,
+                  top: 51.sh,
                   child: const BackButtonWidget(),
                 ),
 
                 // Content
                 Center(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: sx(40)),
+                    padding: EdgeInsets.symmetric(horizontal: 40.sw),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         // Warning icon
                         Container(
-                          width: sx(100),
-                          height: sx(100),
+                          width: 100.sw,
+                          height: 100.sw,
                           decoration: BoxDecoration(
                             color: const Color(0xFFFFE0DD),
-                            borderRadius: BorderRadius.circular(sx(50)),
+                            borderRadius: BorderRadius.circular(50.sw),
                           ),
                           child: Icon(
                             Icons.warning_rounded,
-                            size: sx(50),
+                            size: 50.sw,
                             color: btnRed,
                           ),
                         ),
 
-                        SizedBox(height: sy(30)),
+                        SizedBox(height: 30.sh),
 
                         // Title
                         Text(
@@ -186,20 +180,20 @@ class _NutritionistRejectedScreenState extends State<NutritionistRejectedScreen>
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: purple,
-                            fontSize: sx(32),
+                            fontSize: 32.sp,
                             fontWeight: FontWeight.w900,
                             fontFamily: "Satoshi",
                           ),
                         ),
 
-                        SizedBox(height: sy(20)),
+                        SizedBox(height: 20.sh),
 
                         // Rejection reason
                         Container(
-                          padding: EdgeInsets.all(sx(20)),
+                          padding: EdgeInsets.all(20.sw),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF9E3D5),
-                            borderRadius: BorderRadius.circular(sx(15)),
+                            borderRadius: BorderRadius.circular(15.sw),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,17 +202,17 @@ class _NutritionistRejectedScreenState extends State<NutritionistRejectedScreen>
                                 "Reason:",
                                 style: TextStyle(
                                   color: purple,
-                                  fontSize: sx(12),
+                                  fontSize: 12.sp,
                                   fontWeight: FontWeight.w700,
                                   fontFamily: "Satoshi",
                                 ),
                               ),
-                              SizedBox(height: sy(8)),
+                              SizedBox(height: 8.sh),
                               Text(
                                 widget.rejectionReason,
                                 style: TextStyle(
                                   color: purple,
-                                  fontSize: sx(14),
+                                  fontSize: 14.sp,
                                   fontWeight: FontWeight.w500,
                                   height: 1.5,
                                   fontFamily: "Satoshi",
@@ -228,23 +222,23 @@ class _NutritionistRejectedScreenState extends State<NutritionistRejectedScreen>
                           ),
                         ),
 
-                        SizedBox(height: sy(40)),
+                        SizedBox(height: 40.sh),
 
                         // Delete account button
                         GestureDetector(
                           onTap: _deleting ? null : _deleteAccount,
                           child: Container(
-                            width: sx(280),
-                            height: sy(62),
+                            width: 280.sw,
+                            height: 62.sh,
                             decoration: BoxDecoration(
                               color: btnRed,
-                              borderRadius: BorderRadius.circular(sx(20)),
+                              borderRadius: BorderRadius.circular(20.sw),
                             ),
                             alignment: Alignment.center,
                             child: _deleting
                                 ? SizedBox(
-                                    width: sx(18),
-                                    height: sx(18),
+                                    width: 18.sw,
+                                    height: 18.sw,
                                     child: const CircularProgressIndicator(
                                       strokeWidth: 2,
                                       color: Colors.white,
@@ -254,7 +248,7 @@ class _NutritionistRejectedScreenState extends State<NutritionistRejectedScreen>
                                     "Delete Account Now",
                                     style: TextStyle(
                                       color: btnText,
-                                      fontSize: sx(14),
+                                      fontSize: 14.sp,
                                       fontWeight: FontWeight.w700,
                                       fontFamily: "Satoshi",
                                     ),

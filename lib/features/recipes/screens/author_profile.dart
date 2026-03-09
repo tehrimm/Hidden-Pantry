@@ -8,6 +8,8 @@ import 'package:hidden_pantry_app/core/constants/api_constants.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
 import 'package:hidden_pantry_app/features/user/services/follow_service.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class AuthorProfileScreen extends StatefulWidget {
   final String authorId;
@@ -83,10 +85,10 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
           }
           _recipes = byId.values.toList();
           _stats['recipe_count'] = _recipes.length;
-          _isFollowing = results[2] as bool;
-          
-          final firestoreFollowStats = results[3] as Map<String, int>;
-          final firestoreMetricStats = results[4] as Map<String, dynamic>;
+          _isFollowing = results[3] as bool;                                  
+
+          final firestoreFollowStats = results[4] as Map<String, int>;        
+          final firestoreMetricStats = results[5] as Map<String, dynamic>;    
 
           // Override API mocked stats with real Firestore stats
           _stats['followers'] = firestoreFollowStats['followers'];
@@ -154,6 +156,7 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     return Scaffold(
       backgroundColor: bgColor,
       body: Stack(
@@ -161,15 +164,15 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
           const PatternBackground(),
                 // Standardized Header - Back Button
                 Positioned(
-                  left: 30,
-                  top: 51,
+                  left: 30.sw,
+                  top: 51.sh,
                   child: const BackButtonWidget(color: textColor),
                 ),
 
                 SafeArea(
                   child: Column(
                     children: [
-                      const SizedBox(height: 70), // Gap for standardized header
+                      SizedBox(height: 70.sh), // Gap for standardized header
 
                 Expanded(
                   child: _loading 
@@ -186,21 +189,21 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
 
   Widget _buildContent() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 18),
+      padding: EdgeInsets.symmetric(horizontal: 18.sw),
       child: Column(
         children: [
-          const SizedBox(height: 10),
+          SizedBox(height: 10.sh),
           
           // Profile Photo (Centered)
           Center(
             child: Container(
-              width: 120,
-              height: 120,
+              width: 120.sw,
+              height: 120.sw,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 4),
+                border: Border.all(color: Colors.white, width: 4.sw),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 10, spreadRadius: 2),
+                  BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 10.sw, spreadRadius: 2.sw),
                 ],
               ),
               child: ClipOval(
@@ -211,26 +214,26 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
             ),
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: 16.sh),
 
           // Name
           Text(
             widget.authorName,
             textAlign: TextAlign.center,
-            style: const TextStyle(
+            style: TextStyle(
               color: textColor,
-              fontSize: 24,
+              fontSize: 24.sp,
               fontWeight: FontWeight.w800,
               fontFamily: "Satoshi",
             ),
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: 16.sh),
 
           // Follow Button
           SizedBox(
-            width: 140,
-            height: 44,
+            width: 140.sw,
+            height: 44.sh,
             child: ElevatedButton(
               onPressed: () async {
                 final newValue = !_isFollowing;
@@ -256,18 +259,18 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
                 foregroundColor: _isFollowing ? orange : Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(22),
+                  borderRadius: BorderRadius.circular(22.sw),
                   side: _isFollowing ? const BorderSide(color: orange) : BorderSide.none,
                 ),
               ),
               child: Text(
                 _isFollowing ? "Following" : "Follow",
-                style: const TextStyle(fontWeight: FontWeight.w800, fontFamily: "Satoshi"),
+                style: TextStyle(fontWeight: FontWeight.w800, fontFamily: "Satoshi", fontSize: 14.sp),
               ),
             ),
           ),
 
-          const SizedBox(height: 28),
+          SizedBox(height: 28.sh),
 
           // Stats row
           Row(
@@ -281,34 +284,34 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
             ],
           ),
 
-          const SizedBox(height: 32),
+          SizedBox(height: 32.sh),
 
           // Recipes Header
-          const Align(
+          Align(
             alignment: Alignment.centerLeft,
             child: Text(
               "Posted Recipes",
               style: TextStyle(
                 color: textColor,
-                fontSize: 20,
+                fontSize: 20.sp,
                 fontWeight: FontWeight.w800,
                 fontFamily: "Satoshi",
               ),
             ),
           ),
 
-          const SizedBox(height: 16),
+          SizedBox(height: 16.sh),
 
           // Recipes Grid or List
           if (_recipes.isEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 40),
-              child: Text("No recipes posted yet.", style: TextStyle(color: textColor.withValues(alpha:0.5))),
+              padding: EdgeInsets.only(top: 40.sh),
+              child: Text("No recipes posted yet.", style: TextStyle(color: textColor.withValues(alpha:0.5), fontSize: 14.sp)),
             )
           else
             _buildRecipeGrid(),
           
-          const SizedBox(height: 40),
+          SizedBox(height: 40.sh),
         ],
       ),
     );
@@ -319,19 +322,19 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
       children: [
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             color: textColor,
-            fontSize: 18,
+            fontSize: 18.sp,
             fontWeight: FontWeight.w800,
             fontFamily: "Satoshi",
           ),
         ),
-        const SizedBox(height: 4),
+        SizedBox(height: 4.sh),
         Text(
           label,
           style: TextStyle(
             color: textColor.withValues(alpha:0.5),
-            fontSize: 12,
+            fontSize: 12.sp,
             fontWeight: FontWeight.w500,
             fontFamily: "Satoshi",
           ),
@@ -344,11 +347,11 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         childAspectRatio: 157 / 231, // Standard aspect ratio for cards
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+        crossAxisSpacing: 16.sw,
+        mainAxisSpacing: 16.sh,
       ),
       itemCount: _recipes.length,
       itemBuilder: (context, index) {
@@ -369,7 +372,7 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
   Widget _fallbackAvatar() {
     return Container(
       color: cardColor,
-      child: const Icon(Icons.person, size: 50, color: orange),
+      child: Icon(Icons.person, size: 50.sw, color: orange),
     );
   }
 

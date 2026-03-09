@@ -4,6 +4,8 @@ import 'package:hidden_pantry_app/features/user/services/user_service.dart';
 import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class AllergiesScreen extends StatefulWidget {
   /// When opened from Profile Settings:
@@ -27,15 +29,12 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
   bool _fetching = false;
 
   // Figma base
-  static const double baseW = 393.0;
-  static const double baseH = 852.0;
+ 
 
   // Tile sizes
   static const double smallSize = 70;
   static const double largeSize = 90;
 
-  // Rounded corners
-  static const double screenRadius = 20;
   static const double tileRadius = 20;
 
   // Colors
@@ -157,190 +156,160 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     return Scaffold(
       backgroundColor: bg,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final w = constraints.maxWidth;
-          final h = constraints.maxHeight;
+      body: Stack(
+        children: [
+          Positioned.fill(child: Container(color: bg)),
 
-          // true responsive (keeps proportions)
-          final s = math.min(w / baseW, h / baseH);
+          const PatternBackground(),
 
-          // center the whole design
-          final dx = (w - baseW * s) / 2;
-          final dy = (h - baseH * s) / 2;
+          // Back button ONLY in profile mode
+          if (widget.fromProfile)
+            Positioned(
+              left: 30.sw,
+              top: 51.sh,
+              child: BackButtonWidget(color: titleColor),
+            ),
 
-          return Stack(
-            children: [
-              Positioned.fill(child: Container(color: bg)),
+          // Skip ONLY in signup mode
+          if (!widget.fromProfile)
+            Positioned(
+              right: 30.sw,
+              top: 67.sh,
+              child: GestureDetector(
+                onTap: _skip,
+                child: Text(
+                  'Skip',
+                  style: TextStyle(
+                    color: const Color(0xFF74503C),
+                    fontSize: 15.sp,
+                    fontFamily: 'Satoshi',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
 
-              Positioned(
-                left: dx,
-                top: dy,
-                width: baseW * s,
-                height: baseH * s,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(screenRadius * s),
-                  child: Stack(
-                    clipBehavior: Clip.hardEdge,
-                    children: [
-                      Positioned.fill(child: Container(color: bg)),
+          // Title
+          Positioned(
+            left: 30.sw,
+            top: 117.sh,
+            child: SizedBox(
+              width: 330.sw,
+              child: Text(
+                'What should we\navoid for you?',
+                style: TextStyle(
+                  color: titleColor,
+                  fontSize: 40.sp,
+                  fontFamily: 'Satoshi',
+                  fontWeight: FontWeight.w900,
+                  height: 1.10,
+                ),
+              ),
+            ),
+          ),
 
-                      const PatternBackground(),
+          Positioned(
+            left: 30.sw,
+            top: 222.sh,
+            child: SizedBox(
+              width: 325.sw,
+              child: Text(
+                'Pick the ingredients you want to avoid due to\nallergies, intolerances, or personal health\nneeds.',
+                style: TextStyle(
+                  color: titleColor,
+                  fontSize: 15.sp,
+                  fontFamily: 'Satoshi',
+                  fontWeight: FontWeight.w400,
+                  height: 1.35,
+                ),
+              ),
+            ),
+          ),
 
-                      // Back button ONLY in profile mode
-                      if (widget.fromProfile)
-                        Positioned(
-                          left: 30 * s,
-                          top: 51 * s,
-                          child: BackButtonWidget(color: titleColor),
-                        ),
+          // Tiles
+          for (final t in _tiles)
+            Positioned(
+              left: t.left.sw,
+              top: t.top.sh,
+              child: _DiamondTile(
+                size: (t.isLarge ? largeSize : smallSize).sw,
+                radius: tileRadius.sw,
+                asset: t.asset,
+                label: t.label,
+                selected: _selected.contains(t.label),
+                onTap: () => _toggle(t.label),
+                iconW: t.iconW,
+                iconH: t.iconH,
+              ),
+            ),
 
-                      // Skip ONLY in signup mode
-                      if (!widget.fromProfile)
-                        Positioned(
-                          right: 30 * s,
-                          top: 67 * s,
-                          child: GestureDetector(
-                            onTap: _skip,
-                            child: Text(
-                              'Skip',
+          // Counter
+          Positioned(
+            left: 30.sw,
+            top: 704.sh,
+            child: Text(
+              '${_selected.length}/12 Selected',
+              style: TextStyle(
+                color: titleColor,
+                fontSize: 15.sp,
+                fontFamily: 'Satoshi',
+                fontWeight: FontWeight.w400,
+              ),
+            ),
+          ),
+
+          // Button
+          Positioned(
+            left: 32.sw,
+            top: 748.sh,
+            child: GestureDetector(
+              onTap: (_loading || _fetching) ? null : _saveOrContinue,
+              child: Container(
+                width: 332.sw,
+                height: 62.sh,
+                decoration: BoxDecoration(
+                  color: buttonOrange,
+                  borderRadius: BorderRadius.circular(20.sw),
+                ),
+                child: Center(
+                  child: (_loading || _fetching)
+                      ? SizedBox(
+                          width: 20.sw,
+                          height: 20.sh,
+                          child: const CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              widget.fromProfile ? 'Save' : 'Continue',
                               style: TextStyle(
-                                color: const Color(0xFF74503C),
-                                fontSize: 15 * s,
+                                color: buttonText,
+                                fontSize: 15.sp,
                                 fontFamily: 'Satoshi',
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                          ),
-                        ),
-
-                      // Title
-                      Positioned(
-                        left: 30 * s,
-                        top: 117 * s,
-                        child: SizedBox(
-                          width: 330 * s,
-                          child: Text(
-                            'What should we\navoid for you?',
-                            style: TextStyle(
-                              color: titleColor,
-                              fontSize: 40 * s,
-                              fontFamily: 'Satoshi',
-                              fontWeight: FontWeight.w900,
-                              height: 1.10,
+                            SizedBox(width: 10.sw),
+                            Image.asset(
+                              'assets/icons/nextButton.png',
+                              width: 18.sw,
+                              height: 18.sh,
+                              fit: BoxFit.contain,
                             ),
-                          ),
+                          ],
                         ),
-                      ),
-
-                      Positioned(
-                        left: 30 * s,
-                        top: 222 * s,
-                        child: SizedBox(
-                          width: 325 * s,
-                          child: Text(
-                            'Pick the ingredients you want to avoid due to\nallergies, intolerances, or personal health\nneeds.',
-                            style: TextStyle(
-                              color: titleColor,
-                              fontSize: 15 * s,
-                              fontFamily: 'Satoshi',
-                              fontWeight: FontWeight.w400,
-                              height: 1.35,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      // Tiles
-                      for (final t in _tiles)
-                        Positioned(
-                          left: t.left * s,
-                          top: t.top * s,
-                          child: _DiamondTile(
-                            size: (t.isLarge ? largeSize : smallSize) * s,
-                            radius: tileRadius * s,
-                            asset: t.asset,
-                            label: t.label,
-                            selected: _selected.contains(t.label),
-                            onTap: () => _toggle(t.label),
-                            scale: s,
-                            iconW: t.iconW,
-                            iconH: t.iconH,
-                          ),
-                        ),
-
-                      // Counter
-                      Positioned(
-                        left: 30 * s,
-                        top: 704 * s,
-                        child: Text(
-                          '${_selected.length}/12 Selected',
-                          style: TextStyle(
-                            color: titleColor,
-                            fontSize: 15 * s,
-                            fontFamily: 'Satoshi',
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                      ),
-
-                      // Button
-                      Positioned(
-                        left: 32 * s,
-                        top: 748 * s,
-                        child: GestureDetector(
-                          onTap: (_loading || _fetching) ? null : _saveOrContinue,
-                          child: Container(
-                            width: 332 * s,
-                            height: 62 * s,
-                            decoration: BoxDecoration(
-                              color: buttonOrange,
-                              borderRadius: BorderRadius.circular(20 * s),
-                            ),
-                            child: Center(
-                              child: (_loading || _fetching)
-                                  ? SizedBox(
-                                      width: 20 * s,
-                                      height: 20 * s,
-                                      child: const CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: Colors.white,
-                                      ),
-                                    )
-                                  : Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          widget.fromProfile ? 'Save' : 'Continue',
-                                          style: TextStyle(
-                                            color: buttonText,
-                                            fontSize: 15 * s,
-                                            fontFamily: 'Satoshi',
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                        SizedBox(width: 10 * s),
-                                        Image.asset(
-                                          'assets/icons/nextButton.png',
-                                          width: 18 * s,
-                                          height: 18 * s,
-                                          fit: BoxFit.contain,
-                                        ),
-                                      ],
-                                    ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
-            ],
-          );
-        },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -353,7 +322,6 @@ class _DiamondTile extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  final double scale;
 
   final double? iconW;
   final double? iconH;
@@ -365,7 +333,6 @@ class _DiamondTile extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
-    required this.scale,
     this.iconW,
     this.iconH,
   });
@@ -380,8 +347,8 @@ class _DiamondTile extends StatelessWidget {
     final textColor = selected ? Colors.white : labelBrown;
 
     final double defaultIcon = size * 0.42;
-    final double w = (iconW != null) ? iconW! * scale : defaultIcon;
-    final double h = (iconH != null) ? iconH! * scale : defaultIcon;
+    final double w = (iconW != null) ? iconW!.sw : defaultIcon;
+    final double h = (iconH != null) ? iconH!.sh : defaultIcon;
 
     return GestureDetector(
       onTap: onTap,
@@ -411,7 +378,7 @@ class _DiamondTile extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: textColor,
-                    fontSize: 12 * scale,
+                    fontSize: 12.sp,
                     fontFamily: 'Satoshi',
                     fontWeight: FontWeight.w500,
                     height: 1.1,

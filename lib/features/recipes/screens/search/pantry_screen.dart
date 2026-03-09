@@ -1,6 +1,6 @@
-import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 class PantryScreen extends StatefulWidget {
   final List<String> initialSelectedIngredients;
@@ -208,6 +208,7 @@ class _PantryScreenState extends State<PantryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     final safeBottom = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
@@ -216,37 +217,37 @@ class _PantryScreenState extends State<PantryScreen> {
       body: Container(
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(30.sw),
         ),
         child: Stack(
           children: [
             // Background patterns (matching other screens)
             Positioned(
-              left: -154,
-              top: -14,
+              left: (-154).sw,
+              top: (-14).sh,
               child: Transform.rotate(
                 angle: 21 * pi / 180,
                 child: Container(
-                  width: 271,
-                  height: 159,
+                  width: 271.sw,
+                  height: 159.sh,
                   decoration: BoxDecoration(
                     border: Border.all(color: const Color(0xFFF5DDCE)),
-                    borderRadius: const BorderRadius.all(Radius.elliptical(136, 80)),
+                    borderRadius: BorderRadius.all(Radius.elliptical(136.sw, 80.sh)),
                   ),
                 ),
               ),
             ),
             Positioned(
-              left: -149,
-              top: -100,
+              left: (-149).sw,
+              top: (-100).sh,
               child: Transform.rotate(
                 angle: 4 * pi / 180,
                 child: Container(
-                  width: 303,
-                  height: 329,
+                  width: 303.sw,
+                  height: 329.sh,
                   decoration: BoxDecoration(
                     border: Border.all(color: const Color(0xFFF5DDCE)),
-                    borderRadius: const BorderRadius.all(Radius.elliptical(152, 165)),
+                    borderRadius: BorderRadius.all(Radius.elliptical(152.sw, 165.sh)),
                   ),
                 ),
               ),
@@ -256,20 +257,20 @@ class _PantryScreenState extends State<PantryScreen> {
               bottom: false,
               child: Column(
                 children: [
-                  const SizedBox(height: 12),
+                  SizedBox(height: 12.sh),
                   _topBar(context),
-                  const SizedBox(height: 14),
+                  SizedBox(height: 14.sh),
                   
                   // Title
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: EdgeInsets.symmetric(horizontal: 20.sw),
                     child: Align(
                       alignment: Alignment.centerLeft,
                       child: Text(
                         "What's in your Fridge?",
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: primary,
-                          fontSize: 40,
+                          fontSize: 40.sp,
                           fontWeight: FontWeight.w900,
                           height: 1.1,
                           fontFamily: 'Satoshi',
@@ -277,16 +278,16 @@ class _PantryScreenState extends State<PantryScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16.sh),
 
                   // Search Bar
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: EdgeInsets.symmetric(horizontal: 20.sw),
                     child: Container(
-                      height: 50,
+                      height: 50.sh,
                       decoration: BoxDecoration(
                         color: const Color(0xFFFDECE4),
-                        borderRadius: BorderRadius.circular(25),
+                        borderRadius: BorderRadius.circular(25.sw),
                       ),
                       child: TextField(
                         controller: _searchController,
@@ -295,22 +296,22 @@ class _PantryScreenState extends State<PantryScreen> {
                             _searchQuery = value.toLowerCase();
                           });
                         },
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: primary,
-                          fontSize: 14,
+                          fontSize: 14.sp,
                           fontFamily: 'Satoshi',
                         ),
                         decoration: InputDecoration(
                           hintText: 'Search ingredients...',
-                          hintStyle: const TextStyle(
-                            color: Color(0xFFA18671),
-                            fontSize: 14,
+                          hintStyle: TextStyle(
+                            color: const Color(0xFFA18671),
+                            fontSize: 14.sp,
                             fontFamily: 'Satoshi',
                           ),
-                          prefixIcon: const Icon(Icons.search, color: Color(0xFFA18671), size: 20),
+                          prefixIcon: Icon(Icons.search, color: const Color(0xFFA18671), size: 20.sw),
                           suffixIcon: _searchQuery.isNotEmpty
                               ? IconButton(
-                                  icon: const Icon(Icons.close, size: 18, color: primary),
+                                  icon: Icon(Icons.close, size: 18.sw, color: primary),
                                   onPressed: () {
                                     _searchController.clear();
                                     setState(() {
@@ -320,12 +321,12 @@ class _PantryScreenState extends State<PantryScreen> {
                                 )
                               : null,
                           border: InputBorder.none,
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 14.sh),
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: 16.sh),
 
                   Expanded(
                     child: _loading
@@ -340,11 +341,11 @@ class _PantryScreenState extends State<PantryScreen> {
 
             // Bottom CTA pinned (always visible)
             Positioned(
-              left: 20,
-              right: 20,
-              bottom: 16 + safeBottom,
+              left: 20.sw,
+              right: 20.sw,
+              bottom: 16.sh + safeBottom,
               child: SizedBox(
-                height: 62,
+                height: 62.sh,
                 child: ElevatedButton(
                   onPressed: () {
                     // Return selected ingredients to the previous screen (SearchScreen)
@@ -353,14 +354,14 @@ class _PantryScreenState extends State<PantryScreen> {
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: cta,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.sw)),
                     elevation: 0,
                   ),
-                  child: const Text(
+                  child: Text(
                     "Done",
                     style: TextStyle(
-                      color: Color(0xFFFFF2EA),
-                      fontSize: 15,
+                      color: const Color(0xFFFFF2EA),
+                      fontSize: 15.sp,
                       fontWeight: FontWeight.w600,
                       fontFamily: 'Satoshi',
                     ),
@@ -376,19 +377,19 @@ class _PantryScreenState extends State<PantryScreen> {
 
   Widget _topBar(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      padding: EdgeInsets.symmetric(horizontal: 20.sw),
       child: Row(
         children: [
           GestureDetector(
             onTap: () => Navigator.maybePop(context),
             child: Container(
-              width: 50,
-              height: 50,
+              width: 50.sw,
+              height: 50.sw,
               decoration: BoxDecoration(
                 color: const Color(0xFFF9E3D5),
-                borderRadius: BorderRadius.circular(25),
+                borderRadius: BorderRadius.circular(25.sw),
               ),
-              child: const Icon(Icons.arrow_back_ios_new, size: 18, color: primary),
+              child: Icon(Icons.arrow_back_ios_new, size: 18.sw, color: primary),
             ),
           ),
           const Spacer(),
@@ -468,9 +469,9 @@ class _PantryScreenState extends State<PantryScreen> {
     final itemCount = visibleCategories.length + (showSelected ? 1 : 0);
 
     return ListView.separated(
-      padding: EdgeInsets.only(left: 20, right: 20, bottom: padBottom),
+      padding: EdgeInsets.only(left: 20.sw, right: 20.sw, bottom: padBottom),
       itemCount: itemCount,
-      separatorBuilder: (_, __) => const SizedBox(height: 16),
+      separatorBuilder: (_, __) => SizedBox(height: 16.sh),
       itemBuilder: (context, index) {
         if (showSelected && index == 0) {
           // Selected Ingredients Section as a Category Card
@@ -600,10 +601,10 @@ class _CategoryCard extends StatelessWidget {
     final displayItems = allItems.take(displayLimit).toList();
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(14.sw),
       decoration: BoxDecoration(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(22.sw),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -614,16 +615,16 @@ class _CategoryCard extends StatelessWidget {
             children: [
               // Circular Icon
               Container(
-                width: 78,
-                height: 78,
+                width: 78.sw,
+                height: 78.sw,
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha:0.25),
                   shape: BoxShape.circle,
                 ),
-                padding: const EdgeInsets.all(14),
+                padding: EdgeInsets.all(14.sw),
                 child: Image.asset(meta.iconAsset, fit: BoxFit.contain),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12.sw),
               
               // Text Content
               Expanded(
@@ -637,7 +638,7 @@ class _CategoryCard extends StatelessWidget {
                             meta.title,
                             style: TextStyle(
                               color: primary,
-                              fontSize: 20,
+                              fontSize: 20.sp,
                               fontWeight: FontWeight.bold,
                               fontFamily: 'Satoshi',
                             ),
@@ -649,27 +650,28 @@ class _CategoryCard extends StatelessWidget {
                         if (hasMore && showExpandButton)
                           InkWell(
                             onTap: onToggleExpansion,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(20.sw),
                             child: Padding(
-                              padding: const EdgeInsets.all(6),
+                              padding: EdgeInsets.all(6.sw),
                               child: AnimatedRotation(
                                 turns: isExpanded ? 0.5 : 0,
                                 duration: const Duration(milliseconds: 200),
-                                child: const Icon(
+                                child: Icon(
                                   Icons.keyboard_arrow_down_rounded,
-                                  color: Color(0xFF462F4D),
+                                  color: const Color(0xFF462F4D),
+                                  size: 24.sw,
                                 ),
                               ),
                             ),
                           ),
                       ],
                     ),
-                    const SizedBox(height: 4),
+                    SizedBox(height: 4.sh),
                     Text(
                       subtitle,
-                      style: const TextStyle(
-                        color: Color(0xFF462F4D),
-                        fontSize: 12,
+                      style: TextStyle(
+                        color: const Color(0xFF462F4D),
+                        fontSize: 12.sp,
                         fontFamily: 'Satoshi',
                         fontWeight: FontWeight.normal,
                       ),
@@ -680,12 +682,12 @@ class _CategoryCard extends StatelessWidget {
             ],
           ),
           
-          const SizedBox(height: 14), // Spacing between header and chips
+          SizedBox(height: 14.sh), // Spacing between header and chips
 
           // Chips Section
           Wrap(
-            spacing: 10,
-            runSpacing: 10,
+            spacing: 10.sw,
+            runSpacing: 10.sh,
             children: [
               for (final chip in displayItems)
                 _PillChip(
@@ -743,19 +745,19 @@ class _PillChip extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(20.sw),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+        padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 9.sh),
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(20.sw),
           border: border,
         ),
         child: Text(
           label,
           style: TextStyle(
             color: textColor,
-            fontSize: 12,
+            fontSize: 12.sp,
             fontFamily: 'Satoshi',
             fontWeight: FontWeight.normal,
           ),

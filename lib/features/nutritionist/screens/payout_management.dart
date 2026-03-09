@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:hidden_pantry_app/features/user/services/stripe_service.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 class PayoutManagementScreen extends StatefulWidget {
   const PayoutManagementScreen({super.key});
@@ -23,15 +24,16 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
 
   // Removed withdrawal logic as per direct payment model
 
-
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
+    final topPad = MediaQuery.of(context).padding.top;
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(30.sw),
         child: Container(
           color: bg,
           child: Stack(
@@ -58,20 +60,20 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
                       children: [
                         // Fixed Header
                         Padding(
-                          padding: const EdgeInsets.only(left: 22, right: 22, top: 16, bottom: 20),
+                          padding: EdgeInsets.only(left: 22.sw, right: 22.sw, top: 16.sh, bottom: 20.sh),
                           child: Row(
                             children: [
                               GestureDetector(
                                 onTap: () => Navigator.pop(context),
                                 child: Container(
-                                  width: 50,
-                                  height: 50,
+                                  width: 50.sw,
+                                  height: 50.sw,
                                   decoration: BoxDecoration(
                                     color: tileBg,
-                                    borderRadius: BorderRadius.circular(25),
+                                    borderRadius: BorderRadius.circular(25.sw),
                                   ),
                                   child: Center(
-                                    child: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: brown),
+                                    child: Icon(Icons.arrow_back_ios_new_rounded, size: 18.sw, color: brown),
                                   ),
                                 ),
                               ),
@@ -80,7 +82,7 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
                                 "Earnings & Fees",
                                 style: TextStyle(
                                   color: purple,
-                                  fontSize: 24,
+                                  fontSize: 24.sp,
                                   fontWeight: FontWeight.bold,
                                   fontFamily: "Satoshi",
                                 ),
@@ -93,7 +95,7 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
                         // Scrollable Content
                         Expanded(
                           child: ListView(
-                            padding: const EdgeInsets.symmetric(horizontal: 22),
+                            padding: EdgeInsets.symmetric(horizontal: 22.sw),
                             children: [
                               StreamBuilder<QuerySnapshot>(
                                 stream: FirebaseFirestore.instance
@@ -112,19 +114,19 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
                                   return _balanceCard(total, projectedMonthly, data);
                                 }
                               ),
-                              const SizedBox(height: 24),
+                              SizedBox(height: 24.sh),
                               _stripeConnectSection(data),
-                              const SizedBox(height: 24),
+                              SizedBox(height: 24.sh),
                               _saasStatusSection(data),
-                              const SizedBox(height: 32),
-                              Text("Platform Payment History", style: TextStyle(color: purple, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
-                              const SizedBox(height: 16),
+                              SizedBox(height: 32.sh),
+                              Text("Platform Payment History", style: TextStyle(color: purple, fontSize: 20.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+                              SizedBox(height: 16.sh),
                               _platformPaymentHistoryList(user?.uid),
-                              const SizedBox(height: 32),
-                              Text("Earnings History", style: TextStyle(color: purple, fontSize: 20, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
-                              const SizedBox(height: 16),
+                              SizedBox(height: 32.sh),
+                              Text("Earnings History", style: TextStyle(color: purple, fontSize: 20.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+                              SizedBox(height: 16.sh),
                               _earningsHistoryList(user?.uid),
-                              const SizedBox(height: 100), // Bottom padding
+                              SizedBox(height: 100.sh), // Bottom padding
                             ],
                           ),
                         ),
@@ -147,43 +149,43 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
     final bool isLinked = stripeId != null && stripeId.isNotEmpty;
 
     return Container(
-      padding: const EdgeInsets.all(28),
+      padding: EdgeInsets.all(28.sw),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [purple, const Color(0xFF63456D)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(32),
+        borderRadius: BorderRadius.circular(32.sw),
         boxShadow: [
-          BoxShadow(color: purple.withValues(alpha:0.2), blurRadius: 20, offset: const Offset(0, 10)),
+          BoxShadow(color: purple.withValues(alpha:0.2), blurRadius: 20.sw, offset: Offset(0, 10.sh)),
         ],
       ),
       child: Column(
         children: [
-          Text("TOTAL EARNINGS", style: TextStyle(color: Colors.white.withValues(alpha:0.6), fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.2, fontFamily: "Satoshi")),
-          const SizedBox(height: 8),
-          Text("Rs. ${total.toInt()}", style: const TextStyle(color: Colors.white, fontSize: 40, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
+          Text("TOTAL EARNINGS", style: TextStyle(color: Colors.white.withValues(alpha:0.6), fontSize: 12.sp, fontWeight: FontWeight.w900, letterSpacing: 1.2, fontFamily: "Satoshi")),
+          SizedBox(height: 8.sh),
+          Text("Rs. ${total.toInt()}", style: TextStyle(color: Colors.white, fontSize: 40.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
           if (projected > 0) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8.sh),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 6.sh),
               decoration: BoxDecoration(
                 color: Colors.white.withValues(alpha:0.1),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(10.sw),
               ),
               child: Text(
                 "POTENTIAL MONTHLY: Rs. ${projected.toInt()}",
-                style: TextStyle(color: orange, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                style: TextStyle(color: orange, fontSize: 10.sp, fontWeight: FontWeight.bold, letterSpacing: 0.5),
               ),
             ),
           ],
-          const SizedBox(height: 28),
+          SizedBox(height: 28.sh),
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12.sw),
             decoration: BoxDecoration(
               color: isLinked ? Colors.green.withValues(alpha:0.2) : orange.withValues(alpha:0.2),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(12.sw),
               border: Border.all(color: isLinked ? Colors.green.withValues(alpha:0.3) : orange.withValues(alpha:0.3)),
             ),
             child: Row(
@@ -192,16 +194,16 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
                 Icon(
                   isLinked ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
                   color: isLinked ? Colors.greenAccent : orange,
-                  size: 16,
+                  size: 16.sw,
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8.sw),
                 Flexible(
                   child: Text(
                     isLinked ? "Stripe Connected - Direct Payments Active" : "Connect Stripe to receive payments",
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 12,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.bold,
                       fontFamily: "Satoshi",
                     ),
@@ -210,11 +212,11 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.sh),
           Text(
             "* Funds are transferred directly to your Stripe account.",
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white.withValues(alpha:0.5), fontSize: 10, fontFamily: "Satoshi"),
+            style: TextStyle(color: Colors.white.withValues(alpha:0.5), fontSize: 10.sp, fontFamily: "Satoshi"),
           ),
         ],
       ),
@@ -234,9 +236,9 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
       builder: (context, snapshot) {
         if (snapshot.hasError) return _emptyMinorState("Error loading: ${snapshot.error}");
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Padding(
-            padding: EdgeInsets.all(20),
-            child: Center(child: Text("Loading items...", style: TextStyle(color: Color(0xFF462F4D), fontSize: 13, fontFamily: "Satoshi"))),
+          return Padding(
+            padding: EdgeInsets.all(20.sw),
+            child: Center(child: Text("Loading items...", style: TextStyle(color: Color(0xFF462F4D), fontSize: 13.sp, fontFamily: "Satoshi"))),
           );
         }
         final docs = snapshot.data!.docs;
@@ -263,32 +265,32 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
 
   Widget _historyTile({required String title, required String subtitle, required String amount, required String date, bool isPositive = true, Color? statusColor}) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: EdgeInsets.only(bottom: 12.sh),
+      padding: EdgeInsets.all(16.sw),
       decoration: BoxDecoration(
         color: const Color(0xFFF9E3D5),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.sw),
         boxShadow: [
-          BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10.sw, offset: Offset(0, 4.sh)),
         ],
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            padding: EdgeInsets.all(10.sw),
             decoration: BoxDecoration(color: const Color(0xFFFFF2EA), shape: BoxShape.circle),
-            child: Icon(isPositive ? Icons.add_rounded : Icons.south_west_rounded, color: isPositive ? Colors.green : orange, size: 20),
+            child: Icon(isPositive ? Icons.add_rounded : Icons.south_west_rounded, color: isPositive ? Colors.green : orange, size: 20.sw),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16.sw),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
-              Text(subtitle, style: TextStyle(color: statusColor ?? purple.withValues(alpha:0.4), fontSize: 11, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
+              Text(title, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14.sp, fontFamily: "Satoshi")),
+              Text(subtitle, style: TextStyle(color: statusColor ?? purple.withValues(alpha:0.4), fontSize: 11.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
             ]),
           ),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(amount, style: TextStyle(color: isPositive ? Colors.green : purple, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
-            Text(date, style: TextStyle(color: purple.withValues(alpha:0.3), fontSize: 11, fontFamily: "Satoshi")),
+            Text(amount, style: TextStyle(color: isPositive ? Colors.green : purple, fontWeight: FontWeight.w900, fontSize: 14.sp, fontFamily: "Satoshi")),
+            Text(date, style: TextStyle(color: purple.withValues(alpha:0.3), fontSize: 11.sp, fontFamily: "Satoshi")),
           ]),
         ],
       ),
@@ -296,7 +298,7 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
   }
 
   Widget _emptyMinorState(String msg) {
-    return Center(child: Padding(padding: const EdgeInsets.all(20), child: Text(msg, style: TextStyle(color: purple.withValues(alpha:0.3), fontSize: 13, fontFamily: "Satoshi"))));
+    return Center(child: Padding(padding: EdgeInsets.all(20.sw), child: Text(msg, style: TextStyle(color: purple.withValues(alpha:0.3), fontSize: 13.sp, fontFamily: "Satoshi"))));
   }
 
   Widget _stripeConnectSection(Map<String, dynamic> data) {
@@ -304,32 +306,32 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
     final bool isLinked = stripeId != null && stripeId.isNotEmpty;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 16.sh),
       decoration: BoxDecoration(
         color: tileBg,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(24.sw),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: const Color(0xFFFFF2EA), borderRadius: BorderRadius.circular(16)),
-            child: Icon(Icons.account_balance_rounded, color: orange, size: 24),
+            padding: EdgeInsets.all(12.sw),
+            decoration: BoxDecoration(color: const Color(0xFFFFF2EA), borderRadius: BorderRadius.circular(16.sw)),
+            child: Icon(Icons.account_balance_rounded, color: orange, size: 24.sw),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16.sw),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   isLinked ? "Stripe Connected" : "Link Stripe Account",
-                  style: TextStyle(color: purple, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+                  style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
                 ),
                 Text(
                   isLinked 
                     ? "Direct payments enabled" 
                     : "Payments go directly to your bank",
-                  style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 12, fontFamily: "Satoshi"),
+                  style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 12.sp, fontFamily: "Satoshi"),
                 ),
               ],
             ),
@@ -346,10 +348,10 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: orange,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.sw)),
+                padding: EdgeInsets.symmetric(horizontal: 16.sw),
               ),
-              child: Text(isLinked ? "Manage" : "Setup", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              child: Text(isLinked ? "Manage" : "Setup", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp)),
             ),
           ],
         ),
@@ -361,10 +363,10 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
       final bool isActive = status == "active";
 
       return Container(
-        padding: const EdgeInsets.all(20),
+        padding: EdgeInsets.all(20.sw),
         decoration: BoxDecoration(
           color: isActive ? Colors.green.withValues(alpha:0.1) : orange.withValues(alpha:0.1),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(24.sw),
           border: Border.all(color: isActive ? Colors.green.withValues(alpha:0.2) : orange.withValues(alpha:0.2)),
         ),
         child: Column(
@@ -372,32 +374,32 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
           children: [
             Row(
               children: [
-                Icon(isActive ? Icons.check_circle_rounded : Icons.warning_rounded, color: isActive ? Colors.green : orange, size: 20),
-                const SizedBox(width: 8),
+                Icon(isActive ? Icons.check_circle_rounded : Icons.warning_rounded, color: isActive ? Colors.green : orange, size: 20.sw),
+                SizedBox(width: 8.sw),
                 Text(
                   "Platform Membership",
-                  style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 15),
+                  style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 15.sp),
                 ),
                 const Spacer(),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 8.sw, vertical: 4.sh),
                   decoration: BoxDecoration(
                     color: isActive ? Colors.green : orange,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(8.sw),
                   ),
                   child: Text(
                     status.toUpperCase(),
-                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: 12.sh),
             Text(
               isActive 
                 ? "Your profile is active and visible to all users." 
                 : "Pay the monthly platform fee to keep your profile visible.",
-              style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 12),
+              style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 12.sp),
             ),
             if (!isActive) ...[
               const SizedBox(height: 16),
@@ -415,9 +417,9 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: purple,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.sw)),
                 ),
-                child: const Text("Pay Platform Fee (Rs. 1,200)", style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text("Pay Platform Fee (Rs. 1,200)", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp)),
               ),
             ),
           ],
@@ -443,13 +445,13 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
         final docs = snapshot.data?.docs ?? [];
         if (docs.isEmpty) {
           return Container(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24.sw),
             decoration: BoxDecoration(
               color: Colors.grey.withValues(alpha:0.05),
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(20.sw),
             ),
             child: Center(
-              child: Text("No platform payments recorded", style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 13)),
+              child: Text("No platform payments recorded", style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 13.sp)),
             ),
           );
         }
@@ -466,36 +468,36 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
             final formattedDate = date != null ? "${date.day}/${date.month}/${date.year}" : "...";
 
             return Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
+              margin: EdgeInsets.only(bottom: 12.sh),
+              padding: EdgeInsets.all(16.sw),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(16.sw),
                 border: Border.all(color: Colors.grey.withValues(alpha:0.2)),
               ),
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: EdgeInsets.all(10.sw),
                     decoration: BoxDecoration(
                       color: Colors.green.withValues(alpha:0.1),
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.sw),
                     ),
-                    child: const Icon(Icons.receipt_long_rounded, color: Colors.green, size: 20),
+                    child: Icon(Icons.receipt_long_rounded, color: Colors.green, size: 20.sw),
                   ),
-                  const SizedBox(width: 16),
+                  SizedBox(width: 16.sw),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(type, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14)),
-                        Text(formattedDate, style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 12)),
+                        Text(type, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14.sp)),
+                        Text(formattedDate, style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 12.sp)),
                       ],
                     ),
                   ),
                   Text(
                     "Rs. ${amount.toInt()}",
-                    style: TextStyle(color: purple, fontWeight: FontWeight.w900, fontSize: 14),
+                    style: TextStyle(color: purple, fontWeight: FontWeight.w900, fontSize: 14.sp),
                   ),
                 ],
               ),
@@ -512,45 +514,40 @@ class _PayoutBackgroundPattern extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const baseW = 393.0;
-    const baseH = 852.0;
-    final size = MediaQuery.of(context).size;
-    double sx(double v) => v * (size.width / baseW);
-    double sy(double v) => v * (size.height / baseH);
     final stroke = const Color(0xFFF5DDCE);
 
     return IgnorePointer(
       child: Stack(
         children: [
           Positioned(
-            left: sx(-154),
-            top: sy(-14),
+            left: (-154).sw,
+            top: (-14).sh,
             child: Transform.rotate(
               angle: 21 * math.pi / 180,
               child: Container(
-                width: sx(271),
-                height: sy(159),
+                width: 271.sw,
+                height: 159.sh,
                 decoration: BoxDecoration(
                   border: Border.all(color: stroke),
                   borderRadius: BorderRadius.all(
-                    Radius.elliptical(sx(136), sy(80)),
+                    Radius.elliptical(136.sw, 80.sh),
                   ),
                 ),
               ),
             ),
           ),
           Positioned(
-            left: sx(-149),
-            top: sy(-100),
+            left: (-149).sw,
+            top: (-100).sh,
             child: Transform.rotate(
               angle: 4 * math.pi / 180,
               child: Container(
-                width: sx(303),
-                height: sy(329),
+                width: 303.sw,
+                height: 329.sh,
                 decoration: BoxDecoration(
                   border: Border.all(color: stroke),
                   borderRadius: BorderRadius.all(
-                    Radius.elliptical(sx(152), sy(165)),
+                    Radius.elliptical(152.sw, 165.sh),
                   ),
                 ),
               ),

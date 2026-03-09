@@ -5,6 +5,8 @@ import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'add_ingredient_screen.dart';
 import 'upload_recipe_step4.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class UploadRecipeStep3 extends StatefulWidget {
   final String title;
@@ -72,6 +74,7 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     return Scaffold(
       backgroundColor: const Color(0xFFFFF3EB),
       body: Stack(
@@ -79,10 +82,10 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
           const _BackgroundPatterns(),
           Column(
             children: [
-              const SizedBox(height: 50),
+              SizedBox(height: 50.sh),
               // Header
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 29),
+                padding: EdgeInsets.symmetric(horizontal: 29.sw),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -91,24 +94,24 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
                       widget.editingRecipe != null ? 'Edit Recipe' : 'Add Recipe',
                       style: TextStyle(
                         color: purple,
-                        fontSize: 20,
+                        fontSize: 20.sp,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Satoshi',
                       ),
                     ),
                     Container(
-                      width: 69,
-                      height: 42,
+                      width: 69.sw,
+                      height: 42.sh,
                       decoration: BoxDecoration(
                         color: purple,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(10.sw),
                       ),
-                      child: const Center(
+                      child: Center(
                         child: Text(
                           '3/5',
                           style: TextStyle(
                             color: const Color(0xFFFFF2EA),
-                            fontSize: 12,
+                            fontSize: 12.sp,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Satoshi',
                           ),
@@ -122,41 +125,41 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
               // Scrollable content
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.only(top: 20, bottom: 120),
+                  padding: EdgeInsets.only(top: 20.sh, bottom: 120.sh),
                   children: [
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 27),
+                      padding: EdgeInsets.symmetric(horizontal: 27.sw),
                       child: Text(
                         'Ingredients',
                         style: TextStyle(
                           color: purple,
-                          fontSize: 40,
+                          fontSize: 40.sp,
                           fontWeight: FontWeight.w900,
                           height: 1.1,
                           fontFamily: 'Satoshi',
                         ),
                       ),
                     ),
-                    const SizedBox(height: 30),
+                    SizedBox(height: 30.sh),
 
                     // Ingredient list
                     ..._ingredients.asMap().entries.map((entry) {
                       final idx = entry.key;
                       final ingredient = entry.value;
                       return Padding(
-                        padding: const EdgeInsets.fromLTRB(30, 0, 30, 8),
+                        padding: EdgeInsets.fromLTRB(30.sw, 0, 30.sw, 8.sh),
                         child: Container(
-                          height: 70,
+                          height: 70.sh,
                           clipBehavior: Clip.hardEdge,
                           decoration: BoxDecoration(
                             color: cardBg,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(20.sw),
                           ),
                           child: Stack(
                             children: [
                               // Divider line
                               Positioned(
-                                left: 174,
+                                left: 174.sw,
                                 top: 0,
                                 bottom: 0,
                                 child: Container(
@@ -175,7 +178,7 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           color: purple,
-                                          fontSize: 15,
+                                          fontSize: 15.sp,
                                           fontFamily: 'Satoshi',
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -189,7 +192,7 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
                                         textAlign: TextAlign.center,
                                         style: TextStyle(
                                           color: purple,
-                                          fontSize: 15,
+                                          fontSize: 15.sp,
                                           fontFamily: 'Satoshi',
                                           overflow: TextOverflow.ellipsis,
                                         ),
@@ -197,9 +200,9 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
                                     ),
                                     // Remove button
                                     Padding(
-                                      padding: const EdgeInsets.only(right: 8),
+                                      padding: EdgeInsets.only(right: 8.sw),
                                       child: IconButton(
-                                        icon: const Icon(Icons.close, size: 18),
+                                        icon: Icon(Icons.close, size: 18.sw),
                                         onPressed: () => _removeIngredient(idx),
                                         color: purple.withValues(alpha: 0.5),
                                       ),
@@ -215,27 +218,27 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
 
                     // Add button
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 8),
+                      padding: EdgeInsets.symmetric(horizontal: 30.sw, vertical: 8.sh),
                        child: GestureDetector(
                         onTap: _addIngredient,
                         child: Container(
-                          height: 62,
+                          height: 62.sh,
                           decoration: BoxDecoration(
                             color: cardBg,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(20.sw),
                           ),
                           child: Padding(
-                            padding: const EdgeInsets.only(left: 30),
+                            padding: EdgeInsets.only(left: 30.sw),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.add, color: purple, size: 18),
-                                const SizedBox(width: 8),
+                                Icon(Icons.add, color: purple, size: 18.sw),
+                                SizedBox(width: 8.sw),
                                 Text(
                                   'Add Ingredients',
                                   style: TextStyle(
                                     color: purple,
-                                    fontSize: 15,
+                                    fontSize: 15.sp,
                                     fontWeight: FontWeight.w500,
                                     fontFamily: 'Satoshi',
                                   ),
@@ -249,7 +252,7 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
 
                     // Bottom buttons inside the scrollable area
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(30, 42, 29, 42),
+                      padding: EdgeInsets.fromLTRB(30.sw, 42.sh, 29.sw, 42.sh),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -275,25 +278,25 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
                                 );
                               },
                               child: Container(
-                                height: 62,
+                                height: 62.sh,
                                 decoration: BoxDecoration(
                                   color: orange,
-                                  borderRadius: BorderRadius.circular(20),
+                                  borderRadius: BorderRadius.circular(20.sw),
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
-                                  children: const [
+                                  children: [
                                     Text(
                                       'Next',
                                       style: TextStyle(
                                         color: Color(0xFFFFF2EA),
-                                        fontSize: 15,
+                                        fontSize: 15.sp,
                                         fontWeight: FontWeight.bold,
                                         fontFamily: 'Satoshi',
                                       ),
                                     ),
-                                    SizedBox(width: 10),
-                                    Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                                    SizedBox(width: 10.sw),
+                                    Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16.sw),
                                   ],
                                 ),
                               ),
@@ -322,31 +325,31 @@ class _BackgroundPatterns extends StatelessWidget {
       child: Stack(
         children: [
           Positioned(
-            left: -154,
-            top: -14,
+            left: -154.sw,
+            top: -14.sh,
             child: Transform.rotate(
               angle: 21 * math.pi / 180,
               child: Container(
-                width: 271,
-                height: 159,
+                width: 271.sw,
+                height: 159.sh,
                 decoration: BoxDecoration(
                   border: Border.all(color: const Color(0xFFF5DDCE)),
-                  borderRadius: const BorderRadius.all(Radius.elliptical(136, 80)),
+                  borderRadius: BorderRadius.all(Radius.elliptical(136.sw, 80.sh)),
                 ),
               ),
             ),
           ),
           Positioned(
-            left: -149,
-            top: -100,
+            left: -149.sw,
+            top: -100.sh,
             child: Transform.rotate(
               angle: 4 * math.pi / 180,
               child: Container(
-                width: 303,
-                height: 329,
+                width: 303.sw,
+                height: 329.sh,
                 decoration: BoxDecoration(
                   border: Border.all(color: const Color(0xFFF5DDCE)),
-                  borderRadius: const BorderRadius.all(Radius.elliptical(152, 165)),
+                  borderRadius: BorderRadius.all(Radius.elliptical(152.sw, 165.sh)),
                 ),
               ),
             ),

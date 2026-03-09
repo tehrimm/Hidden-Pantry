@@ -10,6 +10,7 @@ import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/features/nutritionist/services/nutritionist_service.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 class NutritionistProfileSettingScreen extends StatefulWidget {
   const NutritionistProfileSettingScreen({super.key});
@@ -19,9 +20,6 @@ class NutritionistProfileSettingScreen extends StatefulWidget {
 }
 
 class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSettingScreen> {
-  static const double baseW = 393.0;
-  static const double baseH = 852.0;
-
   static const Color bg = Color(0xFFFFF3EB);
   static const Color card = Color(0xFFF9E3D5);
   static const Color text = Color(0xFF462F4D);
@@ -42,7 +40,8 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
     "Plant-Based",
     "Holistic",
     "Diabetes Educator",
-    "General Wellness"
+    "General Wellness",
+    "Keto",
   ];
 
   bool _loading = false;
@@ -157,12 +156,8 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
       resizeToAvoidBottomInset: false,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final w = constraints.maxWidth;
-          final h = constraints.maxHeight;
-          final s = math.min(w / baseW, h / baseH);
-          double x(double v) => v * s;
-          double y(double v) => v * s;
-
+          ResponsiveUtils.init(context);
+          final topPad = MediaQuery.of(context).padding.top;
           final bottomInset = MediaQuery.of(context).viewInsets.bottom;
 
           return GestureDetector(
@@ -176,91 +171,100 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
                 SafeArea(
                   child: Column(
                     children: [
-                      const SizedBox(height: 80), // Space for Fixed Header
+                      SizedBox(height: 96.sh), // Space for Fixed Header
                       Expanded(
                         child: SingleChildScrollView(
-                          padding: EdgeInsets.only(bottom: bottomInset + y(40), top: y(20)),
+                          padding: EdgeInsets.only(bottom: bottomInset + 40.sh),
                           child: Center(
-                            child: SizedBox(
-                              width: x(baseW),
-                              height: y(1020), // Height for all fields
-                              child: Stack(
+                          child: SizedBox(
+                              width: double.infinity,
+                              child: Column(
                                 children: [
                                   // Profile Picture
-                                  Positioned(
-                                    left: x(146.5),
-                                    top: y(20),
-                                    child: Container(
-                                      width: x(100),
-                                      height: x(100),
-                                      decoration: BoxDecoration(
-                                        color: card,
-                                        shape: BoxShape.circle,
-                                        image: _pickedImage != null
-                                            ? DecorationImage(image: FileImage(_pickedImage!), fit: BoxFit.cover)
-                                            : (_photoUrl != null
-                                                ? DecorationImage(image: NetworkImage(_photoUrl!), fit: BoxFit.cover)
-                                                : null),
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: _photoUrl == null && _pickedImage == null
-                                          ? Icon(Icons.person, size: x(50), color: text)
-                                          : null,
-                                    ),
-                                  ),
-
-                                  // Camera Icon
-                                  Positioned(
-                                    left: x(221),
-                                    top: y(88),
-                                    child: GestureDetector(
-                                      onTap: _pickImage,
-                                      child: Container(
-                                        width: x(25),
-                                        height: x(25),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFF737373),
-                                          borderRadius: BorderRadius.circular(x(13)),
+                                  GestureDetector(
+                                    onTap: _pickImage,
+                                    child: Stack(
+                                      children: [
+                                        Container(
+                                          width: 100.sw,
+                                          height: 100.sw,
+                                          decoration: BoxDecoration(
+                                            color: card,
+                                            shape: BoxShape.circle,
+                                            image: _pickedImage != null
+                                                ? DecorationImage(image: FileImage(_pickedImage!), fit: BoxFit.cover)
+                                                : (_photoUrl != null
+                                                    ? DecorationImage(image: NetworkImage(_photoUrl!), fit: BoxFit.cover)
+                                                    : null),
+                                          ),
+                                          alignment: Alignment.center,
+                                          child: _photoUrl == null && _pickedImage == null
+                                              ? Icon(Icons.person, size: 50.sw, color: text)
+                                              : null,
                                         ),
-                                        alignment: Alignment.center,
-                                        child: Icon(Icons.camera_alt_rounded, size: x(14), color: Colors.white),
-                                      ),
+                                        Positioned(
+                                          right: 0,
+                                          bottom: 0,
+                                          child: Container(
+                                            width: 25.sw,
+                                            height: 25.sw,
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFF737373),
+                                              borderRadius: BorderRadius.circular(13.sw),
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: Icon(Icons.camera_alt_rounded, size: 14.sw, color: Colors.white),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
+                                  SizedBox(height: 20.sh),
 
                                   // Fields
-                                  Positioned(left: x(30), top: y(140), child: SizedBox(width: x(332), child: _inputField(controller: _nameCtrl, hintText: "Full Name", icon: Icons.person_outline_rounded, scale: s))),
-                                  Positioned(left: x(30), top: y(226), child: SizedBox(width: x(332), child: _inputField(controller: _phoneCtrl, hintText: "Phone Number", icon: Icons.phone_outlined, scale: s, keyboardType: TextInputType.phone))),
-                                  Positioned(left: x(30), top: y(312), child: SizedBox(width: x(332), child: _inputField(controller: _orgCtrl, hintText: "Organization Name", icon: Icons.business_rounded, scale: s))),
-                                  Positioned(left: x(30), top: y(398), child: SizedBox(width: x(332), child: _domainSelector(scale: s))),
-                                  Positioned(left: x(30), top: y(484), child: SizedBox(width: x(332), child: _inputField(controller: _bioCtrl, hintText: "Biography", icon: Icons.description_outlined, scale: s, maxLines: 5, minLines: 1))),
-                                  Positioned(left: x(30), top: y(570), child: SizedBox(width: x(332), child: _notificationToggle(scale: s))),
-                                  Positioned(left: x(30), top: y(656), child: SizedBox(width: x(332), child: _preferencesCard(scale: s))),
+                                  Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 30.sw),
+                                    child: Column(
+                                      children: [
+                                        _inputField(controller: _nameCtrl, hintText: "Full Name", icon: Icons.person_outline_rounded),
+                                        SizedBox(height: 16.sh),
+                                        _inputField(controller: _phoneCtrl, hintText: "Phone Number", icon: Icons.phone_outlined, keyboardType: TextInputType.phone),
+                                        SizedBox(height: 16.sh),
+                                        _inputField(controller: _orgCtrl, hintText: "Organization Name", icon: Icons.business_rounded),
+                                        SizedBox(height: 16.sh),
+                                        _domainSelector(),
+                                        SizedBox(height: 16.sh),
+                                        _inputField(controller: _bioCtrl, hintText: "Biography", icon: Icons.description_outlined, maxLines: 5, minLines: 1),
+                                        SizedBox(height: 16.sh),
+                                        _notificationToggle(),
+                                        SizedBox(height: 16.sh),
+                                        _preferencesCard(),
+                                        SizedBox(height: 30.sh),
 
-                                  // Save Button
-                                  Positioned(
-                                    left: x(30),
-                                    top: y(786),
-                                    child: GestureDetector(
-                                      onTap: _loading ? null : _saveChanges,
-                                      child: Container(
-                                        width: x(332),
-                                        height: x(60),
-                                        decoration: BoxDecoration(
-                                          color: orange,
-                                          borderRadius: BorderRadius.circular(x(20)),
-                                          boxShadow: [
-                                            BoxShadow(color: orange.withValues(alpha:0.3), blurRadius: 15, offset: const Offset(0, 8)),
-                                          ],
+                                        // Save Button
+                                        GestureDetector(
+                                          onTap: _loading ? null : _saveChanges,
+                                          child: Container(
+                                            width: double.infinity,
+                                            height: 60.sh,
+                                            decoration: BoxDecoration(
+                                              color: orange,
+                                              borderRadius: BorderRadius.circular(20.sw),
+                                              boxShadow: [
+                                                BoxShadow(color: orange.withValues(alpha:0.3), blurRadius: 15.sw, offset: Offset(0, 8.sh)),
+                                              ],
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: _loading
+                                                ? const CircularProgressIndicator(color: Colors.white)
+                                                : Text(
+                                                    'Save Changes',
+                                                    style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.bold, fontFamily: 'Satoshi'),
+                                                  ),
+                                          ),
                                         ),
-                                        alignment: Alignment.center,
-                                        child: _loading
-                                            ? const CircularProgressIndicator(color: Colors.white)
-                                            : Text(
-                                                'Save Changes',
-                                                style: TextStyle(color: Colors.white, fontSize: x(16), fontWeight: FontWeight.bold, fontFamily: 'Satoshi'),
-                                              ),
-                                      ),
+                                        SizedBox(height: 40.sh),
+                                      ],
                                     ),
                                   ),
                                 ],
@@ -275,22 +279,22 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
 
                 // Fixed Header
                 Positioned(
-                  left: 30,
+                  left: 30.sw,
                   right: 0,
-                  top: 51,
-                  height: 50,
+                  top: topPad + 36.sh,
+                  height: 50.sh,
                   child: Stack(
                     children: [
                       BackButtonWidget(
                         onPressed: () => Navigator.pop(context),
                         color: text,
                       ),
-                      const Center(
+                      Center(
                         child: Text(
                           'Profile setting',
                           style: TextStyle(
                             color: text,
-                            fontSize: 24,
+                            fontSize: 24.sp,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Satoshi',
                           ),
@@ -311,7 +315,6 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
     required TextEditingController controller,
     required String hintText,
     required IconData icon,
-    required double scale,
     TextInputType keyboardType = TextInputType.text,
     int? maxLines = 1,
     int? minLines,
@@ -319,52 +322,52 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
     return Container(
       decoration: BoxDecoration(
         color: card,
-        borderRadius: BorderRadius.circular(20 * scale),
+        borderRadius: BorderRadius.circular(20.sw),
       ),
-      height: 70 * scale,
+      height: 70.sh,
       alignment: Alignment.center,
       child: TextField(
         controller: controller,
         keyboardType: keyboardType,
         maxLines: maxLines,
         minLines: minLines,
-        style: TextStyle(color: text, fontSize: 12 * scale, fontWeight: FontWeight.w500, fontFamily: 'Satoshi'),
+        style: TextStyle(color: text, fontSize: 12.sp, fontWeight: FontWeight.w500, fontFamily: 'Satoshi'),
         decoration: InputDecoration(
           hintText: hintText,
-          hintStyle: TextStyle(color: hintColor, fontSize: 12 * scale, fontWeight: FontWeight.w500, fontFamily: 'Satoshi'),
-          prefixIcon: Icon(icon, color: text.withValues(alpha:0.5), size: 18 * scale),
+          hintStyle: TextStyle(color: hintColor, fontSize: 12.sp, fontWeight: FontWeight.w500, fontFamily: 'Satoshi'),
+          prefixIcon: Icon(icon, color: text.withValues(alpha:0.5), size: 18.sw),
           prefixIconConstraints: BoxConstraints(
-            minWidth: 50 * scale,
+            minWidth: 50.sw,
           ),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(horizontal: 24 * scale, vertical: 22 * scale),
+          contentPadding: EdgeInsets.symmetric(horizontal: 24.sw, vertical: 22.sh),
         ),
       ),
     );
   }
 
-  Widget _notificationToggle({required double scale}) {
+  Widget _notificationToggle() {
     return Container(
-      width: 332 * scale,
-      height: 70 * scale,
+      width: 332.sw,
+      height: 70.sh,
       decoration: BoxDecoration(
         color: card,
-        borderRadius: BorderRadius.circular(20 * scale),
+        borderRadius: BorderRadius.circular(20.sw),
       ),
       child: Row(
         children: [
-          SizedBox(width: 20 * scale),
+          SizedBox(width: 20.sw),
           Image.asset(
             'assets/icons/notification.png',
-            width: 18 * scale,
-            height: 18 * scale,
+            width: 18.sw,
+            height: 18.sw,
           ),
-          SizedBox(width: 12 * scale),
+          SizedBox(width: 12.sw),
           Text(
             'Notification',
             style: TextStyle(
               color: text,
-              fontSize: 12 * scale,
+              fontSize: 12.sp,
               fontWeight: FontWeight.w500,
               letterSpacing: 0.2,
               fontFamily: 'Satoshi',
@@ -374,15 +377,14 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
           _NotifSwitch(
             value: _notifEnabled,
             onChanged: (v) => setState(() => _notifEnabled = v),
-            scale: scale,
           ),
-          SizedBox(width: 16 * scale),
+          SizedBox(width: 16.sw),
         ],
       ),
     );
   }
 
-  Widget _preferencesCard({required double scale}) {
+  Widget _preferencesCard() {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -391,35 +393,35 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
         );
       },
       child: Container(
-        width: 332 * scale,
-        height: 90 * scale,
+        width: 332.sw,
+        height: 90.sh,
         decoration: BoxDecoration(
           color: card,
-          borderRadius: BorderRadius.circular(20 * scale),
+          borderRadius: BorderRadius.circular(20.sw),
         ),
         child: Stack(
           children: [
             Positioned(
-              left: 25 * scale,
-              top: 18 * scale,
+              left: 25.sw,
+              top: 18.sh,
               child: Text(
                 'Your Preferences',
                 style: TextStyle(
                   color: text,
-                  fontSize: 20 * scale,
+                  fontSize: 20.sp,
                   fontWeight: FontWeight.w700,
                   fontFamily: 'Satoshi',
                 ),
               ),
             ),
             Positioned(
-              left: 25 * scale,
-              top: 48 * scale,
+              left: 25.sw,
+              top: 48.sh,
               child: Text(
                 'Change your allergies and diet preferences',
                 style: TextStyle(
                   color: text,
-                  fontSize: 12 * scale,
+                  fontSize: 12.sp,
                   fontWeight: FontWeight.w500,
                   letterSpacing: 0.2,
                   fontFamily: 'Satoshi',
@@ -427,12 +429,12 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
               ),
             ),
             Positioned(
-              right: 20 * scale,
-              top: 40 * scale,
+              right: 20.sw,
+              top: 40.sh,
               child: Image.asset(
                 'assets/icons/next_brown.png',
-                width: 18 * scale,
-                height: 18 * scale,
+                width: 18.sw,
+                height: 18.sw,
               ),
             ),
           ],
@@ -441,27 +443,27 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
     );
   }
 
-  Widget _domainSelector({required double scale}) {
+  Widget _domainSelector() {
     return Container(
-      width: 332 * scale,
-      height: 70 * scale,
-      padding: EdgeInsets.symmetric(horizontal: 20 * scale),
+      width: 332.sw,
+      height: 70.sh,
+      padding: EdgeInsets.symmetric(horizontal: 20.sw),
       decoration: BoxDecoration(
         color: card,
-        borderRadius: BorderRadius.circular(20 * scale),
+        borderRadius: BorderRadius.circular(20.sw),
       ),
       alignment: Alignment.center,
       child: DropdownButtonHideUnderline(
         child: DropdownButton<String>(
           value: _selectedDomain,
-          hint: Text("Select Specialized Domain", style: TextStyle(color: hintColor, fontSize: 12 * scale, fontWeight: FontWeight.w500, fontFamily: 'Satoshi')),
+          hint: Text("Select Specialized Domain", style: TextStyle(color: hintColor, fontSize: 12.sp, fontWeight: FontWeight.w500, fontFamily: 'Satoshi')),
           isExpanded: true,
           icon: const Icon(Icons.arrow_drop_down_rounded, color: text),
           dropdownColor: card,
           items: _domains.map((d) {
             return DropdownMenuItem(
               value: d,
-              child: Text(d, style: TextStyle(color: text, fontSize: 12 * scale, fontWeight: FontWeight.w500, fontFamily: 'Satoshi')),
+              child: Text(d, style: TextStyle(color: text, fontSize: 12.sp, fontWeight: FontWeight.w500, fontFamily: 'Satoshi')),
             );
           }).toList(),
           onChanged: (v) => setState(() => _selectedDomain = v),
@@ -475,19 +477,17 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
 class _NotifSwitch extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
-  final double scale;
 
   const _NotifSwitch({
     required this.value,
     required this.onChanged,
-    required this.scale,
   });
 
   @override
   Widget build(BuildContext context) {
-    final trackW = 25.0 * scale;
-    final trackH = 10.0 * scale;
-    final knobSize = 15.0 * scale;
+    final trackW = 25.sw;
+    final trackH = 10.sh;
+    final knobSize = 15.sw;
 
     final trackColor = value ? const Color(0xFFDFBFE5) : const Color(0xFFE5CCBF);
     final knobColor = value ? const Color(0xFF462F4D) : const Color(0xFF74503C);

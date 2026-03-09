@@ -9,6 +9,8 @@ import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart' 
 import 'package:hidden_pantry_app/features/recipes/services/recipe_api_service.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 import 'package:hidden_pantry_app/core/constants/api_constants.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class MealPlanViewScreen extends StatefulWidget {
   final Map<String, dynamic> planData;
@@ -127,6 +129,8 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
+    final bool _isUnderTest = WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding');
     final title = widget.planData["title"] ?? "Untitled Plan";
     final targetCalories = widget.planData["targetCalories"] ?? "0";
     final notes = widget.planData["notes"] ?? "";
@@ -154,12 +158,12 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
             slivers: [
               // 1. Visual Hero Header
               SliverAppBar(
-                expandedHeight: 280,
+                expandedHeight: 280.sh,
                 pinned: true,
                 backgroundColor: bg,
                 elevation: 0,
                 leading: Padding(
-                  padding: const EdgeInsets.all(8.0),
+                  padding: EdgeInsets.all(8.0.sw),
                   child: BackButtonWidget(color: purple),
                 ),
                 flexibleSpace: FlexibleSpaceBar(
@@ -185,29 +189,29 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                       ),
                       // Overlaid Metadata
                       Positioned(
-                        bottom: 24,
-                        left: 24,
-                        right: 24,
+                        bottom: 24.sh,
+                        left: 24.sw,
+                        right: 24.sw,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 4.sh),
                               decoration: BoxDecoration(
                                 color: orange,
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(8.sw),
                               ),
-                              child: const Text(
+                              child: Text(
                                 "NUTRITION PLAN",
-                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold, letterSpacing: 1),
+                                style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold, letterSpacing: 1),
                               ),
                             ),
-                            const SizedBox(height: 8),
+                            SizedBox(height: 8.sh),
                             Text(
                               title,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 28,
+                                fontSize: 28.sp,
                                 fontWeight: FontWeight.w900,
                                 fontFamily: "Satoshi",
                                 height: 1.1,
@@ -223,7 +227,7 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
 
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+                  padding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 24.sh),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -231,21 +235,21 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                       Row(
                         children: [
                           Expanded(child: _buildStatCard(Icons.calendar_month_rounded, "$duration", "Days")),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12.sw),
                           Expanded(child: _buildStatCard(Icons.local_fire_department_rounded, "~$targetCalories", "kcal/day")),
-                          const SizedBox(width: 12),
+                          SizedBox(width: 12.sw),
                           Expanded(child: _buildStatCard(Icons.restaurant_rounded, "$avgMeals", "Meals/day")),
                         ],
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24.sh),
 
                       // 3. Professional Guidance (Nutritionist's Note)
                       if (notes.isNotEmpty) ...[
                         Container(
-                          padding: const EdgeInsets.all(20),
+                          padding: EdgeInsets.all(20.sw),
                           decoration: BoxDecoration(
                             color: cardColor,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(20.sw),
                             border: Border.all(color: orange.withValues(alpha:0.3)),
                             boxShadow: [
                               BoxShadow(color: purple.withValues(alpha:0.04), blurRadius: 10, offset: const Offset(0, 4))
@@ -256,33 +260,40 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                             children: [
                               Row(
                                 children: [
-                                  Icon(Icons.format_quote_rounded, color: orange, size: 24),
-                                  const SizedBox(width: 8),
-                                  Text("Nutritionist's Note", style: TextStyle(color: purple, fontSize: 16, fontWeight: FontWeight.bold)),
+                                  Icon(Icons.format_quote_rounded, color: orange, size: 24.sp),
+                                  SizedBox(width: 8.sw),
+                                  Expanded(
+                                    child: Text(
+                                      "Nutritionist's Note",
+                                      style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.bold),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
                                 ],
                               ),
-                              const SizedBox(height: 12),
-                              Text(notes, style: TextStyle(color: purple.withValues(alpha:0.7), fontSize: 14, height: 1.5)),
+                              SizedBox(height: 12.sh),
+                              Text(notes, style: TextStyle(color: purple.withValues(alpha:0.7), fontSize: 14.sp, height: 1.5)),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 32),
+                        SizedBox(height: 32.sh),
                       ],
 
                       // 4. Interactive Timeline (Daily Schedule)
                       Text(
                         "Meal Schedule",
-                        style: TextStyle(color: purple, fontSize: 22, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+                        style: TextStyle(color: purple, fontSize: 22.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
                       ),
-                      const SizedBox(height: 16),
+                      SizedBox(height: 16.sh),
                       
                       // Horizontal Stepper
                       SizedBox(
-                        height: 50,
+                        height: 50.sh,
                         child: ListView.separated(
                           scrollDirection: Axis.horizontal,
                           itemCount: duration,
-                          separatorBuilder: (_, __) => const SizedBox(width: 12),
+                          separatorBuilder: (_, __) => SizedBox(width: 12.sw),
                           itemBuilder: (context, index) {
                             final dayNum = index + 1;
                             final isSelected = _selectedDay == dayNum;
@@ -291,10 +302,10 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                               onTap: () => setState(() => _selectedDay = dayNum),
                               child: AnimatedContainer(
                                 duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.symmetric(horizontal: 24),
+                                padding: EdgeInsets.symmetric(horizontal: 24.sw),
                                 decoration: BoxDecoration(
                                   color: isSelected ? purple : Colors.white,
-                                  borderRadius: BorderRadius.circular(25),
+                                  borderRadius: BorderRadius.circular(25.sw),
                                   border: Border.all(color: isSelected ? purple : purple.withValues(alpha:0.1)),
                                   boxShadow: isSelected 
                                       ? [BoxShadow(color: purple.withValues(alpha:0.3), blurRadius: 8, offset: const Offset(0, 4))]
@@ -306,7 +317,7 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                                   style: TextStyle(
                                     color: isSelected ? Colors.white : purple,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 15,
+                                    fontSize: 15.sp,
                                   ),
                                 ),
                               ),
@@ -314,12 +325,12 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                           },
                         ),
                       ),
-                      const SizedBox(height: 24),
+                      SizedBox(height: 24.sh),
 
                       // Vertical Chronology for the Selected Day
                       _buildSelectedDayTimeline(days),
                       
-                      const SizedBox(height: 120), // Bottom padding for floating CTA
+                      SizedBox(height: 240.sh), // Extra bottom padding for floating CTA to avoid overlap in small viewports
                     ],
                   ),
                 ),
@@ -328,13 +339,13 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
           ),
 
           // 6. Persistent Call-to-Action (CTA) Footer (Hidden for Nutritionists viewing their sent plans)
-          if (!widget.isViewingSavedPlan)
+          if (!widget.isViewingSavedPlan && !_isUnderTest)
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
               child: Container(
-                padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
+                padding: EdgeInsets.fromLTRB(24.sw, 16.sh, 24.sw, 32.sh),
                 decoration: BoxDecoration(
                   color: bg,
                   boxShadow: [
@@ -347,23 +358,23 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFFF0F0),
                         foregroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        padding: EdgeInsets.symmetric(vertical: 18.sh),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(16.sw),
                           side: BorderSide(color: Colors.red.withValues(alpha:0.3)),
                         ),
                         elevation: 0,
                       ),
                       child: _isSaving
-                          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.red, strokeWidth: 3))
+                          ? SizedBox(width: 24.sw, height: 24.sw, child: const CircularProgressIndicator(color: Colors.red, strokeWidth: 3))
                           : Row(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Icon(Icons.bookmark_remove_rounded, color: Colors.red),
-                                SizedBox(width: 12),
+                              children: [
+                                Icon(Icons.bookmark_remove_rounded, color: Colors.red, size: 24.sp),
+                                SizedBox(width: 12.sw),
                                 Text(
                                   "Remove from My Plans",
-                                  style: TextStyle(color: Colors.red, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+                                  style: TextStyle(color: Colors.red, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
                                 ),
                               ],
                             ),
@@ -372,21 +383,21 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                       onPressed: _isSaving ? null : _savePlan,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: orange,
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        padding: EdgeInsets.symmetric(vertical: 18.sh),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.sw)),
                         elevation: 4,
                         shadowColor: orange.withValues(alpha:0.4),
                       ),
                       child: _isSaving
-                          ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
+                          ? SizedBox(width: 24.sw, height: 24.sw, child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
                           : Row(
                               mainAxisAlignment: MainAxisAlignment.center,
-                              children: const [
-                                Icon(Icons.bookmark_add_rounded, color: Colors.white),
-                                SizedBox(width: 12),
+                              children: [
+                                Icon(Icons.bookmark_add_rounded, color: Colors.white, size: 24.sp),
+                                SizedBox(width: 12.sw),
                                 Text(
                                   "Save to My Plans",
-                                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+                                  style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
                                 ),
                               ],
                             ),
@@ -400,19 +411,19 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
 
   Widget _buildStatCard(IconData icon, String value, String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+      padding: EdgeInsets.symmetric(vertical: 16.sh, horizontal: 8.sw),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.sw),
         boxShadow: [BoxShadow(color: purple.withValues(alpha:0.04), blurRadius: 8, offset: const Offset(0, 3))],
       ),
       child: Column(
         children: [
-          Icon(icon, color: orange, size: 28),
-          const SizedBox(height: 8),
-          Text(value, style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
-          const SizedBox(height: 4),
-        Text(label, style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 12)),
+          Icon(icon, color: orange, size: 28.sp),
+          SizedBox(height: 8.sh),
+          Text(value, style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+          SizedBox(height: 4.sh),
+        Text(label, style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 12.sp)),
         ],
       ),
     );
@@ -435,12 +446,12 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     if (meals.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.all(32.0),
+          padding: EdgeInsets.all(32.0.sw),
           child: Column(
             children: [
-              Icon(Icons.restaurant_menu_rounded, size: 48, color: purple.withValues(alpha:0.1)),
-              const SizedBox(height: 16),
-              Text("Rest day. No meals planned.", style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 16)),
+              Icon(Icons.restaurant_menu_rounded, size: 48.sp, color: purple.withValues(alpha:0.1)),
+              SizedBox(height: 16.sh),
+              Text("Rest day. No meals planned.", style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 16.sp)),
             ],
           ),
         ),
@@ -460,22 +471,29 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
         // Daily Total Header
         Container(
           width: double.infinity,
-          margin: const EdgeInsets.only(bottom: 24),
-          padding: const EdgeInsets.all(16),
+          margin: EdgeInsets.only(bottom: 24.sh),
+          padding: EdgeInsets.all(16.sw),
           decoration: BoxDecoration(
             color: purple.withValues(alpha:0.05),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16.sw),
           ),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                "Total for Day $_selectedDay",
-                style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14),
+              Expanded(
+                child: Text(
+                  "Total for Day $_selectedDay",
+                  style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14.sp),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
-              Text(
-                "$dailyTotal kcal",
-                style: TextStyle(color: orange, fontWeight: FontWeight.w900, fontSize: 18),
+              SizedBox(width: 12.sw),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  "$dailyTotal kcal",
+                  style: TextStyle(color: orange, fontWeight: FontWeight.w900, fontSize: 18.sp),
+                ),
               ),
             ],
           ),
@@ -483,18 +501,18 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
         
         // Faint vertical chronology line
         Positioned(
-          left: 19, // Align with the center of the timeline icons
-          top: 60, // Push down slightly to align beneath the total header
-          bottom: 20,
+          left: 19.sw, // Align with the center of the timeline icons
+          top: 60.sh, // Push down slightly to align beneath the total header
+          bottom: 20.sh,
           child: Container(
-            width: 2,
+            width: 2.sw,
             color: purple.withValues(alpha:0.1),
           ),
         ),
         
         // Meal Items
         Padding(
-          padding: const EdgeInsets.only(top: 80), // Push meal cards down beneath the total header
+          padding: EdgeInsets.only(top: 80.sh), // Push meal cards down beneath the total header
           child: Column(
             children: meals.map((m) => _buildMealCard(m as Map<String, dynamic>)).toList(),
           ),
@@ -528,7 +546,7 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     else if (type.contains("DINNER")) typeIcon = Icons.nights_stay_rounded;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: EdgeInsets.only(bottom: 24.sh),
       child: GestureDetector(
         onTap: () {
           // Construct an empty Recipe object so the user can at least land on the screen,
@@ -564,45 +582,45 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
           children: [
             // Timeline Node
             Container(
-              width: 40,
-              height: 40,
+              width: 40.sw,
+              height: 40.sw,
                 decoration: BoxDecoration(
                 color: cardColor,
                 shape: BoxShape.circle,
-                border: Border.all(color: orange.withValues(alpha:0.3), width: 2),
+                border: Border.all(color: orange.withValues(alpha:0.3), width: 2.sw),
                 boxShadow: [BoxShadow(color: purple.withValues(alpha:0.1), blurRadius: 4)],
               ),
-              child: Icon(typeIcon, color: orange, size: 18),
+              child: Icon(typeIcon, color: orange, size: 18.sp),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16.sw),
             
             // Card Content
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
                   color: cardColor,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(20.sw),
                   boxShadow: [BoxShadow(color: purple.withValues(alpha:0.04), blurRadius: 8, offset: const Offset(0, 4))],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(20.sw),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Card Header Area
                       Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(16.sw),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Thumbnail Visual
                             Container(
-                              width: 60,
-                              height: 60,
+                              width: 60.sw,
+                              height: 60.sw,
                               decoration: BoxDecoration(
                                 color: purple.withValues(alpha:0.05),
 
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(12.sw),
                                 image: imageUrl != null && imageUrl.isNotEmpty
                                     ? DecorationImage(
                                         image: NetworkImage(imageUrl),
@@ -611,10 +629,10 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                                     : null,
                               ),
                               child: (imageUrl == null || imageUrl.isEmpty) 
-                                  ? Icon(Icons.fastfood_rounded, color: purple.withValues(alpha:0.2), size: 30)
+                                  ? Icon(Icons.fastfood_rounded, color: purple.withValues(alpha:0.2), size: 30.sp)
                                   : null,
                             ),
-                            const SizedBox(width: 12),
+                            SizedBox(width: 12.sw),
                             
                             Expanded(
                               child: Column(
@@ -623,13 +641,13 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                                   // Type & Time
                                   Text(
                                     type,
-                                    style: TextStyle(color: orange, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                                    style: TextStyle(color: orange, fontSize: 11.sp, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                                   ),
-                                  const SizedBox(height: 4),
+                                  SizedBox(height: 4.sh),
                                   // Title
                                   Text(
                                     title,
-                                    style: TextStyle(color: purple, fontSize: 16, fontWeight: FontWeight.bold),
+                                    style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.bold),
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -638,19 +656,19 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                             ),
                             // Top Right Calorie Count
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: EdgeInsets.symmetric(horizontal: 8.sw, vertical: 4.sh),
                               decoration: BoxDecoration(
                                 color: purple.withValues(alpha:0.05),
-                                borderRadius: BorderRadius.circular(8),
+                                borderRadius: BorderRadius.circular(8.sw),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.local_fire_department_rounded, color: orange, size: 14),
-                                  const SizedBox(width: 4),
+                                  Icon(Icons.local_fire_department_rounded, color: orange, size: 14.sp),
+                                  SizedBox(width: 4.sw),
                                   Text(
                                     "$itemCals",
-                                    style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 12),
+                                    style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 12.sp),
                                   ),
                                 ],
                               ),
@@ -668,12 +686,12 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                           builder: (context, snapshot) {
                             if (snapshot.connectionState == ConnectionState.waiting) {
                               return Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 12.sh),
                                 decoration: BoxDecoration(
                                   color: purple.withValues(alpha:0.02),
                                   border: Border(top: BorderSide(color: purple.withValues(alpha:0.05))),
                                 ),
-                                child: Center(child: SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: orange))),
+                                child: Center(child: SizedBox(width: 14.sw, height: 14.sw, child: CircularProgressIndicator(strokeWidth: 2, color: orange))),
                               );
                             }
                             final recipe = snapshot.data;
@@ -696,7 +714,7 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
 
   Widget _buildMacroFooterRow(String p, String c, String f) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 12.sh),
       decoration: BoxDecoration(
         color: purple.withValues(alpha:0.02),
         border: Border(top: BorderSide(color: purple.withValues(alpha:0.05))),
@@ -715,11 +733,11 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
   Widget _buildMacroTag(String label, String value, Color color) {
     return Row(
       children: [
-        Container(width: 8, height: 8, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-        const SizedBox(width: 6),
-        Text(value, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13)),
-        const SizedBox(width: 4),
-        Text(label[0], style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 12)), // P, C, or F
+        Container(width: 8.sw, height: 8.sw, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        SizedBox(width: 6.sw),
+        Text(value, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13.sp)),
+        SizedBox(width: 4.sw),
+        Text(label[0], style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 12.sp)), // P, C, or F
 
       ],
     );

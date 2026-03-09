@@ -10,6 +10,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hidden_pantry_app/features/user/services/follow_service.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class CategoriesScreen extends StatefulWidget {
   final String title;
@@ -165,7 +167,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: ClipRRect(
-         borderRadius: BorderRadius.circular(30),
+         borderRadius: BorderRadius.circular(30.sw),
         child: Container(
           color: bg,
           child: Stack(
@@ -174,29 +176,29 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               
               // Back Button
               Positioned(
-                top: 51,
-                left: 30,
+                top: 51.sh,
+                left: 30.sw,
                 child: SafeArea(
                   top: false, // Positioned manually
                   child: GestureDetector(
                     onTap: () => Navigator.of(context).maybePop(),
                     child: Container(
-                      width: 50,
-                      height: 50,
+                      width: 50.sw,
+                      height: 50.sw,
                       decoration: BoxDecoration(
                         color: const Color(0xFFF9E3D5),
-                        borderRadius: BorderRadius.circular(25),
+                        borderRadius: BorderRadius.circular(25.sw),
                       ),
                       child: Center(
                         child: Image.asset(
                           'assets/icons/backButton.png',
-                          width: 18,
-                          height: 18,
+                          width: 18.sw,
+                          height: 18.sw,
                           fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) => const Icon(
+                          errorBuilder: (_, __, ___) => Icon(
                             Icons.arrow_back_ios_new,
-                            size: 18,
-                            color: Color(0xFF433020),
+                            size: 18.sw,
+                            color: const Color(0xFF433020),
                           ),
                         ),
                       ),
@@ -207,17 +209,17 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
               // Title
                Positioned(
-                  left: 103, // Aligned with snippet
-                  top: 61,
+                  left: 103.sw, // Aligned with snippet
+                  top: 61.sh,
                   child: SizedBox(
-                    width: 250,
+                    width: 250.sw,
                     child: Text(
                       widget.title == widget.tag ? _beautify(widget.title) : widget.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: Color(0xFF462F4D),
-                        fontSize: 24,
+                      style: TextStyle(
+                        color: const Color(0xFF462F4D),
+                        fontSize: 24.sp,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Satoshi',
                       ),
@@ -227,9 +229,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
               // Content
               Positioned.fill(
-                top: 130, // Below title area
+                top: 130.sh, // Below title area
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 22),
+                  padding: EdgeInsets.symmetric(horizontal: 22.sw),
                   child: _buildBody(),
                 ),
               ),
@@ -243,18 +245,18 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   Widget _buildBody() {
     if (loading) {
        return GridView.builder(
-        padding: const EdgeInsets.only(bottom: 20, top: 10),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        padding: EdgeInsets.only(bottom: 20.sh, top: 10.sh),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
           childAspectRatio: 157 / 231,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
+          crossAxisSpacing: 16.sw,
+          mainAxisSpacing: 16.sh,
         ),
         itemCount: 6,
-        itemBuilder: (_, __) => const SkeletonBox(
+        itemBuilder: (_, __) => SkeletonBox(
           width: double.infinity,
           height: double.infinity,
-          borderRadius: BorderRadius.all(Radius.circular(20)),
+          borderRadius: BorderRadius.all(Radius.circular(20.sw)),
         ),
       );
     }
@@ -272,12 +274,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     }
 
     if (recipes.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           "No recipes found.",
           style: TextStyle(
-            color: Color(0xFF462F4D),
-            fontSize: 16,
+            color: const Color(0xFF462F4D),
+            fontSize: 16.sp,
             fontFamily: 'Satoshi',
           ),
         ),
@@ -285,12 +287,12 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     }
 
     return GridView.builder(
-      padding: const EdgeInsets.only(bottom: 20, top: 10),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      padding: EdgeInsets.only(bottom: 20.sh, top: 10.sh),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         childAspectRatio: 157 / 231, // Match snippet ratio
-        crossAxisSpacing: 15, // Approx space
-        mainAxisSpacing: 15,
+        crossAxisSpacing: 15.sw, // Approx space
+        mainAxisSpacing: 15.sh,
       ),
       itemCount: recipes.length,
       itemBuilder: (context, index) {
@@ -313,47 +315,41 @@ class _CategoryBackgroundPattern extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const baseW = 393.0;
-    const baseH = 852.0;
-
-    final size = MediaQuery.of(context).size;
-    double sx(double v) => v * (size.width / baseW);
-    double sy(double v) => v * (size.height / baseH);
-
+    ResponsiveUtils.init(context);
     final stroke = const Color(0xFFF5DDCE);
 
     return IgnorePointer(
       child: Stack(
         children: [
           Positioned(
-            left: sx(-154),
-            top: sy(-14),
+            left: (-154).sw,
+            top: (-14).sh,
             child: Transform.rotate(
               angle: 21 * math.pi / 180,
               child: Container(
-                width: sx(271),
-                height: sy(159),
+                width: 271.sw,
+                height: 159.sh,
                 decoration: BoxDecoration(
                   border: Border.all(color: stroke),
                   borderRadius: BorderRadius.all(
-                    Radius.elliptical(sx(136), sy(80)),
+                    Radius.elliptical(136.sw, 80.sh),
                   ),
                 ),
               ),
             ),
           ),
           Positioned(
-            left: sx(-149),
-            top: sy(-100),
+            left: (-149).sw,
+            top: (-100).sh,
             child: Transform.rotate(
               angle: 4 * math.pi / 180,
               child: Container(
-                width: sx(303),
-                height: sy(329),
+                width: 303.sw,
+                height: 329.sh,
                 decoration: BoxDecoration(
                   border: Border.all(color: stroke),
                   borderRadius: BorderRadius.all(
-                    Radius.elliptical(sx(152), sy(165)),
+                    Radius.elliptical(152.sw, 165.sh),
                   ),
                 ),
               ),

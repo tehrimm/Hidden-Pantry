@@ -9,6 +9,8 @@ import 'package:hidden_pantry_app/core/services/notification_service.dart';
 import 'package:hidden_pantry_app/features/user/models/notification_model.dart';
 import 'package:add_2_calendar/add_2_calendar.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 import 'dart:async';
 
 class ChatInterface extends StatefulWidget {
@@ -247,7 +249,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("Cancel", style: TextStyle(color: purple.withValues(alpha:0.6), fontWeight: FontWeight.w600)),
+            child: Text("Cancel", style: TextStyle(color: purple.withValues(alpha:0.6), fontWeight: FontWeight.w600, fontSize: 14.sp)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -257,9 +259,9 @@ class _ChatInterfaceState extends State<ChatInterface> {
             style: ElevatedButton.styleFrom(
               backgroundColor: orange,
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.sw)),
             ),
-            child: const Text("Clear", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text("Clear", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.sp)),
           ),
         ],
       ),
@@ -268,6 +270,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     // 1. Determine title & photo
     final String title = widget.otherUserName ?? widget.nutritionistData["fullName"] ?? "Chat";
     final String? photoUrl = widget.otherUserPhoto ?? widget.nutritionistData["imageUrl"];
@@ -283,26 +286,26 @@ class _ChatInterfaceState extends State<ChatInterface> {
         leading: GestureDetector(
           onTap: () => Navigator.pop(context),
           child: Container(
-             margin: const EdgeInsets.all(8),
+             margin: EdgeInsets.all(8.sw),
              alignment: Alignment.center,
-             child: const Icon(Icons.arrow_back_rounded, color: Color(0xFF462F4D), size: 24),
+             child: Icon(Icons.arrow_back_rounded, color: const Color(0xFF462F4D), size: 24.sw),
           ),
         ),
         title: Row(
           children: [
             CircleAvatar(
-              radius: 18,
+              radius: 18.sw,
               backgroundColor: purple.withValues(alpha:0.1),
               backgroundImage: photoUrl != null && photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
               child: photoUrl == null || photoUrl.isEmpty
-                  ? Icon(Icons.person, color: purple, size: 20)
+                  ? Icon(Icons.person, color: purple, size: 20.sw)
                   : null,
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: 10.sw),
             Expanded(
               child: Text(
                 title,
-                style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+                style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -321,9 +324,9 @@ class _ChatInterfaceState extends State<ChatInterface> {
                 value: 'clear',
                 child: Row(
                   children: [
-                    Icon(Icons.delete_sweep_rounded, color: Colors.red, size: 20),
-                    const SizedBox(width: 8),
-                    const Text("Clear Chat History", style: TextStyle(color: Colors.red)),
+                    Icon(Icons.delete_sweep_rounded, color: Colors.red, size: 20.sw),
+                    SizedBox(width: 8.sw),
+                    Text("Clear Chat History", style: TextStyle(color: Colors.red, fontSize: 14.sp)),
                   ],
                 ),
               ),
@@ -340,12 +343,12 @@ class _ChatInterfaceState extends State<ChatInterface> {
               // Encryption notice
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 4),
+                padding: EdgeInsets.symmetric(vertical: 4.sh),
                 color: Colors.black.withValues(alpha:0.02),
                 child: Text(
                   "Messages are end-to-end encrypted",
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 10),
+                  style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 10.sp),
                 ),
               ),
               // Messages
@@ -374,7 +377,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
                         return Center(
                           child: Text(
                             "Start the conversation!",
-                            style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 16),
+                            style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 16.sp),
                           ),
                         );
                       }
@@ -415,23 +418,23 @@ class _ChatInterfaceState extends State<ChatInterface> {
                   if (!isOtherTyping) return const SizedBox.shrink();
 
                   return Padding(
-                    padding: const EdgeInsets.only(left: 16, bottom: 8),
+                    padding: EdgeInsets.only(left: 16.sw, bottom: 8.sh),
                     child: Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 6.sh),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 4)],
+                            borderRadius: BorderRadius.circular(12.sw),
+                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 4.sw)],
                           ),
                           child: Row(
                             children: [
                               Text(
                                 "typing",
-                                style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 11, fontWeight: FontWeight.bold),
+                                style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 11.sp, fontWeight: FontWeight.bold),
                               ),
-                              const SizedBox(width: 4),
+                              SizedBox(width: 4.sw),
                               _dotAnimation(),
                             ],
                           ),
@@ -443,10 +446,10 @@ class _ChatInterfaceState extends State<ChatInterface> {
               ),
               // Input bar
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.all(16.sw),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFFF3EB).withValues(alpha:0.9),
-                    boxShadow: [BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10, offset: const Offset(0, -4))],
+                    boxShadow: [BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10.sw, offset: Offset(0, -4.sh))],
                   ),
                   child: Row(
                     children: [
@@ -454,36 +457,37 @@ class _ChatInterfaceState extends State<ChatInterface> {
                         GestureDetector(
                           onTap: () => _showActionSheet(),
                           child: Container(
-                            width: 40,
-                            height: 40,
+                            width: 40.sw,
+                            height: 40.sw,
                             decoration: BoxDecoration(
                               color: const Color(0xFFF9E3D5),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(12.sw),
                             ),
-                            child: Icon(Icons.add_rounded, color: const Color(0xFF74503C), size: 22),
+                            child: Icon(Icons.add_rounded, color: const Color(0xFF74503C), size: 22.sw),
                           ),
                         ),
-                        const SizedBox(width: 10),
+                        SizedBox(width: 10.sw),
                       ],
                       Expanded(
                         child: TextField(
                           controller: _msgCtrl,
+                          style: TextStyle(fontSize: 14.sp),
                           decoration: InputDecoration(
                             hintText: "Type a message...",
-                            hintStyle: const TextStyle(color: Color(0xFFBFA89A)),
+                            hintStyle: TextStyle(color: const Color(0xFFBFA89A), fontSize: 14.sp),
                             filled: true,
                             fillColor: const Color(0xFFFDECE4),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(24.sw), borderSide: BorderSide.none),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 12.sh),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: 8.sw),
                       CircleAvatar(
-                        radius: 24,
+                        radius: 24.sw,
                         backgroundColor: const Color(0xFFE48E5B),
                         child: IconButton(
-                          icon: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
+                          icon: Icon(Icons.send_rounded, color: Colors.white, size: 20.sw),
                           onPressed: _sendMessage,
                         ),
                       ),
@@ -518,49 +522,49 @@ class _ChatInterfaceState extends State<ChatInterface> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFFF9E3D5), // Sheet becomes darker beige
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF9E3D5), // Sheet becomes darker beige
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28.sw)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             // Handle
             Container(
-              margin: const EdgeInsets.only(top: 10),
-              width: 50, height: 5,
-              decoration: BoxDecoration(color: actionOrange, borderRadius: BorderRadius.circular(3)),
+              margin: EdgeInsets.only(top: 10.sh),
+              width: 50.sw, height: 5.sh,
+              decoration: BoxDecoration(color: actionOrange, borderRadius: BorderRadius.circular(3.sw)),
             ),
-            const SizedBox(height: 20),
+            SizedBox(height: 20.sh),
             // Title row
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 22),
+              padding: EdgeInsets.symmetric(horizontal: 22.sw),
               child: Row(
                 children: [
                   Text(
                     "Quick Actions",
-                    style: TextStyle(color: purple, fontSize: 20, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+                    style: TextStyle(color: purple, fontSize: 20.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 24), // Added spacing
+            SizedBox(height: 24.sh), // Added spacing
             // Action items — individual cards
             ...List.generate(actions.length, (i) {
               final action = actions[i];
               return Container(
-                margin: EdgeInsets.only(left: 16, right: 16, bottom: i < actions.length - 1 ? 8 : 0),
+                margin: EdgeInsets.only(left: 16.sw, right: 16.sw, bottom: i < actions.length - 1 ? 8.sh : 0),
                 decoration: BoxDecoration(
                   color: const Color(0xFFFFF2EA), // Cards become lighter
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(16.sw),
                   boxShadow: [
-                    BoxShadow(color: purple.withValues(alpha:0.04), blurRadius: 8, offset: const Offset(0, 2)),
+                    BoxShadow(color: purple.withValues(alpha:0.04), blurRadius: 8.sw, offset: Offset(0, 2.sh)),
                   ],
                 ),
                 child: Material(
                   color: Colors.transparent,
                   child: InkWell(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(16.sw),
                     onTap: () {
                       Navigator.pop(context);
                       if (action["title"] == "Create New Meal Plan") {
@@ -576,43 +580,43 @@ class _ChatInterfaceState extends State<ChatInterface> {
                       }
                     },
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 14.sh),
                       child: Row(
                         children: [
                           Container(
-                            width: 48,
-                            height: 48,
+                            width: 48.sw,
+                            height: 48.sw,
                             decoration: BoxDecoration(
                               color: purple.withValues(alpha:0.1),
-                              borderRadius: BorderRadius.circular(14),
+                              borderRadius: BorderRadius.circular(14.sw),
                               border: Border.all(color: purple.withValues(alpha:0.06)),
                             ),
-                            child: Icon(action["icon"] as IconData, color: actionOrange, size: 22),
+                            child: Icon(action["icon"] as IconData, color: actionOrange, size: 22.sw),
                           ),
-                          const SizedBox(width: 14),
+                          SizedBox(width: 14.sw),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
                                   action["title"] as String,
-                                  style: TextStyle(color: purple, fontWeight: FontWeight.w700, fontSize: 15, fontFamily: "Satoshi"),
+                                  style: TextStyle(color: purple, fontWeight: FontWeight.w700, fontSize: 15.sp, fontFamily: "Satoshi"),
                                 ),
-                                const SizedBox(height: 3),
+                                SizedBox(height: 3.sh),
                                 Text(
                                   action["subtitle"] as String,
-                                  style: TextStyle(color: subTextColor, fontSize: 12, height: 1.3),
+                                  style: TextStyle(color: subTextColor, fontSize: 12.sp, height: 1.3),
                                 ),
                               ],
                             ),
                           ),
                           Container(
-                            width: 30, height: 30,
+                            width: 30.sw, height: 30.sw,
                             decoration: BoxDecoration(
                               color: const Color(0xFFF9E3D5),
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(8.sw),
                             ),
-                            child: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF74503C)),
+                            child: Icon(Icons.arrow_forward_ios_rounded, size: 14.sw, color: const Color(0xFF74503C)),
                           ),
                         ],
                       ),
@@ -621,7 +625,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
                 ),
               );
             }),
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 20),
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 20.sh),
           ],
         ),
       ),
@@ -806,9 +810,9 @@ class _ChatInterfaceState extends State<ChatInterface> {
         ),
         child: Row(
           children: [
-            Icon(icon, color: mainColor, size: 22),
-            const SizedBox(width: 12),
-            Text(label, style: TextStyle(color: mainColor, fontWeight: FontWeight.bold, fontSize: 16)),
+            Icon(icon, color: mainColor, size: 22.sw),
+            SizedBox(width: 12.sw),
+            Text(label, style: TextStyle(color: mainColor, fontWeight: FontWeight.bold, fontSize: 16.sp)),
           ],
         ),
       ),
@@ -826,23 +830,23 @@ class _ChatInterfaceState extends State<ChatInterface> {
       child = Align(
         alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
         child: Container(
-          margin: const EdgeInsets.symmetric(vertical: 4),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          margin: EdgeInsets.symmetric(vertical: 4.sh),
+          padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 10.sh),
           decoration: BoxDecoration(
             color: isMe ? const Color(0xFFEF8A54) : Colors.white,
             borderRadius: BorderRadius.only(
-              topLeft: const Radius.circular(16),
-              topRight: const Radius.circular(16),
-              bottomLeft: Radius.circular(isMe ? 16 : 0),
-              bottomRight: Radius.circular(isMe ? 0 : 16),
+              topLeft: Radius.circular(16.sw),
+              topRight: Radius.circular(16.sw),
+              bottomLeft: Radius.circular(isMe ? 16.sw : 0),
+              bottomRight: Radius.circular(isMe ? 0 : 16.sw),
             ),
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 4, offset: const Offset(0, 2))
+              BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 4.sw, offset: Offset(0, 2.sh))
             ],
           ),
           child: Text(
             data["text"] ?? "",
-            style: TextStyle(color: isMe ? Colors.white : purple, fontSize: 15),
+            style: TextStyle(color: isMe ? Colors.white : purple, fontSize: 15.sp),
           ),
         ),
       );
@@ -927,20 +931,20 @@ class _ChatInterfaceState extends State<ChatInterface> {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        width: 260,
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.all(16),
+        width: 260.sw,
+        margin: EdgeInsets.symmetric(vertical: 4.sh),
+        padding: EdgeInsets.all(16.sw),
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(20),
-            topRight: const Radius.circular(20),
-            bottomLeft: Radius.circular(isMe ? 20 : 0),
-            bottomRight: Radius.circular(isMe ? 0 : 20),
+            topLeft: Radius.circular(20.sw),
+            topRight: Radius.circular(20.sw),
+            bottomLeft: Radius.circular(isMe ? 20.sw : 0),
+            bottomRight: Radius.circular(isMe ? 0 : 20.sw),
           ),
           border: Border.all(color: borderColor),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 4, offset: const Offset(0, 2))
+            BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 4.sw, offset: Offset(0, 2.sh))
           ],
         ),
         child: Column(
@@ -948,33 +952,33 @@ class _ChatInterfaceState extends State<ChatInterface> {
           children: [
             Row(
               children: [
-                const Icon(Icons.event_available_rounded, color: Color(0xFFE48E5B), size: 20),
-                const SizedBox(width: 8),
-                Expanded(child: Text("Consultation Scheduled", style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14))),
+                Icon(Icons.event_available_rounded, color: const Color(0xFFE48E5B), size: 20.sw),
+                SizedBox(width: 8.sw),
+                Expanded(child: Text("Consultation Scheduled", style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14.sp))),
               ],
             ),
-            Divider(height: 20, color: purple.withValues(alpha:0.1)),
-            Text(dateStr, style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold)),
-            if (time != null) Text(time, style: TextStyle(color: subheadColor, fontSize: 14)),
+            Divider(height: 20.sh, color: purple.withValues(alpha:0.1)),
+            Text(dateStr, style: TextStyle(color: textColor, fontSize: 16.sp, fontWeight: FontWeight.bold)),
+            if (time != null) Text(time, style: TextStyle(color: subheadColor, fontSize: 14.sp)),
             if (notes != null && notes.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: 8.sh),
               Container(
-                padding: const EdgeInsets.all(8),
+                padding: EdgeInsets.all(8.sw),
                 decoration: BoxDecoration(
                   color: btnBgColor.withValues(alpha:0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(8.sw),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.notes_rounded, size: 14, color: btnBgColor),
-                    const SizedBox(width: 6),
-                    Expanded(child: Text(notes, style: TextStyle(color: subheadColor, fontSize: 13, fontStyle: FontStyle.italic))),
+                    Icon(Icons.notes_rounded, size: 14.sw, color: btnBgColor),
+                    SizedBox(width: 6.sw),
+                    Expanded(child: Text(notes, style: TextStyle(color: subheadColor, fontSize: 13.sp, fontStyle: FontStyle.italic))),
                   ],
                 ),
               ),
             ],
-            const SizedBox(height: 16),
+            SizedBox(height: 16.sh),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -987,15 +991,16 @@ class _ChatInterfaceState extends State<ChatInterface> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: btnBgColor,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: EdgeInsets.symmetric(vertical: 12.sh),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.sw)),
                   elevation: 0,
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.calendar_month_rounded, color: btnTextColor, size: 16),
-                    const SizedBox(width: 6),
-                    Text("Add to Calendar", style: TextStyle(color: btnTextColor, fontWeight: FontWeight.bold)),
+                    Icon(Icons.calendar_month_rounded, color: btnTextColor, size: 16.sw),
+                    SizedBox(width: 6.sw),
+                    Text("Add to Calendar", style: TextStyle(color: btnTextColor, fontWeight: FontWeight.bold, fontSize: 14.sp)),
                   ],
                 ),
               ),
@@ -1048,9 +1053,11 @@ class _ChatInterfaceState extends State<ChatInterface> {
         title: Text("Add Notes (Optional)", style: TextStyle(color: purple, fontWeight: FontWeight.bold)),
         content: TextField(
           controller: notesCtrl,
+          style: TextStyle(fontSize: 14.sp),
           decoration: InputDecoration(
             hintText: "Meeting topic...",
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            hintStyle: TextStyle(fontSize: 14.sp),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.sw)),
           ),
           maxLines: 3,
         ),
@@ -1134,9 +1141,9 @@ class _ChatInterfaceState extends State<ChatInterface> {
       isScrollControlled: true,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
-        decoration: const BoxDecoration(
-          color: Color(0xFFFFF3EB),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF3EB),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24.sw)),
         ),
         child: Column(
           children: [
@@ -1395,20 +1402,20 @@ class _ChatInterfaceState extends State<ChatInterface> {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        width: 260,
-        margin: const EdgeInsets.symmetric(vertical: 4),
-        padding: const EdgeInsets.all(16),
+        width: 260.sw,
+        margin: EdgeInsets.symmetric(vertical: 4.sh),
+        padding: EdgeInsets.all(16.sw),
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(20),
-            topRight: const Radius.circular(20),
-            bottomLeft: Radius.circular(isMe ? 20 : 0),
-            bottomRight: Radius.circular(isMe ? 0 : 20),
+            topLeft: Radius.circular(20.sw),
+            topRight: Radius.circular(20.sw),
+            bottomLeft: Radius.circular(isMe ? 20.sw : 0),
+            bottomRight: Radius.circular(isMe ? 0 : 20.sw),
           ),
           border: Border.all(color: borderColor),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 4, offset: const Offset(0, 2))
+            BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 4.sw, offset: Offset(0, 2.sh))
           ],
         ),
         child: Column(
@@ -1425,19 +1432,19 @@ class _ChatInterfaceState extends State<ChatInterface> {
             if (coverImage != null && coverImage.isNotEmpty)
               Container(
                 width: double.infinity,
-                height: 120,
-                margin: const EdgeInsets.only(bottom: 12),
+                height: 120.sh,
+                margin: EdgeInsets.only(bottom: 12.sh),
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12.sw),
                   image: DecorationImage(
                     image: NetworkImage(coverImage),
                     fit: BoxFit.cover,
                   ),
                 ),
               ),
-            Text(title, style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold)),
-            Text("$days Days • Target $cals kcal", style: TextStyle(color: subheadColor, fontSize: 14)),
-            const SizedBox(height: 16),
+            Text(title, style: TextStyle(color: textColor, fontSize: 16.sp, fontWeight: FontWeight.bold)),
+            Text("$days Days • Target $cals kcal", style: TextStyle(color: subheadColor, fontSize: 14.sp)),
+            SizedBox(height: 16.sh),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -1455,10 +1462,11 @@ class _ChatInterfaceState extends State<ChatInterface> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: btnBgColor,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  padding: EdgeInsets.symmetric(vertical: 12.sh),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.sw)),
                   elevation: 0,
                 ),
-                child: Text(buttonText, style: TextStyle(color: btnTextColor, fontWeight: FontWeight.bold)),
+                child: Text(buttonText, style: TextStyle(color: btnTextColor, fontWeight: FontWeight.bold, fontSize: 14.sp)),
               ),
             ),
           ],

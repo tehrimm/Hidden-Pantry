@@ -113,14 +113,18 @@ class LoadingOne extends StatelessWidget {
                   right: 46 * wScale, // Adjusted from left: 307
                   top: 749 * hScale,
                   child: GestureDetector(
-                    onTap: () {
+                    onTap: () async {
+                      // Preload the next screen's heavy asset before animating
+                      await precacheImage(const AssetImage('assets/bg/2.png'), context);
+                      if (!context.mounted) return;
+                      
                       Navigator.pushReplacement(
                         context,
                         PageRouteBuilder(
                           pageBuilder: (_, __, ___) => const LoadingTwo(),
-                          transitionDuration: const Duration(milliseconds: 400),
+                          transitionDuration: const Duration(milliseconds: 500),
                           transitionsBuilder: (_, anim, __, child) =>
-                            FadeTransition(opacity: anim, child: child),
+                              FadeTransition(opacity: anim, child: child),
                         ),
                       );
                     },
@@ -188,6 +192,3 @@ class OnboardingProgressBar extends StatelessWidget {
     );
   }
 }
-
-
-

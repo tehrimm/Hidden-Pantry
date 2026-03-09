@@ -7,6 +7,8 @@ import 'package:hidden_pantry_app/features/recipes/services/recipe_api_service.d
 import 'package:hidden_pantry_app/core/constants/api_constants.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class MealPlanCreatorScreen extends StatefulWidget {
   final String? existingPlanId;
@@ -66,6 +68,7 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     return Scaffold(
       backgroundColor: const Color(0xFFFFF3EB),
       extendBodyBehindAppBar: true, 
@@ -80,22 +83,22 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
         leading: GestureDetector(
           onTap: () => Navigator.pop(context),
           child: Container(
-             margin: const EdgeInsets.all(8),
+             margin: EdgeInsets.all(8.sw),
              alignment: Alignment.center,
-             child: Icon(Icons.arrow_back_rounded, color: purple, size: 24),
+             child: Icon(Icons.arrow_back_rounded, color: purple, size: 24.sw),
           ),
         ),
         actions: [
           Padding(
-            padding: const EdgeInsets.only(right: 16),
+            padding: EdgeInsets.only(right: 16.sw),
             child: TextButton(
               onPressed: _savePlan,
               style: TextButton.styleFrom(
                 backgroundColor: orange,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.sw)),
+                padding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 8.sh),
               ),
-              child: const Text("Save", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: Text("Save", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.sp)),
             ),
           ),
         ],
@@ -104,21 +107,21 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
         children: [
           const PatternBackground(),
           SingleChildScrollView(
-            padding: const EdgeInsets.all(22),
+            padding: EdgeInsets.all(22.sw),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SizedBox(height: kToolbarHeight + MediaQuery.of(context).padding.top),
                 _buildHeaderSection(),
-                const SizedBox(height: 24),
+                SizedBox(height: 24.sh),
                 _buildDurationSelector(),
-                const SizedBox(height: 24),
+                SizedBox(height: 24.sh),
                 _buildDaySelector(),
-                const SizedBox(height: 24),
+                SizedBox(height: 24.sh),
                 _buildMealListForDay(_selectedDay),
-                const SizedBox(height: 24),
+                SizedBox(height: 24.sh),
                 _buildNotesSection(),
-                const SizedBox(height: 100), 
+                SizedBox(height: 100.sh), 
               ],
             ),
           ),
@@ -129,20 +132,20 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
 
   Widget _buildHeaderSection() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20.sw),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(24.sw),
         boxShadow: [
-          BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10.sw, offset: Offset(0, 4.sh)),
         ],
       ),
       child: TextField(
         controller: _titleCtrl,
-        style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.bold),
+        style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.bold),
         decoration: InputDecoration(
           hintText: "Plan Title (e.g., Weight Loss Week 1)",
-          hintStyle: TextStyle(color: purple.withValues(alpha:0.4)),
+          hintStyle: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 16.sp),
           border: InputBorder.none,
           contentPadding: EdgeInsets.zero,
         ),
@@ -154,8 +157,8 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("Duration", style: TextStyle(color: purple, fontSize: 16, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
+        Text("Duration", style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.bold)),
+        SizedBox(height: 12.sh),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
@@ -164,19 +167,20 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
               return GestureDetector(
                 onTap: () => setState(() => _durationDays = days),
                 child: Container(
-                  margin: const EdgeInsets.only(right: 10),
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  margin: EdgeInsets.only(right: 10.sw),
+                  padding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 10.sh),
                   decoration: BoxDecoration(
                     color: isSelected ? purple : Colors.white,
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(20.sw),
                     border: Border.all(color: isSelected ? purple : purple.withValues(alpha:0.1)),
-                    boxShadow: isSelected ? [BoxShadow(color: purple.withValues(alpha:0.3), blurRadius: 8, offset: const Offset(0, 4))] : [],
+                    boxShadow: isSelected ? [BoxShadow(color: purple.withValues(alpha:0.3), blurRadius: 8.sw, offset: Offset(0, 4.sh))] : [],
                   ),
                   child: Text(
                     "$days Days",
                     style: TextStyle(
                       color: isSelected ? Colors.white : purple,
                       fontWeight: FontWeight.bold,
+                      fontSize: 14.sp,
                     ),
                   ),
                 ),
@@ -190,7 +194,7 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
 
   Widget _buildDaySelector() {
     return SizedBox(
-      height: 60,
+      height: 60.sh,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: _durationDays,
@@ -200,11 +204,11 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
           return GestureDetector(
             onTap: () => setState(() => _selectedDay = dayNum),
             child: Container(
-              width: 60,
-              margin: const EdgeInsets.only(right: 12),
+              width: 60.sw,
+              margin: EdgeInsets.only(right: 12.sw),
               decoration: BoxDecoration(
                 color: isSelected ? orange : Colors.white,
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(16.sw),
                 border: Border.all(color: isSelected ? orange : purple.withValues(alpha:0.1)),
               ),
               child: Column(
@@ -214,7 +218,7 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
                     "DAY",
                     style: TextStyle(
                       color: isSelected ? Colors.white.withValues(alpha:0.8) : purple.withValues(alpha:0.4),
-                      fontSize: 10,
+                      fontSize: 10.sp,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -222,7 +226,7 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
                     "$dayNum",
                     style: TextStyle(
                       color: isSelected ? Colors.white : purple,
-                      fontSize: 18,
+                      fontSize: 18.sp,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -239,11 +243,11 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
     return Column(
       children: [
         _buildCategorySection("Breakfast", Icons.wb_sunny_rounded),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.sh),
         _buildCategorySection("Lunch", Icons.lunch_dining_rounded),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.sh),
         _buildCategorySection("Dinner", Icons.nights_stay_rounded),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.sh),
         _buildCategorySection("Snacks", Icons.apple_rounded),
       ],
     );
@@ -255,31 +259,31 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: purple.withValues(alpha:0.04), blurRadius: 8, offset: const Offset(0, 2))],
+        borderRadius: BorderRadius.circular(20.sw),
+        boxShadow: [BoxShadow(color: purple.withValues(alpha:0.04), blurRadius: 8.sw, offset: Offset(0, 2.sh))],
       ),
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.sw),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: orange, size: 20),
-              const SizedBox(width: 8),
-              Text(title, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16)),
+              Icon(icon, color: orange, size: 20.sw),
+              SizedBox(width: 8.sw),
+              Text(title, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp)),
             ],
           ),
-          const Divider(height: 24),
+          Divider(height: 24.sh),
           if (meals.isEmpty)
-            Text("No meals added", style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 13, fontStyle: FontStyle.italic)),
+            Text("No meals added", style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 13.sp, fontStyle: FontStyle.italic)),
           ...meals.map((m) {
             if (m["isNote"] == true) {
               return ListTile(
                 contentPadding: EdgeInsets.zero,
-                leading: Icon(Icons.sticky_note_2_outlined, color: purple.withValues(alpha:0.4)),
-                title: Text(m["note"], style: TextStyle(color: purple, fontStyle: FontStyle.italic)),
+                leading: Icon(Icons.sticky_note_2_outlined, color: purple.withValues(alpha:0.4), size: 24.sw),
+                title: Text(m["note"], style: TextStyle(color: purple, fontStyle: FontStyle.italic, fontSize: 14.sp)),
                 trailing: IconButton(
-                  icon: Icon(Icons.close, size: 18, color: purple.withValues(alpha:0.4)),
+                  icon: Icon(Icons.close, size: 18.sw, color: purple.withValues(alpha:0.4)),
                   onPressed: () {
                     setState(() {
                       _dayMeals[_selectedDay]?.removeWhere((element) => 
@@ -293,10 +297,10 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
             }
             return ListTile(
               contentPadding: EdgeInsets.zero,
-              title: Text(m["title"] ?? m["name"] ?? "Recipe", style: TextStyle(color: purple, fontWeight: FontWeight.bold)),
-              subtitle: Text("${m["calories"]} kcal", style: TextStyle(color: purple.withValues(alpha:0.6))),
+              title: Text(m["title"] ?? m["name"] ?? "Recipe", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14.sp)),
+              subtitle: Text("${m["calories"]} kcal", style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 12.sp)),
               trailing: IconButton(
-                icon: Icon(Icons.close, size: 18, color: purple.withValues(alpha:0.4)),
+                icon: Icon(Icons.close, size: 18.sw, color: purple.withValues(alpha:0.4)),
                 onPressed: () {
                   setState(() {
                     _dayMeals[_selectedDay]?.removeWhere((element) => 
@@ -307,12 +311,12 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
               ),
             );
           }).toList(),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.sh),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               _addMealButton(title),
-              const SizedBox(width: 8),
+              SizedBox(width: 8.sw),
               _addNoteButton(title),
             ],
           ),
@@ -324,12 +328,12 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
   Widget _addNoteButton(String type) {
     return TextButton.icon(
       onPressed: () => _showAddNoteDialog(type),
-      icon: Icon(Icons.note_add_outlined, color: purple, size: 18),
-      label: Text("Add Note", style: TextStyle(color: purple, fontWeight: FontWeight.bold)),
+      icon: Icon(Icons.note_add_outlined, color: purple, size: 18.sw),
+      label: Text("Add Note", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13.sp)),
       style: TextButton.styleFrom(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 8.sh),
         backgroundColor: purple.withValues(alpha:0.1),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.sw)),
       ),
     );
   }
@@ -340,14 +344,16 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text("Add Note to $type", style: TextStyle(color: purple, fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.sw)),
+        title: Text("Add Note to $type", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 18.sp)),
         content: TextField(
           controller: noteCtrl,
           maxLines: 3,
+          style: TextStyle(fontSize: 14.sp),
           decoration: InputDecoration(
             hintText: "Enter your note here...",
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            hintStyle: TextStyle(fontSize: 14.sp),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.sw)),
           ),
         ),
         actions: [
@@ -370,9 +376,9 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: orange,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.sw)),
             ),
-            child: const Text("Add", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text("Add", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.sp)),
           ),
         ],
       ),
@@ -397,23 +403,24 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
 
   Widget _buildNotesSection() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(20.sw),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(24.sw),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("Notes", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16)),
-          const SizedBox(height: 12),
+          Text("Notes", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp)),
+          SizedBox(height: 12.sh),
           TextField(
             controller: _notesCtrl,
             maxLines: 3,
+            style: TextStyle(fontSize: 14.sp),
             decoration: InputDecoration(
               hintText: "Add any checks, instructions, or notes...",
-              hintStyle: TextStyle(color: purple.withValues(alpha:0.4)),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: purple.withValues(alpha:0.1))),
+              hintStyle: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 14.sp),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.sw), borderSide: BorderSide(color: purple.withValues(alpha:0.1))),
 
               filled: true,
               fillColor: const Color(0xFFFDECE4).withValues(alpha:0.3),
@@ -575,43 +582,45 @@ class _RecipeSearchModalState extends State<_RecipeSearchModal> {
   Widget build(BuildContext context) {
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
-      decoration: const BoxDecoration(
-        color: Color(0xFFFFF3EB),
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF3EB),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.sw)),
       ),
       child: Column(
         children: [
           Container(
-            margin: const EdgeInsets.only(top: 12, bottom: 20),
-            width: 50, height: 5,
-            decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(10)),
+            margin: EdgeInsets.only(top: 12.sh, bottom: 20.sh),
+            width: 50.sw, height: 5.sh,
+            decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(10.sw)),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: EdgeInsets.symmetric(horizontal: 20.sw),
             child: TextField(
               controller: _searchCtrl,
               autofocus: true,
               onChanged: _search,
+              style: TextStyle(fontSize: 16.sp),
               decoration: InputDecoration(
                 hintText: "Search recipes...",
-                prefixIcon: Icon(Icons.search, color: purple.withValues(alpha:0.5)),
+                hintStyle: TextStyle(fontSize: 16.sp),
+                prefixIcon: Icon(Icons.search, color: purple.withValues(alpha:0.5), size: 24.sw),
                 filled: true,
                 fillColor: Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16.sw), borderSide: BorderSide.none),
+                contentPadding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 14.sh),
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          SizedBox(height: 10.sh),
           if (_tags.isNotEmpty)
             Container(
-              height: 40,
-              margin: const EdgeInsets.only(bottom: 10),
+              height: 40.sh,
+              margin: EdgeInsets.only(bottom: 10.sh),
               child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: EdgeInsets.symmetric(horizontal: 20.sw),
                 scrollDirection: Axis.horizontal,
                 itemCount: _tags.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                separatorBuilder: (_, __) => SizedBox(width: 8.sw),
                 itemBuilder: (context, index) {
                   final tag = _tags[index];
                   final isSelected = _selectedTag == tag;
@@ -641,46 +650,46 @@ class _RecipeSearchModalState extends State<_RecipeSearchModal> {
                 : _results.isEmpty
                     ? Center(child: Text("Type to search recipes", style: TextStyle(color: purple.withValues(alpha:0.5))))
                     : ListView.separated(
-                        padding: const EdgeInsets.all(20),
+                        padding: EdgeInsets.all(20.sw),
                         itemCount: _results.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
+                        separatorBuilder: (_, __) => SizedBox(height: 12.sh),
                         itemBuilder: (context, index) {
                           final recipe = _results[index];
                           final cal = recipe.nutrition?["Calories"] ?? "N/A";
                           return GestureDetector(
                             onTap: () => widget.onSelect(recipe),
                             child: Container(
-                              padding: const EdgeInsets.all(12),
+                              padding: EdgeInsets.all(12.sw),
                               decoration: BoxDecoration(
                                 color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                                boxShadow: [BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 4, offset: const Offset(0, 2))],
+                                borderRadius: BorderRadius.circular(16.sw),
+                                boxShadow: [BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 4.sw, offset: Offset(0, 2.sh))],
                               ),
                               child: Row(
                                 children: [
                                   Container(
-                                    width: 50, height: 50,
+                                    width: 50.sw, height: 50.sh,
                                     decoration: BoxDecoration(
                                       color: orange.withValues(alpha:0.1),
-                                      borderRadius: BorderRadius.circular(12),
+                                      borderRadius: BorderRadius.circular(12.sw),
                                       image: recipe.imageUrl != null 
                                           ? DecorationImage(image: NetworkImage(recipe.imageUrl!), fit: BoxFit.cover)
                                           : null,
                                     ),
-                                    child: recipe.imageUrl == null ? Icon(Icons.restaurant, color: orange) : null,
+                                    child: recipe.imageUrl == null ? Icon(Icons.restaurant, color: orange, size: 24.sw) : null,
                                   ),
-                                  const SizedBox(width: 12),
+                                  SizedBox(width: 12.sw),
                                   Expanded(
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(recipe.name, style: TextStyle(color: purple, fontWeight: FontWeight.bold), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                        Text("$cal kcal", style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 12)),
+                                        Text(recipe.name, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14.sp), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                        Text("$cal kcal", style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 12.sp)),
 
                                       ],
                                     ),
                                   ),
-                                  Icon(Icons.add_circle, color: orange),
+                                  Icon(Icons.add_circle, color: orange, size: 24.sw),
                                 ],
                               ),
                             ),

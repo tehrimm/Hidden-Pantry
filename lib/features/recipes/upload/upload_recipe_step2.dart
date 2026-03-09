@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'upload_recipe_step3.dart';
 
 class UploadRecipeStep2 extends StatefulWidget {
@@ -151,23 +152,20 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     return Scaffold(
       backgroundColor: const Color(0xFFFFF3EB),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final s = constraints.maxWidth / 393;
-
-          return Stack(
-            children: [
-              // Background Patterns
-              _BackgroundPatterns(scale: s),
+      body: Stack(
+        children: [
+          // Background Patterns
+          const _BackgroundPatterns(),
 
               Column(
                 children: [
-                  SizedBox(height: 50 * s),
+                  SizedBox(height: 50.sh),
                   // Fixed Header area
                   Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 29 * s),
+                    padding: EdgeInsets.symmetric(horizontal: 29.sw),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -176,25 +174,25 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                           widget.editingRecipe != null ? 'Edit Recipe' : 'Add Recipe',
                           style: TextStyle(
                             color: purple,
-                            fontSize: 20 * s,
+                            fontSize: 20.sp,
                             fontWeight: FontWeight.bold,
                             fontFamily: 'Satoshi',
                           ),
                         ),
                         // Step Indicator
                         Container(
-                          width: 69 * s,
-                          height: 42 * s,
+                          width: 69.sw,
+                          height: 42.sh,
                           decoration: BoxDecoration(
                             color: purple,
-                            borderRadius: BorderRadius.circular(10 * s),
+                            borderRadius: BorderRadius.circular(10.sw),
                           ),
                           child: Center(
                             child: Text(
                               '2/5',
                               style: TextStyle(
                                 color: const Color(0xFFFFF2EA),
-                                fontSize: 12 * s,
+                                fontSize: 12.sp,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Satoshi',
                               ),
@@ -208,48 +206,45 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                   // Scrollable Content
                   Expanded(
                     child: ListView(
-                      padding: EdgeInsets.only(top: 20 * s, bottom: 120),
+                      padding: EdgeInsets.only(top: 20.sh, bottom: 120.sh),
                       children: [
                         Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 27 * s),
+                          padding: EdgeInsets.symmetric(horizontal: 27.sw),
                           child: Text(
                             'Information',
                             style: TextStyle(
                               color: purple,
-                              fontSize: 40 * s,
+                              fontSize: 40.sp,
                               fontWeight: FontWeight.w900,
                               height: 1.1,
                               fontFamily: 'Satoshi',
                             ),
                           ),
                         ),
-                        SizedBox(height: 30 * s),
+                        SizedBox(height: 30.sh),
 
                         _buildCounterResponsive(
                           label: 'Preparation Time',
                           value: _prepTime,
                           unit: 'min',
-                          scale: s,
                           onChanged: (v) => setState(() => _prepTime = v),
                         ),
                         _buildCounterResponsive(
                           label: 'Cooking Time',
                           value: _cookTime,
                           unit: 'min',
-                          scale: s,
                           onChanged: (v) => setState(() => _cookTime = v),
                         ),
                         _buildCounterResponsive(
                           label: 'Serving',
                           value: _servings,
                           unit: '',
-                          scale: s,
                           onChanged: (v) => setState(() => _servings = v),
                         ),
 
                         // Difficulty Dropdown
                         Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 29 * s, vertical: 8 * s),
+                          padding: EdgeInsets.symmetric(horizontal: 29.sw, vertical: 8.sh),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -257,18 +252,18 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                                 'Difficulty',
                                 style: TextStyle(
                                   color: purple,
-                                  fontSize: 15 * s,
+                                  fontSize: 15.sp,
                                   fontFamily: 'Satoshi',
                                 ),
                               ),
                               Container(
-                                width: 176 * s,
-                                height: 61 * s,
+                                width: 176.sw,
+                                height: 61.sh,
                                 decoration: BoxDecoration(
                                   color: cardBg,
-                                  borderRadius: BorderRadius.circular(20 * s),
+                                  borderRadius: BorderRadius.circular(20.sw),
                                 ),
-                                padding: EdgeInsets.symmetric(horizontal: 20 * s),
+                                padding: EdgeInsets.symmetric(horizontal: 20.sw),
                                 child: DropdownButtonHideUnderline(
                                   child: DropdownButton<String>(
                                     value: _difficulty,
@@ -276,11 +271,11 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                                       'Select',
                                       style: TextStyle(
                                         color: purple.withValues(alpha: 0.5),
-                                        fontSize: 15 * s,
+                                        fontSize: 15.sp,
                                         fontFamily: 'Satoshi',
                                       ),
                                     ),
-                                    icon: Icon(Icons.keyboard_arrow_down, color: purple, size: 24 * s),
+                                    icon: Icon(Icons.keyboard_arrow_down, color: purple, size: 24.sw),
                                     items: ['Easy', 'Medium', 'Hard'].map((String level) {
                                       return DropdownMenuItem<String>(
                                         value: level,
@@ -288,7 +283,7 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                                           level,
                                           style: TextStyle(
                                             color: purple,
-                                            fontSize: 15 * s,
+                                            fontSize: 15.sp,
                                             fontFamily: 'Satoshi',
                                           ),
                                         ),
@@ -300,7 +295,7 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                                       });
                                     },
                                     dropdownColor: cardBg,
-                                    borderRadius: BorderRadius.circular(20 * s),
+                                    borderRadius: BorderRadius.circular(20.sw),
                                   ),
                                 ),
                               ),
@@ -308,28 +303,28 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                           ),
                         ),
 
-                        SizedBox(height: 20 * s),
+                        SizedBox(height: 20.sh),
                         // All Categorized Tags
                         ..._allCategories.entries.map((entry) {
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Padding(
-                                padding: EdgeInsets.only(left: 29 * s, top: 16 * s, bottom: 8 * s),
+                                padding: EdgeInsets.only(left: 29.sw, top: 16.sh, bottom: 8.sh),
                                 child: Text(
                                   entry.key,
                                   style: TextStyle(
                                     color: purple,
-                                    fontSize: 15 * s,
+                                    fontSize: 15.sp,
                                     fontFamily: 'Satoshi',
                                   ),
                                 ),
                               ),
                               Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 29 * s),
+                                padding: EdgeInsets.symmetric(horizontal: 29.sw),
                                 child: Wrap(
-                                  spacing: 10 * s,
-                                  runSpacing: 10 * s,
+                                  spacing: 10.sw,
+                                  runSpacing: 10.sh,
                                   children: entry.value.map((tag) {
                                     final isSelected = _selectedTags.contains(tag);
                                     return GestureDetector(
@@ -343,16 +338,16 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                                         });
                                       },
                                       child: Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 16 * s, vertical: 10 * s),
+                                        padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 10.sh),
                                         decoration: BoxDecoration(
                                           color: isSelected ? purple : cardBg,
-                                          borderRadius: BorderRadius.circular(30 * s),
+                                          borderRadius: BorderRadius.circular(30.sw),
                                         ),
                                         child: Text(
                                           _beautify(tag),
                                           style: TextStyle(
                                             color: isSelected ? const Color(0xFFFFF2EA) : purple,
-                                            fontSize: 12 * s,
+                                            fontSize: 12.sp,
                                             fontWeight: FontWeight.w500,
                                             fontFamily: 'Satoshi',
                                           ),
@@ -368,7 +363,7 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
 
                         // Bottom buttons inside the scrollable area
                         Padding(
-                          padding: const EdgeInsets.fromLTRB(30, 42, 29, 42),
+                          padding: EdgeInsets.fromLTRB(30.sw, 42.sh, 29.sw, 42.sh),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
                             mainAxisAlignment: MainAxisAlignment.end,
@@ -393,25 +388,25 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                                     );
                                   },
                                   child: Container(
-                                    height: 62,
+                                    height: 62.sh,
                                     decoration: BoxDecoration(
                                       color: orange,
-                                      borderRadius: BorderRadius.circular(20),
+                                      borderRadius: BorderRadius.circular(20.sw),
                                     ),
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
-                                      children: const [
+                                      children: [
                                         Text(
                                           'Next',
                                           style: TextStyle(
                                             color: Color(0xFFFFF2EA),
-                                            fontSize: 15,
+                                            fontSize: 15.sp,
                                             fontWeight: FontWeight.bold,
                                             fontFamily: 'Satoshi',
                                           ),
                                         ),
-                                        SizedBox(width: 10),
-                                        Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                                        SizedBox(width: 10.sw),
+                                        Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16.sw),
                                       ],
                                     ),
                                   ),
@@ -426,9 +421,7 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                 ],
               ),
             ],
-          );
-        },
-      ),
+          ),
     );
   }
 
@@ -436,14 +429,12 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
     required String label,
     required int value,
     required String unit,
-    required double scale,
     required Function(int) onChanged,
   }) {
     return _CounterInput(
       label: label,
       value: value,
       unit: unit,
-      scale: scale,
       onChanged: onChanged,
       purple: purple,
       cardBg: cardBg,
@@ -456,7 +447,6 @@ class _CounterInput extends StatefulWidget {
   final String label;
   final int value;
   final String unit;
-  final double scale;
   final Function(int) onChanged;
   final Color purple;
   final Color cardBg;
@@ -466,7 +456,6 @@ class _CounterInput extends StatefulWidget {
     required this.label,
     required this.value,
     required this.unit,
-    required this.scale,
     required this.onChanged,
     required this.purple,
     required this.cardBg,
@@ -503,7 +492,7 @@ class _CounterInputState extends State<_CounterInput> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 29 * widget.scale, vertical: 8 * widget.scale),
+      padding: EdgeInsets.symmetric(horizontal: 29.sw, vertical: 8.sh),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -511,16 +500,16 @@ class _CounterInputState extends State<_CounterInput> {
             child: Text(widget.label,
                 style: TextStyle(
                   color: widget.purple,
-                  fontSize: 15 * widget.scale,
+                  fontSize: 15.sp,
                   fontFamily: 'Satoshi',
                 )),
           ),
           Container(
-            width: 176 * widget.scale,
-            height: 61 * widget.scale,
+            width: 176.sw,
+            height: 61.sh,
             decoration: BoxDecoration(
               color: widget.cardBg,
-              borderRadius: BorderRadius.circular(8 * widget.scale),
+              borderRadius: BorderRadius.circular(8.sw),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -530,18 +519,18 @@ class _CounterInputState extends State<_CounterInput> {
                     if (widget.value > 0) widget.onChanged(widget.value - 1);
                   },
                   child: Padding(
-                    padding: EdgeInsets.all(8.0 * widget.scale),
+                    padding: EdgeInsets.all(8.0.sw),
                     child: Text('-',
                         style: TextStyle(
                           color: const Color(0xFF74503C),
-                          fontSize: 24 * widget.scale,
+                          fontSize: 24.sp,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Satoshi',
                         )),
                   ),
                 ),
                 SizedBox(
-                  width: 50 * widget.scale,
+                  width: 50.sw,
                   child: TextField(
                     textAlign: TextAlign.center,
                     keyboardType: TextInputType.number,
@@ -553,7 +542,7 @@ class _CounterInputState extends State<_CounterInput> {
                     decoration: const InputDecoration(border: InputBorder.none),
                     style: TextStyle(
                       color: widget.textBrown,
-                      fontSize: 16 * widget.scale,
+                      fontSize: 16.sp,
                       fontWeight: FontWeight.bold,
                       fontFamily: 'Satoshi',
                     ),
@@ -561,22 +550,22 @@ class _CounterInputState extends State<_CounterInput> {
                 ),
                 if (widget.unit.isNotEmpty)
                   Padding(
-                    padding: EdgeInsets.only(right: 8 * widget.scale),
+                    padding: EdgeInsets.only(right: 8.sw),
                     child: Text(widget.unit,
                         style: TextStyle(
                           color: widget.textBrown,
-                          fontSize: 12 * widget.scale,
+                          fontSize: 12.sp,
                           fontFamily: 'Satoshi',
                         )),
                   ),
                 GestureDetector(
                   onTap: () => widget.onChanged(widget.value + 1),
                   child: Padding(
-                    padding: EdgeInsets.all(8.0 * widget.scale),
+                    padding: EdgeInsets.all(8.0.sw),
                     child: Text('+',
                         style: TextStyle(
                           color: const Color(0xFF74503C),
-                          fontSize: 24 * widget.scale,
+                          fontSize: 24.sp,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Satoshi',
                         )),
@@ -592,8 +581,7 @@ class _CounterInputState extends State<_CounterInput> {
 }
 
 class _BackgroundPatterns extends StatelessWidget {
-  final double scale;
-  const _BackgroundPatterns({required this.scale});
+  const _BackgroundPatterns();
 
   @override
   Widget build(BuildContext context) {
@@ -601,31 +589,31 @@ class _BackgroundPatterns extends StatelessWidget {
       child: Stack(
         children: [
           Positioned(
-            left: -154 * scale,
-            top: -14 * scale,
+            left: -154.sw,
+            top: -14.sh,
             child: Transform.rotate(
               angle: 21 * math.pi / 180,
               child: Container(
-                width: 271 * scale,
-                height: 159 * scale,
+                width: 271.sw,
+                height: 159.sh,
                 decoration: BoxDecoration(
                   border: Border.all(color: const Color(0xFFF5DDCE)),
-                  borderRadius: BorderRadius.all(Radius.elliptical(136 * scale, 80 * scale)),
+                  borderRadius: BorderRadius.all(Radius.elliptical(136.sw, 80.sh)),
                 ),
               ),
             ),
           ),
           Positioned(
-            left: -149 * scale,
-            top: -100 * scale,
+            left: -149.sw,
+            top: -100.sh,
             child: Transform.rotate(
               angle: 4 * math.pi / 180,
               child: Container(
-                width: 303 * scale,
-                height: 329 * scale,
+                width: 303.sw,
+                height: 329.sh,
                 decoration: BoxDecoration(
                   border: Border.all(color: const Color(0xFFF5DDCE)),
-                  borderRadius: BorderRadius.all(Radius.elliptical(152 * scale, 165 * scale)),
+                  borderRadius: BorderRadius.all(Radius.elliptical(152.sw, 165.sh)),
                 ),
               ),
             ),

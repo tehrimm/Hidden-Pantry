@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/chat_interface_part.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class NutritionistChatListScreen extends StatefulWidget {
   const NutritionistChatListScreen({super.key});
@@ -229,16 +231,17 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return const Center(child: Text("Please log in"));
+    ResponsiveUtils.init(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Custom Header
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+          padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 16.sh),
           child: Text(
             "Messages",
-            style: TextStyle(color: purple, fontSize: 28, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+            style: TextStyle(color: purple, fontSize: 28.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
           ),
         ),
         // Content
@@ -297,11 +300,11 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.chat_bubble_outline_rounded, size: 48, color: purple.withValues(alpha:0.2)),
-                            const SizedBox(height: 16),
+                            Icon(Icons.chat_bubble_outline_rounded, size: 48.sw, color: purple.withValues(alpha:0.2)),
+                            SizedBox(height: 16.sh),
                             Text(
                               "No subscribers yet.",
-                              style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 16),
+                              style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 16.sp),
                             ),
                           ],
                         ),
@@ -319,7 +322,7 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
                     });
 
                     return ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+                      padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 10.sh),
                       itemCount: chatsData.length,
                       itemBuilder: (context, index) {
                         final client = chatsData[index];
@@ -373,24 +376,24 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
         }); 
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        margin: EdgeInsets.only(bottom: 12.sh),
+        padding: EdgeInsets.all(16.sw),
         decoration: BoxDecoration(
           color: const Color(0xFFF9E3D5),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(20.sw),
           boxShadow: [
-            BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10, offset: const Offset(0, 4)),
+            BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10.sw, offset: Offset(0, 4.sh)),
           ],
         ),
         child: Row(
           children: [
             CircleAvatar(
-              radius: 24,
+              radius: 24.sw,
               backgroundColor: orange.withValues(alpha:0.1),
               backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
-              child: photoUrl == null ? Icon(Icons.person, color: orange) : null,
+              child: photoUrl == null ? Icon(Icons.person, color: orange, size: 24.sw) : null,
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16.sw),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -401,14 +404,14 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
                       Expanded(
                         child: Text(
                           name,
-                          style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16, fontFamily: "Satoshi"),
+                          style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp, fontFamily: "Satoshi"),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       if (timestamp != null)
                         Text(
                           _formatTime(timestamp),
-                          style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 11),
+                          style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 11.sp),
                         ),
                     ],
                   ),
@@ -433,17 +436,17 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
                                         : purple.withValues(alpha:0.5),
                             fontWeight: (unread > 0 || isTyping) ? FontWeight.bold : FontWeight.normal,
                             fontStyle: (lastMsg.isEmpty && !isTyping) ? FontStyle.italic : FontStyle.normal,
-                            fontSize: 13,
+                            fontSize: 13.sp,
                           ),
                         ),
                       ),
                       if (unread > 0)
                         Container(
-                          padding: const EdgeInsets.all(6),
+                          padding: EdgeInsets.all(6.sw),
                           decoration: BoxDecoration(color: orange, shape: BoxShape.circle),
                           child: Text(
                             unread.toString(),
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                            style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
                           ),
                         ),
                     ],

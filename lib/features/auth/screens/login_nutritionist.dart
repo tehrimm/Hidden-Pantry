@@ -1,8 +1,9 @@
-import 'dart:math' as math;
+
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -247,20 +248,13 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     final mq = MediaQuery.of(context);
-    final size = mq.size;
-
-    // Simple responsive scaling
-    double s(double v) {
-      final base = math.min(size.width / 393.0, size.height / 852.0);
-      return v * base;
-    }
-
-    final horizontal = s(30);
+    final horizontal = 30.sw;
     final topPad = mq.padding.top;
 
-    final fieldHeight = s(70);
-    final radius = s(30);
+    final fieldHeight = 70.sh;
+    final radius = 30.sw;
 
     return PopScope(
       canPop: false,
@@ -289,8 +283,8 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                       padding: EdgeInsets.only(
                         left: horizontal,
                         right: horizontal,
-                        top: topPad + s(51),
-                        bottom: s(14) + mq.padding.bottom + mq.viewInsets.bottom,
+                        top: topPad + 36.sh,
+                        bottom: 14.sh + mq.padding.bottom + mq.viewInsets.bottom,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -313,7 +307,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                                     "User",
                                     style: TextStyle(
                                       color: purple,
-                                      fontSize: s(14),
+                                      fontSize: 14.sp,
                                       fontWeight: FontWeight.w700,
                                       fontFamily: "Satoshi",
                                     ),
@@ -322,31 +316,31 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                               ],
                             ),
 
-                            SizedBox(height: s(45)),
+                            SizedBox(height: 45.sh),
 
                             Text(
                               "Login",
                               style: TextStyle(
                                 color: purple,
-                                fontSize: s(40),
+                                fontSize: 40.sp,
                                 fontWeight: FontWeight.w900,
                                 height: 1.1,
                                 fontFamily: "Satoshi",
                               ),
                             ),
 
-                            SizedBox(height: s(10)),
+                            SizedBox(height: 10.sh),
 
                             Text(
                               "Login to your professional account",
                               style: TextStyle(
                                 color: purple,
-                                fontSize: s(15),
+                                fontSize: 15.sp,
                                 fontFamily: "Satoshi",
                               ),
                             ),
 
-                            SizedBox(height: s(30)),
+                            SizedBox(height: 30.sh),
 
                             // Email field
                             _LabeledField(
@@ -358,7 +352,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                                 textAlignVertical: TextAlignVertical.center,
                                 style: TextStyle(
                                   color: (_emailErr != null) ? errText : enabledText,
-                                  fontSize: s(12),
+                                  fontSize: 12.sp,
                                   fontWeight: FontWeight.w600,
                                   letterSpacing: 0.2,
                                   fontFamily: "Satoshi",
@@ -368,20 +362,20 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                                   hintText: "Email",
                                   hintStyle: TextStyle(
                                     color: hint,
-                                    fontSize: s(12),
+                                    fontSize: 12.sp,
                                     fontWeight: FontWeight.w500,
                                     letterSpacing: 0.2,
                                     fontFamily: "Satoshi",
                                   ),
                                   contentPadding: EdgeInsets.symmetric(
-                                    horizontal: s(30),
-                                    vertical: s(22),
+                                    horizontal: 30.sw,
+                                    vertical: 22.sh,
                                   ),
                                 ),
                               ),
                             ),
 
-                            SizedBox(height: s(16)),
+                            SizedBox(height: 16.sh),
 
                             // Password field
                             _LabeledField(
@@ -397,7 +391,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                                       textAlignVertical: TextAlignVertical.center,
                                       style: TextStyle(
                                         color: (_passErr != null) ? errText : enabledText,
-                                        fontSize: s(12),
+                                        fontSize: 12.sp,
                                         fontWeight: FontWeight.w600,
                                         letterSpacing: 0.2,
                                         fontFamily: "Satoshi",
@@ -407,14 +401,14 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                                         hintText: "Password",
                                         hintStyle: TextStyle(
                                           color: hint,
-                                          fontSize: s(12),
+                                          fontSize: 12.sp,
                                           fontWeight: FontWeight.w500,
                                           letterSpacing: 0.2,
                                           fontFamily: "Satoshi",
                                         ),
                                         contentPadding: EdgeInsets.symmetric(
-                                          horizontal: s(30),
-                                          vertical: s(22),
+                                          horizontal: 30.sw,
+                                          vertical: 22.sh,
                                         ),
                                       ),
                                     ),
@@ -424,13 +418,13 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                                       () => _obscurePassword = !_obscurePassword,
                                     ),
                                     child: Padding(
-                                      padding: EdgeInsets.only(right: s(16)),
+                                      padding: EdgeInsets.only(right: 16.sw),
                                       child: Image.asset(
                                         _obscurePassword
                                             ? "assets/icons/eye-disable.png"
                                             : "assets/icons/eye.png",
-                                        width: s(19),
-                                        height: s(20),
+                                        width: 19.sw,
+                                        height: 20.sw,
                                         fit: BoxFit.contain,
                                       ),
                                     ),
@@ -439,7 +433,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                               ),
                             ),
 
-                            SizedBox(height: s(10)),
+                            SizedBox(height: 10.sh),
 
                             Align(
                               alignment: Alignment.centerRight,
@@ -456,7 +450,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                                   "Forget Password?",
                                   style: TextStyle(
                                     color: purple,
-                                    fontSize: s(14),
+                                    fontSize: 14.sp,
                                     fontWeight: FontWeight.w500,
                                     letterSpacing: 0.3,
                                     fontFamily: "Satoshi",
@@ -465,17 +459,17 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                               ),
                             ),
 
-                            SizedBox(height: s(60)),
+                            SizedBox(height: 60.sh),
 
                             // Login button
                             GestureDetector(
                               onTap: _loading ? null : _onLogin,
                               child: Container(
                                 width: double.infinity,
-                                height: s(62),
+                                height: 62.sh,
                                 decoration: BoxDecoration(
                                   color: btnOrange,
-                                  borderRadius: BorderRadius.circular(s(20)),
+                                  borderRadius: BorderRadius.circular(20.sw),
                                 ),
                                 alignment: Alignment.center,
                                 child: _loading
@@ -483,16 +477,16 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                                         mainAxisAlignment: MainAxisAlignment.center,
                                         children: [
                                           SizedBox(
-                                            width: s(18),
-                                            height: s(18),
+                                            width: 18.sw,
+                                            height: 18.sw,
                                             child: const CircularProgressIndicator(strokeWidth: 2),
                                           ),
-                                          SizedBox(width: s(10)),
+                                          SizedBox(width: 10.sw),
                                           Text(
                                             "Signing in...",
                                             style: TextStyle(
                                               color: btnText,
-                                              fontSize: s(12),
+                                              fontSize: 12.sp,
                                               fontWeight: FontWeight.bold,
                                               fontFamily: "Satoshi",
                                             ),
@@ -503,7 +497,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                                         "Login",
                                         style: TextStyle(
                                           color: btnText,
-                                          fontSize: s(12),
+                                          fontSize: 12.sp,
                                           fontWeight: FontWeight.bold,
                                           fontFamily: "Satoshi",
                                         ),
@@ -511,7 +505,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                               ),
                             ),
 
-                            SizedBox(height: s(16)),
+                            SizedBox(height: 16.sh),
 
                             // Google + Apple buttons
                             Row(
@@ -520,36 +514,36 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                                   child: GestureDetector(
                                     onTap: _loading ? null : _onGoogleLogin,
                                     child: Container(
-                                      height: s(59),
+                                      height: 59.sh,
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFF9E3D5),
-                                        borderRadius: BorderRadius.circular(s(15)),
+                                        borderRadius: BorderRadius.circular(15.sw),
                                       ),
                                       alignment: Alignment.center,
                                       child: Image.asset(
                                         "assets/Logos/google.png",
-                                        width: s(48),
-                                        height: s(27),
+                                        width: 48.sw,
+                                        height: 27.sh,
                                         fit: BoxFit.contain,
                                       ),
                                     ),
                                   ),
                                 ),
-                                SizedBox(width: s(12)),
+                                SizedBox(width: 12.sw),
                                 Expanded(
                                   child: GestureDetector(
                                     onTap: _loading ? null : _onAppleLogin,
                                     child: Container(
-                                      height: s(59),
+                                      height: 59.sh,
                                       decoration: BoxDecoration(
                                         color: const Color(0xFFF9E3D5),
-                                        borderRadius: BorderRadius.circular(s(15)),
+                                        borderRadius: BorderRadius.circular(15.sw),
                                       ),
                                       alignment: Alignment.center,
                                       child: Image.asset(
                                         "assets/Logos/apple.png",
-                                        width: s(70),
-                                        height: s(44),
+                                        width: 70.sw,
+                                        height: 44.sh,
                                         fit: BoxFit.contain,
                                       ),
                                     ),
@@ -558,7 +552,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                               ],
                             ),
 
-                            SizedBox(height: s(32)),
+                            SizedBox(height: 32.sh),
                           ],
                         ),
                       ),
@@ -598,18 +592,18 @@ class _LabeledField extends StatelessWidget {
           height: height,
           decoration: BoxDecoration(
             color: isError ? errFieldBg : fieldBg,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(20.sw),
           ),
           clipBehavior: Clip.hardEdge,
           child: child,
         ),
         if (isError) ...[
-          const SizedBox(height: 6),
+          SizedBox(height: 6.sh),
           Text(
             errorText!,
-            style: const TextStyle(
-              color: Color(0xFFFD3250),
-              fontSize: 10,
+            style: TextStyle(
+              color: const Color(0xFFFD3250),
+              fontSize: 10.sp,
               fontWeight: FontWeight.w500,
               letterSpacing: 0.2,
               fontFamily: "Satoshi",

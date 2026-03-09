@@ -1,5 +1,7 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
+
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 import 'loading_four.dart';
 import 'loading_five.dart';
@@ -20,79 +22,63 @@ class TermsAndConditionScreen extends StatefulWidget {
 class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
   bool agreed = false;
 
-  // Figma base
-  static const double _baseW = 393;
-  static const double _baseH = 852;
-
   @override
   Widget build(BuildContext context) {
-    final mq = MediaQuery.of(context);
-
-    final safeTop = mq.padding.top;
-    final safeBottom = mq.padding.bottom;
-
-    final w = mq.size.width;
-    final h = mq.size.height;
-
-    // Scale factor (keeps proportions like your Figma)
-    final s = math.min(w / _baseW, h / _baseH);
-
-    double sx(double v) => v * s;
-    double sy(double v) => v * s;
+    ResponsiveUtils.init(context);
 
     // Bottom panel height ONLY when not viewOnly
-    final panelHeight = widget.viewOnly ? 0.0 : (sy(140) + safeBottom);
+    final panelHeight = widget.viewOnly ? 0.0 : 160.sh;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF3EB),
       body: SizedBox.expand(
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(sx(30)),
+          borderRadius: BorderRadius.circular(30.sw),
           child: Stack(
             children: [
               // Background
               Container(color: const Color(0xFFFFF3EB)),
 
-              // Decorative rings (scaled)
+              // Decorative rings
               Positioned(
-                left: sx(-154),
-                top: sy(-14),
+                left: -154.sw,
+                top: -14.sh,
                 child: Transform.rotate(
-                  angle: 21 * math.pi / 180,
+                  angle: 21 * 3.14159 / 180,
                   child: Container(
-                    width: sx(271),
-                    height: sy(159),
+                    width: 271.sw,
+                    height: 159.sh,
                     decoration: BoxDecoration(
                       border: Border.all(color: const Color(0xFFF5DDCE)),
                       borderRadius: BorderRadius.all(
-                        Radius.elliptical(sx(136), sy(80)),
+                        Radius.elliptical(136.sw, 80.sh),
                       ),
                     ),
                   ),
                 ),
               ),
               Positioned(
-                left: sx(-149),
-                top: sy(-100),
+                left: -149.sw,
+                top: -100.sh,
                 child: Transform.rotate(
-                  angle: 4 * math.pi / 180,
+                  angle: 4 * 3.14159 / 180,
                   child: Container(
-                    width: sx(303),
-                    height: sy(329),
+                    width: 303.sw,
+                    height: 329.sh,
                     decoration: BoxDecoration(
                       border: Border.all(color: const Color(0xFFF5DDCE)),
                       borderRadius: BorderRadius.all(
-                        Radius.elliptical(sx(152), sy(165)),
+                        Radius.elliptical(152.sw, 165.sh),
                       ),
                     ),
                   ),
                 ),
               ),
 
-              // Back button (safe + scaled)
+              // Back button
               Positioned(
-                left: sx(30),
-                top: safeTop + sy(20),
+                left: 30.sw,
+                top: MediaQuery.paddingOf(context).top + 51.sh,
                 child: GestureDetector(
                 onTap: () {
                   if (widget.viewOnly) {
@@ -113,32 +99,32 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
                 },
 
                   child: Container(
-                    width: sx(50),
-                    height: sx(50),
+                    width: 50.sw,
+                    height: 50.sw,
                     decoration: BoxDecoration(
                       color: const Color(0xFFF9E3D5),
-                      borderRadius: BorderRadius.circular(sx(25)),
+                      borderRadius: BorderRadius.circular(25.sw),
                     ),
                     child: Icon(
                       Icons.arrow_back_ios_new,
-                      size: sx(18),
+                      size: 18.sp,
                       color: const Color(0xFF462F4D),
                     ),
                   ),
                 ),
               ),
 
-              // Title (safe + scaled)
+              // Title
               Positioned(
-                left: sx(120),
-                top: safeTop + sy(20),
+                left: 120.sw,
+                top: MediaQuery.paddingOf(context).top + 20.sh,
                 child: SizedBox(
-                  width: sx(220),
+                  width: 220.sw,
                   child: Text(
                     'Terms and\nCondition',
                     style: TextStyle(
                       color: const Color(0xFF462F4D),
-                      fontSize: sx(32),
+                      fontSize: 32.sp,
                       fontWeight: FontWeight.w800,
                       fontFamily: 'Satoshi',
                       height: 1.05,
@@ -149,13 +135,13 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
 
               // Terms (scrollable) bottom changes based on viewOnly
               Positioned(
-                left: sx(29),
-                right: sx(29),
-                top: safeTop + sy(120),
-                bottom: widget.viewOnly ? safeBottom + sy(16) : panelHeight,
+                left: 29.sw,
+                right: 29.sw,
+                top: MediaQuery.paddingOf(context).top + 120.sh,
+                bottom: widget.viewOnly ? MediaQuery.paddingOf(context).bottom + 16.sh : panelHeight,
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
-                  child: _termsRichText(fontSize: sx(14)),
+                  child: _termsRichText(fontSize: 14.sp),
                 ),
               ),
 
@@ -168,10 +154,10 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
                   child: Container(
                     color: const Color(0xFFF9E3D5),
                     padding: EdgeInsets.fromLTRB(
-                      sx(26),
-                      sy(12),
-                      sx(26),
-                      safeBottom + sy(14),
+                      26.sw,
+                      12.sh,
+                      26.sw,
+                      MediaQuery.paddingOf(context).bottom + 14.sh,
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
@@ -183,29 +169,29 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
                             GestureDetector(
                               onTap: () => setState(() => agreed = !agreed),
                               child: Container(
-                                width: sx(18),
-                                height: sx(18),
+                                width: 18.sw,
+                                height: 18.sw,
                                 decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(sx(4)),
+                                  borderRadius: BorderRadius.circular(4.sw),
                                   border: Border.all(
                                     color: const Color(0xFF462F4D),
-                                    width: sx(1.5),
+                                    width: 1.5.sw,
                                   ),
                                 ),
                                 child: agreed
                                     ? Icon(Icons.check,
-                                        size: sx(14),
+                                        size: 14.sp,
                                         color: const Color(0xFF462F4D))
                                     : null,
                               ),
                             ),
-                            SizedBox(width: sx(10)),
+                            SizedBox(width: 10.sw),
                             Expanded(
                               child: Text(
                                 'I have read and agree to the Terms and Conditions',
                                 style: TextStyle(
                                   color: const Color(0xFF462F4D),
-                                  fontSize: sx(14),
+                                  fontSize: 14.sp,
                                   fontWeight: FontWeight.w500,
                                   letterSpacing: 0.3,
                                   fontFamily: 'Satoshi',
@@ -216,7 +202,7 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
                           ],
                         ),
 
-                        SizedBox(height: sy(14)),
+                        SizedBox(height: 14.sh),
 
                         // Button
                         GestureDetector(
@@ -237,17 +223,17 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
                             opacity: agreed ? 1.0 : 0.55,
                             child: Container(
                               width: double.infinity,
-                              height: sy(62),
+                              height: 62.sh,
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF2894F),
-                                borderRadius: BorderRadius.circular(sx(20)),
+                                borderRadius: BorderRadius.circular(20.sw),
                               ),
                               alignment: Alignment.center,
                               child: Text(
                                 'Agree and Continue',
                                 style: TextStyle(
                                   color: const Color(0xFFFFF2EA),
-                                  fontSize: sx(15),
+                                  fontSize: 15.sp,
                                   fontWeight: FontWeight.w600,
                                   fontFamily: 'Satoshi',
                                 ),

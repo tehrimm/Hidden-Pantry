@@ -8,8 +8,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hidden_pantry_app/features/auth/screens/nutritionist_signup_wrapper.dart';
 import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'loading_five.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 
@@ -22,12 +23,14 @@ class StartingScreen extends StatefulWidget {
 
 class _StartingScreenState extends State<StartingScreen>
     with TickerProviderStateMixin {
-  late final AnimationController _rotateCtrl; // dots rotation (infinite)
-  late final AnimationController _knifeCtrl;  // knife entrance (once)
+  late final AnimationController _rotateCtrl;
+  late final AnimationController _knifeCtrl;
 
-  late final Animation<double> _knifeX;
-  late final Animation<double> _knifeY;
+  // Not final — set in didChangeDependencies after init() is called
+  late Animation<double> _knifeX;
+  late Animation<double> _knifeY;
 
+  bool _animationsInitialized = false;
   Timer? _navTimer;
 
   @override
@@ -35,11 +38,8 @@ class _StartingScreenState extends State<StartingScreen>
     super.initState();
     debugPrint('[StartingScreen] initState - App Start / Splash');
 
-     // Hide system navigation & status bars
-  SystemChrome.setEnabledSystemUIMode(
-    SystemUiMode.immersiveSticky,
-  );
-
+    // Hide system navigation & status bars
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     // Dots rotation -> 6 seconds
     _rotateCtrl = AnimationController(
@@ -47,39 +47,19 @@ class _StartingScreenState extends State<StartingScreen>
       duration: const Duration(seconds: 6),
     )..repeat();
 
-    // Knife entrance animation
+    // Knife entrance controller only — tweens set in didChangeDependencies
     _knifeCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     );
 
-    // Knife comes from TOP-RIGHT (off-screen) to target 80x335
-    _knifeX = Tween<double>(
-      begin: 420, // off-screen right
-      end: 80,    // final left
-    ).animate(CurvedAnimation(parent: _knifeCtrl, curve: Curves.easeOutCubic));
-
-    _knifeY = Tween<double>(
-      begin: -140, // off-screen top
-      end: 280,    // final top
-    ).animate(CurvedAnimation(parent: _knifeCtrl, curve: Curves.easeOutCubic));
-
-    // Start knife AFTER 2 seconds
-Future.delayed(const Duration(seconds: 1), () {
-  if (mounted) {
-    _knifeCtrl.forward();
-  }
-});
-
-
-    // After 6 seconds -> Check Session -> Home OR LoadingOne
+    // After 4 seconds -> Check Session -> Home OR LoadingOne
     _navTimer = Timer(const Duration(seconds: 4), () async {
       debugPrint('[StartingScreen] Timer elapsed - checking auth state');
       if (!mounted) return;
 
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        // Check if user is a nutritionist
         bool isNutritionist = false;
         try {
           final doc = await FirebaseFirestore.instance
@@ -94,8 +74,8 @@ Future.delayed(const Duration(seconds: 1), () {
         if (!mounted) return;
 
         if (isNutritionist) {
-           debugPrint('[StartingScreen] User is nutritionist - navigating to Wrapper');
-           Navigator.of(context).pushReplacement(
+          debugPrint('[StartingScreen] User is nutritionist - navigating to Wrapper');
+          Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const NutritionistSignupWrapper()),
           );
         } else {
@@ -127,6 +107,32 @@ Future.delayed(const Duration(seconds: 1), () {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_animationsInitialized) return;
+    _animationsInitialized = true;
+
+    // Init responsive utils here so .sw/.sh are correct for the real device
+    ResponsiveUtils.init(context);
+
+    // Knife comes from TOP-RIGHT (off-screen) to target
+    _knifeX = Tween<double>(
+      begin: 420.sw, // off-screen right
+      end: 80.sw,    // final left
+    ).animate(CurvedAnimation(parent: _knifeCtrl, curve: Curves.easeOutCubic));
+
+    _knifeY = Tween<double>(
+      begin: (-140).sh, // off-screen top
+      end: 280.sh,      // final top
+    ).animate(CurvedAnimation(parent: _knifeCtrl, curve: Curves.easeOutCubic));
+
+    // Start knife AFTER 1 second
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) _knifeCtrl.forward();
+    });
+  }
+
+  @override
   void dispose() {
     _navTimer?.cancel();
     _rotateCtrl.dispose();
@@ -136,7 +142,8 @@ Future.delayed(const Duration(seconds: 1), () {
 
   @override
   Widget build(BuildContext context) {
-    // Scaffold stays, but background is the same gradient (no white edges)
+    ResponsiveUtils.init(context);
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -145,69 +152,56 @@ Future.delayed(const Duration(seconds: 1), () {
             stops: [0.42, 1],
           ),
         ),
-        child: Center(
-          child: Container(
-            width: 393,
-            height: 852,
-            clipBehavior: Clip.hardEdge,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(30),
-              // optional: keep it transparent since background already gradient
-              // color: Colors.transparent,
-            ),
-            child: Stack(
-              children: [
-                // Background rings + rotating dots
-                PatternBackground(rotation: _rotateCtrl),
+        child: Stack(
+          children: [
+            // Background rings + rotating dots
+            SplashPatternBackground(rotation: _rotateCtrl),
 
-                // Knife BEHIND name
-                AnimatedBuilder(
-                  animation: _knifeCtrl,
-                  builder: (context, _) {
-                    return Positioned(
-                      left: _knifeX.value,
-                      top: _knifeY.value,
-                      child: Transform.rotate(
-                        angle: 4 * math.pi / 180, // -10 degrees
-                        child: Image.asset(
-                          'assets/Logos/knife.png',
-                          width: 253,
-                          height: 210,
-                          fit: BoxFit.contain,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-
-                // Name on TOP of knife
-                const Positioned(
-                  left: 0,
-                  right: 0,
-                  top: 365, // keep your chosen position
-                  child: Center(child: _LogoText()),
-                ),
-              ],
+            // Knife BEHIND name
+            AnimatedBuilder(
+              animation: _knifeCtrl,
+              builder: (context, _) {
+                return Positioned(
+                  left: _knifeX.value,
+                  top: _knifeY.value,
+                  child: Transform.rotate(
+                    angle: 4 * math.pi / 180,
+                    child: Image.asset(
+                      'assets/Logos/knife.png',
+                      width: 253.sw,
+                      height: 210.sw,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                );
+              },
             ),
-          ),
+
+            // Name on TOP of knife
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 365.sh,
+              child: const Center(child: _LogoText()),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
+/// Splash Pattern Background
 /// ------------------------------
-/// Pattern Background
-/// ------------------------------
-class PatternBackground extends StatelessWidget {
+class SplashPatternBackground extends StatelessWidget {
   final Animation<double> rotation;
-  const PatternBackground({super.key, required this.rotation});
+  const SplashPatternBackground({super.key, required this.rotation});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 393,
-      height: 852,
+      width: double.infinity,
+      height: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [Color(0xFFFFF3EB), Color(0xFFF6DFD1)],
@@ -216,10 +210,10 @@ class PatternBackground extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          Positioned(left: -101, top: 248, child: _ring(w: 372, h: 351, rx: 186, ry: 176)),
-          Positioned(left: -298, top: 189, child: _ring(w: 633, h: 470, rx: 317, ry: 235)),
-          Positioned(left: -707, top: 54, child: _ring(w: 1111, h: 745, rx: 556, ry: 373)),
-          Positioned(left: -707, top: -282, child: _ring(w: 1192, h: 1211, rx: 596, ry: 606)),
+          Positioned(left: -101.sw, top: 248.sh, child: _ring(w: 372.sw, h: 351.sh, rx: 186.sw, ry: 176.sh)),
+          Positioned(left: -298.sw, top: 189.sh, child: _ring(w: 633.sw, h: 470.sh, rx: 317.sw, ry: 235.sh)),
+          Positioned(left: -707.sw, top: 54.sh, child: _ring(w: 1111.sw, h: 745.sh, rx: 556.sw, ry: 373.sh)),
+          Positioned(left: -707.sw, top: -282.sh, child: _ring(w: 1192.sw, h: 1211.sh, rx: 596.sw, ry: 606.sh)),
 
           // Rotating dots group
           AnimatedBuilder(
@@ -231,11 +225,11 @@ class PatternBackground extends StatelessWidget {
                 angle: angle,
                 alignment: Alignment.center,
                 child: Stack(
-                  children: const [
-                    Positioned(left: 284, top: 219, child: _Dot(Color(0xFF8C308E))),
-                    Positioned(left: 67, top: 510, child: _Dot(Color(0xFFE18F5F))),
-                    Positioned(left: 249, top: 620, child: _Dot(Color(0xFFB44944))),
-                    Positioned(left: 85, top: 99, child: _Dot(Color(0xFF5797C0))),
+                  children: [
+                    Positioned(left: 284.sw, top: 219.sh, child: _Dot(const Color(0xFF8C308E))),
+                    Positioned(left: 67.sw, top: 510.sh, child: _Dot(const Color(0xFFE18F5F))),
+                    Positioned(left: 249.sw, top: 620.sh, child: _Dot(const Color(0xFFB44944))),
+                    Positioned(left: 85.sw, top: 99.sh, child: _Dot(const Color(0xFF5797C0))),
                   ],
                 ),
               );
@@ -256,7 +250,7 @@ class PatternBackground extends StatelessWidget {
       width: w,
       height: h,
       decoration: BoxDecoration(
-        border: Border.all(width: 2, color: const Color(0xFFF5DDCE)),
+        border: Border.all(width: 2.sw, color: const Color(0xFFF5DDCE)),
         borderRadius: BorderRadius.all(Radius.elliptical(rx, ry)),
       ),
     );
@@ -270,11 +264,11 @@ class _Dot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 10,
-      height: 10,
+      width: 10.sw,
+      height: 10.sw,
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(5),
+        borderRadius: BorderRadius.circular(5.sw),
       ),
     );
   }
@@ -290,12 +284,9 @@ class _LogoText extends StatelessWidget {
   Widget build(BuildContext context) {
     return Image.asset(
       'assets/Logos/name.png',
-      width: 258,
-      height: 115,
+      width: 258.sw,
+      height: 115.sh,
       fit: BoxFit.contain,
     );
   }
 }
-
-
-

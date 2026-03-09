@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/core/widgets/nutritionist_bottom_nav.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/client_plans.dart';
 import 'package:hidden_pantry_app/core/services/notification_service.dart';
@@ -649,11 +650,12 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     return Scaffold(
       backgroundColor: Colors.white,
       extendBody: true,
       body: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(30.sw),
         child: Container(
           color: bg,
           child: Stack(
@@ -693,16 +695,16 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
 
   Widget _topRow() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+      padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 16.sh),
       child: Row(
         children: [
           GestureDetector(
             onTap: _openSettings,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(50),
+              borderRadius: BorderRadius.circular(50.sw),
               child: Container(
-                width: 50,
-                height: 50,
+                width: 50.sw,
+                height: 50.sw,
                 color: const Color(0xFFD9D9D9),
                 child: photoUrl != null && photoUrl!.startsWith("http")
                     ? Image.network(photoUrl!, fit: BoxFit.cover)
@@ -715,18 +717,18 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
           GestureDetector(
             onTap: _switchToUserView,
             child: Container(
-              padding: const EdgeInsets.all(10),
+              padding: EdgeInsets.all(10.sw),
               decoration: BoxDecoration(
                 color: const Color(0xFFF9E3D5),
-                borderRadius: BorderRadius.circular(15),
+                borderRadius: BorderRadius.circular(15.sw),
                 boxShadow: [
                   BoxShadow(
                     color: purple.withValues(alpha:0.05),
-                    blurRadius: 10,
+                    blurRadius: 10.sw,
                   ),
                 ],
               ),
-              child: Icon(Icons.restaurant_rounded, color: orange, size: 24),
+              child: Icon(Icons.restaurant_rounded, color: orange, size: 24.sw),
             ),
           ),
         ],
@@ -738,18 +740,18 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
     final bool isSaaSInactive = saasStatus != "active";
 
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 22),
+      padding: EdgeInsets.symmetric(horizontal: 22.sw),
       children: [
         if (isSaaSInactive && !loadingProfile) ...[
-          const SizedBox(height: 12),
+          SizedBox(height: 12.sh),
           _saasWarningBanner(),
         ],
-        const SizedBox(height: 20),
+        SizedBox(height: 20.sh),
         Text(
           "Welcome,",
           style: TextStyle(
             color: purple,
-            fontSize: 24,
+            fontSize: 24.sp,
             fontWeight: FontWeight.w500,
             fontFamily: "Satoshi",
           ),
@@ -758,21 +760,21 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
           loadingProfile ? "..." : (fullName ?? "Nutritionist"),
           style: TextStyle(
             color: purple,
-            fontSize: 40,
+            fontSize: 40.sp,
             fontWeight: FontWeight.w900,
             height: 1.1,
             fontFamily: "Satoshi",
           ),
         ),
-        const SizedBox(height: 32),
+        SizedBox(height: 32.sh),
         _statsGrid(),
-        const SizedBox(height: 32),
+        SizedBox(height: 32.sh),
         _subscriptionTiersSection(),
-        const SizedBox(height: 32),
+        SizedBox(height: 32.sh),
         _upcomingAppointments(),
-        const SizedBox(height: 32),
+        SizedBox(height: 32.sh),
         _clientInsights(),
-        const SizedBox(height: 120), // Spacing for bottom nav
+        SizedBox(height: 120.sh), // Spacing for bottom nav
       ],
     );
   }
@@ -806,7 +808,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                 }
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: 16.sw),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
@@ -876,7 +878,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        SizedBox(width: 16.sw),
                          Expanded(
                           child: _statCard(
                             "Projected/Mo", 
@@ -887,29 +889,29 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16.sh),
                     Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.all(16.sw),
                         decoration: BoxDecoration(
                           color: orange.withValues(alpha:0.1),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(20.sw),
                           border: Border.all(color: orange.withValues(alpha:0.2)),
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.info_outline_rounded, color: orange, size: 20),
-                            const SizedBox(width: 12),
+                            Icon(Icons.info_outline_rounded, color: orange, size: 20.sw),
+                            SizedBox(width: 12.sw),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     "Direct Payments Active",
-                                    style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13),
+                                    style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13.sp),
                                   ),
                                   Text(
                                     "Client payments are processed directly to your Stripe account.",
-                                    style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 11),
+                                    style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 11.sp),
                                   ),
                                 ],
                               ),
@@ -929,15 +931,15 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
 
   Widget _statCard(String label, String value, IconData icon, {String? subtitle}) {
     return Container(
-      padding: const EdgeInsets.all(16), // Reduced padding to prevent overflow
+      padding: EdgeInsets.all(16.sw), // Reduced padding to prevent overflow
       decoration: BoxDecoration(
         color: const Color(0xFFF9E3D5), // Updated to requested color
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(24.sw),
         boxShadow: [
           BoxShadow(
             color: purple.withValues(alpha:0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            blurRadius: 15.sw,
+            offset: Offset(0, 8.sh),
           ),
         ],
       ),
@@ -946,12 +948,12 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            padding: EdgeInsets.all(8.sw),
             decoration: BoxDecoration(
               color: const Color(0xFFFFF2EA), // Updated to requested color
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(10.sw),
             ),
-            child: Icon(icon, color: orange, size: 20),
+            child: Icon(icon, color: orange, size: 20.sw),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -960,7 +962,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                 value,
                 style: TextStyle(
                   color: purple,
-                  fontSize: 20, // Slightly reduced to prevent overflow
+                  fontSize: 20.sp, // Slightly reduced to prevent overflow
                   fontWeight: FontWeight.w900,
                   fontFamily: "Satoshi",
                 ),
@@ -971,18 +973,18 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   color: purple.withValues(alpha:0.6),
-                  fontSize: 11, // Slightly reduced to prevent overflow
+                  fontSize: 11.sp, // Slightly reduced to prevent overflow
                   fontWeight: FontWeight.w500,
                   fontFamily: "Satoshi",
                 ),
               ),
               if (subtitle != null) ...[
-                const SizedBox(height: 2),
+                SizedBox(height: 2.sh),
                 Text(
                   subtitle,
                   style: TextStyle(
                     color: orange,
-                    fontSize: 9,
+                    fontSize: 9.sp,
                     fontWeight: FontWeight.bold,
                     fontFamily: "Satoshi",
                   ),
@@ -1009,14 +1011,14 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
               "Schedule",
               style: TextStyle(
                 color: purple,
-                fontSize: 22,
+                fontSize: 22.sp,
                 fontWeight: FontWeight.w900,
                 fontFamily: "Satoshi",
               ),
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.sh),
         // First get all chats the nutritionist is part of
         StreamBuilder<QuerySnapshot>(
           stream: FirebaseFirestore.instance
@@ -1036,8 +1038,8 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
               builder: (context, meetingSnap) {
                 if (meetingSnap.connectionState == ConnectionState.waiting) {
                   return Center(child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: CircularProgressIndicator(color: orange, strokeWidth: 2),
+                    padding: EdgeInsets.all(20.sw),
+                    child: CircularProgressIndicator(color: orange, strokeWidth: 2.sw),
                   ));
                 }
 
@@ -1063,21 +1065,21 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
   Widget _emptyScheduleCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 32),
+      padding: EdgeInsets.symmetric(vertical: 32.sh),
       decoration: BoxDecoration(
         color: orange.withValues(alpha:0.05),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: orange.withValues(alpha:0.1), width: 1),
+        borderRadius: BorderRadius.circular(24.sw),
+        border: Border.all(color: orange.withValues(alpha:0.1), width: 1.sw),
       ),
       child: Column(
         children: [
-          Icon(Icons.calendar_month_rounded, color: orange.withValues(alpha:0.3), size: 40),
-          const SizedBox(height: 12),
+          Icon(Icons.calendar_month_rounded, color: orange.withValues(alpha:0.3), size: 40.sw),
+          SizedBox(height: 12.sh),
           Text(
             "No upcoming sessions",
             style: TextStyle(
               color: purple.withValues(alpha:0.4),
-              fontSize: 14,
+              fontSize: 14.sp,
               fontWeight: FontWeight.bold,
               fontFamily: "Satoshi",
             ),
@@ -1205,24 +1207,24 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(18),
+      margin: EdgeInsets.only(bottom: 12.sh),
+      padding: EdgeInsets.all(18.sw),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.sw),
         boxShadow: [
-          BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10.sw, offset: Offset(0, 4.sh)),
         ],
       ),
       child: Row(
         children: [
           // Date badge
           Container(
-            width: 54,
-            height: 60,
+            width: 54.sw,
+            height: 60.sh,
             decoration: BoxDecoration(
               color: isToday ? orange : orange.withValues(alpha:0.12),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(14.sw),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1231,7 +1233,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                   date.day.toString(),
                   style: TextStyle(
                     color: isToday ? Colors.white : orange,
-                    fontSize: 22,
+                    fontSize: 22.sp,
                     fontWeight: FontWeight.w900,
                     fontFamily: "Satoshi",
                   ),
@@ -1240,14 +1242,14 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                   _monthName(date.month).substring(0, 3).toUpperCase(),
                   style: TextStyle(
                     color: isToday ? Colors.white.withValues(alpha:0.8) : orange.withValues(alpha:0.7),
-                    fontSize: 11,
+                    fontSize: 11.sp,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16.sw),
           // Details
           Expanded(
             child: Column(
@@ -1255,26 +1257,26 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
               children: [
                 Text(
                   "Consultation with $clientName",
-                  style: TextStyle(color: purple, fontSize: 14, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+                  style: TextStyle(color: purple, fontSize: 14.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.sh),
                 Row(
                   children: [
-                    Icon(Icons.access_time_rounded, size: 14, color: orange),
-                    const SizedBox(width: 4),
+                    Icon(Icons.access_time_rounded, size: 14.sw, color: orange),
+                    SizedBox(width: 4.sw),
                     Text(
                       "$dateLabel • $time",
-                      style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 12, fontWeight: FontWeight.w600),
+                      style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 12.sp, fontWeight: FontWeight.w600),
                     ),
                   ],
                 ),
                 if (notes.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4.sh),
                   Text(
                     notes,
-                    style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 11, fontStyle: FontStyle.italic),
+                    style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 11.sp, fontStyle: FontStyle.italic),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1284,16 +1286,16 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
           ),
           // Status indicator
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 5.sh),
             decoration: BoxDecoration(
               color: isToday ? orange.withValues(alpha:0.1) : purple.withValues(alpha:0.06),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(8.sw),
             ),
             child: Text(
               isToday ? "Today" : (isTomorrow ? "Tomorrow" : "Upcoming"),
               style: TextStyle(
                 color: isToday ? orange : purple.withValues(alpha:0.5),
-                fontSize: 10,
+                fontSize: 10.sp,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -1312,34 +1314,34 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
   Widget _clientInsights() {
     final user = FirebaseAuth.instance.currentUser;
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(24.sw),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [purple, const Color(0xFF63456D)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(30.sw),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.insights_rounded, color: Colors.white),
-              const SizedBox(width: 12),
+              Icon(Icons.insights_rounded, color: Colors.white, size: 24.sw),
+              SizedBox(width: 12.sw),
               Text(
                 "Subscriber Analytics",
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 18,
+                  fontSize: 18.sp,
                   fontWeight: FontWeight.bold,
                   fontFamily: "Satoshi",
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20.sh),
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection("subscriptions")
@@ -1350,7 +1352,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
               if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                 return Text(
                   "Analytics will appear here once you have active subscribers.",
-                  style: TextStyle(color: Colors.white.withValues(alpha:0.6), fontSize: 13, height: 1.4),
+                  style: TextStyle(color: Colors.white.withValues(alpha:0.6), fontSize: 13.sp, height: 1.4),
                 );
               }
 
@@ -1406,12 +1408,12 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                        _tierBar("Platinum", tierRevenue[3]!, tierCounts[3]!, const Color(0xFF4B0082), maxRev),
                      ],
                    ),
-                   const SizedBox(height: 24),
+                   SizedBox(height: 24.sh),
                    Container(
-                     padding: const EdgeInsets.all(16),
+                     padding: EdgeInsets.all(16.sw),
                      decoration: BoxDecoration(
                        color: Colors.white.withValues(alpha:0.08),
-                       borderRadius: BorderRadius.circular(20),
+                       borderRadius: BorderRadius.circular(20.sw),
                      ),
                      child: Row(
                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1437,20 +1439,20 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
     
     return Column(
       children: [
-        Text("Rs. ${revenue.toInt()}", style: TextStyle(color: Colors.white.withValues(alpha:0.6), fontSize: 10, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
+        Text("Rs. ${revenue.toInt()}", style: TextStyle(color: Colors.white.withValues(alpha:0.6), fontSize: 10.sp, fontWeight: FontWeight.bold)),
+        SizedBox(height: 8.sh),
         Container(
-          width: 45,
-          height: 100 * heightFactor,
+          width: 45.sw,
+          height: 100.sh * heightFactor,
           decoration: BoxDecoration(
             color: color,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: [BoxShadow(color: color.withValues(alpha:0.3), blurRadius: 8, offset: const Offset(0, 4))],
+            borderRadius: BorderRadius.circular(10.sw),
+            boxShadow: [BoxShadow(color: color.withValues(alpha:0.3), blurRadius: 8.sw, offset: Offset(0, 4.sh))],
           ),
         ),
-        const SizedBox(height: 8),
-        Text(label, style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
-        Text("$count subs", style: TextStyle(color: Colors.white.withValues(alpha:0.4), fontSize: 9)),
+        SizedBox(height: 8.sh),
+        Text(label, style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.bold)),
+        Text("$count subs", style: TextStyle(color: Colors.white.withValues(alpha:0.4), fontSize: 9.sp)),
       ],
     );
   }
@@ -1458,8 +1460,8 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
   Widget _summaryItem(String label, String value) {
     return Column(
       children: [
-        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
-        Text(label, style: TextStyle(color: Colors.white.withValues(alpha:0.5), fontSize: 10, fontWeight: FontWeight.bold)),
+        Text(value, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16.sp)),
+        Text(label, style: TextStyle(color: Colors.white.withValues(alpha:0.5), fontSize: 10.sp, fontWeight: FontWeight.bold)),
       ],
     );
   }
@@ -1478,7 +1480,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
               "Subscription Plans",
               style: TextStyle(
                 color: purple,
-                fontSize: 22,
+                fontSize: 22.sp,
                 fontWeight: FontWeight.w900,
                 fontFamily: "Satoshi",
               ),
@@ -1489,7 +1491,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                 "Manage",
                 style: TextStyle(
                   color: orange,
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -1529,39 +1531,39 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
 
   Widget _planPreviewCard(String title, String price) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.only(bottom: 12.sh),
+      padding: EdgeInsets.all(20.sw),
       decoration: BoxDecoration(
         color: const Color(0xFFF9E3D5),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.sw),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: EdgeInsets.all(12.sw),
             decoration: BoxDecoration(
               color: const Color(0xFFFFF2EA),
-              borderRadius: BorderRadius.circular(15),
+              borderRadius: BorderRadius.circular(15.sw),
             ),
-            child: Icon(Icons.star_rounded, color: orange, size: 24),
+            child: Icon(Icons.star_rounded, color: orange, size: 24.sw),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: 16.sw),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16),
+                  style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp),
                 ),
                 Text(
                   "Rs. $price",
-                  style: TextStyle(color: orange, fontWeight: FontWeight.w900, fontSize: 13),
+                  style: TextStyle(color: orange, fontWeight: FontWeight.w900, fontSize: 13.sp),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Color(0xFF462F4D)),
+          Icon(Icons.arrow_forward_ios_rounded, size: 14.sw, color: const Color(0xFF462F4D)),
         ],
       ),
     );
@@ -1570,21 +1572,21 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
   Widget _emptyHubCard([String? uid]) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(24.sw),
       decoration: BoxDecoration(
         color: orange.withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(24.sw),
         border: Border.all(color: orange.withValues(alpha: 0.1)),
       ),
       child: Column(
         children: [
-          Icon(Icons.add_circle_outline_rounded, color: orange.withValues(alpha: 0.3), size: 40),
-          const SizedBox(height: 12),
+          Icon(Icons.add_circle_outline_rounded, color: orange.withValues(alpha: 0.3), size: 40.sw),
+          SizedBox(height: 12.sh),
           Text(
             "No plans published yet",
             style: TextStyle(
               color: purple.withValues(alpha: 0.4),
-              fontSize: 14,
+              fontSize: 14.sp,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -1592,7 +1594,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
             const SizedBox(height: 4),
             Text(
               "UID: $uid",
-              style: TextStyle(color: purple.withValues(alpha: 0.2), fontSize: 9),
+              style: TextStyle(color: purple.withValues(alpha: 0.2), fontSize: 9.sp),
             ),
           ],
           const SizedBox(height: 16),
@@ -1609,32 +1611,32 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
 
   Widget _saasWarningBanner() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(16.sw),
       decoration: BoxDecoration(
         color: orange.withValues(alpha:0.1),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.sw),
         border: Border.all(color: orange.withValues(alpha:0.3)),
       ),
       child: Column(
         children: [
           Row(
             children: [
-              Icon(Icons.warning_amber_rounded, color: orange, size: 20),
-              const SizedBox(width: 12),
+              Icon(Icons.warning_amber_rounded, color: orange, size: 20.sw),
+              SizedBox(width: 12.sw),
               Expanded(
                 child: Text(
                   "Platform Membership Inactive",
-                  style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14),
+                  style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14.sp),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.sh),
           Text(
             "Your profile is currently hidden from users. Pay the monthly fee to activate your listing.",
-            style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 12),
+            style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 12.sp),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.sh),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -1647,10 +1649,10 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: orange,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.sw)),
                 elevation: 0,
               ),
-              child: const Text("Resolve Now", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              child: Text("Resolve Now", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp)),
             ),
           ),
         ],
@@ -1671,22 +1673,22 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
       isScrollControlled: true,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.75,
-        decoration: const BoxDecoration(
-          color: Color(0xFFFFF3EB),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF3EB),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30.sw)),
         ),
         child: Column(
           children: [
             Container(
-              margin: const EdgeInsets.only(top: 10, bottom: 20),
-              width: 50, height: 5,
-              decoration: BoxDecoration(color: actionOrange, borderRadius: BorderRadius.circular(3)),
+              margin: EdgeInsets.only(top: 10.sh, bottom: 20.sh),
+              width: 50.sw, height: 5.sh,
+              decoration: BoxDecoration(color: actionOrange, borderRadius: BorderRadius.circular(3.sw)),
             ),
             Text(
               benefitTitle != null ? "Share $benefitTitle" : "Select Client to Share With",
-              style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 16),
+            SizedBox(height: 16.sh),
             Expanded(
               child: FutureBuilder<List<Map<String, dynamic>>>(
                 future: _fetchClientsForShare(user.uid, requiredBenefit: benefitTitle ?? "InChat meal plans"),
@@ -1702,9 +1704,9 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                   if (clients.isEmpty) return const Center(child: Text("No clients found."));
 
                   return ListView.separated(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(20.sw),
                     itemCount: clients.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (_, __) => SizedBox(height: 12.sh),
                     itemBuilder: (context, index) {
                       final client = clients[index];
                       final otherUserId = client["userId"] as String;
@@ -1753,19 +1755,19 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                         ),
                         tileColor: Colors.white,
                         leading: CircleAvatar(
-                          radius: 24,
+                          radius: 24.sw,
                           backgroundColor: purple.withValues(alpha:0.1),
                           backgroundImage: otherUserPhoto != null ? NetworkImage(otherUserPhoto) : null,
-                          child: otherUserPhoto == null ? Icon(Icons.person, color: purple) : null,
+                          child: otherUserPhoto == null ? Icon(Icons.person, color: purple, size: 24.sw) : null,
                         ),
-                        title: Text(otherUserName, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16)),
+                        title: Text(otherUserName, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp)),
                         trailing: Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: EdgeInsets.all(8.sw),
                           decoration: BoxDecoration(
                             color: actionOrange.withValues(alpha:0.1),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.send_rounded, color: actionOrange, size: 20),
+                          child: Icon(Icons.send_rounded, color: actionOrange, size: 20.sw),
                         ),
                       );
                     },
@@ -1931,45 +1933,40 @@ class _DashboardBackgroundPattern extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const baseW = 393.0;
-    const baseH = 852.0;
-    final size = MediaQuery.of(context).size;
-    double sx(double v) => v * (size.width / baseW);
-    double sy(double v) => v * (size.height / baseH);
     final stroke = const Color(0xFFF5DDCE);
 
     return IgnorePointer(
       child: Stack(
         children: [
           Positioned(
-            left: sx(-154),
-            top: sy(-14),
+            left: (-154).sw,
+            top: (-14).sh,
             child: Transform.rotate(
               angle: 21 * math.pi / 180,
               child: Container(
-                width: sx(271),
-                height: sy(159),
+                width: 271.sw,
+                height: 159.sh,
                 decoration: BoxDecoration(
                   border: Border.all(color: stroke),
                   borderRadius: BorderRadius.all(
-                    Radius.elliptical(sx(136), sy(80)),
+                    Radius.elliptical(136.sw, 80.sh),
                   ),
                 ),
               ),
             ),
           ),
           Positioned(
-            left: sx(-149),
-            top: sy(-100),
+            left: (-149).sw,
+            top: (-100).sh,
             child: Transform.rotate(
               angle: 4 * math.pi / 180,
               child: Container(
-                width: sx(303),
-                height: sy(329),
+                width: 303.sw,
+                height: 329.sh,
                 decoration: BoxDecoration(
                   border: Border.all(color: stroke),
                   borderRadius: BorderRadius.all(
-                    Radius.elliptical(sx(152), sy(165)),
+                    Radius.elliptical(152.sw, 165.sh),
                   ),
                 ),
               ),

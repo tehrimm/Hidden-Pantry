@@ -4,6 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/features/user/screens/meal_plan_view.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class MyPlansScreen extends StatelessWidget {
   const MyPlansScreen({super.key});
@@ -15,7 +17,9 @@ class MyPlansScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     final user = FirebaseAuth.instance.currentUser;
+    final topPad = MediaQuery.of(context).padding.top;
 
     return Scaffold(
       backgroundColor: bg,
@@ -26,7 +30,7 @@ class MyPlansScreen extends StatelessWidget {
           SafeArea(
             child: Column(
               children: [
-                const SizedBox(height: 70), // Header space
+                SizedBox(height: 96.sh), // Standardized gap for fixed header
                 Expanded(
                   child: user == null
                       ? const Center(child: Text("Please log in to view saved plans"))
@@ -52,14 +56,14 @@ class MyPlansScreen extends StatelessWidget {
                                 child: Column(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.assignment_rounded, size: 80, color: purple.withValues(alpha:0.1)),
-                                    const SizedBox(height: 20),
-                                    Text("No Saved Plans Yet", style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
-                                    const SizedBox(height: 8),
+                                    Icon(Icons.assignment_rounded, size: 80.sp, color: purple.withValues(alpha:0.1)),
+                                    SizedBox(height: 20.sh),
+                                    Text("No Saved Plans Yet", style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+                                    SizedBox(height: 8.sh),
                                     Text(
                                       "Ask your nutritionist to share a plan\nwith you in the chat.",
                                       textAlign: TextAlign.center,
-                                      style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 14, fontFamily: "Satoshi"),
+                                      style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 14.sp, fontFamily: "Satoshi"),
                                     ),
                                   ],
                                 ),
@@ -67,9 +71,9 @@ class MyPlansScreen extends StatelessWidget {
                             }
 
                             return ListView.separated(
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+                              padding: EdgeInsets.symmetric(horizontal: 24.sw, vertical: 20.sh),
                               itemCount: docs.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 16),
+                              separatorBuilder: (_, __) => SizedBox(height: 16.sh),
                               itemBuilder: (context, index) {
                                 final planData = docs[index].data() as Map<String, dynamic>;
                                 final title = planData["title"] ?? "Untitled Plan";
@@ -86,10 +90,10 @@ class MyPlansScreen extends StatelessWidget {
                                     );
                                   },
                                   child: Container(
-                                    padding: const EdgeInsets.all(20),
+                                    padding: EdgeInsets.all(20.sw),
                                     decoration: BoxDecoration(
                                       color: cardColor,
-                                      borderRadius: BorderRadius.circular(20),
+                                      borderRadius: BorderRadius.circular(20.sw),
                                       boxShadow: [
                                         BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10, offset: const Offset(0, 5))
                                       ],
@@ -97,34 +101,34 @@ class MyPlansScreen extends StatelessWidget {
                                     child: Row(
                                       children: [
                                         Container(
-                                          padding: const EdgeInsets.all(12),
+                                          padding: EdgeInsets.all(12.sw),
                                           decoration: BoxDecoration(
                                             color: orange.withValues(alpha:0.1),
-                                            borderRadius: BorderRadius.circular(16),
+                                            borderRadius: BorderRadius.circular(16.sw),
                                           ),
-                                          child: Icon(Icons.restaurant_menu_rounded, color: orange, size: 28),
+                                          child: Icon(Icons.restaurant_menu_rounded, color: orange, size: 28.sp),
                                         ),
-                                        const SizedBox(width: 16),
+                                        SizedBox(width: 16.sw),
                                         Expanded(
                                           child: Column(
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Text(
                                                 title,
-                                                style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+                                                style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                               ),
-                                              const SizedBox(height: 6),
+                                              SizedBox(height: 6.sh),
                                               Text(
                                                 "$duration Days • ~ $targetCalories kcal",
-                                                style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 13, fontWeight: FontWeight.w500),
+                                                style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 13.sp, fontWeight: FontWeight.w500),
 
                                               ),
                                             ],
                                           ),
                                         ),
-                                        Icon(Icons.arrow_forward_ios_rounded, color: purple.withValues(alpha:0.3), size: 16),
+                                        Icon(Icons.arrow_forward_ios_rounded, color: purple.withValues(alpha:0.3), size: 16.sp),
                                       ],
                                     ),
                                   ),
@@ -139,21 +143,21 @@ class MyPlansScreen extends StatelessWidget {
           ),
           
           Positioned(
-            left: 30,
-            top: 51,
+            left: 30.sw,
+            top: topPad + 36.sh,
             child: BackButtonWidget(color: purple),
           ),
           Positioned(
             left: 0,
             right: 0,
-            top: 51,
-            height: 50,
+            top: topPad + 36.sh,
+            height: 50.sh,
             child: Center(
               child: Text(
                 "My Plans",
                 style: TextStyle(
                   color: purple,
-                  fontSize: 24,
+                  fontSize: 24.sp,
                   fontWeight: FontWeight.bold,
                   fontFamily: "Satoshi",
                 ),

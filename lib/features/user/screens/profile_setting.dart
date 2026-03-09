@@ -11,6 +11,8 @@ import 'package:hidden_pantry_app/features/recipes/screens/allergies.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 
 class ProfileSettingScreen extends StatefulWidget {
@@ -21,9 +23,6 @@ class ProfileSettingScreen extends StatefulWidget {
 }
 
 class _ProfileSettingScreenState extends State<ProfileSettingScreen> {
-  static const double baseW = 393.0;
-  static const double baseH = 852.0;
-
   static const Color bg = Color(0xFFFFF3EB);
   static const Color card = Color(0xFFF9E3D5);
   static const Color text = Color(0xFF462F4D);
@@ -223,18 +222,11 @@ void _openPreferences() {
 
         // Keyboard fix: do not resize whole UI up
         resizeToAvoidBottomInset: false,
-
-        body: LayoutBuilder(
-          builder: (context, constraints) {
-            final w = constraints.maxWidth;
-            final h = constraints.maxHeight;
-
+        body: Builder(
+          builder: (context) {
+            ResponsiveUtils.init(context);
             final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-            final s = math.min(w / baseW, h / baseH);
-
-            double x(double v) => v * s;
-            double y(double v) => v * s;
-
+            final topPad = MediaQuery.of(context).padding.top;
             return GestureDetector(
               onTap: () => FocusScope.of(context).unfocus(),
               child: Stack(
@@ -246,26 +238,26 @@ void _openPreferences() {
                   SafeArea(
                     child: Column(
                       children: [
-                        const SizedBox(height: 80), // Absolute gap for fixed header
+                        SizedBox(height: 96.sh), // Absolute gap for fixed header
                         Expanded(
                           child: SingleChildScrollView(
-                            padding: EdgeInsets.only(bottom: bottomInset + y(40), top: y(20)),
+                            padding: EdgeInsets.only(bottom: bottomInset + 40.sh),
                             child: Center(
-                              child: SizedBox(
-                                width: x(baseW),
-                                height: y(baseH) - 120, 
+                              child: Container(
+                                width: double.infinity,
+                                height: 852.sh,
                                 child: Stack(
                                   children: [
                                     // Profile pic
                                     Positioned(
-                                      left: x(146),
-                                      top: y(20),
+                                      left: 146.sw,
+                                      top: 20.sh,
                                   child: Container(
-                                    width: x(100),
-                                    height: x(100),
+                                    width: 100.sw,
+                                    height: 100.sw,
                                     decoration: BoxDecoration(
                                       color: const Color(0xFFD9D9D9),
-                                      borderRadius: BorderRadius.circular(x(50)),
+                                      borderRadius: BorderRadius.circular(50.sw),
                                     ),
                                     clipBehavior: Clip.antiAlias,
                                     child: _buildProfileImage(),
@@ -274,22 +266,22 @@ void _openPreferences() {
 
                                 // Camera
                                 Positioned(
-                                  left: x(221),
-                                  top: y(88),
+                                  left: 221.sw,
+                                  top: 88.sh,
                                   child: GestureDetector(
                                     onTap: _pickProfileImage,
                                     child: Container(
-                                      width: x(25),
-                                      height: x(25),
+                                      width: 25.sw,
+                                      height: 25.sw,
                                       decoration: BoxDecoration(
                                         color: const Color(0xFF737373),
-                                        borderRadius: BorderRadius.circular(x(13)),
+                                        borderRadius: BorderRadius.circular(13.sw),
                                       ),
                                       alignment: Alignment.center,
                                       child: Image.asset(
                                         'assets/icons/camera.png',
-                                        width: x(14),
-                                        height: x(14),
+                                        width: 14.sw,
+                                        height: 14.sw,
                                         fit: BoxFit.contain,
                                       ),
                                     ),
@@ -298,16 +290,16 @@ void _openPreferences() {
 
                                 // Name
                                 Positioned(
-                                  left: x(30),
-                                  top: y(128),
+                                  left: 30.sw,
+                                  top: 128.sh,
                                   child: _InputCard(
-                                    width: x(332),
-                                    height: y(70),
+                                    width: 332.sw,
+                                    height: 70.sh,
                                     child: TextField(
                                       controller: _nameCtrl,
                                       style: TextStyle(
                                         color: text,
-                                        fontSize: x(12),
+                                        fontSize: 12.sp,
                                         fontWeight: FontWeight.w500,
                                         letterSpacing: 0.2,
                                         fontFamily: 'Satoshi',
@@ -317,13 +309,13 @@ void _openPreferences() {
                                         hintText: 'Full Name',
                                         hintStyle: TextStyle(
                                           color: hint,
-                                          fontSize: x(12),
+                                          fontSize: 12.sp,
                                           fontWeight: FontWeight.w500,
                                           fontFamily: 'Satoshi',
                                         ),
                                         contentPadding: EdgeInsets.symmetric(
-                                          horizontal: x(24),
-                                          vertical: y(22),
+                                          horizontal: 24.sw,
+                                          vertical: 22.sh,
                                         ),
                                       ),
                                     ),
@@ -332,16 +324,16 @@ void _openPreferences() {
 
                                 // Bio
                                 Positioned(
-                                  left: x(30),
-                                  top: y(214),
+                                  left: 30.sw,
+                                  top: 214.sh,
                                   child: _InputCard(
-                                    width: x(332),
-                                    height: y(70),
+                                    width: 332.sw,
+                                    height: 70.sh,
                                     child: TextField(
                                       controller: _bioCtrl,
                                       style: TextStyle(
                                         color: text,
-                                        fontSize: x(12),
+                                        fontSize: 12.sp,
                                         fontWeight: FontWeight.w500,
                                         fontFamily: 'Satoshi',
                                       ),
@@ -350,13 +342,13 @@ void _openPreferences() {
                                         hintText: 'Bio',
                                         hintStyle: TextStyle(
                                           color: hint,
-                                          fontSize: x(12),
+                                          fontSize: 12.sp,
                                           fontWeight: FontWeight.w500,
                                           fontFamily: 'Satoshi',
                                         ),
                                         contentPadding: EdgeInsets.symmetric(
-                                          horizontal: x(24),
-                                          vertical: y(22),
+                                          horizontal: 24.sw,
+                                          vertical: 22.sh,
                                         ),
                                       ),
                                     ),
@@ -365,17 +357,17 @@ void _openPreferences() {
 
                                 // Phone
                                 Positioned(
-                                  left: x(30),
-                                  top: y(300),
+                                  left: 30.sw,
+                                  top: 300.sh,
                                   child: _InputCard(
-                                    width: x(332),
-                                    height: y(70),
+                                    width: 332.sw,
+                                    height: 70.sh,
                                     child: TextField(
                                       controller: _phoneCtrl,
                                       keyboardType: TextInputType.phone,
                                       style: TextStyle(
                                         color: text,
-                                        fontSize: x(12),
+                                        fontSize: 12.sp,
                                         fontWeight: FontWeight.w500,
                                         letterSpacing: 0.2,
                                         fontFamily: 'Satoshi',
@@ -385,13 +377,13 @@ void _openPreferences() {
                                         hintText: 'Phone number',
                                         hintStyle: TextStyle(
                                           color: hint,
-                                          fontSize: x(12),
+                                          fontSize: 12.sp,
                                           fontWeight: FontWeight.w500,
                                           fontFamily: 'Satoshi',
                                         ),
                                         contentPadding: EdgeInsets.symmetric(
-                                          horizontal: x(24),
-                                          vertical: y(22),
+                                          horizontal: 24.sw,
+                                          vertical: 22.sh,
                                         ),
                                       ),
                                     ),
@@ -400,25 +392,25 @@ void _openPreferences() {
 
                                 // Notification toggle
                                 Positioned(
-                                  left: x(30),
-                                  top: y(386),
+                                  left: 30.sw,
+                                  top: 386.sh,
                                   child: _InputCard(
-                                    width: x(332),
-                                    height: y(70),
+                                    width: 332.sw,
+                                    height: 70.sh,
                                     child: Row(
                                       children: [
-                                        SizedBox(width: x(20)),
+                                        SizedBox(width: 20.sw),
                                         Image.asset(
                                           'assets/icons/notification.png',
-                                          width: x(18),
-                                          height: x(18),
+                                          width: 18.sw,
+                                          height: 18.sw,
                                         ),
-                                        SizedBox(width: x(12)),
+                                        SizedBox(width: 12.sw),
                                         Text(
                                           'Notification',
                                           style: TextStyle(
                                             color: text,
-                                            fontSize: x(12),
+                                            fontSize: 12.sp,
                                             fontWeight: FontWeight.w500,
                                             letterSpacing: 0.2,
                                             fontFamily: 'Satoshi',
@@ -428,9 +420,8 @@ void _openPreferences() {
                                         _NotifSwitch(
                                           value: _notifEnabled,
                                           onChanged: (v) => setState(() => _notifEnabled = v),
-                                          scale: s,
                                         ),
-                                        SizedBox(width: x(16)),
+                                        SizedBox(width: 16.sw),
                                       ],
                                     ),
                                   ),
@@ -438,40 +429,40 @@ void _openPreferences() {
 
                                 // Preferences card
                                 Positioned(
-                                  left: x(30),
-                                  top: y(472),
+                                  left: 30.sw,
+                                  top: 472.sh,
                                   child: GestureDetector(
                                     onTap: _openPreferences,
                                     child: Container(
-                                      width: x(332),
-                                      height: y(90),
+                                      width: 332.sw,
+                                      height: 90.sh,
                                       decoration: BoxDecoration(
                                         color: card,
-                                        borderRadius: BorderRadius.circular(x(20)),
+                                        borderRadius: BorderRadius.circular(20.sw),
                                       ),
                                       child: Stack(
                                         children: [
                                           Positioned(
-                                            left: x(25),
-                                            top: y(18),
+                                            left: 25.sw,
+                                            top: 18.sh,
                                             child: Text(
                                               'Your Preferences',
                                               style: TextStyle(
                                                 color: text,
-                                                fontSize: x(20),
+                                                fontSize: 20.sp,
                                                 fontWeight: FontWeight.w700,
                                                 fontFamily: 'Satoshi',
                                               ),
                                             ),
                                           ),
                                           Positioned(
-                                            left: x(25),
-                                            top: y(48),
+                                            left: 25.sw,
+                                            top: 48.sh,
                                             child: Text(
                                               'Change your allergies and diet preferences',
                                               style: TextStyle(
                                                 color: text,
-                                                fontSize: x(12),
+                                                fontSize: 12.sp,
                                                 fontWeight: FontWeight.w500,
                                                 letterSpacing: 0.2,
                                                 fontFamily: 'Satoshi',
@@ -479,12 +470,12 @@ void _openPreferences() {
                                             ),
                                           ),
                                           Positioned(
-                                            right: x(20),
-                                            top: y(40),
+                                            right: 20.sw,
+                                            top: 40.sh,
                                             child: Image.asset(
                                               'assets/icons/next_brown.png',
-                                              width: x(18),
-                                              height: x(18),
+                                              width: 18.sw,
+                                              height: 18.sw,
                                             ),
                                           ),
                                         ],
@@ -495,22 +486,22 @@ void _openPreferences() {
 
                                 // Save button
                                 Positioned(
-                                  left: x(30),
-                                  top: y(582),
+                                  left: 30.sw,
+                                  top: 582.sh,
                                   child: GestureDetector(
                                     onTap: _loading ? null : _saveChanges,
                                     child: Container(
-                                      width: x(332),
-                                      height: y(62),
+                                      width: 332.sw,
+                                      height: 62.sh,
                                       decoration: BoxDecoration(
                                         color: orange,
-                                        borderRadius: BorderRadius.circular(x(20)),
+                                        borderRadius: BorderRadius.circular(20.sw),
                                       ),
                                       alignment: Alignment.center,
                                       child: _loading
                                           ? SizedBox(
-                                              width: x(22),
-                                              height: x(22),
+                                              width: 22.sw,
+                                              height: 22.sw,
                                               child: const CircularProgressIndicator(
                                                 color: Colors.white,
                                                 strokeWidth: 2,
@@ -520,7 +511,7 @@ void _openPreferences() {
                                               'Save Changes',
                                               style: TextStyle(
                                                 color: whiteText,
-                                                fontSize: x(15),
+                                                fontSize: 15.sp,
                                                 fontWeight: FontWeight.w700,
                                                 fontFamily: 'Satoshi',
                                               ),
@@ -539,12 +530,11 @@ void _openPreferences() {
                     ),
                   ),
 
-                  // FIXED HEADER
                   Positioned(
-                    left: 30,
+                    left: 30.sw,
                     right: 0,
-                    top: 51,
-                    height: 50,
+                    top: topPad + 36.sh,
+                    height: 50.sh,
                     child: Stack(
                       children: [
                         BackButtonWidget(
@@ -556,7 +546,7 @@ void _openPreferences() {
                             'Your profile',
                             style: TextStyle(
                               color: text,
-                              fontSize: 24,
+                              fontSize: 24.sp,
                               fontWeight: FontWeight.bold,
                               fontFamily: 'Satoshi',
                             ),
@@ -592,8 +582,8 @@ void _openPreferences() {
     return Center(
       child: Image.asset(
         'assets/Logos/profile_placeholder.png',
-        width: 22,
-        height: 22,
+        width: 22.sw,
+        height: 22.sw,
         fit: BoxFit.contain,
       ),
     );
@@ -620,7 +610,7 @@ class _InputCard extends StatelessWidget {
       height: height,
       decoration: BoxDecoration(
         color: card,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.sw),
       ),
       child: child,
     );
@@ -630,20 +620,18 @@ class _InputCard extends StatelessWidget {
 class _NotifSwitch extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
-  final double scale;
 
   const _NotifSwitch({
     required this.value,
     required this.onChanged,
-    required this.scale,
   });
 
   @override
   Widget build(BuildContext context) {
     // exact sizes requested
-    final trackW = 25.0 * scale;
-    final trackH = 10.0 * scale;
-    final knobSize = 15.0 * scale;
+    final trackW = 25.sw;
+    final trackH = 10.sh;
+    final knobSize = 15.sw;
 
     final trackColor = value ? const Color(0xFFDFBFE5) : const Color(0xFFE5CCBF);
     final knobColor = value ? const Color(0xFF462F4D) : const Color(0xFF74503C);

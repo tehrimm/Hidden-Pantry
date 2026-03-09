@@ -16,6 +16,7 @@ import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/help_support.dart';
 import 'package:hidden_pantry_app/features/user/screens/my_favourites.dart';
 import 'package:hidden_pantry_app/features/user/screens/user_network_screen.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 class NutritionistSettingsScreen extends StatefulWidget {
   const NutritionistSettingsScreen({super.key});
@@ -133,12 +134,13 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
 
   @override
   Widget build(BuildContext context) {
-    // ignore: unused_local_variable
-    final user = FirebaseAuth.instance.currentUser;
+    ResponsiveUtils.init(context);
+    final topPad = MediaQuery.of(context).padding.top;
+    
     return Scaffold(
       backgroundColor: Colors.white,
       body: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(30.sw),
         child: Container(
           color: bg,
           child: Stack(
@@ -151,15 +153,15 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
                     ? const Center(child: CircularProgressIndicator())
                     : Column(
                         children: [
-                          const SizedBox(height: 80), // Space for Fixed Header
+                          SizedBox(height: 96.sh), // Space for Fixed Header
                           Expanded(
                             child: SingleChildScrollView(
-                              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
+                              padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 20.sh),
                               child: Column(
                                 children: [
                                   // Profile Block
                                   _profileBlock(),
-                                  const SizedBox(height: 30),
+                                  SizedBox(height: 30.sh),
                                   
                                   // Tiles
                                   _tile(
@@ -232,11 +234,11 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
                                         title: "Notifications",
                                         trailingIcon: unreadCount > 0 
                                           ? Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(10)),
+                                              padding: EdgeInsets.symmetric(horizontal: 8.sw, vertical: 4.sh),
+                                              decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(10.sw)),
                                               child: Text(
                                                 unreadCount > 9 ? "9+" : "$unreadCount",
-                                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                                style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
                                               ),
                                             )
                                           : null,
@@ -256,11 +258,11 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
                                       Navigator.push(context, MaterialPageRoute(builder: (_) => const HelpSupportScreen()));
                                     },
                                   ),
-                                  const SizedBox(height: 26),
+                                  SizedBox(height: 26.sh),
                                   _logoutButton(),
-                                  const SizedBox(height: 16),
+                                  SizedBox(height: 16.sh),
                                   _deleteAccountButton(),
-                                  const SizedBox(height: 100), // Bottom padding
+                                  SizedBox(height: 100.sh), // Bottom padding
                                 ],
                               ),
                             ),
@@ -271,22 +273,22 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
 
               // Fixed Header
               Positioned(
-                top: 51,
-                left: 22,
-                right: 22,
+                top: topPad + 36.sh,
+                left: 22.sw,
+                right: 22.sw,
                 child: Row(
                   children: [
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
                       child: Container(
-                        width: 50,
-                        height: 50,
+                        width: 50.sw,
+                        height: 50.sw,
                         decoration: BoxDecoration(
                           color: tileBg,
-                          borderRadius: BorderRadius.circular(25),
+                          borderRadius: BorderRadius.circular(25.sw),
                         ),
                         child: Center(
-                          child: Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: brown),
+                          child: Icon(Icons.arrow_back_ios_new_rounded, size: 18.sw, color: brown),
                         ),
                       ),
                     ),
@@ -295,7 +297,7 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
                       "Settings",
                       style: TextStyle(
                         color: purple,
-                        fontSize: 24,
+                        fontSize: 24.sp,
                         fontWeight: FontWeight.bold,
                         fontFamily: "Satoshi",
                       ),
@@ -315,17 +317,17 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
     return Row(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(30.sw),
           child: Container(
-            width: 60,
-            height: 60,
+            width: 60.sw,
+            height: 60.sw,
             color: const Color(0xFFD9D9D9),
             child: photoUrl != null && photoUrl!.startsWith("http")
                 ? Image.network(photoUrl!, fit: BoxFit.cover)
                 : Image.asset("assets/Logos/mainLogo.png", fit: BoxFit.cover),
           ),
         ),
-        const SizedBox(width: 16),
+        SizedBox(width: 16.sw),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -334,7 +336,7 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
                 loading ? "..." : (name ?? "Nutritionist"),
                 style: TextStyle(
                   color: purple,
-                  fontSize: 20,
+                  fontSize: 20.sp,
                   fontWeight: FontWeight.bold,
                   fontFamily: "Satoshi",
                 ),
@@ -343,7 +345,7 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
                 loading ? "" : (email ?? ""),
                 style: TextStyle(
                   color: purple.withValues(alpha: 0.55),
-                  fontSize: 15,
+                  fontSize: 15.sp,
                   fontFamily: "Satoshi",
                 ),
               ),
@@ -362,29 +364,29 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
     Widget? trailingIcon,
   }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: EdgeInsets.symmetric(vertical: 10.sh),
       child: GestureDetector(
         onTap: onTap,
         child: Container(
-          height: 70,
+          height: 70.sh,
           decoration: BoxDecoration(
             color: tileBg,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(20.sw),
           ),
           child: Row(
             children: [
-              const SizedBox(width: 20),
+              SizedBox(width: 20.sw),
               if (icon != null)
-                Image.asset(icon, width: 18, height: 18, fit: BoxFit.contain)
+                Image.asset(icon, width: 18.sw, height: 18.sw, fit: BoxFit.contain)
               else if (iconData != null)
-                Icon(iconData, color: purple, size: 20),
-              const SizedBox(width: 16),
+                Icon(iconData, color: purple, size: 20.sw),
+              SizedBox(width: 16.sw),
               Expanded(
                 child: Text(
                   title,
                   style: TextStyle(
                     color: purple,
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w500,
                     fontFamily: "Satoshi",
                   ),
@@ -392,10 +394,10 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
               ),
               if (trailingIcon != null) ...[
                 trailingIcon,
-                const SizedBox(width: 12),
+                SizedBox(width: 12.sw),
               ],
-              Image.asset("assets/icons/next_brown.png", width: 18, height: 14, fit: BoxFit.contain),
-              const SizedBox(width: 20),
+              Image.asset("assets/icons/next_brown.png", width: 18.sw, height: 14.sh, fit: BoxFit.contain),
+              SizedBox(width: 20.sw),
             ],
           ),
         ),
@@ -416,21 +418,21 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
     return GestureDetector(
       onTap: _logout,
       child: Container(
-        height: 70,
+        height: 70.sh,
         decoration: BoxDecoration(
           color: orange,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(20.sw),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset("assets/icons/logout.png", width: 18, height: 18, fit: BoxFit.contain),
-            const SizedBox(width: 12),
+            Image.asset("assets/icons/logout.png", width: 18.sw, height: 18.sw, fit: BoxFit.contain),
+            SizedBox(width: 12.sw),
             Text(
               "Logout",
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w600,
                 fontFamily: "Satoshi",
               ),
@@ -445,17 +447,17 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
     return GestureDetector(
       onTap: loading ? null : _deleteAccount,
       child: Container(
-        height: 70,
+        height: 70.sh,
         decoration: BoxDecoration(
           color: Colors.red,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(20.sw),
         ),
-        child: const Center(
+        child: Center(
           child: Text(
             "Delete Account",
             style: TextStyle(
               color: Colors.white,
-              fontSize: 14,
+              fontSize: 14.sp,
               fontWeight: FontWeight.w600,
               fontFamily: "Satoshi",
             ),
@@ -471,45 +473,40 @@ class _SettingsBackgroundPattern extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const baseW = 393.0;
-    const baseH = 852.0;
-    final size = MediaQuery.of(context).size;
-    double sx(double v) => v * (size.width / baseW);
-    double sy(double v) => v * (size.height / baseH);
-    final stroke = const Color(0xFFF5DDCE);
+    const stroke = Color(0xFFF5DDCE);
 
     return IgnorePointer(
       child: Stack(
         children: [
           Positioned(
-            left: sx(-154),
-            top: sy(-14),
+            left: (-154).sw,
+            top: (-14).sh,
             child: Transform.rotate(
               angle: 21 * math.pi / 180,
               child: Container(
-                width: sx(271),
-                height: sy(159),
+                width: 271.sw,
+                height: 159.sh,
                 decoration: BoxDecoration(
                   border: Border.all(color: stroke),
                   borderRadius: BorderRadius.all(
-                    Radius.elliptical(sx(136), sy(80)),
+                    Radius.elliptical(136.sw, 80.sh),
                   ),
                 ),
               ),
             ),
           ),
           Positioned(
-            left: sx(-149),
-            top: sy(-100),
+            left: (-149).sw,
+            top: (-100).sh,
             child: Transform.rotate(
               angle: 4 * math.pi / 180,
               child: Container(
-                width: sx(303),
-                height: sy(329),
+                width: 303.sw,
+                height: 329.sh,
                 decoration: BoxDecoration(
                   border: Border.all(color: stroke),
                   borderRadius: BorderRadius.all(
-                    Radius.elliptical(sx(152), sy(165)),
+                    Radius.elliptical(152.sw, 165.sh),
                   ),
                 ),
               ),

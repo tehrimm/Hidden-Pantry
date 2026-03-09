@@ -18,6 +18,8 @@ import 'filter_bottom_sheet.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
 import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
 import 'ingredient_camera_screen.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 
 class SearchScreen extends StatefulWidget {
   final bool inShell;
@@ -38,6 +40,7 @@ class _SearchScreenState extends State<SearchScreen> {
   List<String> _currentIngredients = [];
   List<String> _userAllergies = [];
   bool _hasSearched = false;
+  bool _isSearching = false;
 
   bool get _isUnderTest => widget.apiService != null;
 
@@ -213,43 +216,44 @@ class _SearchScreenState extends State<SearchScreen> {
     print('DEBUG _performSearch: query="$query", ingredients=${_currentIngredients.length}, filters=${_filterTags.length}');
     setState(() {
       _hasSearched = true;
+      _isSearching = true;
     });
     try {
-      // 1. Fetch from Firestore (User Uploaded Recipes)
-      final firestoreResults = await RecipeService().searchRecipes(
-        query,
-        limit: 20,
-        ingredients: _currentIngredients,
-        maxMinutes: _filterMaxMinutes,
-        tags: _filterTags,
-      );
+      List<Recipe> firestoreResults = const [];
+      if (!_isUnderTest) {
+        firestoreResults = await RecipeService().searchRecipes(
+          query,
+          limit: 20,
+          ingredients: _currentIngredients,
+          maxMinutes: _filterMaxMinutes,
+          tags: _filterTags,
+        );
+      }
 
-      // 2. Fetch from API (External Recipes)
       final apiResults = await _api.searchRecipes(
         query, 
-        limit: 30, 
+        limit: 50, 
         ingredients: _currentIngredients,
         maxMinutes: _filterMaxMinutes,
         tags: _filterTags,
-        allergies: _userAllergies,
+        allergies: _userAllergies.isNotEmpty ? _userAllergies : null,
       );
 
       if (mounted) {
         setState(() {
-          // Combine and prioritize Firestore results
           final List<Recipe> combined = [];
-          
-          // Add Firestore results first (User uploaded)
-          combined.addAll(firestoreResults);
-          
-          // Add API results if not already present (avoid duplicates)
-          for (var apiR in apiResults) {
-            if (!combined.any((r) => r.id == apiR.id)) {
-              combined.add(apiR);
+          if (firestoreResults.isNotEmpty) {
+            combined.addAll(firestoreResults);
+            for (var apiR in apiResults) {
+              if (!combined.any((r) => r.id == apiR.id)) {
+                combined.add(apiR);
+              }
             }
+          } else {
+            combined.addAll(apiResults);
           }
-          
           _results = combined;
+          _isSearching = false;
         });
         FocusScope.of(context).unfocus();
       }
@@ -258,6 +262,7 @@ class _SearchScreenState extends State<SearchScreen> {
       if (mounted) {
         setState(() {
           _results = [];
+          _isSearching = false;
         });
       }
     }
@@ -369,21 +374,16 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: bg,
       resizeToAvoidBottomInset: false,
-      body: Container(
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Stack(
-          children: [
-            // Background pattern removed for test stability
+      body: Stack(
+        children: [
+          PatternBackground(),
             SafeArea(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 24),
+                  SizedBox(height: 36.sh),
                   _searchBarRow(),
                   if (_controller.text.isNotEmpty && _suggestedQuery != null) ...[
                     const SizedBox(height: 12),
@@ -433,7 +433,6 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ],
         ),
-      ),
       bottomNavigationBar: widget.inShell || _searchFocus.hasFocus 
           ? null 
           : HpBottomNav(
@@ -588,6 +587,12 @@ class _SearchScreenState extends State<SearchScreen> {
 
 
   Widget _resultsList() {
+    if (_isSearching) {
+      return const Center(
+        child: CircularProgressIndicator(color: Color(0xFFEF8A54)),
+      );
+    }
+
     if (_results.isEmpty && (_controller.text.isNotEmpty || _hasSearched)) {
       return Center(
         child: Column(

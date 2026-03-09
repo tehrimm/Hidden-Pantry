@@ -18,6 +18,7 @@ import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
 import 'package:hidden_pantry_app/core/services/view_mode_service.dart';
 import 'recipe_details.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 class SavedRecipesScreen extends StatefulWidget {
   final bool inShell;
@@ -42,8 +43,6 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
   bool _isOfflineView = false;
 
   String? _selectedCookbookId;
-  String? _selectedCookbookDescription;
-  List<String> _selectedRecipeIds = [];
 
   @override
   void initState() {
@@ -54,57 +53,6 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
     _initDefaultSelection();
   }
 
-  Future<void> _refreshCurrentData() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
-    // If in offline view, the FutureBuilder will handle it on rebuild
-    if (_isOfflineView) {
-      if (mounted) setState(() {});
-      return;
-    }
-
-    if (_selectedCookbookId == null) return;
-
-    try {
-      if (_selectedCookbookId == 'favorite_internal') {
-        // Re-fetch the real fav cookbook ID first just in case
-        final favId = await _recipeService.getOrCreateFavoriteCookbook(user.uid);
-        final doc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('cookbooks')
-            .doc(favId)
-            .get();
-
-        if (doc.exists && mounted) {
-          final data = doc.data()!;
-          setState(() {
-            _selectedCookbookId = favId;
-            _selectedRecipeIds = List<String>.from(data['recipeIds'] ?? []);
-          });
-        }
-      } else {
-        // Refresh specific cookbook
-        final doc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('cookbooks')
-            .doc(_selectedCookbookId!)
-            .get();
-
-        if (doc.exists && mounted) {
-          final data = doc.data()!;
-          setState(() {
-            _selectedRecipeIds = List<String>.from(data['recipeIds'] ?? []);
-            _selectedCookbookDescription = data['description'];
-          });
-        }
-      }
-    } catch (e) {
-      print("Error refreshing cookbook: $e");
-    }
-  }
 
   Future<void> _initDefaultSelection() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -112,27 +60,15 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
 
     try {
       final favId = await _recipeService.getOrCreateFavoriteCookbook(user.uid);
-      
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('cookbooks')
-          .doc(favId)
-          .get();
-
-      if (doc.exists && mounted) {
-        final data = doc.data()!;
+      if (mounted) {
         setState(() {
           _selectedCookbookId = favId;
-          _selectedCookbookDescription = data['description'];
-          _selectedRecipeIds = List<String>.from(data['recipeIds'] ?? []);
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _selectedCookbookId = 'favorite_internal';
-          _selectedRecipeIds = [];
         });
       }
     }
@@ -229,6 +165,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return const Scaffold(body: Center(child: Text("Please login")));
     final double topPad = MediaQuery.of(context).padding.top;
@@ -237,99 +174,129 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
       backgroundColor: bg,
       body: Container(
         color: bg,
-          child: Stack(
-            children: [
-              const PatternBackground(),
-
-                // Removed Back Button to make it a top-level tab
-                if (!widget.inShell)
-                  Positioned(
-                    left: 30,
-                    top: topPad + 20,
-                    child: const BackButtonWidget(),
-                  ),
-
-                // Standardized Header - Title
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: topPad + 20,
-                  height: 50,
-                  child: Center(
-                    child: Text(
-                      'My Saved',
-                      style: TextStyle(
-                        color: purple,
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Satoshi',
-                      ),
-                    ),
-                  ),
-                ),
-
-                // Removed Settings Button as requested
-
-                SafeArea(
-                  bottom: false,
-                  child: Column(
-                    children: [
-                      SizedBox(height: topPad + 70), // Responsive gap for header
-                    Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 30),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const SizedBox(height: 20),
-                            Center(child: _buildProfileSection()),
-                            const SizedBox(height: 30),
-                            _buildToggle(),
-                            const SizedBox(height: 30),
-                            if (!_isOfflineView) ...[
-                              _buildCookbookGrid(user.uid),
-                              const SizedBox(height: 30),
-                              if (_selectedCookbookId != null) ...[
-                                if (_selectedCookbookDescription != null && _selectedCookbookDescription!.isNotEmpty) ...[
-                                  Text(
-                                    _selectedCookbookDescription!,
-                                    style: TextStyle(
-                                      color: purple.withValues(alpha: 0.7),
-                                      fontSize: 14,
-                                      fontStyle: FontStyle.italic,
-                                      fontFamily: 'Satoshi',
-                                    ),
-                                  ),
-                                  const SizedBox(height: 20),
-                                ],
-                                Text(
-                                  "Saved Recipes",
-                                  style: TextStyle(
-                                    color: purple,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'Satoshi',
-                                  ),
-                                ),
-                                const SizedBox(height: 20),
-                                _buildRecipeList(),
-                              ],
-                            ] else ...[
-                              _buildOfflineSection(),
-                            ],
-                            const SizedBox(height: 30),
-                    ],
+        child: Stack(
+          children: [
+            const PatternBackground(),
+            if (!widget.inShell)
+              Positioned(
+                left: 30.sw,
+                top: topPad + 36.sh,
+                child: const BackButtonWidget(),
+              ),
+            Positioned(
+              left: 0,
+              right: 0,
+              top: topPad + 36.sh,
+              height: 50.sh,
+              child: Center(
+                child: Text(
+                  'My Saved',
+                  style: TextStyle(
+                    color: purple,
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'Satoshi',
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+            SafeArea(
+              bottom: false,
+              child: Column(
+                children: [
+                  SizedBox(height: 96.sh),
+                  Expanded(
+                    child: StreamBuilder<List<Map<String, dynamic>>>(
+                      stream: _recipeService.getUserCookbooks(user.uid),
+                      builder: (context, snapshot) {
+                        final cookbooksData = snapshot.data ?? [];
+                        List<Map<String, dynamic>> consolidatedCookbooks = List.from(cookbooksData);
+                        final bool hasFavInDb = consolidatedCookbooks.any((c) => (c['title']?.toString() ?? '').toLowerCase() == 'favorite');
+                        if (!hasFavInDb) {
+                          consolidatedCookbooks.insert(0, {
+                            'id': 'favorite_internal',
+                            'title': 'Favorite',
+                            'recipeIds': [],
+                            'imageUrl': null,
+                            'isDefault': true,
+                          });
+                        }
+
+                        List<String> currentRecipeIds = [];
+                        String? currentDesc;
+                        if (!_isOfflineView) {
+                          Map<String, dynamic>? selected;
+                          if (_selectedCookbookId != null) {
+                            selected = consolidatedCookbooks.cast<Map<String, dynamic>?>().firstWhere(
+                              (c) => c?['id'] == _selectedCookbookId,
+                              orElse: () => null,
+                            );
+                          }
+                          if (selected == null && consolidatedCookbooks.isNotEmpty) {
+                            selected = consolidatedCookbooks.first;
+                          }
+                          if (selected != null) {
+                            currentRecipeIds = List<String>.from(selected['recipeIds'] ?? []);
+                            currentDesc = selected['description'];
+                          }
+                        }
+
+                        return SingleChildScrollView(
+                          padding: EdgeInsets.symmetric(horizontal: 30.sw),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(height: 20.sh),
+                              Center(child: _buildProfileSection()),
+                              SizedBox(height: 30.sh),
+                              _buildToggle(),
+                              SizedBox(height: 30.sh),
+                              if (!_isOfflineView) ...[
+                                _buildCookbookGrid(consolidatedCookbooks),
+                                SizedBox(height: 30.sh),
+                                if (currentRecipeIds.isNotEmpty || (_selectedCookbookId != null)) ...[
+                                  if (currentDesc != null && currentDesc.isNotEmpty) ...[
+                                    Text(
+                                      currentDesc,
+                                      style: TextStyle(
+                                        color: purple.withValues(alpha: 0.7),
+                                        fontSize: 14.sp,
+                                        fontStyle: FontStyle.italic,
+                                        fontFamily: 'Satoshi',
+                                      ),
+                                    ),
+                                    SizedBox(height: 20.sh),
+                                  ],
+                                  Text(
+                                    "Saved Recipes",
+                                    style: TextStyle(
+                                      color: purple,
+                                      fontSize: 20.sp,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: 'Satoshi',
+                                    ),
+                                  ),
+                                  SizedBox(height: 20.sh),
+                                  _buildRecipeList(currentRecipeIds),
+                                ],
+                              ] else ...[
+                                _buildOfflineSection(),
+                              ],
+                              SizedBox(height: 30.sh),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-      ],
-    ),
-  ),
-      bottomNavigationBar: widget.inShell 
-          ? null 
+      ),
+      bottomNavigationBar: widget.inShell
+          ? null
           : HpBottomNav(
               currentIndex: 3,
               onTap: _onBottomTap,
@@ -344,33 +311,33 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
     return Column(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(50),
+          borderRadius: BorderRadius.circular(50.sw),
           child: Container(
-            width: 80,
-            height: 80,
+            width: 80.sw,
+            height: 80.sw,
             color: const Color(0xFFD9D9D9),
             child: _photoUrl != null
                 ? Image.network(_photoUrl!, fit: BoxFit.cover)
                 : Image.asset('assets/Logos/profile_placeholder.png', scale: 2),
           ),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10.sh),
         Text(
           _name ?? 'Hidden Pantry',
           style: TextStyle(
             color: purple,
-            fontSize: 15,
+            fontSize: 15.sp,
             fontWeight: FontWeight.bold,
             fontFamily: 'Satoshi',
           ),
         ),
-        const SizedBox(height: 5),
+        SizedBox(height: 5.sh),
         Text(
           _bio ?? 'Passionate about cooking.',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: purple,
-            fontSize: 12,
+            fontSize: 12.sp,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.2,
             fontFamily: 'Satoshi',
@@ -382,12 +349,12 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
 
   Widget _buildToggle() {
     return Container(
-      height: 50,
+      height: 50.sh,
       decoration: BoxDecoration(
         color: cardColor.withValues(alpha:0.5),
-        borderRadius: BorderRadius.circular(25),
+        borderRadius: BorderRadius.circular(25.sw),
       ),
-      padding: const EdgeInsets.all(4),
+      padding: EdgeInsets.all(4.sw),
       child: Row(
         children: [
           Expanded(
@@ -396,7 +363,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   color: !_isOfflineView ? orange : Colors.transparent,
-                  borderRadius: BorderRadius.circular(21),
+                  borderRadius: BorderRadius.circular(21.sw),
                 ),
                 alignment: Alignment.center,
                 child: Text(
@@ -405,7 +372,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
                     color: !_isOfflineView ? Colors.white : purple,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Satoshi',
-                    fontSize: 14,
+                    fontSize: 14.sp,
                   ),
                 ),
               ),
@@ -417,7 +384,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
               child: Container(
                 decoration: BoxDecoration(
                   color: _isOfflineView ? orange : Colors.transparent,
-                  borderRadius: BorderRadius.circular(21),
+                  borderRadius: BorderRadius.circular(21.sw),
                 ),
                 alignment: Alignment.center,
                 child: Text(
@@ -426,7 +393,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
                     color: _isOfflineView ? Colors.white : purple,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'Satoshi',
-                    fontSize: 14,
+                    fontSize: 14.sp,
                   ),
                 ),
               ),
@@ -445,12 +412,12 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
           "Offline Downloads",
           style: TextStyle(
             color: purple,
-            fontSize: 20,
+            fontSize: 20.sp,
             fontWeight: FontWeight.bold,
             fontFamily: 'Satoshi',
           ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: 20.sh),
         FutureBuilder<List<Recipe>>(
           future: FirebaseAuth.instance.currentUser != null 
             ? _localService.getOfflineRecipes(FirebaseAuth.instance.currentUser!.uid)
@@ -463,10 +430,10 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
             if (recipes.isEmpty) {
               return Center(
                 child: Padding(
-                  padding: const EdgeInsets.only(top: 40),
+                  padding: EdgeInsets.only(top: 40.sh),
                   child: Text(
                     "No offline recipes found.",
-                    style: TextStyle(color: purple.withValues(alpha:0.6), fontFamily: "Satoshi"),
+                    style: TextStyle(color: purple.withValues(alpha:0.6), fontFamily: "Satoshi", fontSize: 14.sp),
                   ),
                 ),
               );
@@ -482,11 +449,11 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         childAspectRatio: 0.65,
-        crossAxisSpacing: 15,
-        mainAxisSpacing: 15,
+        crossAxisSpacing: 15.sw,
+        mainAxisSpacing: 15.sh,
       ),
       itemCount: recipes.length,
       itemBuilder: (context, index) {
@@ -505,59 +472,35 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
           MaterialPageRoute(
             builder: (_) => RecipeDetailsScreen(recipe: recipe),
           ),
-        ).then((_) => _refreshCurrentData());
+        );
       },
     );
   }
 
-  Widget _buildCookbookGrid(String userId) {
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: _recipeService.getUserCookbooks(userId),
-      builder: (context, snapshot) {
-        if (snapshot.hasError) {
-          return Center(child: Text("Error: ${snapshot.error}"));
-        }
-        
-        final cookbooksData = snapshot.data ?? [];
-        final List<Widget> cards = [];
-        
-        // 1. Always show 'Favorite' as the first card if not in DB
-        final hasFavInDb = cookbooksData.any((c) => (c['title']?.toString() ?? '').toLowerCase() == 'favorite');
-        
-        if (!hasFavInDb) {
-          cards.add(_buildCookbookCard(
-            id: 'favorite_internal',
-            title: 'Favorite',
-            recipeIds: [],
-            imageUrl: null,
-            isDefault: true,
-          ));
-        }
-        
-        // 2. Add DB cookbooks
-        for (var data in cookbooksData) {
-          final cookbook = Cookbook.fromJson(data, data['id']);
-          cards.add(_buildCookbookCard(
-            id: cookbook.id,
-            title: cookbook.title,
-            description: cookbook.description,
-            recipeIds: cookbook.recipeIds,
-            imageUrl: cookbook.imageUrl,
-          ));
-        }
-        
-        // 3. Add "+" Button
-        cards.add(_buildAddButton());
+  Widget _buildCookbookGrid(List<Map<String, dynamic>> consolidatedCookbooks) {
+    final List<Widget> cards = [];
+    
+    // Add DB/Consolidated cookbooks
+    for (var data in consolidatedCookbooks) {
+      cards.add(_buildCookbookCard(
+        id: data['id'],
+        title: data['title'],
+        description: data['description'],
+        recipeIds: List<String>.from(data['recipeIds'] ?? []),
+        imageUrl: data['imageUrl'],
+      ));
+    }
+    
+    // 3. Add "+" Button
+    cards.add(_buildAddButton());
 
-        return Align(
-          alignment: Alignment.centerLeft,
-          child: Wrap(
-            spacing: 20,
-            runSpacing: 20,
-            children: cards,
-          ),
-        );
-      },
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Wrap(
+        spacing: 20.sw,
+        runSpacing: 20.sh,
+        children: cards,
+      ),
     );
   }
 
@@ -575,19 +518,17 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
       onTap: () {
         setState(() {
           _selectedCookbookId = id;
-          _selectedCookbookDescription = description;
-          _selectedRecipeIds = recipeIds;
         });
       },
       child: Column(
         children: [
           Container(
-            width: 75,
-            height: 75,
+            width: 75.sw,
+            height: 75.sw,
             clipBehavior: Clip.hardEdge,
             decoration: BoxDecoration(
               color: cardColor,
-              borderRadius: BorderRadius.circular(38),
+              borderRadius: BorderRadius.circular(38.sw),
             ),
             child: Stack(
               children: [
@@ -605,7 +546,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
                               : null,
                     ),
                     child: (imageUrl == null && !isDefault) 
-                      ? Icon(Icons.restaurant_menu, color: purple.withValues(alpha:0.5), size: 30)
+                      ? Icon(Icons.restaurant_menu, color: purple.withValues(alpha:0.5), size: 30.sp)
                       : null,
                   ),
                 ),
@@ -613,22 +554,22 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
                   Positioned.fill(
                     child: Container(
                       color: purple.withValues(alpha:0.4),
-                      child: const Center(
-                        child: Icon(Icons.check, color: Colors.white, size: 24),
+                      child: Center(
+                        child: Icon(Icons.check, color: Colors.white, size: 24.sp),
                       ),
                     ),
                   ),
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.sh),
           Text(
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: purple,
-              fontSize: 12,
+              fontSize: 12.sp,
               fontWeight: FontWeight.bold,
               fontFamily: 'Satoshi',
             ),
@@ -644,21 +585,21 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
         GestureDetector(
           onTap: _showCreateCookbook,
           child: Container(
-            width: 75,
-            height: 75,
+            width: 75.sw,
+            height: 75.sw,
             decoration: BoxDecoration(
               color: cardColor,
-              borderRadius: BorderRadius.circular(38),
+              borderRadius: BorderRadius.circular(38.sw),
             ),
-            child: const Icon(Icons.add, color: Color(0xFF74503C), size: 30),
+            child: Icon(Icons.add, color: const Color(0xFF74503C), size: 30.sp),
           ),
         ),
-        const SizedBox(height: 8),
-        const Text(
+        SizedBox(height: 8.sh),
+        Text(
           'Add',
           style: TextStyle(
             color: Colors.transparent,
-            fontSize: 12,
+            fontSize: 12.sp,
             fontFamily: 'Satoshi',
           ),
         ),
@@ -666,21 +607,21 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
     );
   }
 
-  Widget _buildRecipeList() {
-    if (_selectedRecipeIds.isEmpty) {
+  Widget _buildRecipeList(List<String> recipeIds) {
+    if (recipeIds.isEmpty) {
       return Center(
         child: Padding(
-          padding: const EdgeInsets.only(top: 20),
+          padding: EdgeInsets.only(top: 20.sh),
           child: Text(
             "No recipes in this cookbook.",
-            style: TextStyle(color: purple.withValues(alpha:0.6), fontFamily: "Satoshi"),
+            style: TextStyle(color: purple.withValues(alpha: 0.6), fontFamily: "Satoshi", fontSize: 14.sp),
           ),
         ),
       );
     }
 
     return FutureBuilder<List<Recipe>>(
-      future: _recipeService.getRecipesByIds(_selectedRecipeIds),
+      future: _recipeService.getRecipesByIds(recipeIds),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -691,7 +632,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
           return Center(
             child: Text(
               "No recipes found.",
-              style: TextStyle(color: purple.withValues(alpha:0.6), fontFamily: "Satoshi"),
+              style: TextStyle(color: purple.withValues(alpha: 0.6), fontFamily: "Satoshi", fontSize: 14.sp),
             ),
           );
         }
@@ -701,7 +642,4 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
     );
   }
 }
-
-
-
 

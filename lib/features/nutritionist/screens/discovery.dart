@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/core/widgets/home_bottom_nav.dart';
 import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
@@ -29,7 +30,19 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
   String _selectedDomain = "All";
   int _bottomIndex = 4; // Expert tab
   
-  final List<String> _domains = ["⭐ Top Rated", "All", "Weight Loss", "Clinical", "Sports", "Pediatric", "General", "Keto", "Vegan"];
+  final List<String> _domains = [
+    "⭐ Top Rated",
+    "All",
+    "Clinical Nutrition",
+    "Sports Nutrition",
+    "Pediatric Nutrition",
+    "Weight Management",
+    "Plant-Based",
+    "Holistic",
+    "Diabetes Educator",
+    "General Wellness",
+    "Keto",
+  ];
 
   // Cache subscriptions
   Set<String> _subscribedIds = {};
@@ -139,6 +152,7 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     return Scaffold(
       backgroundColor: bg,
       resizeToAvoidBottomInset: false,
@@ -150,16 +164,11 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
               orange: orange,
               isNutritionistInUserView: false, // In discovery, we are a user viewing experts
             ),
-      body: Container(
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Stack(
-          children: [
-            const PatternBackground(),
-            
-            SafeArea(
+      body: Stack(
+        children: [
+          const PatternBackground(),
+          
+          SafeArea(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -177,7 +186,6 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
             ),
           ],
         ),
-      ),
     );
   }
 
@@ -219,64 +227,71 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
           }
         }
 
-        // Apply filters to Others
-        var filteredOthers = othersList.where((data) {
+        // Helper for matching
+        bool matchesFilter(Map<String, dynamic> data) {
           final name = (data['fullName'] ?? '').toString().toLowerCase();
-          final domain = (data['domain'] ?? 'All').toString();
+          final domain = (data['domain'] ?? '').toString().toLowerCase();
+          final selected = _selectedDomain.toLowerCase();
+          
           final matchesSearch = _searchQuery.isEmpty || name.contains(_searchQuery.toLowerCase());
-          final matchesDomain = isTopRated || _selectedDomain == 'All' || domain == _selectedDomain;
+          
+          bool matchesDomain = false;
+          if (_selectedDomain == 'All' || isTopRated) {
+            matchesDomain = true;
+          } else {
+            // Flexible matching: "Sports" matches "Sports Nutrition"
+            matchesDomain = domain.contains(selected) || selected.contains(domain);
+          }
+          
           return matchesSearch && matchesDomain;
-        }).toList();
+        }
+
+        // Apply filters to both lists
+        var filteredSubscribed = subscribedList.where(matchesFilter).toList();
+        var filteredOthers = othersList.where(matchesFilter).toList();
 
         // Sort by avgRating descending when Top Rated is selected
         if (isTopRated) {
-          filteredOthers.sort((a, b) {
-            final ra = (a['avgRating'] as double);
-            final rb = (b['avgRating'] as double);
-            return rb.compareTo(ra);
-          });
-          subscribedList.sort((a, b) {
-            final ra = (a['avgRating'] as double);
-            final rb = (b['avgRating'] as double);
-            return rb.compareTo(ra);
-          });
+          filteredOthers.sort((a, b) => (b['avgRating'] as double).compareTo(a['avgRating'] as double));
+          filteredSubscribed.sort((a, b) => (b['avgRating'] as double).compareTo(a['avgRating'] as double));
         }
 
         return ListView(
           padding: const EdgeInsets.only(left: 22, right: 22, top: 10, bottom: 120),
           children: [
-            if (subscribedList.isNotEmpty && _searchQuery.isEmpty && (_selectedDomain == 'All' || _selectedDomain == '⭐ Top Rated')) ...[
+            if (filteredSubscribed.isNotEmpty) ...[
               Text(
-                "Your Nutritionists",
-                style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+                (_searchQuery.isEmpty && _selectedDomain == 'All') ? "Your Nutritionists" : "Followed Matches",
+                style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
               ),
               const SizedBox(height: 12),
-              ...subscribedList.map((data) => _nutritionistCard(
-                data['_id'] as String,
-                data,
-                isSubscribed: true,
-                isCancelled: _cancelledIds.contains(data['_id']),
-              )),
+              ...filteredSubscribed.map((data) => _nutritionistCard(
+                    data['_id'] as String,
+                    data,
+                    isSubscribed: true,
+                    isCancelled: _cancelledIds.contains(data['_id']),
+                  )),
               const SizedBox(height: 24),
               Divider(color: purple.withValues(alpha: 0.1)),
               const SizedBox(height: 24),
             ],
 
-            Text(
-              isTopRated ? "Top Rated Nutritionists" : "Available Nutritionists",
-              style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
-            ),
-            const SizedBox(height: 12),
-
-            if (filteredOthers.isEmpty)
-              _emptyState("No results found for your search.")
-            else
+            if (filteredOthers.isNotEmpty) ...[
+              Text(
+                isTopRated ? "Top Rated Nutritionists" : "Available Nutritionists",
+                style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+              ),
+              const SizedBox(height: 12),
               ...filteredOthers.map((data) => _nutritionistCard(
-                data['_id'] as String,
-                data,
-                isSubscribed: false,
-                isCancelled: false,
-              )),
+                    data['_id'] as String,
+                    data,
+                    isSubscribed: false,
+                    isCancelled: false,
+                  )),
+            ],
+
+            if (filteredSubscribed.isEmpty && filteredOthers.isEmpty)
+              _emptyState(_searchQuery.isEmpty ? "No experts found in this category." : "No results found for your search."),
           ],
         );
       },
@@ -285,17 +300,17 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
 
   Widget _header() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(22, 10, 22, 10),
+      padding: EdgeInsets.fromLTRB(22.sw, 10.sh, 22.sw, 10.sh),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             "Explore Nutritionists",
-            style: TextStyle(color: purple, fontSize: 28, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+            style: TextStyle(color: purple, fontSize: 28.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
           ),
           Text(
             "Get personalized guidance for your health",
-            style: TextStyle(color: purple.withValues(alpha: 0.6), fontSize: 14, fontFamily: "Satoshi"),
+            style: TextStyle(color: purple.withValues(alpha: 0.6), fontSize: 14.sp, fontFamily: "Satoshi"),
           ),
         ],
       ),
@@ -304,26 +319,26 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
 
   Widget _searchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 8.sh),
       child: Container(
-        height: 54,
+        height: 54.sh,
         decoration: BoxDecoration(
           color: searchBarBg,
-          borderRadius: BorderRadius.circular(27),
+          borderRadius: BorderRadius.circular(27.sw),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: EdgeInsets.symmetric(horizontal: 20.sw),
         child: Row(
           children: [
-            Image.asset("assets/icons/Search.png", width: 20, height: 20),
-            const SizedBox(width: 12),
+            Image.asset("assets/icons/Search.png", width: 20.sw, height: 20.sw),
+            SizedBox(width: 12.sw),
             Expanded(
               child: TextField(
                 controller: _searchCtrl,
                 onChanged: (val) => setState(() => _searchQuery = val),
-                 style: TextStyle(color: purple, fontSize: 16, fontFamily: "Satoshi"),
+                 style: TextStyle(color: purple, fontSize: 16.sp, fontFamily: "Satoshi"),
                 decoration: InputDecoration(
                   hintText: "Search nutritionist...",
-                  hintStyle: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 16, fontFamily: "Satoshi"),
+                  hintStyle: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 16.sp, fontFamily: "Satoshi"),
                   border: InputBorder.none,
                 ),
               ),
@@ -334,7 +349,7 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
                   _searchCtrl.clear();
                   setState(() => _searchQuery = "");
                 },
-                child: Icon(Icons.close, color: purple, size: 20),
+                child: Icon(Icons.close, color: purple, size: 20.sw),
               ),
           ],
         ),
@@ -345,25 +360,25 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
   Widget _domainFilters() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.only(left: 22, right: 22, bottom: 16, top: 16),
+      padding: EdgeInsets.only(left: 22.sw, right: 22.sw, bottom: 16.sh, top: 16.sh),
       child: Row(
         children: _domains.map((domain) {
           final isSelected = _selectedDomain == domain;
           return GestureDetector(
             onTap: () => setState(() => _selectedDomain = domain),
             child: Container(
-              margin: const EdgeInsets.only(right: 10),
-              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              margin: EdgeInsets.only(right: 10.sw),
+              padding: EdgeInsets.symmetric(horizontal: 18.sw, vertical: 10.sh),
               decoration: BoxDecoration(
-                color: isSelected ? orange : const Color(0xFFF9E3D5), // Match Search screen chip style
-                borderRadius: BorderRadius.circular(20),
+                color: isSelected ? orange : const Color(0xFFF9E3D5),
+                borderRadius: BorderRadius.circular(20.sw),
               ),
               child: Text(
                 domain,
                 style: TextStyle(
                   color: isSelected ? Colors.white : purple,
                   fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   fontFamily: "Satoshi",
                 ),
               ),
@@ -400,14 +415,14 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 70,
-              height: 70,
+              width: 70.sw,
+              height: 70.sw,
               decoration: BoxDecoration(
                 color: const Color(0xFFF9E3D5),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(20.sw),
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(20.sw),
                 child: photo != null && photo.startsWith("http")
                     ? Image.network(photo, fit: BoxFit.cover)
                     : Image.asset("assets/Logos/mainLogo.png", fit: BoxFit.cover),
@@ -423,7 +438,7 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
                       Expanded(
                         child: Text(
                           name,
-                          style: TextStyle(color: purple, fontSize: 16, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+                          style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
                         ),
                       ),
                       if (isTop)
@@ -465,7 +480,7 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
                     bio,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 13, fontFamily: "Satoshi"),
+                    style: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 13.sp, fontFamily: "Satoshi"),
                   ),
                   const SizedBox(height: 6),
                   Row(
@@ -475,7 +490,7 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
                         const SizedBox(width: 4),
                         Text(
                           "${avgRating.toStringAsFixed(1)} ($reviewCount)",
-                          style: TextStyle(color: purple, fontSize: 12, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: purple, fontSize: 12.sp, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(width: 12),
                       ],

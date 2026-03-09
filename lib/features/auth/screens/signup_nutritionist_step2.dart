@@ -1,6 +1,9 @@
-import 'dart:math' as math;
+
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
@@ -59,8 +62,8 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
   static const Color errText = Color(0xFFFD3250);
 
   // Base size
-  static const double _baseW = 393;
-  static const double _baseH = 852;
+  // Removed legacy base constants
+
 
   @override
   void dispose() {
@@ -323,20 +326,19 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
   // ======================= UI =======================
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
+
     final mq = MediaQuery.of(context);
-    final w = mq.size.width;
-    final h = mq.size.height;
 
-    final s = math.min(w / _baseW, h / _baseH);
-    double sx(double v) => v * s;
-    double sy(double v) => v * s;
 
-    final fieldH = sy(70);
-    final baseGap = sy(16);
-    final errOffset = sy(4);
+
+
+    final fieldH = 70.sh;
+    final baseGap = 16.sh;
+    final errOffset = 4.sh;
 
     EdgeInsets padMain() =>
-        EdgeInsets.symmetric(horizontal: sx(30), vertical: sy(22));
+        EdgeInsets.symmetric(horizontal: 30.sw, vertical: 22.sh);
 
     final topPad = mq.padding.top;
 
@@ -347,10 +349,10 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
         resizeToAvoidBottomInset: false,
         body: Center(
           child: SizedBox(
-            width: sx(_baseW),
-            height: sy(_baseH),
+            width: 393.sw,
+            height: 852.sh,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(sx(30)),
+              borderRadius: BorderRadius.circular(30.sw),
               child: Stack(
                 clipBehavior: Clip.hardEdge,
                 children: [
@@ -360,7 +362,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                     children: [
                       // Fixed Top row (Back + Login)
                       Padding(
-                        padding: EdgeInsets.fromLTRB(sx(30), topPad + sy(20), sx(30), sy(20)),
+                        padding: EdgeInsets.fromLTRB(30.sw, topPad + 36.sh, 30.sw, 20.sh),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -376,7 +378,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                                 "Login",
                                 style: TextStyle(
                                   color: purple,
-                                  fontSize: sx(14),
+                                  fontSize: 14.sp,
                                   fontWeight: FontWeight.w700,
                                   fontFamily: "Satoshi",
                                 ),
@@ -390,9 +392,9 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                       Expanded(
                         child: SingleChildScrollView(
                           padding: EdgeInsets.only(
-                            left: sx(30),
-                            right: sx(30),
-                            bottom: sy(30) + mq.padding.bottom + mq.viewInsets.bottom,
+                            left: 30.sw,
+                            right: 30.sw,
+                            bottom: 30.sh + mq.padding.bottom + mq.viewInsets.bottom,
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -400,12 +402,12 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
 
                           // Title
                           SizedBox(
-                            width: sx(337),
+                            width: 337.sw,
                             child: Text(
                               "Register",
                               style: TextStyle(
                                 color: purple,
-                                fontSize: sx(40),
+                                fontSize: 40.sp,
                                 fontWeight: FontWeight.w900,
                                 height: 1.1,
                                 fontFamily: "Satoshi",
@@ -413,26 +415,26 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                             ),
                           ),
 
-                          SizedBox(height: sy(46)),
+                          SizedBox(height: 46.sh),
 
                           // ================= UPLOAD CERTIFICATE =================
                           SizedBox(
-                            width: sx(332),
+                            width: 332.sw,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 GestureDetector(
                                   onTap: _pickCertificate,
                                   child: Container(
-                                    width: sx(332),
-                                    height: sy(70),
+                                    width: 332.sw,
+                                    height: 70.sh,
                                     decoration: BoxDecoration(
                                       color: bg,
                                       border: Border.all(
                                         color: _certErr != null ? errText : btnOrange,
                                         width: 2,
                                       ),
-                                      borderRadius: BorderRadius.circular(sx(20)),
+                                      borderRadius: BorderRadius.circular(20.sw),
                                     ),
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
@@ -440,16 +442,16 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                                         Icon(
                                           Icons.upload_file,
                                           color: _certErr != null ? errText : btnOrange,
-                                          size: sx(24),
+                                          size: 24.sw,
                                         ),
-                                        SizedBox(width: sx(12)),
+                                        SizedBox(width: 12.sw),
                                         Flexible(
                                           child: Text(
                                             _certificateFileName ?? "Upload Certificate",
                                             overflow: TextOverflow.ellipsis,
                                             style: TextStyle(
                                               color: _certErr != null ? errText : btnOrange,
-                                              fontSize: sx(12),
+                                              fontSize: 12.sp,
                                               fontWeight: FontWeight.w600,
                                               fontFamily: "Satoshi",
                                             ),
@@ -460,14 +462,14 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                                   ),
                                 ),
                                 if (_certErr != null) ...[
-                                  SizedBox(height: sy(4)),
+                                  SizedBox(height: 4.sh),
                                   Padding(
-                                    padding: EdgeInsets.only(left: sx(12)),
+                                    padding: EdgeInsets.only(left: 12.sw),
                                     child: Text(
                                       _certErr!,
                                       style: TextStyle(
                                         color: errText,
-                                        fontSize: sx(10),
+                                        fontSize: 10.sp,
                                         fontWeight: FontWeight.w500,
                                         letterSpacing: 0.2,
                                         fontFamily: "Satoshi",
@@ -483,12 +485,12 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
 
                           // ================= LICENSE NUMBER =================
                           SizedBox(
-                            width: sx(332),
+                            width: 332.sw,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _FieldBox(
-                                  width: sx(332),
+                                  width: 332.sw,
                                   height: fieldH,
                                   isError: _licenseErr != null,
                                   child: TextField(
@@ -502,7 +504,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                                           : (_licenseCtrl.text.trim().isEmpty
                                               ? hint
                                               : enabledText),
-                                      fontSize: sx(12),
+                                      fontSize: 12.sp,
                                       fontWeight: FontWeight.w600,
                                       letterSpacing: 0.2,
                                       fontFamily: "Satoshi",
@@ -512,7 +514,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                                       hintText: "License Number",
                                       hintStyle: TextStyle(
                                         color: hint,
-                                        fontSize: sx(12),
+                                        fontSize: 12.sp,
                                         fontWeight: FontWeight.w500,
                                         letterSpacing: 0.2,
                                         fontFamily: "Satoshi",
@@ -525,12 +527,12 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                                 if (_licenseErr != null) ...[
                                   SizedBox(height: errOffset),
                                   Padding(
-                                    padding: EdgeInsets.only(left: sx(12)),
+                                    padding: EdgeInsets.only(left: 12.sw),
                                     child: Text(
                                       _licenseErr!,
                                       style: TextStyle(
                                         color: errText,
-                                        fontSize: sx(10),
+                                        fontSize: 10.sp,
                                         fontWeight: FontWeight.w500,
                                         letterSpacing: 0.2,
                                         fontFamily: "Satoshi",
@@ -546,12 +548,12 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
 
                           // ================= ORGANIZATION NAME =================
                           SizedBox(
-                            width: sx(332),
+                            width: 332.sw,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _FieldBox(
-                                  width: sx(332),
+                                  width: 332.sw,
                                   height: fieldH,
                                   isError: _organizationErr != null,
                                   child: TextField(
@@ -565,7 +567,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                                           : (_organizationCtrl.text.trim().isEmpty
                                               ? hint
                                               : enabledText),
-                                      fontSize: sx(12),
+                                      fontSize: 12.sp,
                                       fontWeight: FontWeight.w600,
                                       letterSpacing: 0.2,
                                       fontFamily: "Satoshi",
@@ -575,7 +577,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                                       hintText: "Organization Name",
                                       hintStyle: TextStyle(
                                         color: hint,
-                                        fontSize: sx(12),
+                                        fontSize: 12.sp,
                                         fontWeight: FontWeight.w500,
                                         letterSpacing: 0.2,
                                         fontFamily: "Satoshi",
@@ -588,12 +590,12 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                                 if (_organizationErr != null) ...[
                                   SizedBox(height: errOffset),
                                   Padding(
-                                    padding: EdgeInsets.only(left: sx(12)),
+                                    padding: EdgeInsets.only(left: 12.sw),
                                     child: Text(
                                       _organizationErr!,
                                       style: TextStyle(
                                         color: errText,
-                                        fontSize: sx(10),
+                                        fontSize: 10.sp,
                                         fontWeight: FontWeight.w500,
                                         letterSpacing: 0.2,
                                         fontFamily: "Satoshi",
@@ -609,12 +611,12 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
 
                           // ================= EXPIRY DATE =================
                           SizedBox(
-                            width: sx(332),
+                            width: 332.sw,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 _FieldBox(
-                                  width: sx(332),
+                                  width: 332.sw,
                                   height: fieldH,
                                   isError: _expiryErr != null,
                                   child: GestureDetector(
@@ -624,23 +626,23 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                                         controller: _expiryDateCtrl,
                                         cursorColor: purple,
                                         textAlignVertical: TextAlignVertical.center,
-                                        style: TextStyle(
-                                          color: (_expiryErr != null)
-                                              ? errText
-                                          : (_expiryDateCtrl.text.trim().isEmpty
-                                                  ? hint
-                                                  : enabledText),
-                                          fontSize: sx(12),
-                                          fontWeight: FontWeight.w600,
-                                          letterSpacing: 0.2,
-                                          fontFamily: "Satoshi",
-                                        ),
+                                          style: TextStyle(
+                                            color: (_expiryErr != null)
+                                                ? errText
+                                            : (_expiryDateCtrl.text.trim().isEmpty
+                                                    ? hint
+                                                    : enabledText),
+                                            fontSize: 12.sp,
+                                            fontWeight: FontWeight.w600,
+                                            letterSpacing: 0.2,
+                                            fontFamily: "Satoshi",
+                                          ),
                                         decoration: InputDecoration(
                                           border: InputBorder.none,
                                           hintText: "Expiry Date (MM/DD/YYYY)",
                                           hintStyle: TextStyle(
                                             color: hint,
-                                            fontSize: sx(12),
+                                            fontSize: 12.sp,
                                             fontWeight: FontWeight.w500,
                                             letterSpacing: 0.2,
                                             fontFamily: "Satoshi",
@@ -650,7 +652,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                                           suffixIcon: Icon(
                                             Icons.calendar_today,
                                             color: _expiryErr != null ? errText : purple,
-                                            size: sx(18),
+                                            size: 18.sw,
                                           ),
                                         ),
                                       ),
@@ -660,12 +662,12 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                                 if (_expiryErr != null) ...[
                                   SizedBox(height: errOffset),
                                   Padding(
-                                    padding: EdgeInsets.only(left: sx(12)),
+                                    padding: EdgeInsets.only(left: 12.sw),
                                     child: Text(
                                       _expiryErr!,
                                       style: TextStyle(
                                         color: errText,
-                                        fontSize: sx(10),
+                                        fontSize: 10.sp,
                                         fontWeight: FontWeight.w500,
                                         letterSpacing: 0.2,
                                         fontFamily: "Satoshi",
@@ -677,23 +679,23 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                             ),
                           ),
 
-                          SizedBox(height: sy(30)),
+                          SizedBox(height: 30.sh),
 
                           // Register button
                           GestureDetector(
                             onTap: _loading ? null : _onRegister,
                             child: Container(
-                              width: sx(332),
-                              height: sy(62),
+                              width: 332.sw,
+                              height: 62.sh,
                               decoration: BoxDecoration(
                                 color: _loading ? hint : btnOrange,
-                                borderRadius: BorderRadius.circular(sx(20)),
+                                borderRadius: BorderRadius.circular(20.sw),
                               ),
                               alignment: Alignment.center,
                               child: _loading
                                   ? SizedBox(
-                                      width: sx(24),
-                                      height: sx(24),
+                                      width: 24.sw,
+                                      height: 24.sw,
                                       child: CircularProgressIndicator(
                                         color: btnText,
                                         strokeWidth: 2,
@@ -703,7 +705,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                                       "Register",
                                       style: TextStyle(
                                         color: btnText,
-                                        fontSize: sx(14),
+                                        fontSize: 14.sp,
                                         fontWeight: FontWeight.w700,
                                         fontFamily: "Satoshi",
                                       ),
@@ -711,7 +713,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                             ),
                           ),
 
-                          SizedBox(height: sy(40)),
+                          SizedBox(height: 40.sh),
                           ],
                         ),
                       ),

@@ -4,6 +4,7 @@ import 'package:hidden_pantry_app/features/user/services/follow_service.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/author_profile.dart'; // Assuming this exists or similar
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 class UserNetworkScreen extends StatefulWidget {
   final int initialIndex;
@@ -20,6 +21,8 @@ class _UserNetworkScreenState extends State<UserNetworkScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
+    final topPad = MediaQuery.of(context).padding.top;
     const purple = Color(0xFF462F4D);
     const bg = Color(0xFFFFF3EB);
     const brown = Color(0xFF433020);
@@ -31,7 +34,7 @@ class _UserNetworkScreenState extends State<UserNetworkScreen> {
       child: Scaffold(
         backgroundColor: widget.isNutritionist ? Colors.white : bg,
         body: ClipRRect(
-          borderRadius: widget.isNutritionist ? BorderRadius.circular(30) : BorderRadius.zero,
+          borderRadius: widget.isNutritionist ? BorderRadius.circular(30.sw) : BorderRadius.zero,
           child: Container(
             color: bg,
             child: Stack(
@@ -40,25 +43,25 @@ class _UserNetworkScreenState extends State<UserNetworkScreen> {
             SafeArea(
               child: Column(
                 children: [
-                   const SizedBox(height: 80), // Space for header
+                   SizedBox(height: 96.sh), // Standardized gap for fixed header
                    
                    Padding(
-                     padding: const EdgeInsets.symmetric(horizontal: 22),
+                     padding: EdgeInsets.symmetric(horizontal: 22.sw),
                      child: TabBar(
                        indicatorColor: orange, // Changed to orange
-                       indicatorWeight: 3,
+                       indicatorWeight: 3.sw,
                        indicatorSize: TabBarIndicatorSize.tab,
                        labelColor: orange, // Changed to orange
                        unselectedLabelColor: purple.withValues(alpha: 0.5),
-                       labelStyle: const TextStyle(
+                       labelStyle: TextStyle(
                          fontWeight: FontWeight.w900,
                          fontFamily: 'Satoshi',
-                         fontSize: 16,
+                         fontSize: 16.sp,
                        ),
-                       unselectedLabelStyle: const TextStyle(
+                       unselectedLabelStyle: TextStyle(
                          fontWeight: FontWeight.w500,
                          fontFamily: 'Satoshi',
-                         fontSize: 16,
+                         fontSize: 16.sp,
                        ),
                        tabs: const [
                          Tab(text: "Following"),
@@ -66,7 +69,7 @@ class _UserNetworkScreenState extends State<UserNetworkScreen> {
                        ],
                      ),
                    ),
-                   const SizedBox(height: 20),
+                   SizedBox(height: 20.sh),
 
                    Expanded(
                      child: TabBarView(
@@ -88,9 +91,9 @@ class _UserNetworkScreenState extends State<UserNetworkScreen> {
 
             // Fixed Header
             Positioned(
-              top: 51,
-              left: 22,
-              right: 22,
+              top: topPad + 36.sh,
+              left: 22.sw,
+              right: 22.sw,
               child: Row(
                 children: [
                   BackButtonWidget(
@@ -98,11 +101,11 @@ class _UserNetworkScreenState extends State<UserNetworkScreen> {
                     onPressed: () => Navigator.pop(context),
                   ),
                   const Spacer(),
-                  const Text(
+                  Text(
                     "My Network",
                     style: TextStyle(
                       color: purple,
-                      fontSize: 24,
+                      fontSize: 24.sp,
                       fontWeight: FontWeight.bold,
                       fontFamily: "Satoshi",
                     ),
@@ -120,11 +123,34 @@ class _UserNetworkScreenState extends State<UserNetworkScreen> {
   }
 }
 
-class _UserList extends StatelessWidget {
+class _UserList extends StatefulWidget {
   final Future<List<Map<String, dynamic>>> fetchFuture;
   final String emptyMessage;
 
   const _UserList({required this.fetchFuture, required this.emptyMessage});
+
+  @override
+  State<_UserList> createState() => _UserListState();
+}
+
+class _UserListState extends State<_UserList> {
+  List<Map<String, dynamic>>? _users;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final data = await widget.fetchFuture;
+      if (mounted) setState(() { _users = data; _loading = false; });
+    } catch (_) {
+      if (mounted) setState(() { _users = []; _loading = false; });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -132,124 +158,121 @@ class _UserList extends StatelessWidget {
     const tileBg = Color(0xFFF9E3D5);
     const bg = Color(0xFFFFF3EB);
 
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: fetchFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFFEF8A54)));
-        }
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Center(
-            child: Text(
-              emptyMessage,
-              style: TextStyle(color: purple.withValues(alpha:0.6), fontFamily: "Satoshi"),
-            ),
-          );
-        }
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator(color: Color(0xFFEF8A54)));
+    }
+    if (_users == null || _users!.isEmpty) {
+      return Center(
+        child: Text(
+          widget.emptyMessage,
+          style: TextStyle(color: purple.withValues(alpha: 0.6), fontFamily: "Satoshi", fontSize: 14.sp),
+        ),
+      );
+    }
 
-        final users = snapshot.data!;
-        
-        return ListView.separated(
-          padding: const EdgeInsets.symmetric(horizontal: 22),
-          itemCount: users.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
-          itemBuilder: (context, index) {
-            final user = users[index];
-            final String name = user['fullName'] ?? 
-                                user['name'] ?? 
-                                user['userName'] ?? 
-                                (user['email'] != null ? (user['email'] as String).split('@').first : 'User');
-            final photoUrl = user['photoUrl'];
-            final uid = user['uid'];
-            final isFollowingTab = emptyMessage.contains("following"); // Simple check to decide button type
+    final users = _users!;
 
-            return GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => AuthorProfileScreen(
-                      authorId: uid,
-                      authorName: name,
-                      profileImageUrl: photoUrl,
-                    ),
-                  ),
-                );
-              },
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: tileBg,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    // Licensed Avatar Styling
-                    Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: [
-                          BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 5, spreadRadius: 1),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: photoUrl != null
-                            ? Image.network(photoUrl, fit: BoxFit.cover, errorBuilder: (_,__,___) => Image.asset("assets/Logos/profile_placeholder.png", fit: BoxFit.cover))
-                            : Image.asset("assets/Logos/profile_placeholder.png", fit: BoxFit.cover),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    
-                    Expanded(
-                      child: Text(
-                        name,
-                        style: const TextStyle(
-                          color: purple,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          fontFamily: "Satoshi",
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
+    return ListView.separated(
+      padding: EdgeInsets.symmetric(horizontal: 22.sw),
+      itemCount: users.length,
+      separatorBuilder: (_, __) => SizedBox(height: 12.sh),
+      itemBuilder: (context, index) {
+        final user = users[index];
+        final String name = user['fullName'] ??
+            user['name'] ??
+            user['userName'] ??
+            (user['email'] != null ? (user['email'] as String).split('@').first : 'User');
+        final photoUrl = user['photoUrl'];
+        final uid = user['uid'];
+        final isFollowingTab = widget.emptyMessage.contains("following");
 
-                    // Action Button
-                    if (isFollowingTab)
-                      SizedBox(
-                        height: 36,
-                        child: ElevatedButton(
-                          onPressed: () async {
-                            // Unfollow logic
-                            await FollowService().toggleFollow(uid, shouldFollow: false);
-                            // Force rebuild/refresh - in a real app might want to remove item from list locally
-                            (context as Element).markNeedsBuild(); 
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: bg, // Light background
-                            foregroundColor: const Color(0xFFEF8A54), // Orange text
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18),
-                              side: const BorderSide(color: Color(0xFFEF8A54)),
-                            ),
-                          ),
-                          child: const Text(
-                            "Unfollow",
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, fontFamily: "Satoshi"),
-                          ),
-                        ),
-                      ),
-                  ],
+        return GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => AuthorProfileScreen(
+                  authorId: uid,
+                  authorName: name,
+                  profileImageUrl: photoUrl,
                 ),
               ),
             );
           },
+          child: Container(
+            padding: EdgeInsets.all(12.sw),
+            decoration: BoxDecoration(
+              color: tileBg,
+              borderRadius: BorderRadius.circular(20.sw),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 50.sw,
+                  height: 50.sw,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2.sw),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 5.sw, spreadRadius: 1.sw),
+                    ],
+                  ),
+                  child: ClipOval(
+                    child: photoUrl != null
+                        ? Image.network(photoUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => Image.asset("assets/Logos/profile_placeholder.png", fit: BoxFit.cover))
+                        : Image.asset("assets/Logos/profile_placeholder.png", fit: BoxFit.cover),
+                  ),
+                ),
+                SizedBox(width: 16.sw),
+
+                Expanded(
+                  child: Text(
+                    name,
+                    style: TextStyle(
+                      color: purple,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.sp,
+                      fontFamily: "Satoshi",
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+
+                if (isFollowingTab)
+                  SizedBox(
+                    height: 36.sh,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await FollowService().toggleFollow(uid, shouldFollow: false);
+                        // Remove user from local list immediately
+                        if (mounted) {
+                          setState(() {
+                            _users!.removeAt(index);
+                          });
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: bg,
+                        foregroundColor: const Color(0xFFEF8A54),
+                        elevation: 0,
+                        padding: EdgeInsets.symmetric(horizontal: 16.sw),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18.sw),
+                          side: BorderSide(color: const Color(0xFFEF8A54), width: 1.sw),
+                        ),
+                      ),
+                      child: Text(
+                        "Unfollow",
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12.sp, fontFamily: "Satoshi"),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         );
       },
     );
   }
 }
+

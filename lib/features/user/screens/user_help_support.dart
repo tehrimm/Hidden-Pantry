@@ -5,15 +5,14 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
-
-class HelpSupportScreen extends StatefulWidget {
-  const HelpSupportScreen({super.key});
+class UserHelpSupportScreen extends StatefulWidget {
+  const UserHelpSupportScreen({super.key});
 
   @override
-  State<HelpSupportScreen> createState() => _HelpSupportScreenState();
+  State<UserHelpSupportScreen> createState() => _UserHelpSupportScreenState();
 }
 
-class _HelpSupportScreenState extends State<HelpSupportScreen> {
+class _UserHelpSupportScreenState extends State<UserHelpSupportScreen> {
   final Color bg = const Color(0xFFFFF3EB);
   final Color purple = const Color(0xFF462F4D);
   final Color orange = const Color(0xFFEF8A54);
@@ -21,36 +20,28 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
 
   final List<Map<String, String>> _faqs = [
     {
-      "q": "How do I create a subscription plan?",
-      "a": "Go to your Dashboard, tap the '+' button to create a new subscription plan. You can set a title, price, billing interval, and benefits for each tier (Silver, Gold, Platinum)."
+      "q": "How do I subscribe to a nutritionist?",
+      "a": "Browse nutritionists in the Discovery tab, view their profile, and select a membership plan (Silver, Gold, or Platinum). Complete the payment via Stripe to unlock their exclusive benefits."
     },
     {
-      "q": "How do subscribers find me?",
-      "a": "Once your profile is approved and active, you'll appear in the Discovery section. Users can browse nutritionists by domain, ratings, and subscriber count."
+      "q": "Where can I find my active subscriptions?",
+      "a": "Go to 'My Subscriptions' in your profile settings. There you can view your current plan details and manage your membership."
     },
     {
-      "q": "How do I receive payments?",
-      "a": "Payments are processed through Stripe Connect. Go to Settings > Payouts & Earnings to view your earnings and manage your connected Stripe account."
+      "q": "Can I message a nutritionist?",
+      "a": "Yes, if your subscribed plan includes chat benefits, you can message your nutritionist directly from the Chat tab."
     },
     {
-      "q": "Can I share meal plans with clients?",
-      "a": "Yes! In any chat with a subscriber, tap the '+' button to create a new meal plan or share one from your saved plans library."
-    },
-    {
-      "q": "How do I schedule a consultation?",
-      "a": "In the chat with your client, tap the '+' button and select 'Schedule Meeting'. Pick a date, time, and add optional notes. Your client will receive the invite and can add it to their calendar."
-    },
-    {
-      "q": "What happens if my SaaS subscription expires?",
-      "a": "If your platform subscription payment is overdue, your profile will be hidden from discovery. Your existing subscribers will retain access until their billing period ends."
-    },
-    {
-      "q": "How do I edit my profile?",
-      "a": "Go to Settings > Edit Profile. You can update your name, bio, organization, domain, and profile photo."
+      "q": "How does the virtual pantry work?",
+      "a": "You can scan your receipts or add ingredients manually to your Pantry. The app will then suggest recipes you can make with what you currently have."
     },
     {
       "q": "Can I upload my own recipes?",
-      "a": "Yes! Navigate to My Recipes from your settings, then tap the '+' button to start uploading a new recipe with images, ingredients, and step-by-step instructions."
+      "a": "Absolutely! Go to 'My Recipes' in your profile and tap the '+' button to add your own culinary creations."
+    },
+    {
+      "q": "How do I write a review?",
+      "a": "Visit the profile of a nutritionist you've interacted with, switch to the 'Reviews' tab, and tap 'Write a Review'."
     },
   ];
 
@@ -304,7 +295,7 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
                   width: 42.sw,
                   height: 42.sw,
                   decoration: BoxDecoration(
-                    color: cardBg,
+                    color: Colors.white,
                     borderRadius: BorderRadius.circular(12.sw),
                   ),
                   child: Icon(icon, color: orange, size: 20.sw),
@@ -413,5 +404,4 @@ class _HelpSupportScreenState extends State<HelpSupportScreen> {
       ),
     );
   }
-
 }

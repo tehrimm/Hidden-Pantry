@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -18,6 +19,7 @@ class NutritionistSignupWrapper extends StatefulWidget {
 class _NutritionistSignupWrapperState extends State<NutritionistSignupWrapper> {
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     final user = FirebaseAuth.instance.currentUser;
 
     if (user == null) {

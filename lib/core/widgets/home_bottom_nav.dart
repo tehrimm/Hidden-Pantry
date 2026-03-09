@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class HpBottomNav extends StatelessWidget {
   const HpBottomNav({
@@ -18,8 +20,9 @@ class HpBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     return SizedBox(
-      height: 72,
+      height: 72.sh,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
@@ -33,7 +36,7 @@ class HpBottomNav extends StatelessWidget {
           Align(
             alignment: Alignment.bottomCenter,
             child: Padding(
-              padding: const EdgeInsets.only(left: 30, right: 30, bottom: 14),
+              padding: EdgeInsets.only(left: 30.sw, right: 30.sw, bottom: 14.sh),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -47,7 +50,7 @@ class HpBottomNav extends StatelessWidget {
                     active: "assets/icons/Search_active.png",
                     inactive: "assets/icons/search_inactive.png",
                   ),
-                  const SizedBox(width: 48), // space for plus
+                  SizedBox(width: 48.sw), // space for plus
                   _navIcon(
                     index: 3,
                     active: "assets/icons/Bookmark_active.png",
@@ -68,24 +71,24 @@ class HpBottomNav extends StatelessWidget {
           ),
 
           Positioned(
-            left: 4,
+            left: 4.sw,
             right: 0,
-            bottom: 40,
+            bottom: 40.sh,
             child: Center(
               child: GestureDetector(
                 onTap: () => onTap(2),
                 child: Container(
-                  width: 56,
-                  height: 56,
+                  width: 56.sw,
+                  height: 56.sw,
                   decoration: BoxDecoration(
                     color: orange,
-                    borderRadius: BorderRadius.circular(28),
+                    borderRadius: BorderRadius.circular(28.sw),
                   ),
                   child: Center(
                     child: Image.asset(
                       "assets/icons/Plus.png",
-                      width: 22,
-                      height: 22,
+                      width: 22.sp,
+                      height: 22.sp,
                       fit: BoxFit.contain,
                     ),
                   ),
@@ -109,31 +112,35 @@ class HpBottomNav extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () => onTap(index),
       child: SizedBox(
-        width: 48,
-        height: 58,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Image.asset(
-              isActive ? active : inactive,
-              width: _iconSize,
-              height: _iconSize,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(height: 6),
-            AnimatedOpacity(
-              opacity: isActive ? 1 : 0,
-              duration: const Duration(milliseconds: 160),
-              child: Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  border: Border.all(width: 1.6, color: orange),
-                  borderRadius: BorderRadius.circular(3),
+        width: 48.sw,
+        height: 58.sh,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.bottomCenter,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Image.asset(
+                isActive ? active : inactive,
+                width: _iconSize.sp,
+                height: _iconSize.sp,
+                fit: BoxFit.contain,
+              ),
+              SizedBox(height: 6.sh),
+              AnimatedOpacity(
+                opacity: isActive ? 1 : 0,
+                duration: const Duration(milliseconds: 160),
+                child: Container(
+                  width: 6.sp,
+                  height: 6.sp,
+                  decoration: BoxDecoration(
+                    border: Border.all(width: 1.6.sw, color: orange),
+                    borderRadius: BorderRadius.circular(3.sw),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -147,31 +154,35 @@ class HpBottomNav extends StatelessWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () => onTap(index),
       child: SizedBox(
-        width: 48,
-        height: 58,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Image.asset(
-              "assets/icons/User_inactive.png",
-              width: 24, // Consistent icon size
-              height: 24,
-              fit: BoxFit.contain,
-            ),
-            const SizedBox(height: 6),
-            AnimatedOpacity(
-              opacity: isActive ? 1 : 0,
-              duration: const Duration(milliseconds: 160),
-              child: Container(
-                width: 6,
-                height: 6,
-                decoration: BoxDecoration(
-                  border: Border.all(width: 1.6, color: orange),
-                  borderRadius: BorderRadius.circular(3),
+        width: 48.sw,
+        height: 58.sh,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.bottomCenter,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Image.asset(
+                "assets/icons/User_inactive.png",
+                width: 24.sp,
+                height: 24.sp,
+                fit: BoxFit.contain,
+              ),
+              SizedBox(height: 6.sh),
+              AnimatedOpacity(
+                opacity: isActive ? 1 : 0,
+                duration: const Duration(milliseconds: 160),
+                child: Container(
+                  width: 6.sp,
+                  height: 6.sp,
+                  decoration: BoxDecoration(
+                    border: Border.all(width: 1.6.sw, color: orange),
+                    borderRadius: BorderRadius.circular(3.sw),
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

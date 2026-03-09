@@ -1,6 +1,6 @@
 // lib/screens/Authorization/forget_password_phone_otp.dart
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -54,12 +54,7 @@ class _ForgetPasswordPhoneOtpScreenState
     super.dispose();
   }
 
-  double _scale(BuildContext context, double v) {
-    final size = MediaQuery.of(context).size;
-    final base = math.min(size.width / 393.0, size.height / 852.0);
-    final clamped = base.clamp(0.85, 1.20);
-    return v * clamped;
-  }
+  // Removed manual scale function
 
   String get _otp =>
       _ctrl.map((e) => e.text.trim()).join(); // "123456"
@@ -259,11 +254,11 @@ class _ForgetPasswordPhoneOtpScreenState
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     final mq = MediaQuery.of(context);
-    final s = (double v) => _scale(context, v);
 
-    final boxW = s(44);
-    final boxH = s(51);
+    final boxW = 44.sw;
+    final boxH = 51.sh;
 
     return Scaffold(
       backgroundColor: bg,
@@ -273,7 +268,7 @@ class _ForgetPasswordPhoneOtpScreenState
         child: SafeArea(
           top: false,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(s(30)),
+            borderRadius: BorderRadius.circular(30.sw),
             child: Stack(
               children: [
                 const PatternBackground(),
@@ -281,10 +276,10 @@ class _ForgetPasswordPhoneOtpScreenState
                 // Content (scroll-safe)
                 SingleChildScrollView(
                   padding: EdgeInsets.only(
-                    left: s(30),
-                    right: s(30),
-                    top: mq.padding.top + s(22),
-                    bottom: s(22) + mq.viewInsets.bottom,
+                    left: 30.sw,
+                    right: 30.sw,
+                    top: mq.padding.top + 22.sh,
+                    bottom: 22.sh + mq.viewInsets.bottom,
                   ),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
@@ -304,16 +299,16 @@ class _ForgetPasswordPhoneOtpScreenState
                             );
                           },
                         ),
-                        SizedBox(height: s(38)),
+                        SizedBox(height: 38.sh),
 
                         // Title
                         SizedBox(
-                          width: s(235),
+                          width: 235.sw,
                           child: Text(
                             "Enter OTP",
                             style: TextStyle(
                               color: purple,
-                              fontSize: s(40),
+                              fontSize: 40.sp,
                               fontWeight: FontWeight.w900,
                               height: 1.1,
                               fontFamily: "Satoshi",
@@ -321,27 +316,27 @@ class _ForgetPasswordPhoneOtpScreenState
                           ),
                         ),
 
-                        SizedBox(height: s(12)),
+                        SizedBox(height: 12.sh),
 
                         // Subtitle
                         SizedBox(
-                          width: s(300),
+                          width: 300.sw,
                           child: Text(
                             "Please enter the OTP sent to ${widget.phone}",
                             style: TextStyle(
                               color: purple,
-                              fontSize: s(15),
+                              fontSize: 15.sp,
                               fontFamily: "Satoshi",
                             ),
                           ),
                         ),
 
-                        SizedBox(height: s(26)),
+                        SizedBox(height: 26.sh),
 
                         // OTP Boxes (responsive, no overflow)
                         LayoutBuilder(
                           builder: (context, c) {
-                            final totalW = boxW * 6 + s(10) * 5;
+                            final totalW = boxW * 6 + 10.sw * 5;
                             final shouldWrap = totalW > c.maxWidth;
 
                             final boxes = List.generate(6, (i) {
@@ -359,8 +354,8 @@ class _ForgetPasswordPhoneOtpScreenState
 
                             if (shouldWrap) {
                               return Wrap(
-                                spacing: s(10),
-                                runSpacing: s(10),
+                                spacing: 10.sw,
+                                runSpacing: 10.sw,
                                 children: boxes,
                               );
                             }
@@ -369,7 +364,7 @@ class _ForgetPasswordPhoneOtpScreenState
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 for (int i = 0; i < boxes.length; i++) ...[
-                                  if (i != 0) SizedBox(width: s(10)),
+                                  if (i != 0) SizedBox(width: 10.sw),
                                   boxes[i],
                                 ],
                               ],
@@ -377,23 +372,23 @@ class _ForgetPasswordPhoneOtpScreenState
                           },
                         ),
 
-                        SizedBox(height: s(26)),
+                        SizedBox(height: 26.sh),
 
                         // Verify button (full width like UI)
                         GestureDetector(
                           onTap: _loading ? null : _verify,
                           child: Container(
                             width: double.infinity,
-                            height: s(62),
+                            height: 62.sh,
                             decoration: BoxDecoration(
                               color: orange,
-                              borderRadius: BorderRadius.circular(s(20)),
+                              borderRadius: BorderRadius.circular(20.sw),
                             ),
                             alignment: Alignment.center,
                             child: _loading
                                 ? SizedBox(
-                                    width: s(18),
-                                    height: s(18),
+                                    width: 18.sw,
+                                    height: 18.sw,
                                     child: const CircularProgressIndicator(
                                       strokeWidth: 2,
                                     ),
@@ -402,7 +397,7 @@ class _ForgetPasswordPhoneOtpScreenState
                                     "Verify Code",
                                     style: TextStyle(
                                       color: btnText,
-                                      fontSize: s(12),
+                                      fontSize: 12.sp,
                                       fontWeight: FontWeight.bold,
                                       fontFamily: "Satoshi",
                                     ),
@@ -410,7 +405,7 @@ class _ForgetPasswordPhoneOtpScreenState
                           ),
                         ),
 
-                        SizedBox(height: s(18)),
+                        SizedBox(height: 18.sh),
 
                         // Resend text
                         Center(
@@ -420,7 +415,7 @@ class _ForgetPasswordPhoneOtpScreenState
                               text: TextSpan(
                                 style: TextStyle(
                                   color: purple,
-                                  fontSize: s(15),
+                                  fontSize: 15.sp,
                                   fontFamily: "Satoshi",
                                 ),
                                 children: const [
@@ -435,8 +430,8 @@ class _ForgetPasswordPhoneOtpScreenState
                           ),
                         ),
 
-                        SizedBox(height: s(40)),
-                        SizedBox(height: s(8)),
+                        SizedBox(height: 40.sh),
+                        SizedBox(height: 8.sh),
                       ],
                     ),
                   ),
@@ -494,7 +489,7 @@ class _OtpBox extends StatelessWidget {
           cursorColor: purple,
           style: TextStyle(
             color: purple,
-            fontSize: 24,
+            fontSize: 24.sp,
             fontWeight: FontWeight.bold,
             fontFamily: "Satoshi",
           ),

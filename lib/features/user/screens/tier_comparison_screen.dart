@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/features/user/services/stripe_service.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 class TierComparisonScreen extends StatefulWidget {
   final String nutritionistId;
@@ -137,14 +138,14 @@ class _TierComparisonScreenState extends State<TierComparisonScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: bg,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Cancel Subscription?", style: TextStyle(color: purple, fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.sw)),
+        title: Text("Cancel Subscription?", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 18.sp)),
         content: const Text("You will keep your access until the end of the current billing period."),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text("No", style: TextStyle(color: purple))),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text("No", style: TextStyle(color: purple, fontSize: 14.sp))),
           TextButton(
             onPressed: () => Navigator.pop(context, true), 
-            child: const Text("Yes, Cancel", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold))
+            child: Text("Yes, Cancel", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14.sp))
           ),
         ],
       ),
@@ -208,6 +209,7 @@ class _TierComparisonScreenState extends State<TierComparisonScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     return Scaffold(
       backgroundColor: bg,
       body: Stack(
@@ -218,7 +220,7 @@ class _TierComparisonScreenState extends State<TierComparisonScreen> {
               children: [
                 // Header
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 10.sh),
                   child: Row(
                     children: [
                       BackButtonWidget(onPressed: () => Navigator.pop(context), color: const Color(0xFF433020)),
@@ -227,13 +229,13 @@ class _TierComparisonScreenState extends State<TierComparisonScreen> {
                         "Subscription Plans",
                         style: TextStyle(
                           color: purple,
-                          fontSize: 20,
+                          fontSize: 20.sp,
                           fontWeight: FontWeight.bold,
                           fontFamily: "Satoshi",
                         ),
                       ),
                       const Spacer(),
-                      const SizedBox(width: 40),
+                      SizedBox(width: 40.sw),
                     ],
                   ),
                 ),
@@ -242,14 +244,14 @@ class _TierComparisonScreenState extends State<TierComparisonScreen> {
                   child: _loading 
                       ? const Center(child: CircularProgressIndicator())
                       : ListView(
-                          padding: const EdgeInsets.all(20),
+                          padding: EdgeInsets.all(20.sw),
                           children: [
                             Text(
                               "Choose Your Tier",
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: purple,
-                                fontSize: 28,
+                                fontSize: 28.sp,
                                 fontWeight: FontWeight.w900,
                                 fontFamily: "Satoshi",
                               ),
@@ -258,9 +260,9 @@ class _TierComparisonScreenState extends State<TierComparisonScreen> {
                             Text(
                               "Select a plan to unlock exclusive content from ${widget.nutritionistData['fullName'] ?? 'this expert'}.",
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 14),
+                              style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 14.sp),
                             ),
-                            const SizedBox(height: 30),
+                            SizedBox(height: 30.sh),
                             
                              // Free Tier Card (Static)
                             _tierCard(
@@ -296,15 +298,15 @@ class _TierComparisonScreenState extends State<TierComparisonScreen> {
                                 );
                               }),
                             
-                            const SizedBox(height: 20),
+                            SizedBox(height: 20.sh),
                             Center(
                               child: Text(
                                 "Secure Payment Processing via Stripe Connect",
-                                style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 11, fontWeight: FontWeight.bold),
+                                style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 11.sp, fontWeight: FontWeight.bold),
                               ),
                             ),
-                            const SizedBox(height: 10),
-                            Image.asset('assets/icons/stripe_badge.png', height: 20, errorBuilder: (_, __, ___) => Container()), // Hidden if not exists
+                            SizedBox(height: 10.sh),
+                            Image.asset('assets/icons/stripe_badge.png', height: 20.sh, errorBuilder: (_, __, ___) => Container()), // Hidden if not exists
                           ],
                         ),
                 ),
@@ -333,16 +335,16 @@ class _TierComparisonScreenState extends State<TierComparisonScreen> {
     final Color accentColor = color;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
+      margin: EdgeInsets.only(bottom: 20.sh),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(24.sw),
         border: Border.all(
           color: isCurrent ? orange : accentColor.withValues(alpha:0.2),
-          width: isCurrent ? 2 : 1
+          width: isCurrent ? 2.sw : 1.sw
         ),
         boxShadow: [
-          BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 15, offset: const Offset(0, 8)),
+          BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 15.sw, offset: Offset(0, 8.sh)),
         ],
       ),
       child: Column(
@@ -350,33 +352,33 @@ class _TierComparisonScreenState extends State<TierComparisonScreen> {
           // Banner for badge
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            padding: EdgeInsets.symmetric(vertical: 8.sh, horizontal: 16.sw),
             decoration: BoxDecoration(
               color: isCurrent ? orange : accentColor.withValues(alpha:0.1),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(22.sw)),
             ),
             child: Row(
               children: [
                 Icon(
                   isCurrent ? Icons.check_circle_rounded : Icons.star_rounded, 
                   color: isCurrent ? Colors.white : accentColor, 
-                  size: 18
+                  size: 18.sw
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: 8.sw),
                 Text(
                   isCurrent ? "CURRENT PLAN" : (isUpgrade ? "UPGRADE" : (isNewSub ? "SELECT PLAN" : "AVAILABLE")),
                   style: TextStyle(
                     color: isCurrent ? Colors.white : accentColor,
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.bold,
-                    letterSpacing: 1,
+                    letterSpacing: 1.sw,
                   ),
                 ),
               ],
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24.sw),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -387,59 +389,60 @@ class _TierComparisonScreenState extends State<TierComparisonScreen> {
                       children: [
                         Text(
                           title,
-                          style: TextStyle(color: purple, fontSize: 22, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+                          style: TextStyle(color: purple, fontSize: 22.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: 8.sw),
                         Icon(
                           tierLevel == 3 ? Icons.diamond_rounded : (tierLevel == 2 ? Icons.star_rounded : Icons.star_half_rounded), 
-                          color: accentColor
+                          color: accentColor,
+                          size: 20.sw,
                         ),
                       ],
                     ),
                     if (tierLevel > 0)
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: EdgeInsets.symmetric(horizontal: 8.sw, vertical: 4.sh),
                       decoration: BoxDecoration(
                         color: accentColor.withValues(alpha:0.1),
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(8.sw),
                       ),
                       child: Text(
                         tierLevel == 3 ? "PLATINUM" : (tierLevel == 2 ? "GOLD" : "SILVER"),
-                        style: TextStyle(color: accentColor, fontSize: 10, fontWeight: FontWeight.bold),
+                        style: TextStyle(color: accentColor, fontSize: 10.sp, fontWeight: FontWeight.bold),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: 4.sh),
                 Text(
                   price,
-                  style: TextStyle(color: orange, fontSize: 24, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+                  style: TextStyle(color: orange, fontSize: 24.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
                 ),
                 if (isUpgrade) 
                   Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: EdgeInsets.only(top: 4.sh),
                     child: Text(
                       "*Upgrades are pro-rated. You'll only pay the difference for the remaining days of your current cycle.",
-                      style: TextStyle(color: orange.withValues(alpha:0.8), fontSize: 11, fontStyle: FontStyle.italic),
+                      style: TextStyle(color: orange.withValues(alpha:0.8), fontSize: 11.sp, fontStyle: FontStyle.italic),
                     ),
                   ),
-                const SizedBox(height: 20),
+                SizedBox(height: 20.sh),
                 ...benefits.map((b) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: EdgeInsets.only(bottom: 8.sh),
                   child: Row(
                     children: [
-                      Icon(Icons.check_circle_outline_rounded, color: accentColor.withValues(alpha:0.6), size: 16),
-                      const SizedBox(width: 10),
-                      Expanded(child: Text(b, style: TextStyle(color: purple.withValues(alpha:0.8), fontSize: 14))),
+                      Icon(Icons.check_circle_outline_rounded, color: accentColor.withValues(alpha:0.6), size: 16.sw),
+                      SizedBox(width: 10.sw),
+                      Expanded(child: Text(b, style: TextStyle(color: purple.withValues(alpha:0.8), fontSize: 14.sp))),
                     ],
                   ),
                 )),
-                const SizedBox(height: 24),
+                SizedBox(height: 24.sh),
                 
                 if (tierLevel > 0 && !isCurrent)
                   SizedBox(
                     width: double.infinity,
-                    height: 50,
+                    height: 50.sh,
                     child: ElevatedButton(
                       onPressed: () => _handleSubscribe(planData!),
                       style: ElevatedButton.styleFrom(
@@ -448,11 +451,11 @@ class _TierComparisonScreenState extends State<TierComparisonScreen> {
                         elevation: 0,
                         side: (isUpgrade || isNewSub) ? BorderSide.none : BorderSide(color: purple.withValues(alpha:0.2)),
 
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.sw)),
                       ),
                       child: Text(
                         isUpgrade ? "Proceed to Upgrade" : (isNewSub ? "Subscribe Now" : "Switch to this Tier"),
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp),
                       ),
                     ),
                   )
@@ -462,15 +465,15 @@ class _TierComparisonScreenState extends State<TierComparisonScreen> {
                       Center(
                         child: Text(
                           "Your Active Plan",
-                          style: TextStyle(color: orange, fontWeight: FontWeight.bold, fontSize: 16),
+                          style: TextStyle(color: orange, fontWeight: FontWeight.bold, fontSize: 16.sp),
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      SizedBox(height: 12.sh),
                       TextButton(
                         onPressed: _isCancelling ? null : _cancelSubscription,
                         child: _isCancelling 
-                           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                           : const Text("Cancel Subscription", style: TextStyle(color: Colors.red, fontSize: 13)),
+                           ? SizedBox(width: 20.sw, height: 20.sw, child: CircularProgressIndicator(strokeWidth: 2.sw))
+                           : Text("Cancel Subscription", style: TextStyle(color: Colors.red, fontSize: 13.sp)),
                       ),
                     ],
                   ),

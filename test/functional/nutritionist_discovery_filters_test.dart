@@ -22,18 +22,18 @@ void main() {
     await tester.pump();
 
     expect(find.text('All'), findsOneWidget);
-    expect(find.text('Sports'), findsOneWidget);
+    expect(find.text('Sports Nutrition'), findsOneWidget);
 
     Text allBefore = tester.widget<Text>(find.text('All'));
     expect(allBefore.style?.fontWeight, FontWeight.bold);
 
-    await tester.tap(find.text('Sports'));
+    await tester.tap(find.text('Sports Nutrition'));
     await tester.pump();
 
     Text allAfter = tester.widget<Text>(find.text('All'));
     expect(allAfter.style?.fontWeight == FontWeight.bold, isFalse);
 
-    Text sportsAfter = tester.widget<Text>(find.text('Sports'));
+    Text sportsAfter = tester.widget<Text>(find.text('Sports Nutrition'));
     expect(sportsAfter.style?.fontWeight, FontWeight.bold);
   });
 }

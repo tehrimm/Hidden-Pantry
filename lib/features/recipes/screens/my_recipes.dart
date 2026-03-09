@@ -11,6 +11,8 @@ import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
 import 'package:hidden_pantry_app/features/recipes/upload/upload_recipe_step1.dart';
 import 'package:hidden_pantry_app/core/services/view_mode_service.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class MyRecipesScreen extends StatefulWidget {
   const MyRecipesScreen({super.key});
@@ -85,16 +87,16 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: const Color(0xFFF9E3D5),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30.sw)),
       ),
       builder: (context) => SafeArea(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              leading: const Icon(Icons.edit_rounded, color: Color(0xFF462F4D)),
-              title: const Text('Edit Recipe', style: TextStyle(color: Color(0xFF462F4D), fontFamily: 'Satoshi')),
+              leading: Icon(Icons.edit_rounded, color: const Color(0xFF462F4D), size: 24.sp),
+              title: Text('Edit Recipe', style: TextStyle(color: const Color(0xFF462F4D), fontFamily: 'Satoshi', fontSize: 16.sp)),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -106,8 +108,8 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.share_rounded, color: Color(0xFF462F4D)),
-              title: const Text('Share Recipe', style: TextStyle(color: Color(0xFF462F4D), fontFamily: 'Satoshi')),
+              leading: Icon(Icons.share_rounded, color: const Color(0xFF462F4D), size: 24.sp),
+              title: Text('Share Recipe', style: TextStyle(color: const Color(0xFF462F4D), fontFamily: 'Satoshi', fontSize: 16.sp)),
               onTap: () {
                 Navigator.pop(context);
                 _showShareOptions(recipe);
@@ -183,27 +185,27 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24.sw),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28.sw)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 50, height: 5,
-              decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(3)),
+              width: 50.sw, height: 5.sh,
+              decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(3.sw)),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24.sh),
             Text(
               "Manage Recipe",
-              style: TextStyle(color: purple, fontSize: 20, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+              style: TextStyle(color: purple, fontSize: 20.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24.sh),
             ListTile(
-              leading: Icon(Icons.edit_rounded, color: orange),
-              title: Text("Edit Recipe", style: TextStyle(color: purple, fontWeight: FontWeight.bold)),
+              leading: Icon(Icons.edit_rounded, color: orange, size: 24.sp),
+              title: Text("Edit Recipe", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp)),
               onTap: () {
                 Navigator.pop(context);
                 Navigator.push(
@@ -215,8 +217,8 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline_rounded, color: Colors.red),
-              title: const Text("Delete Recipe", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+              leading: Icon(Icons.delete_outline_rounded, color: Colors.red, size: 24.sp),
+              title: Text("Delete Recipe", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16.sp)),
               onTap: () {
                 Navigator.pop(context);
                 _confirmDelete(recipe);
@@ -233,35 +235,35 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(24.sw),
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28.sw)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 50, height: 5,
-              decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(3)),
+              width: 50.sw, height: 5.sh,
+              decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(3.sw)),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24.sh),
             Text(
               "Share Recipe",
-              style: TextStyle(color: purple, fontSize: 20, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+              style: TextStyle(color: purple, fontSize: 20.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24.sh),
             ListTile(
-              leading: Icon(Icons.chat_bubble_outline_rounded, color: orange),
-              title: Text("Share with Clients", style: TextStyle(color: purple, fontWeight: FontWeight.bold)),
+              leading: Icon(Icons.chat_bubble_outline_rounded, color: orange, size: 24.sp),
+              title: Text("Share with Clients", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp)),
               onTap: () {
                 Navigator.pop(context);
                 _showSelectClientSheet(recipe);
               },
             ),
             ListTile(
-              leading: Icon(Icons.dynamic_feed_rounded, color: orange),
-              title: Text("Post to Wall", style: TextStyle(color: purple, fontWeight: FontWeight.bold)),
+              leading: Icon(Icons.dynamic_feed_rounded, color: orange, size: 24.sp),
+              title: Text("Post to Wall", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp)),
               onTap: () {
                 Navigator.pop(context);
                 _shareToWall(recipe);
@@ -275,6 +277,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return const Scaffold(body: Center(child: Text("Please login")));
     final double topPad = MediaQuery.of(context).padding.top;
@@ -282,7 +285,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
     return Scaffold(
       backgroundColor: bg,
       body: ClipRRect(
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(30.sw),
         child: Container(
           color: bg,
             child: Stack(
@@ -291,8 +294,8 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
 
                 // Standardized Header - Back Button
                 Positioned(
-                  left: 30,
-                  top: topPad + 20,
+                  left: 30.sw,
+                  top: topPad + 36.sh,
                   child: BackButtonWidget(color: purple),
                 ),
 
@@ -300,14 +303,14 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                 Positioned(
                   left: 0,
                   right: 0,
-                  top: topPad + 20,
-                  height: 50,
+                  top: topPad + 36.sh,
+                  height: 50.sh,
                   child: Center(
                     child: Text(
                       'My Recipes',
                       style: TextStyle(
                         color: purple,
-                        fontSize: 24,
+                        fontSize: 24.sp,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Satoshi',
                       ),
@@ -320,28 +323,28 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                 SafeArea(
                   child: Column(
                     children: [
-                      SizedBox(height: topPad + 70), // Responsive gap for header
+                      SizedBox(height: 96.sh), // Standardized gap for fixed header
                     Expanded(
                       child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 30),
+                        padding: EdgeInsets.symmetric(horizontal: 30.sw),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(height: 20),
+                            SizedBox(height: 20.sh),
                             Center(child: _buildProfileSection()),
-                            const SizedBox(height: 30),
+                            SizedBox(height: 30.sh),
                             Text(
                               "My Recipes",
                               style: TextStyle(
                                 color: purple,
-                                fontSize: 20,
+                                fontSize: 20.sp,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Satoshi',
                               ),
                             ),
-                            const SizedBox(height: 20),
+                            SizedBox(height: 20.sh),
                             _buildRecipeList(user.uid),
-                            const SizedBox(height: 30),
+                            SizedBox(height: 30.sh),
                           ],
                         ),
                       ),
@@ -369,17 +372,17 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
         height: MediaQuery.of(context).size.height * 0.75,
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30.sw)),
         ),
         child: Column(
           children: [
             Container(
-              margin: const EdgeInsets.only(top: 10, bottom: 20),
-              width: 50, height: 5,
-              decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(3)),
+              margin: EdgeInsets.only(top: 10.sh, bottom: 20.sh),
+              width: 50.sw, height: 5.sh,
+              decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(3.sw)),
             ),
-            Text("Select Client to Share With", style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
+            Text("Select Client to Share With", style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.bold)),
+            SizedBox(height: 16.sh),
             Expanded(
               child: FutureBuilder<List<Map<String, dynamic>>>(
                 future: _fetchClientsForShare(user.uid),
@@ -395,9 +398,9 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                   if (clients.isEmpty) return const Center(child: Text("No clients found with matching benefits."));
 
                   return ListView.separated(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.all(20.sw),
                     itemCount: clients.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (_, __) => SizedBox(height: 12.sh),
                     itemBuilder: (context, index) {
                       final client = clients[index];
                       final otherUserId = client["userId"] as String;
@@ -440,26 +443,26 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                              }
                            }
                         },
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 8.sh),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius: BorderRadius.circular(16.sw),
                           side: BorderSide(color: purple.withValues(alpha:0.05)),
                         ),
                         tileColor: Colors.white,
                         leading: CircleAvatar(
-                          radius: 24,
+                          radius: 24.sw,
                           backgroundColor: purple.withValues(alpha:0.1),
                           backgroundImage: otherUserPhoto != null ? NetworkImage(otherUserPhoto) : null,
-                          child: otherUserPhoto == null ? Icon(Icons.person, color: purple) : null,
+                          child: otherUserPhoto == null ? Icon(Icons.person, color: purple, size: 24.sp) : null,
                         ),
-                        title: Text(otherUserName, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16)),
+                        title: Text(otherUserName, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp)),
                         trailing: Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: EdgeInsets.all(8.sw),
                           decoration: BoxDecoration(
                             color: orange.withValues(alpha:0.1),
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(Icons.send_rounded, color: orange, size: 20),
+                          child: Icon(Icons.send_rounded, color: orange, size: 20.sp),
                         ),
                       );
                     },
@@ -581,33 +584,33 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
     return Column(
       children: [
         ClipRRect(
-          borderRadius: BorderRadius.circular(50),
+          borderRadius: BorderRadius.circular(50.sw),
           child: Container(
-            width: 80,
-            height: 80,
+            width: 80.sw,
+            height: 80.sw,
             color: const Color(0xFFD9D9D9),
             child: _photoUrl != null
                 ? Image.network(_photoUrl!, fit: BoxFit.cover)
                 : Image.asset('assets/Logos/profile_placeholder.png', scale: 2),
           ),
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: 10.sh),
         Text(
           _name ?? 'Hidden Pantry',
           style: TextStyle(
             color: purple,
-            fontSize: 15,
+            fontSize: 15.sp,
             fontWeight: FontWeight.bold,
             fontFamily: 'Satoshi',
           ),
         ),
-        const SizedBox(height: 5),
+        SizedBox(height: 5.sh),
         Text(
           _bio ?? 'Passionate about cooking.',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: purple,
-            fontSize: 12,
+            fontSize: 12.sp,
             fontWeight: FontWeight.w500,
             letterSpacing: 0.2,
             fontFamily: 'Satoshi',
@@ -632,10 +635,10 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
         if (docs.isEmpty) {
           return Center(
             child: Padding(
-              padding: const EdgeInsets.only(top: 40),
+              padding: EdgeInsets.only(top: 40.sh),
               child: Text(
                 "You haven't uploaded any recipes yet.",
-                style: TextStyle(color: purple.withValues(alpha:0.6), fontFamily: "Satoshi"),
+                style: TextStyle(color: purple.withValues(alpha:0.6), fontFamily: "Satoshi", fontSize: 14.sp),
               ),
             ),
           );
@@ -644,11 +647,11 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
             childAspectRatio: 157 / 231,
-            crossAxisSpacing: 15,
-            mainAxisSpacing: 15,
+            crossAxisSpacing: 15.sw,
+            mainAxisSpacing: 15.sh,
           ),
           itemCount: docs.length,
           itemBuilder: (context, index) {

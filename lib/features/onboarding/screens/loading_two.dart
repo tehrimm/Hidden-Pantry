@@ -7,22 +7,18 @@ class LoadingTwo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-return PopScope(
-  canPop: false, // prevent app from closing
-  onPopInvokedWithResult: (didPop, result) {
-    if (didPop) return;
+    return PopScope(
+      canPop: false, // prevent app from closing
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
 
-    // Android back button → LoadingOne
-    Navigator.pushReplacement(
-      context,
-      PageRouteBuilder(
-        pageBuilder: (_, __, ___) => const LoadingOne(),
-        transitionDuration: const Duration(milliseconds: 400),
-        transitionsBuilder: (_, anim, __, child) =>
-          FadeTransition(opacity: anim, child: child),
-      ),
-    );
-  },
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const LoadingOne(),
+          ),
+        );
+      },
       child: Scaffold(
         backgroundColor: const Color(0xFFFFF3EB),
         body: LayoutBuilder(
@@ -43,7 +39,7 @@ return PopScope(
               height: screenHeight,
               child: Stack(
                 children: [
-                  // Background Image
+                  // Big card image
                   Positioned(
                     left: 26 * wScale,
                     top: 34 * hScale,
@@ -60,7 +56,7 @@ return PopScope(
                     ),
                   ),
 
-                  // Logo (Centered horizontally)
+                  // Top logo (center)
                   Positioned(
                     top: 62 * hScale,
                     left: 0,
@@ -75,7 +71,7 @@ return PopScope(
                     ),
                   ),
 
-                  // Title Text
+                  // Title
                   Positioned(
                     left: 52 * wScale,
                     top: 555 * hScale,
@@ -94,12 +90,12 @@ return PopScope(
                     ),
                   ),
 
-                  // Subtitle Text
+                  // Subtext
                   Positioned(
                     left: 52 * wScale,
                     top: 648 * hScale,
                     child: SizedBox(
-                      width: 260 * wScale,
+                      width: 290 * wScale,
                       child: Text(
                         'Master new dishes with clear, \nguided instructions.',
                         style: TextStyle(
@@ -114,7 +110,7 @@ return PopScope(
                     ),
                   ),
 
-                  // Progress Bar
+                  // Progress bar (4 states) -> currentStep: 2
                   Positioned(
                     left: 26 * wScale,
                     top: 776 * hScale,
@@ -125,19 +121,23 @@ return PopScope(
                     ),
                   ),
 
-                  // Next Button
+                  // Next button
                   Positioned(
                     right: 46 * wScale, // Adjusted from left: 307
                     top: 749 * hScale,
                     child: GestureDetector(
-                      onTap: () {
+                      onTap: () async {
+                        // Preload the next screen's heavy asset before animating
+                        await precacheImage(const AssetImage('assets/bg/3.jpg'), context);
+                        if (!context.mounted) return;
+                        
                         Navigator.pushReplacement(
                           context,
                           PageRouteBuilder(
                             pageBuilder: (_, __, ___) => const LoadingThree(),
-                            transitionDuration: const Duration(milliseconds: 400),
+                            transitionDuration: const Duration(milliseconds: 500),
                             transitionsBuilder: (_, anim, __, child) =>
-                              FadeTransition(opacity: anim, child: child),
+                                FadeTransition(opacity: anim, child: child),
                           ),
                         );
                       },
@@ -158,52 +158,3 @@ return PopScope(
     );
   }
 }
-
-class OnboardingProgressBar extends StatelessWidget {
-  final int currentStep;
-  final int totalSteps;
-  final double wScale;
-
-  const OnboardingProgressBar({
-    super.key,
-    required this.currentStep,
-    required this.totalSteps,
-    this.wScale = 1.0,
-  });
-
-  double _filledWidth() {
-    final widths = [37.5 * wScale, 75.0 * wScale, 112.5 * wScale, 150.0 * wScale];
-    final idx = (currentStep - 1).clamp(0, widths.length - 1);
-    return widths[idx];
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final baseWidth = 150.0 * wScale;
-    const height = 11.0;
-
-    return Stack(
-      children: [
-        Container(
-          width: baseWidth,
-          height: height,
-          decoration: BoxDecoration(
-            color: const Color(0xFFF9E3D5),
-            borderRadius: BorderRadius.circular(20),
-          ),
-        ),
-        Container(
-          width: _filledWidth(),
-          height: height,
-          decoration: BoxDecoration(
-            color: const Color(0xFFFF9453),
-            borderRadius: BorderRadius.circular(20),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-
-

@@ -239,7 +239,7 @@ class RecipeApiService {
     
     final uri = Uri.parse("$baseUrl/recommend");
     // Fetch MORE results (top_k) for ingredient searches to allow effective local filtering
-    final topK = (hasIngredients || (allergies != null && allergies.isNotEmpty)) ? 1500 : (limit > 50 ? limit : 50);
+    final topK = (hasIngredients || (allergies != null && allergies.isNotEmpty)) ? 5000 : (limit > 50 ? limit : 50);
     
     final body = <String, dynamic>{
       "query": effectiveQuery,
@@ -271,32 +271,44 @@ class RecipeApiService {
 
       // Allergen Filtering (Local)
       if (allergies != null && allergies.isNotEmpty) {
-        allRecipes = allRecipes.where((r) {
-           return RecipeMatcher.calculateMatch(r, [], allergies: allergies) > 0 || r.ingredients.isEmpty;
-        }).toList();
+        allRecipes = allRecipes.where((r) => RecipeMatcher.isSafe(r, allergies)).toList();
       }
 
       // Note: We no longer perform strict tag filtering here.
       // Instead, we will use tags in the ranking logic below to prioritize "best matches".
 
-      // Filter by ingredients if provided
+      // Filter by ingredients if provided — strict AND with flexible fallback
       if (ingredients != null && ingredients.isNotEmpty) {
-        print('DEBUG API: Strict Filtering ${allRecipes.length} recipes by ${ingredients.length} ingredients');
-        allRecipes = allRecipes.where((r) {
-          // Check if recipe contains ALL of the selected ingredients (Strict AND)
+        print('DEBUG API: Filtering ${allRecipes.length} recipes by ${ingredients.length} ingredients');
+        
+        // First try strict AND: recipe must contain ALL selected ingredients
+        final strictResults = allRecipes.where((r) {
           final recipeIngredientNames = r.ingredients.map((i) => i.name.toLowerCase()).toList();
-          
-          for (final selectedIng in ingredients) {
+          return ingredients.every((selectedIng) {
             final selectedLower = selectedIng.toLowerCase();
-            // Check if THIS selected ingredient is present in the recipe
-            final hasMatch = recipeIngredientNames.any((rIng) => 
+            return recipeIngredientNames.any((rIng) =>
               rIng.contains(selectedLower) || selectedLower.contains(rIng)
             );
-            if (!hasMatch) return false; // One selected ingredient is missing, skip recipe
-          }
-          return true; // All selected ingredients are present
+          });
         }).toList();
-        print('DEBUG API: After strict filtering: ${allRecipes.length} recipes remain');
+        
+        if (strictResults.isNotEmpty) {
+          print('DEBUG API: Strict AND matched ${strictResults.length} recipes');
+          allRecipes = strictResults;
+        } else {
+          // Fallback to flexible OR: at least 1 ingredient must match
+          print('DEBUG API: Strict AND found 0, falling back to flexible OR');
+          allRecipes = allRecipes.where((r) {
+            final recipeIngredientNames = r.ingredients.map((i) => i.name.toLowerCase()).toList();
+            return ingredients.any((selectedIng) {
+              final selectedLower = selectedIng.toLowerCase();
+              return recipeIngredientNames.any((rIng) =>
+                rIng.contains(selectedLower) || selectedLower.contains(rIng)
+              );
+            });
+          }).toList();
+          print('DEBUG API: Flexible OR matched ${allRecipes.length} recipes');
+        }
       }
 
       // Sorting & Ranking

@@ -4,6 +4,7 @@ import 'package:hidden_pantry_app/features/recipes/services/recipe_api_service.d
 import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
 import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
 import 'package:hidden_pantry_app/core/constants/api_constants.dart';
+import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
@@ -155,11 +156,16 @@ class _RecipeSearchScreenState extends State<RecipeSearchScreen> {
           style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
         ),
       ),
-      body: _loading
-          ? _buildProgress()
-          : _error != null
-              ? _buildError()
-              : _buildGrid(),
+      body: Stack(
+        children: [
+          const PatternBackground(),
+          _loading
+              ? _buildProgress()
+              : _error != null
+                  ? _buildError()
+                  : _buildGrid(),
+        ],
+      ),
     );
   }
 

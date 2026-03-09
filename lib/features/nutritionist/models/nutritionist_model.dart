@@ -4,12 +4,12 @@ class Nutritionist {
   final String uid;
   final String fullName;
   final String email;
-  final String phoneNumber;
-  final String licenseNumber;
-  final String certificateUrl;
+  final String? phoneNumber;
+  final String? licenseNumber;
+  final String? certificateUrl;
   final String? organizationName;
   final String? expiryDate;
-  final String verificationStatus; // "pending" | "approved" | "rejected"
+  final String verificationStatus; // pending, approved, rejected
   final String? rejectionReason;
   final DateTime? rejectionDate;
   final bool hasLoggedInAfterRejection;
@@ -18,70 +18,28 @@ class Nutritionist {
   final DateTime updatedAt;
   final String? stripeConnectedAccountId;
 
-  Nutritionist({
+  const Nutritionist({
     required this.uid,
     required this.fullName,
     required this.email,
-    required this.phoneNumber,
-    required this.licenseNumber,
-    required this.certificateUrl,
+    this.phoneNumber,
+    this.licenseNumber,
+    this.certificateUrl,
     this.organizationName,
     this.expiryDate,
-    required this.verificationStatus,
+    this.verificationStatus = 'pending',
     this.rejectionReason,
     this.rejectionDate,
-    required this.hasLoggedInAfterRejection,
+    this.hasLoggedInAfterRejection = false,
     this.lastLoginAt,
     required this.createdAt,
     required this.updatedAt,
     this.stripeConnectedAccountId,
   });
 
-  factory Nutritionist.fromJson(Map<String, dynamic> json) {
-    return Nutritionist(
-      uid: json['uid'] as String,
-      fullName: json['fullName'] as String,
-      email: json['email'] as String,
-      phoneNumber: json['phoneNumber'] as String,
-      licenseNumber: json['licenseNumber'] as String,
-      certificateUrl: json['certificateUrl'] as String,
-      organizationName: json['organizationName'] as String?,
-      expiryDate: json['expiryDate'] as String?,
-      verificationStatus: json['verificationStatus'] as String,
-      rejectionReason: json['rejectionReason'] as String?,
-      rejectionDate: json['rejectionDate'] != null
-          ? (json['rejectionDate'] as Timestamp).toDate()
-          : null,
-      hasLoggedInAfterRejection: json['hasLoggedInAfterRejection'] as bool? ?? false,
-      lastLoginAt: json['lastLoginAt'] != null
-          ? (json['lastLoginAt'] as Timestamp).toDate()
-          : null,
-      createdAt: (json['createdAt'] as Timestamp).toDate(),
-      updatedAt: (json['updatedAt'] as Timestamp).toDate(),
-      stripeConnectedAccountId: json['stripeConnectedAccountId'] as String?,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'uid': uid,
-      'fullName': fullName,
-      'email': email,
-      'phoneNumber': phoneNumber,
-      'licenseNumber': licenseNumber,
-      'certificateUrl': certificateUrl,
-      'organizationName': organizationName,
-      'expiryDate': expiryDate,
-      'verificationStatus': verificationStatus,
-      'rejectionReason': rejectionReason,
-      'rejectionDate': rejectionDate != null ? Timestamp.fromDate(rejectionDate!) : null,
-      'hasLoggedInAfterRejection': hasLoggedInAfterRejection,
-      'lastLoginAt': lastLoginAt != null ? Timestamp.fromDate(lastLoginAt!) : null,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'updatedAt': Timestamp.fromDate(updatedAt),
-      'stripeConnectedAccountId': stripeConnectedAccountId,
-    };
-  }
+  bool get isApproved => verificationStatus.toLowerCase() == 'approved';
+  bool get isPending => verificationStatus.toLowerCase() == 'pending';
+  bool get isRejected => verificationStatus.toLowerCase() == 'rejected';
 
   Nutritionist copyWith({
     String? uid,
@@ -90,6 +48,8 @@ class Nutritionist {
     String? phoneNumber,
     String? licenseNumber,
     String? certificateUrl,
+    String? organizationName,
+    String? expiryDate,
     String? verificationStatus,
     String? rejectionReason,
     DateTime? rejectionDate,
@@ -106,6 +66,8 @@ class Nutritionist {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       licenseNumber: licenseNumber ?? this.licenseNumber,
       certificateUrl: certificateUrl ?? this.certificateUrl,
+      organizationName: organizationName ?? this.organizationName,
+      expiryDate: expiryDate ?? this.expiryDate,
       verificationStatus: verificationStatus ?? this.verificationStatus,
       rejectionReason: rejectionReason ?? this.rejectionReason,
       rejectionDate: rejectionDate ?? this.rejectionDate,
@@ -117,10 +79,59 @@ class Nutritionist {
     );
   }
 
-  bool get isPending => verificationStatus == 'pending';
-  bool get isApproved => verificationStatus == 'approved';
-  bool get isRejected => verificationStatus == 'rejected';
+  factory Nutritionist.fromJson(Map<String, dynamic> json) {
+    DateTime? _toDate(dynamic v) {
+      if (v == null) return null;
+      if (v is Timestamp) return v.toDate();
+      if (v is String) return DateTime.tryParse(v);
+      if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
+      return null;
+    }
+
+    final created = _toDate(json['createdAt']) ?? DateTime.now();
+    final updated = _toDate(json['updatedAt']) ?? created;
+
+    return Nutritionist(
+      uid: json['uid'] ?? '',
+      fullName: json['fullName'] ?? '',
+      email: json['email'] ?? '',
+      phoneNumber: json['phoneNumber'],
+      licenseNumber: json['licenseNumber'],
+      certificateUrl: json['certificateUrl'],
+      organizationName: json['organizationName'],
+      expiryDate: json['expiryDate'],
+      verificationStatus: json['verificationStatus'] ?? 'pending',
+      rejectionReason: json['rejectionReason'],
+      rejectionDate: _toDate(json['rejectionDate']),
+      hasLoggedInAfterRejection: (json['hasLoggedInAfterRejection'] as bool?) ?? false,
+      lastLoginAt: _toDate(json['lastLoginAt']),
+      createdAt: created,
+      updatedAt: updated,
+      stripeConnectedAccountId: json['stripeConnectedAccountId'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    Timestamp _ts(DateTime dt) => Timestamp.fromDate(dt);
+
+    return {
+      'uid': uid,
+      'fullName': fullName,
+      'email': email,
+      'phoneNumber': phoneNumber,
+      'licenseNumber': licenseNumber,
+      'certificateUrl': certificateUrl,
+      'organizationName': organizationName,
+      'expiryDate': expiryDate,
+      'verificationStatus': verificationStatus,
+      'rejectionReason': rejectionReason,
+      'rejectionDate': rejectionDate != null ? _ts(rejectionDate!) : null,
+      'hasLoggedInAfterRejection': hasLoggedInAfterRejection,
+      'lastLoginAt': lastLoginAt != null ? _ts(lastLoginAt!) : null,
+      'createdAt': _ts(createdAt),
+      'updatedAt': _ts(updatedAt),
+      'stripeConnectedAccountId': stripeConnectedAccountId,
+    }..removeWhere((key, value) => value == null);
+  }
 }
-
-
 

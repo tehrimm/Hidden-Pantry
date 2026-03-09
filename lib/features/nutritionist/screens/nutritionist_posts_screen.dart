@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
 
@@ -44,6 +45,7 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return const Center(child: Text("Please log in"));
 
@@ -51,25 +53,25 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(22, 12, 22, 0),
+          padding: EdgeInsets.fromLTRB(22.sw, 12.sh, 22.sw, 0),
           child: Text(
             "My Posts",
             style: TextStyle(
               color: purple,
-              fontSize: 28,
+              fontSize: 28.sp,
               fontWeight: FontWeight.w900,
               fontFamily: "Satoshi",
             ),
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 22),
+          padding: EdgeInsets.symmetric(horizontal: 22.sw),
           child: Text(
             "Your published tips & content",
-            style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 13),
+            style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 13.sp),
           ),
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: 16.sh),
         Expanded(
           child: StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
@@ -92,10 +94,10 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
               }
 
               return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 22),
+                padding: EdgeInsets.symmetric(horizontal: 22.sw),
                 itemCount: docs.length + 1,
                 itemBuilder: (context, index) {
-                  if (index == docs.length) return const SizedBox(height: 100);
+                  if (index == docs.length) return SizedBox(height: 100.sh);
                   final data = docs[index].data() as Map<String, dynamic>;
                   final docId = docs[index].id;
                   return _postCard(data, docId, uid);
@@ -114,22 +116,22 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24.sw),
             decoration: BoxDecoration(
               color: cardBg,
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.article_outlined, size: 48, color: orange.withValues(alpha:0.5)),
+            child: Icon(Icons.article_outlined, size: 48.sw, color: orange.withValues(alpha:0.5)),
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20.sh),
           Text(
             "No posts yet",
-            style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 18, fontFamily: "Satoshi"),
+            style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 18.sp, fontFamily: "Satoshi"),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.sh),
           Text(
             "Tap the + button to post your first tip!",
-            style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 14),
+            style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 14.sp),
           ),
         ],
       ),
@@ -160,12 +162,12 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
     ];
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: 16.sh),
       decoration: BoxDecoration(
         color: cardBg,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(24.sw),
         boxShadow: [
-          BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 15, offset: const Offset(0, 4)),
+          BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 15.sw, offset: Offset(0, 4.sh)),
         ],
       ),
       child: Column(
@@ -173,52 +175,52 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
         children: [
           // ── Author Row ──
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: EdgeInsets.fromLTRB(16.sw, 16.sh, 16.sw, 0),
             child: Row(
               children: [
                 CircleAvatar(
-                  radius: 18,
+                  radius: 18.sw,
                   backgroundColor: cardInner,
                   backgroundImage: _photoUrl != null && _photoUrl!.startsWith("http")
                       ? NetworkImage(_photoUrl!)
                       : null,
                   child: _photoUrl == null
-                      ? Icon(Icons.person, color: orange, size: 18)
+                      ? Icon(Icons.person, color: orange, size: 18.sw)
                       : null,
                 ),
-                const SizedBox(width: 10),
+                SizedBox(width: 10.sw),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         _fullName ?? "You",
-                        style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14, fontFamily: "Satoshi"),
+                        style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14.sp, fontFamily: "Satoshi"),
                       ),
                       Text(
                         timeAgo,
-                        style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 11),
+                        style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 11.sp),
                       ),
                     ],
                   ),
                 ),
                 // Tier badge
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 5.sh),
                   decoration: BoxDecoration(
                     color: tierColors[minTier].withValues(alpha:0.15),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(10.sw),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(tierIcons[minTier], size: 12, color: tierColors[minTier]),
-                      const SizedBox(width: 4),
+                      Icon(tierIcons[minTier], size: 12.sw, color: tierColors[minTier]),
+                      SizedBox(width: 4.sw),
                       Text(
                         tierLabels[minTier],
                         style: TextStyle(
                           color: tierColors[minTier],
-                          fontSize: 10,
+                          fontSize: 10.sp,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -231,18 +233,18 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
 
           // ── Content ──
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+            padding: EdgeInsets.fromLTRB(16.sw, 14.sh, 16.sw, 10.sh),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (content.isNotEmpty)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
+                    padding: EdgeInsets.only(bottom: 12.sh),
                     child: Text(
                       content,
                       style: TextStyle(
                         color: purple.withValues(alpha:0.85),
-                        fontSize: 15,
+                        fontSize: 15.sp,
                         height: 1.6,
                       ),
                     ),
@@ -251,9 +253,9 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
                 // Image Attachment
                 if (data["imageUrl"] != null)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
+                    padding: EdgeInsets.only(bottom: 12.sh),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
+                      borderRadius: BorderRadius.circular(16.sw),
                       child: Image.network(
                         data["imageUrl"],
                         width: double.infinity,
@@ -261,7 +263,7 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
                         loadingBuilder: (context, child, loadingProgress) {
                           if (loadingProgress == null) return child;
                           return Container(
-                            height: 200,
+                            height: 200.sh,
                             color: purple.withValues(alpha:0.05),
                             child: const Center(child: CircularProgressIndicator()),
                           );
@@ -273,14 +275,14 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
                 // Meal Plan Attachment
                 if (data["mealPlanId"] != null)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
+                    padding: EdgeInsets.only(bottom: 12.sh),
                     child: _mealPlanPreview(data["mealPlanId"], content, uid),
                   ),
 
                 // Shared Recipe Attachment
                 if (data["recipeId"] != null)
                   Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
+                    padding: EdgeInsets.only(bottom: 12.sh),
                     child: _recipePreview(data["recipeId"], data["recipeName"], data["recipeImageUrl"] ?? data["imageUrl"]),
                   ),
 
@@ -294,23 +296,23 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
                       }
                     },
                     child: Container(
-                      padding: const EdgeInsets.all(12),
+                      padding: EdgeInsets.all(12.sw),
                       decoration: BoxDecoration(
                         color: purple.withValues(alpha:0.05),
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(12.sw),
                         border: Border.all(color: purple.withValues(alpha:0.1)),
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.insert_drive_file_rounded, color: orange, size: 24),
-                          const SizedBox(width: 12),
+                          Icon(Icons.insert_drive_file_rounded, color: orange, size: 24.sw),
+                          SizedBox(width: 12.sw),
                           Expanded(
                             child: Text(
                               "View Attached Document",
-                              style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13),
+                              style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13.sp),
                             ),
                           ),
-                          Icon(Icons.open_in_new_rounded, color: purple.withValues(alpha:0.4), size: 18),
+                          Icon(Icons.open_in_new_rounded, color: purple.withValues(alpha:0.4), size: 18.sw),
                         ],
                       ),
                     ),
@@ -321,14 +323,14 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
 
           // ── Divider ──
           Container(
-            height: 1,
-            margin: const EdgeInsets.symmetric(horizontal: 16),
+            height: 1.sh,
+            margin: EdgeInsets.symmetric(horizontal: 16.sw),
             color: purple.withValues(alpha:0.06),
           ),
 
           // ── Action Row: Like · Comment · Share · Delete ──
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            padding: EdgeInsets.symmetric(horizontal: 8.sw, vertical: 6.sh),
             child: Row(
               children: [
                 // Like (Disabled for Nutritionists)
@@ -412,30 +414,30 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
         final title = plan["title"] ?? "Meal Plan";
         
         return Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12.sw),
           decoration: BoxDecoration(
             color: cardInner,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16.sw),
             border: Border.all(color: orange.withValues(alpha:0.1)),
           ),
           child: Row(
             children: [
               Container(
-                 padding: const EdgeInsets.all(8),
+                 padding: EdgeInsets.all(8.sw),
                  decoration: BoxDecoration(color: orange.withValues(alpha:0.1), shape: BoxShape.circle),
-                 child: Icon(Icons.restaurant_menu_rounded, color: orange, size: 20),
+                 child: Icon(Icons.restaurant_menu_rounded, color: orange, size: 20.sw),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12.sw),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14)),
-                    Text("${plan['duration'] ?? 0} Days", style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 11)),
+                    Text(title, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14.sp)),
+                    Text("${plan['duration'] ?? 0} Days", style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 11.sp)),
                   ],
                 ),
               ),
-              const Icon(Icons.visibility_outlined, color: Colors.grey, size: 18),
+              Icon(Icons.visibility_outlined, color: Colors.grey, size: 18.sw),
             ],
           ),
         );
@@ -452,17 +454,17 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(12.sw),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 8.sh),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 18, color: color),
+              Icon(icon, size: 18.sw, color: color),
               if (label.isNotEmpty) ...[
-                const SizedBox(width: 5),
-                Text(label, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600)),
+                SizedBox(width: 5.sw),
+                Text(label, style: TextStyle(color: color, fontSize: 12.sp, fontWeight: FontWeight.w600)),
               ],
             ],
           ),
@@ -480,21 +482,21 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.6,
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24.sw)),
         ),
         child: Column(
           children: [
             // Handle
             Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40, height: 4,
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+              margin: EdgeInsets.only(top: 12.sh),
+              width: 40.sw, height: 4.sh,
+              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2.sw)),
             ),
             Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text("Comments", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 18, fontFamily: "Satoshi")),
+              padding: EdgeInsets.all(16.sw),
+              child: Text("Comments", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 18.sp, fontFamily: "Satoshi")),
             ),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
@@ -509,33 +511,33 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
                 builder: (context, snapshot) {
                   if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                     return Center(
-                      child: Text("No comments yet", style: TextStyle(color: purple.withValues(alpha:0.4))),
+                      child: Text("No comments yet", style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 14.sp)),
                     );
                   }
                   final docs = snapshot.data!.docs;
                   return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: EdgeInsets.symmetric(horizontal: 16.sw),
                     itemCount: docs.length,
                     itemBuilder: (context, index) {
                       final c = docs[index].data() as Map<String, dynamic>;
                       return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
+                        padding: EdgeInsets.only(bottom: 12.sh),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             CircleAvatar(
-                              radius: 14,
+                              radius: 14.sw,
                               backgroundColor: cardBg,
-                              child: Icon(Icons.person, size: 14, color: orange),
+                              child: Icon(Icons.person, size: 14.sw, color: orange),
                             ),
-                            const SizedBox(width: 10),
+                            SizedBox(width: 10.sw),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(c["userName"] ?? "User", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13)),
-                                  const SizedBox(height: 2),
-                                  Text(c["text"] ?? "", style: TextStyle(color: purple.withValues(alpha:0.7), fontSize: 13)),
+                                  Text(c["userName"] ?? "User", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13.sp)),
+                                  SizedBox(height: 2.sh),
+                                  Text(c["text"] ?? "", style: TextStyle(color: purple.withValues(alpha:0.7), fontSize: 13.sp)),
                                 ],
                               ),
                             ),
@@ -549,32 +551,33 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
             ),
             // Input row
             Container(
-              padding: EdgeInsets.fromLTRB(16, 8, 16, MediaQuery.of(context).viewInsets.bottom + 16),
+              padding: EdgeInsets.fromLTRB(16.sw, 8.sh, 16.sw, MediaQuery.of(context).viewInsets.bottom + 16.sh),
               decoration: BoxDecoration(
                 color: Colors.white,
-                boxShadow: [BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10, offset: const Offset(0, -4))],
+                boxShadow: [BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10.sw, offset: Offset(0, -4.sh))],
               ),
               child: Row(
                 children: [
                   Expanded(
                     child: TextField(
                       controller: commentCtrl,
+                      style: TextStyle(fontSize: 14.sp),
                       decoration: InputDecoration(
                         hintText: "Add a comment...",
-                        hintStyle: TextStyle(color: purple.withValues(alpha:0.4)),
+                        hintStyle: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 14.sp),
                         filled: true,
                         fillColor: cardInner,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20.sw), borderSide: BorderSide.none),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 10.sh),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  SizedBox(width: 8.sw),
                   CircleAvatar(
-                    radius: 20,
+                    radius: 20.sw,
                     backgroundColor: orange,
                     child: IconButton(
-                      icon: const Icon(Icons.send_rounded, color: Colors.white, size: 16),
+                      icon: Icon(Icons.send_rounded, color: Colors.white, size: 16.sw),
                       onPressed: () async {
                         final text = commentCtrl.text.trim();
                         if (text.isEmpty) return;
@@ -609,16 +612,16 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFFFFF3EB),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text("Delete Post?", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.sw)),
+        title: Text("Delete Post?", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontFamily: "Satoshi", fontSize: 18.sp)),
         content: Text(
           "This action cannot be undone.",
-          style: TextStyle(color: purple.withValues(alpha:0.7), fontSize: 14),
+          style: TextStyle(color: purple.withValues(alpha:0.7), fontSize: 14.sp),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("Cancel", style: TextStyle(color: purple.withValues(alpha:0.6), fontWeight: FontWeight.w600)),
+            child: Text("Cancel", style: TextStyle(color: purple.withValues(alpha:0.6), fontWeight: FontWeight.w600, fontSize: 14.sp)),
           ),
           ElevatedButton(
             onPressed: () async {
@@ -639,9 +642,9 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFEF8A54), // orange
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.sw)),
             ),
-            child: const Text("Delete", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            child: Text("Delete", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.sp)),
           ),
         ],
       ),
@@ -672,20 +675,20 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
         }
 
         return Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(12.sw),
           decoration: BoxDecoration(
             color: cardInner,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(16.sw),
             border: Border.all(color: orange.withValues(alpha: 0.1)),
           ),
           child: Row(
             children: [
               // Square Thumbnail
               ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.sw),
                 child: Container(
-                  width: 50,
-                  height: 50,
+                  width: 50.sw,
+                  height: 50.sw,
                   color: orange.withValues(alpha: 0.05),
                   child: (img != null && img.isNotEmpty)
                       ? Image.network(
@@ -696,7 +699,7 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
                       : _recipeCardPlaceholder(),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: 12.sw),
               // Info Middle
               Expanded(
                 child: Column(
@@ -707,18 +710,18 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
                       style: TextStyle(
                         color: purple,
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: 14.sp,
                         fontFamily: "Satoshi",
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: 2.sh),
                     Text(
                       "View detailed recipe instructions",
                       style: TextStyle(
                         color: purple.withValues(alpha: 0.4),
-                        fontSize: 11,
+                        fontSize: 11.sp,
                         fontFamily: "Satoshi",
                       ),
                       maxLines: 1,
@@ -727,21 +730,21 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8.sw),
               // Button Right
               InkWell(
                 onTap: () => _navigateToRecipe(recipeId),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 6.sh),
                   decoration: BoxDecoration(
                     color: orange,
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(8.sw),
                   ),
-                  child: const Text(
+                  child: Text(
                     "View",
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 11,
+                      fontSize: 11.sp,
                       fontWeight: FontWeight.bold,
                       fontFamily: "Satoshi",
                     ),
@@ -758,7 +761,7 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
   Widget _recipeCardPlaceholder() {
     return Container(
       decoration: BoxDecoration(color: orange.withValues(alpha: 0.1), shape: BoxShape.circle),
-      child: Icon(Icons.restaurant_menu_rounded, color: orange, size: 24),
+      child: Icon(Icons.restaurant_menu_rounded, color: orange, size: 24.sw),
     );
   }
 

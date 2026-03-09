@@ -454,8 +454,16 @@ class Recipe {
         data['prep_time'], 
         fallback: _toInt(data['prepTime'] ?? 0) + _toInt(data['cookTime'] ?? 0)
       ),
-      prepMinutes: _toInt(data['prep_minutes'] ?? data['prep_time'] ?? data['prepMinutes'] ?? data['prepTime']),
-      cookMinutes: _toInt(data['cook_minutes'] ?? data['cook_time'] ?? data['cookMinutes'] ?? data['cookTime']),
+      prepMinutes: (() {
+        final raw = data['prep_minutes'] ?? data['prep_time'] ?? data['prepMinutes'] ?? data['prepTime'];
+        if (raw == null) return null;
+        return _toInt(raw);
+      })(),
+      cookMinutes: (() {
+        final raw = data['cook_minutes'] ?? data['cook_time'] ?? data['cookMinutes'] ?? data['cookTime'];
+        if (raw == null) return null;
+        return _toInt(raw);
+      })(),
       avgRating: _toDouble(
         data['avg_rating'] ?? 
         data['avgRating'] ?? 

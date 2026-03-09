@@ -1,7 +1,7 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'login_user.dart';
 import 'forget_password.dart'; // go back
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
@@ -39,12 +39,7 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> {
     _authService = widget.authService ?? AuthService();
   }
 
-  double _scale(BuildContext context, double v) {
-    final size = MediaQuery.of(context).size;
-    final base = math.min(size.width / 393.0, size.height / 852.0);
-    final clamped = base.clamp(0.85, 1.20);
-    return v * clamped;
-  }
+  // Removed manual scale function
 
   void _snack(String msg) {
     if (!mounted) return;
@@ -110,8 +105,8 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     final mq = MediaQuery.of(context);
-    final s = (double v) => _scale(context, v);
 
     return Scaffold(
       backgroundColor: bg,
@@ -119,7 +114,7 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> {
       body: SafeArea(
         top: false,
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(s(30)),
+          borderRadius: BorderRadius.circular(30.sw),
           child: Stack(
             children: [
               const PatternBackground(),
@@ -129,10 +124,10 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> {
               // Content
               SingleChildScrollView(
                 padding: EdgeInsets.only(
-                  left: s(30),
-                  right: s(30),
-                  top: mq.padding.top + s(51),
-                  bottom: s(22) + mq.viewInsets.bottom,
+                  left: 30.sw,
+                  right: 30.sw,
+                  top: mq.padding.top + 36.sh,
+                  bottom: 22.sh + mq.viewInsets.bottom,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -149,61 +144,61 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> {
                       },
                     ),
 
-                    SizedBox(height: s(38)),
+                    SizedBox(height: 38.sh),
 
                     Text(
                       "Verify Email",
                       style: TextStyle(
                         color: purple,
-                        fontSize: s(40),
+                        fontSize: 40.sp,
                         fontWeight: FontWeight.w900,
                         height: 1.1,
                         fontFamily: "Satoshi",
                       ),
                     ),
 
-                    SizedBox(height: s(12)),
+                    SizedBox(height: 12.sh),
 
                     SizedBox(
-                      width: s(290),
+                      width: 290.sw,
                       child: Text(
                         "Enter your email and we will send you a password reset link.",
                         style: TextStyle(
                           color: purple,
-                          fontSize: s(15),
+                          fontSize: 15.sp,
                           fontFamily: "Satoshi",
                         ),
                       ),
                     ),
 
-                    SizedBox(height: s(26)),
+                    SizedBox(height: 26.sh),
 
                     // Email field
                     Container(
-                      height: s(62),
+                      height: 62.sh,
                       decoration: BoxDecoration(
                         color: fieldBg,
-                        borderRadius: BorderRadius.circular(s(20)),
+                        borderRadius: BorderRadius.circular(20.sw),
                       ),
                       child: Row(
                         children: [
-                          SizedBox(width: s(16)),
+                          SizedBox(width: 16.sw),
                           Container(
-                            width: s(46),
-                            height: s(47),
+                            width: 46.sw,
+                            height: 47.sh,
                             decoration: BoxDecoration(
                               color: orange,
-                              borderRadius: BorderRadius.circular(s(10)),
+                              borderRadius: BorderRadius.circular(10.sw),
                             ),
                             alignment: Alignment.center,
                             child: Image.asset(
                               "assets/icons/gmail.png",
-                              width: s(18),
-                              height: s(18),
+                              width: 18.sw,
+                              height: 18.sw,
                               fit: BoxFit.contain,
                             ),
                           ),
-                          SizedBox(width: s(12)),
+                          SizedBox(width: 12.sw),
                           Expanded(
                             child: TextField(
                               controller: _emailCtrl,
@@ -213,7 +208,7 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> {
                               cursorColor: purple,
                               style: TextStyle(
                                 color: (_emailErr != null) ? errText : purple,
-                                fontSize: s(12),
+                                fontSize: 12.sp,
                                 fontWeight: FontWeight.w600,
                                 fontFamily: "Satoshi",
                               ),
@@ -222,43 +217,43 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> {
                                 hintText: "Gmail",
                                 hintStyle: TextStyle(
                                   color: hint,
-                                  fontSize: s(12),
+                                  fontSize: 12.sp,
                                   fontWeight: FontWeight.w500,
                                   fontFamily: "Satoshi",
                                 ),
                               ),
                             ),
                           ),
-                          SizedBox(width: s(12)),
+                          SizedBox(width: 12.sw),
                         ],
                       ),
                     ),
 
                     if (_emailErr != null) ...[
-                      SizedBox(height: s(6)),
+                      SizedBox(height: 6.sh),
                       Text(
                         _emailErr!,
                         style: TextStyle(
                           color: errText,
-                          fontSize: s(10),
+                          fontSize: 10.sp,
                           fontWeight: FontWeight.w500,
                           fontFamily: "Satoshi",
                         ),
                       ),
                     ],
 
-                    SizedBox(height: s(28)),
+                    SizedBox(height: 28.sh),
 
                     Align(
                       alignment: Alignment.centerRight,
                       child: GestureDetector(
                         onTap: _loading ? null : _sendEmailReset,
                         child: Container(
-                          width: s(221),
-                          height: s(62),
+                          width: 221.sw,
+                          height: 62.sh,
                           decoration: BoxDecoration(
                             color: orange,
-                            borderRadius: BorderRadius.circular(s(20)),
+                            borderRadius: BorderRadius.circular(20.sw),
                           ),
                           alignment: Alignment.center,
                           child: _loading
@@ -266,17 +261,17 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> {
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
                                     SizedBox(
-                                      width: s(18),
-                                      height: s(18),
+                                      width: 18.sw,
+                                      height: 18.sw,
                                       child: const CircularProgressIndicator(
                                           strokeWidth: 2),
                                     ),
-                                    SizedBox(width: s(10)),
+                                    SizedBox(width: 10.sw),
                                     Text(
                                       "Sending...",
                                       style: TextStyle(
                                         color: btnText,
-                                        fontSize: s(12),
+                                        fontSize: 12.sp,
                                         fontWeight: FontWeight.bold,
                                         fontFamily: "Satoshi",
                                       ),
@@ -287,7 +282,7 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> {
                                   "Send Link",
                                   style: TextStyle(
                                     color: btnText,
-                                    fontSize: s(12),
+                                    fontSize: 12.sp,
                                     fontWeight: FontWeight.bold,
                                     fontFamily: "Satoshi",
                                   ),

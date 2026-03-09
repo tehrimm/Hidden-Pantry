@@ -529,19 +529,21 @@ class RecipeService {
 
   /// Specialized helper to get or create the default 'Favorite' cookbook
   Future<String> getOrCreateFavoriteCookbook(String userId) async {
+    // 1. Fetch all cookbooks to check case-insensitively
     final snap = await _firestore
         .collection('users')
         .doc(userId)
         .collection('cookbooks')
-        .where('title', isEqualTo: 'Favorite')
-        .limit(1)
         .get();
 
-    if (snap.docs.isNotEmpty) {
-      return snap.docs.first.id;
+    for (var doc in snap.docs) {
+      final title = (doc.data()['title']?.toString() ?? '').toLowerCase();
+      if (title == 'favorite') {
+        return doc.id;
+      }
     }
 
-    // Create it if missing
+    // 2. Create it if missing (always use capitalized 'Favorite')
     final docRef = await _firestore
         .collection('users')
         .doc(userId)
@@ -671,7 +673,7 @@ class RecipeService {
           .collection('recipes')
           .doc(recipeId)
           .get()
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 3));
 
       if (!doc.exists) return null;
       

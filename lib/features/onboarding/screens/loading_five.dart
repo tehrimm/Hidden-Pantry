@@ -5,6 +5,7 @@ import 'terms_and_condition.dart';
 import 'package:hidden_pantry_app/features/auth/screens/signup_user.dart';
 import 'package:hidden_pantry_app/features/auth/screens/login_user.dart';
 import 'package:hidden_pantry_app/features/auth/screens/nutritionist_signup_wrapper.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 class LoadingFive extends StatefulWidget {
   const LoadingFive({super.key});
@@ -27,37 +28,25 @@ class _LoadingFiveState extends State<LoadingFive> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     return Scaffold(
       backgroundColor: const Color(0xFFFFF3EB),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final double screenWidth = constraints.maxWidth;
-          final double screenHeight = constraints.maxHeight;
-
-          // Design dimensions
-          const double designWidth = 393.0;
-          const double designHeight = 852.0;
-
-          // Scale factors
-          final double wScale = screenWidth / designWidth;
-          final double hScale = screenHeight / designHeight;
-
-          return SizedBox(
-            width: screenWidth,
-            height: screenHeight,
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
+      body: SizedBox(
+        width: double.infinity,
+        height: double.infinity,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
                 // Background Image
                 Positioned(
-                  left: 26 * wScale,
-                  top: 28 * hScale,
+                  left: 26.sw,
+                  top: 28.sh,
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(45 * wScale),
+                    borderRadius: BorderRadius.circular(45.sw),
                     child: Image.asset(
                       'assets/bg/4.png',
-                      width: 341 * wScale,
-                      height: 562 * hScale,
+                      width: 341.sw,
+                      height: 562.sh,
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -65,14 +54,14 @@ class _LoadingFiveState extends State<LoadingFive> {
 
                 // Logo (Centered horizontally)
                 Positioned(
-                  top: 56 * hScale,
+                  top: 56.sh,
                   left: 0,
                   right: 0,
                   child: Center(
                     child: Image.asset(
                       'assets/Logos/logo2.png',
-                      width: 113 * wScale,
-                      height: 26 * hScale,
+                      width: 113.sw,
+                      height: 26.sh,
                       fit: BoxFit.contain,
                     ),
                   ),
@@ -80,8 +69,8 @@ class _LoadingFiveState extends State<LoadingFive> {
 
                 // Question Mark Button
                 Positioned(
-                  right: 26 * wScale,
-                  top: 43 * hScale,
+                  right: 26.sw,
+                  top: 43.sh,
                   child: GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -92,18 +81,18 @@ class _LoadingFiveState extends State<LoadingFive> {
                       );
                     },
                     child: Container(
-                      width: 52 * wScale,
-                      height: 52 * wScale, // Keeping it square
+                      width: 52.sw,
+                      height: 52.sw, // Keeping it square
                       decoration: BoxDecoration(
                         color: const Color(0xFFF5DDCE),
-                        borderRadius: BorderRadius.circular(26 * wScale),
+                        borderRadius: BorderRadius.circular(26.sw),
                       ),
                       child: Center(
                         child: Text(
                           '?',
                           style: TextStyle(
                             color: const Color(0xFF433020),
-                            fontSize: 20 * wScale,
+                            fontSize: 20.sp,
                             fontFamily: 'Satoshi',
                             fontWeight: FontWeight.w700,
                           ),
@@ -115,15 +104,15 @@ class _LoadingFiveState extends State<LoadingFive> {
 
                 // Title Text
                 Positioned(
-                  left: 45 * wScale,
-                  top: 403 * hScale,
+                  left: 45.sw,
+                  top: 403.sh,
                   child: SizedBox(
-                    width: 291 * wScale,
+                    width: 291.sw,
                     child: Text(
                       'Create an\nAccount',
                       style: TextStyle(
                         color: const Color(0xFFFFF2EA),
-                        fontSize: 40 * wScale,
+                        fontSize: 40.sp,
                         fontWeight: FontWeight.w900,
                         height: 1.1,
                         fontFamily: 'Satoshi',
@@ -134,17 +123,17 @@ class _LoadingFiveState extends State<LoadingFive> {
 
                 // Subtitle Text
                 Positioned(
-                  left: 45 * wScale,
-                  top: 509 * hScale,
+                  left: 45.sw,
+                  top: 509.sh,
                   child: SizedBox(
-                    width: 237 * wScale,
+                    width: 237.sw,
                     child: Text(
                       'Create an account as a home cook\nor a professional nutritionist',
                       style: TextStyle(
                         color: const Color(0xFFFFF2EA),
-                        fontSize: 14 * wScale,
+                        fontSize: 14.sp,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 0.3 * wScale,
+                        letterSpacing: 0.3.sw,
                         fontFamily: 'Satoshi',
                       ),
                     ),
@@ -153,8 +142,8 @@ class _LoadingFiveState extends State<LoadingFive> {
 
                 // Register Homecook Button
                 Positioned(
-                  left: 26 * wScale,
-                  top: 624 * hScale,
+                  left: 26.sw,
+                  top: 624.sh,
                   child: GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -163,29 +152,29 @@ class _LoadingFiveState extends State<LoadingFive> {
                       );
                     },
                     child: Container(
-                      width: 341 * wScale,
-                      height: 60 * hScale,
+                      width: 341.sw,
+                      height: 60.sh,
                       decoration: BoxDecoration(
                         color: const Color(0xFFF2894F),
-                        borderRadius: BorderRadius.circular(20 * wScale),
+                        borderRadius: BorderRadius.circular(20.sw),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Image.asset(
                             'assets/icons/chef.png',
-                            width: 24 * wScale,
-                            height: 24 * wScale,
+                            width: 24.sw,
+                            height: 24.sw,
                             fit: BoxFit.contain,
                           ),
-                          SizedBox(width: 12 * wScale),
+                          SizedBox(width: 12.sw),
                           Text(
                             'Register as Homecook',
                             style: TextStyle(
                               color: const Color(0xFFFFF2EA),
-                              fontSize: 14 * wScale,
+                              fontSize: 14.sp,
                               fontWeight: FontWeight.bold,
-                              letterSpacing: 0.3 * wScale,
+                              letterSpacing: 0.3.sw,
                               fontFamily: 'Satoshi',
                             ),
                           ),
@@ -197,8 +186,8 @@ class _LoadingFiveState extends State<LoadingFive> {
 
                 // Register Nutritionist Button
                 Positioned(
-                  left: 26 * wScale,
-                  top: 694 * hScale,
+                  left: 26.sw,
+                  top: 694.sh,
                   child: GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -207,33 +196,36 @@ class _LoadingFiveState extends State<LoadingFive> {
                       );
                     },
                     child: Container(
-                      width: 341 * wScale,
-                      height: 60 * hScale,
+                      width: 341.sw,
+                      height: 60.sh,
                       decoration: BoxDecoration(
                         color: const Color(0xFFF9E3D5),
-                        borderRadius: BorderRadius.circular(20 * wScale),
+                        borderRadius: BorderRadius.circular(20.sw),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Image.asset(
-                            'assets/icons/apple.png',
-                            width: 24 * wScale,
-                            height: 24 * wScale,
-                            fit: BoxFit.contain,
-                          ),
-                          SizedBox(width: 12 * wScale),
-                          Text(
-                            'Register as Nutritionist',
-                            style: TextStyle(
-                              color: const Color(0xFFF2894F),
-                              fontSize: 14 * wScale,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 0.3 * wScale,
-                              fontFamily: 'Satoshi',
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset(
+                              'assets/icons/apple.png',
+                              width: 24.sw,
+                              height: 24.sw,
+                              fit: BoxFit.contain,
                             ),
-                          ),
-                        ],
+                            SizedBox(width: 12.sw),
+                            Text(
+                              'Register as Nutritionist',
+                              style: TextStyle(
+                                color: const Color(0xFFF2894F),
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.3.sw,
+                                fontFamily: 'Satoshi',
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -241,21 +233,21 @@ class _LoadingFiveState extends State<LoadingFive> {
 
                 // Login Text
                 Positioned(
-                  left: 130 * wScale,
-                  top: 771 * hScale,
+                  left: 130.sw,
+                  top: 771.sh,
                   child: Text(
                     'Have an Account?',
                     style: TextStyle(
                       color: const Color(0xFF462F4D),
-                      fontSize: 12 * wScale,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.w500,
                       fontFamily: 'Satoshi',
                     ),
                   ),
                 ),
                 Positioned(
-                  left: 229 * wScale,
-                  top: 771 * hScale,
+                  left: 229.sw,
+                  top: 771.sh,
                   child: GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -267,7 +259,7 @@ class _LoadingFiveState extends State<LoadingFive> {
                       'Login',
                       style: TextStyle(
                         color: const Color(0xFF462F4D),
-                        fontSize: 12 * wScale,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w900,
                         fontFamily: 'Satoshi',
                       ),
@@ -276,10 +268,8 @@ class _LoadingFiveState extends State<LoadingFive> {
                 ),
               ],
             ),
-          );
-        },
-      ),
-    );
+          ),
+        );
   }
 }
 

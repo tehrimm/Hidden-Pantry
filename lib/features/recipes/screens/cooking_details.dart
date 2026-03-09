@@ -6,6 +6,8 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/reviews/post_review.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class CookingDetailsScreen extends StatefulWidget {
   final Recipe recipe;
@@ -108,16 +110,17 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFFFFF3EB),
-        title: const Text("Cancel Timer?", style: TextStyle(color: Color(0xFF462F4D), fontFamily: 'Satoshi', fontWeight: FontWeight.bold)),
-        content: const Text("Are you sure you want to stop the timer?", style: TextStyle(color: Color(0xFF462F4D), fontFamily: 'Satoshi')),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.sw)),
+        title: Text("Cancel Timer?", style: TextStyle(color: const Color(0xFF462F4D), fontFamily: 'Satoshi', fontWeight: FontWeight.bold, fontSize: 18.sp)),
+        content: Text("Are you sure you want to stop the timer?", style: TextStyle(color: const Color(0xFF462F4D), fontFamily: 'Satoshi', fontSize: 14.sp)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("No", style: TextStyle(color: Color(0xFF462F4D))),
+            child: Text("No", style: TextStyle(color: const Color(0xFF462F4D), fontSize: 14.sp)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Yes", style: TextStyle(color: Color(0xFFEF8A54), fontWeight: FontWeight.bold)),
+            child: Text("Yes", style: TextStyle(color: const Color(0xFFEF8A54), fontWeight: FontWeight.bold, fontSize: 14.sp)),
           ),
         ],
       ),
@@ -162,12 +165,12 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
     showCupertinoModalPopup(
       context: context,
       builder: (context) => Container(
-        height: 260,
+        height: 260.sh,
         color: const Color(0xFFFFF3EB),
         child: Column(
           children: [
             Container(
-              height: 200,
+              height: 200.sh,
               child: CupertinoTimerPicker(
                 mode: CupertinoTimerPickerMode.hms,
                 initialTimerDuration: duration,
@@ -236,16 +239,17 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFFFFF3EB),
-        title: const Text("Exit Cooking?", style: TextStyle(color: Color(0xFF462F4D), fontFamily: 'Satoshi', fontWeight: FontWeight.bold)),
-        content: const Text("Are you sure you want to stop cooking?", style: TextStyle(color: Color(0xFF462F4D), fontFamily: 'Satoshi')),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.sw)),
+        title: Text("Exit Cooking?", style: TextStyle(color: const Color(0xFF462F4D), fontFamily: 'Satoshi', fontWeight: FontWeight.bold, fontSize: 18.sp)),
+        content: Text("Are you sure you want to stop cooking?", style: TextStyle(color: const Color(0xFF462F4D), fontFamily: 'Satoshi', fontSize: 14.sp)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("No", style: TextStyle(color: Color(0xFF462F4D))),
+            child: Text("No", style: TextStyle(color: const Color(0xFF462F4D), fontSize: 14.sp)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Yes", style: TextStyle(color: Color(0xFFEF8A54), fontWeight: FontWeight.bold)),
+            child: Text("Yes", style: TextStyle(color: const Color(0xFFEF8A54), fontWeight: FontWeight.bold, fontSize: 14.sp)),
           ),
         ],
       ),
@@ -264,6 +268,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+      ResponsiveUtils.init(context);
       final screenWidth = MediaQuery.of(context).size.width;
       final currentDirection = widget.recipe.directions[_currentIndex];
       final detectedTimes = _detectTimes(currentDirection);
@@ -284,9 +289,9 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
           body: Container(
             width: double.infinity,
             height: double.infinity,
-            decoration: const BoxDecoration(
-              color: Color(0xFFFFF3EB),
-              borderRadius: BorderRadius.all(Radius.circular(30)),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF3EB),
+              borderRadius: BorderRadius.all(Radius.circular(30.sw)),
             ),
             child: Stack(
               children: [
@@ -296,15 +301,15 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                 // Step image (uses step-specific image when available)
                Positioned(
                 left: 0,
-                top: 140,
+                top: 140.sh,
                 child: _stepImage(screenWidth, _currentIndex),
               ),
                 
                 // Header: Close Button, Step Counter, Ingredient Label
                 Positioned(
-                  left: 30,
-                  right: 30,
-                  top: 40,
+                  left: 30.sw,
+                  right: 30.sw,
+                  top: 40.sh,
                   child: SafeArea(
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -316,14 +321,14 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                             }
                           },
                           child: Container(
-                            width: 50,
-                            height: 50,
+                            width: 50.sw,
+                            height: 50.sw,
                             decoration: BoxDecoration(
                               color: const Color(0xFFF9E3D5),
-                              borderRadius: BorderRadius.circular(25),
+                              borderRadius: BorderRadius.circular(25.sw),
                             ),
-                            child: const Center(
-                              child: Icon(Icons.close, size: 24, color: Color(0xFF462F4D)),
+                            child: Center(
+                              child: Icon(Icons.close, size: 24.sw, color: const Color(0xFF462F4D)),
                             ),
                           ),
                         ),
@@ -331,9 +336,9 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                           child: Text(
                             'Step ${_currentIndex + 1} of ${widget.recipe.directions.length}',
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Color(0xFF462F4D),
-                              fontSize: 15,
+                            style: TextStyle(
+                              color: const Color(0xFF462F4D),
+                              fontSize: 15.sp,
                               fontWeight: FontWeight.bold,
                               fontFamily: 'Satoshi',
                             ),
@@ -341,11 +346,11 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                         ),
                         GestureDetector(
                           onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
-                          child: const Text(
+                          child: Text(
                             'Ingredient',
                             style: TextStyle(
-                              color: Color(0xFF462F4D),
-                              fontSize: 12,
+                              color: const Color(0xFF462F4D),
+                              fontSize: 12.sp,
                               fontWeight: FontWeight.bold,
                               fontFamily: 'Satoshi',
                               decoration: TextDecoration.underline,
@@ -359,10 +364,10 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                 
                 // Direction Text with PageView
                 Positioned(
-                  left: 30,
-                  right: 30,
-                  top: 360,
-                  bottom: 120,
+                  left: 30.sw,
+                  right: 30.sw,
+                  top: 360.sh,
+                  bottom: 120.sh,
                   child: Column(
                     children: [
                       Expanded(
@@ -389,12 +394,12 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                               return SingleChildScrollView(
                                 physics: const BouncingScrollPhysics(),
                                 child: Padding(
-                                  padding: const EdgeInsets.only(top: 10),
+                                  padding: EdgeInsets.only(top: 10.sh),
                                   child: Text(
                                     widget.recipe.directions[index],
-                                    style: const TextStyle(
-                                      color: Color(0xFF462F4D),
-                                      fontSize: 16,
+                                    style: TextStyle(
+                                      color: const Color(0xFF462F4D),
+                                      fontSize: 16.sp,
                                       height: 1.5,
                                       fontWeight: FontWeight.w600,
                                       fontFamily: 'Satoshi',
@@ -408,21 +413,22 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                       ),
                       if (_currentIndex == widget.recipe.directions.length - 1)
                         Padding(
-                          padding: const EdgeInsets.only(top: 20),
+                          padding: EdgeInsets.only(top: 20.sh),
                           child: GestureDetector(
                             onTap: _openReview,
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                              padding: EdgeInsets.symmetric(horizontal: 24.sw, vertical: 12.sh),
                               decoration: BoxDecoration(
                                 color: const Color(0xFFEF8A54),
-                                borderRadius: BorderRadius.circular(20),
+                                borderRadius: BorderRadius.circular(20.sw),
                               ),
-                              child: const Text(
+                              child: Text(
                                 "Finish & Review",
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                   fontFamily: 'Satoshi',
+                                  fontSize: 14.sp,
                                 ),
                               ),
                             ),
@@ -437,24 +443,24 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                   Positioned(
                     left: 0,
                     right: 0,
-                    bottom: 130,
+                    bottom: 130.sh,
                     child: Center(
                       child: Column(
                         children: [
                           Text(
                             _formatDuration(_remainingSeconds),
-                            style: const TextStyle(
-                              fontSize: 32,
+                            style: TextStyle(
+                              fontSize: 32.sp,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xFFEF8A54),
+                              color: const Color(0xFFEF8A54),
                               fontFamily: 'Satoshi',
                             ),
                           ),
-                          const Text(
+                          Text(
                             "remaining",
                             style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF462F4D),
+                              fontSize: 12.sp,
+                              color: const Color(0xFF462F4D),
                               fontFamily: 'Satoshi',
                             ),
                           ),
@@ -467,13 +473,13 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                 Positioned(
                   left: 0,
                   right: 0,
-                  bottom: 40,
+                  bottom: 40.sh,
                   child: Center(
                     child: GestureDetector(
                       onTap: () => _speak(widget.recipe.directions[_currentIndex]),
                       child: Container(
-                        width: 74,
-                        height: 71,
+                        width: 74.sw,
+                        height: 71.sh,
                         decoration: const BoxDecoration(
                           color: Color(0xFFE48E5B),
                           shape: BoxShape.circle,
@@ -482,7 +488,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                           child: Icon(
                             _isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
                             color: Colors.white,
-                            size: 40,
+                            size: 40.sw,
                           ),
                         ),
                       ),
@@ -493,8 +499,8 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                 // Timer Button (Bottom Right)
                 if (detectedTimes.isNotEmpty || _timerRunning)
                   Positioned(
-                    right: 20,
-                    bottom: 50,
+                    right: 20.sw,
+                    bottom: 50.sh,
                     child: GestureDetector(
                       onTap: () {
                         if (_timerRunning) {
@@ -504,23 +510,23 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                         }
                       },
                       child: Container(
-                        width: 55,
-                        height: 55,
+                        width: 55.sw,
+                        height: 55.sw,
                         decoration: BoxDecoration(
                           color: _timerRunning ? const Color(0xFF462F4D) : const Color(0xFFEF8A54),
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
                               color: Colors.black.withValues(alpha:0.1),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                              blurRadius: 10.sw,
+                              offset: Offset(0, 4.sh),
                             ),
                           ],
                         ),
                         child: Icon(
                           _timerRunning ? Icons.timer_off_outlined : Icons.timer_outlined,
                           color: Colors.white,
-                          size: 28,
+                          size: 28.sw,
                         ),
                       ),
                     ),
@@ -538,49 +544,49 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
       width: MediaQuery.of(context).size.width * 0.75,
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: EdgeInsets.all(24.sw),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 "Ingredients for $_currentServings servings",
-                style: const TextStyle(
-                  fontSize: 20,
+                style: TextStyle(
+                  fontSize: 20.sp,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF462F4D),
+                  color: const Color(0xFF462F4D),
                   fontFamily: 'Satoshi',
                 ),
               ),
-              const SizedBox(height: 24),
+              SizedBox(height: 24.sh),
               Expanded(
                 child: ListView.separated(
                   itemCount: widget.recipe.ingredients.length,
-                  separatorBuilder: (_, __) => const Divider(height: 24),
+                  separatorBuilder: (_, __) => Divider(height: 24.sh),
                   itemBuilder: (context, index) {
                     final ing = widget.recipe.ingredients[index];
                     final qtyStr = _fmtQty(ing.quantity);
                     return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
+                      padding: EdgeInsets.symmetric(vertical: 4.sh),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
                             child: Text(
                               ing.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Color(0xFF462F4D),
+                              style: TextStyle(
+                                fontSize: 16.sp,
+                                color: const Color(0xFF462F4D),
                                 fontFamily: 'Satoshi',
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                           ),
-                          const SizedBox(width: 8),
+                          SizedBox(width: 8.sw),
                           Text(
                             "${qtyStr.isEmpty ? '' : '$qtyStr '}${ing.unit}",
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF462F4D),
+                            style: TextStyle(
+                              fontSize: 14.sp,
+                              color: const Color(0xFF462F4D),
                               fontFamily: 'Satoshi',
                               fontWeight: FontWeight.w800,
                             ),
@@ -613,7 +619,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
 
     return Container(
       width: width,
-      height: 180,
+      height: 180.sh,
       decoration: const BoxDecoration(
         color: Colors.transparent,
       ),
@@ -621,7 +627,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
           ? Image.network(
               url,
               width: width,
-              height: 180,
+              height: 180.sh,
               fit: BoxFit.cover,
               errorBuilder: (_, __, ___) => _placeholder(width),
             )
@@ -633,7 +639,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
     return Image.asset(
       'assets/Logos/recipe_placeholder.jpg',
       width: width,
-      height: 180,
+      height: 180.sh,
       fit: BoxFit.cover,
     );
   }

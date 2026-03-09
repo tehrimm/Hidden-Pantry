@@ -5,6 +5,8 @@ import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/features/user/services/stripe_service.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class MySubscriptionsScreen extends StatefulWidget {
   const MySubscriptionsScreen({super.key});
@@ -26,7 +28,9 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   @override
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser?.uid;
+    final topPad = MediaQuery.of(context).padding.top;
 
+    ResponsiveUtils.init(context);
     return Scaffold(
       backgroundColor: _bg,
       body: Stack(
@@ -35,21 +39,21 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
           
           // Fixed Header
           Positioned(
-            left: 30,
-            top: 51,
+            left: 30.sw,
+            top: topPad + 36.sh,
             child: BackButtonWidget(color: _purple),
           ),
           Positioned(
             left: 0,
             right: 0,
-            top: 51,
-            height: 50,
+            top: topPad + 36.sh,
+            height: 50.sh,
             child: Center(
               child: Text(
                 'My Subscriptions',
                 style: TextStyle(
                   color: _purple,
-                  fontSize: 24,
+                  fontSize: 24.sp,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'Satoshi',
                 ),
@@ -61,7 +65,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
           SafeArea(
             child: Column(
               children: [
-                const SizedBox(height: 80), // Gap for standardized header
+                SizedBox(height: 96.sh), // Standardized gap for fixed header
                 Expanded(
                   child: uid == null
                       ? _emptyState('Please sign in to view your subscriptions.')
@@ -165,17 +169,17 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                             }
 
                             return ListView(
-                              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+                              padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 16.sh),
                               children: [
                                 if (active.isNotEmpty) ...[
                                   _sectionHeader('Active'),
-                                  const SizedBox(height: 10),
+                                  SizedBox(height: 10.sh),
                                   ...active.map((doc) => _subscriptionCard(doc)),
-                                  const SizedBox(height: 24),
+                                  SizedBox(height: 24.sh),
                                 ],
                                 if (expired.isNotEmpty) ...[
                                   _sectionHeader('Past'),
-                                  const SizedBox(height: 10),
+                                  SizedBox(height: 10.sh),
                                   ...expired.map((doc) => _subscriptionCard(doc)),
                                 ],
                               ],
@@ -196,10 +200,10 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
       label,
       style: TextStyle(
         color: _purple.withValues(alpha: 0.5),
-        fontSize: 13,
+        fontSize: 13.sp,
         fontWeight: FontWeight.w600,
         fontFamily: 'Satoshi',
-        letterSpacing: 1,
+        letterSpacing: 1.sw,
       ),
     );
   }
@@ -265,16 +269,16 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
         : 'Expired';
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(20),
+      margin: EdgeInsets.only(bottom: 14.sh),
+      padding: EdgeInsets.all(20.sw),
       decoration: BoxDecoration(
         color: _cardColor,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(20.sw),
         boxShadow: [
           BoxShadow(
             color: _purple.withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
+            blurRadius: 16.sw,
+            offset: Offset(0, 4.sh),
           ),
         ],
       ),
@@ -286,15 +290,15 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
             children: [
               // Avatar
               Container(
-                width: 46,
-                height: 46,
+                width: 46.sw,
+                height: 46.sw,
                 decoration: BoxDecoration(
                   color: _orange.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(14.sw),
                 ),
-                child: Icon(Icons.person_rounded, color: _orange, size: 24),
+                child: Icon(Icons.person_rounded, color: _orange, size: 24.sw),
               ),
-              const SizedBox(width: 14),
+              SizedBox(width: 14.sw),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -303,17 +307,17 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                       name,
                       style: TextStyle(
                         color: _purple,
-                        fontSize: 16,
+                        fontSize: 16.sp,
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Satoshi',
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    SizedBox(height: 2.sh),
                     Text(
                       plan,
                       style: TextStyle(
                         color: _purple.withValues(alpha: 0.5),
-                        fontSize: 13,
+                        fontSize: 13.sp,
                         fontFamily: 'Satoshi',
                       ),
                     ),
@@ -321,16 +325,16 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 4.sh),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(8.sw),
                 ),
                 child: Text(
                   statusText,
                   style: TextStyle(
                     color: statusColor,
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     fontWeight: FontWeight.w600,
                     fontFamily: 'Satoshi',
                   ),
@@ -338,9 +342,9 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Divider(color: _purple.withValues(alpha: 0.06), height: 1),
-          const SizedBox(height: 16),
+          SizedBox(height: 16.sh),
+          Divider(color: _purple.withValues(alpha: 0.06), height: 1.sh),
+          SizedBox(height: 16.sh),
 
           // Price & expiry
           Row(
@@ -350,7 +354,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                 price != null ? 'Rs. ${double.tryParse(price.toString())?.toStringAsFixed(2) ?? "0.00"} / $interval' : '',
                 style: TextStyle(
                   color: _purple.withValues(alpha: 0.7),
-                  fontSize: 14,
+                  fontSize: 14.sp,
                   fontFamily: 'Satoshi',
                 ),
               ),
@@ -363,7 +367,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                       : 'Ended ${_formatDate(expiry)}',
                   style: TextStyle(
                     color: _purple.withValues(alpha: 0.5),
-                    fontSize: 12,
+                    fontSize: 12.sp,
                     fontFamily: 'Satoshi',
                   ),
                 ),
@@ -372,24 +376,24 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
 
           // Show remaining days for cancelled subscriptions
           if (isCancelled && expiry != null && expiry.isAfter(DateTime.now())) ...[        
-            const SizedBox(height: 12),
+            SizedBox(height: 12.sh),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: EdgeInsets.symmetric(horizontal: 14.sw, vertical: 10.sh),
               decoration: BoxDecoration(
                 color: Colors.amber.shade50,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(12.sw),
                 border: Border.all(color: Colors.amber.shade200),
               ),
               child: Row(
                 children: [
-                  Icon(Icons.timer_outlined, color: Colors.amber.shade700, size: 18),
-                  const SizedBox(width: 10),
+                  Icon(Icons.timer_outlined, color: Colors.amber.shade700, size: 18.sw),
+                  SizedBox(width: 10.sw),
                   Expanded(
                     child: Text(
                       '${expiry.difference(DateTime.now()).inDays} days remaining — access until ${_formatDate(expiry)}',
                       style: TextStyle(
                         color: Colors.amber.shade800,
-                        fontSize: 12,
+                        fontSize: 12.sp,
                         fontWeight: FontWeight.w600,
                         fontFamily: 'Satoshi',
                       ),
@@ -402,20 +406,20 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
 
           // Cancel button for active, non-cancelled
           if (isActive && !isCancelled) ...[
-            const SizedBox(height: 16),
+            SizedBox(height: 16.sh),
             SizedBox(
               width: double.infinity,
-              height: 44,
+              height: 44.sh,
               child: OutlinedButton(
                 onPressed: () => _confirmCancel(doc.id, expiry),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: _red,
                   side: BorderSide(color: _red.withValues(alpha: 0.3)),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.sw)),
                 ),
-                child: const Text(
+                child: Text(
                   'Cancel Subscription',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, fontFamily: 'Satoshi'),
+                  style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w600, fontFamily: 'Satoshi'),
                 ),
               ),
             ),
@@ -430,8 +434,8 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: _bg,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text('Cancel Subscription?', style: TextStyle(color: _purple, fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.sw)),
+        title: Text('Cancel Subscription?', style: TextStyle(color: _purple, fontWeight: FontWeight.bold, fontSize: 18.sp)),
         content: Text(
           expiry != null
               ? 'You will still have access until ${_formatDate(expiry)}. You will not be charged again.'
@@ -441,11 +445,11 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text('Keep', style: TextStyle(color: _purple)),
+            child: Text('Keep', style: TextStyle(color: _purple, fontSize: 14.sp)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Cancel', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: Text('Cancel', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14.sp)),
           ),
         ],
       ),
@@ -468,26 +472,26 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   Widget _emptyState(String message) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(40),
+        padding: EdgeInsets.all(40.sw),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 80,
-              height: 80,
+              width: 80.sw,
+              height: 80.sw,
               decoration: BoxDecoration(
                 color: _orange.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.subscriptions_outlined, color: _orange, size: 36),
+              child: Icon(Icons.subscriptions_outlined, color: _orange, size: 36.sw),
             ),
-            const SizedBox(height: 24),
+            SizedBox(height: 24.sh),
             Text(
               message,
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: _purple.withValues(alpha: 0.6),
-                fontSize: 15,
+                fontSize: 15.sp,
                 fontFamily: 'Satoshi',
                 height: 1.5,
               ),

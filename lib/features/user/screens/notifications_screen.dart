@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hidden_pantry_app/core/services/notification_service.dart';
 import 'package:hidden_pantry_app/features/user/models/notification_model.dart';
 import 'package:intl/intl.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
@@ -13,6 +15,8 @@ class NotificationsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
+    final topPad = MediaQuery.of(context).padding.top;
     final Color purple = const Color(0xFF462F4D);
     final Color orange = const Color(0xFFEF8A54);
     final Color bg = const Color(0xFFFFF3EB);
@@ -20,7 +24,7 @@ class NotificationsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: isNutritionist ? Colors.white : bg,
       body: ClipRRect(
-        borderRadius: isNutritionist ? BorderRadius.circular(30) : BorderRadius.zero,
+        borderRadius: isNutritionist ? BorderRadius.circular(30.sw) : BorderRadius.zero,
         child: Container(
           color: bg,
           child: Stack(
@@ -30,7 +34,7 @@ class NotificationsScreen extends StatelessWidget {
               SafeArea(
                 child: Column(
                   children: [
-                    const SizedBox(height: 80), // Space for header
+                    SizedBox(height: 96.sh), // Standardized gap for fixed header
                     Expanded(
                       child: StreamBuilder<List<AppNotification>>(
                         stream: NotificationService().streamNotifications(),
@@ -47,7 +51,7 @@ class NotificationsScreen extends StatelessWidget {
     
                           return ListView.builder(
                             itemCount: grouped.keys.length,
-                            padding: const EdgeInsets.only(bottom: 20),
+                            padding: EdgeInsets.only(bottom: 20.sh),
                             itemBuilder: (context, index) {
                               final section = grouped.keys.elementAt(index);
                               final items = grouped[section]!;
@@ -56,13 +60,13 @@ class NotificationsScreen extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Padding(
-                                    padding: const EdgeInsets.fromLTRB(22, 20, 22, 10),
+                                    padding: EdgeInsets.fromLTRB(22.sw, 20.sh, 22.sw, 10.sh),
                                     child: Text(
                                       section,
                                       style: TextStyle(
                                         color: purple,
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 16,
+                                        fontSize: 16.sp,
                                         fontFamily: "Satoshi",
                                       ),
                                     ),
@@ -81,9 +85,9 @@ class NotificationsScreen extends StatelessWidget {
               
               // Fixed Header
               Positioned(
-                top: 51,
-                left: 22,
-                right: 22,
+                top: topPad + 36.sh,
+                left: 22.sw,
+                right: 22.sw,
                 child: Row(
                   children: [
                     BackButtonWidget(
@@ -95,7 +99,7 @@ class NotificationsScreen extends StatelessWidget {
                       "Notifications",
                       style: TextStyle(
                         color: purple,
-                        fontSize: 24,
+                        fontSize: 24.sp,
                         fontWeight: FontWeight.bold,
                         fontFamily: "Satoshi",
                       ),
@@ -116,16 +120,16 @@ class NotificationsScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.notifications_none_rounded, size: 80, color: purple.withValues(alpha:0.1)),
-          const SizedBox(height: 20),
+          Icon(Icons.notifications_none_rounded, size: 80.sw, color: purple.withValues(alpha:0.1)),
+          SizedBox(height: 20.sh),
           Text(
             "No notifications yet",
-            style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 18),
+            style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 18.sp),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8.sh),
           Text(
             "We'll notify you when something happens.",
-            style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 14),
+            style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 14.sp),
           ),
         ],
       ),
@@ -241,9 +245,9 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
       direction: DismissDirection.endToStart,
       background: Container(
         alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
+        padding: EdgeInsets.only(right: 20.sw),
         color: Colors.red,
-        child: const Icon(Icons.delete_outline_rounded, color: Colors.white),
+        child: Icon(Icons.delete_outline_rounded, color: Colors.white, size: 24.sw),
       ),
       onDismissed: (_) {
         NotificationService().deleteNotification(widget.notif.id);
@@ -254,18 +258,18 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
           NotificationService().navigateByNotification(context, widget.notif);
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+          padding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 15.sh),
           child: Row(
             children: [
               _buildLeadingWidget(widget.notif, widget.orange, widget.purple),
-              const SizedBox(width: 15),
+              SizedBox(width: 15.sw),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     RichText(
                       text: TextSpan(
-                        style: TextStyle(color: widget.purple, fontSize: 14, fontFamily: "Satoshi"),
+                        style: TextStyle(color: widget.purple, fontSize: 14.sp, fontFamily: "Satoshi"),
                         children: [
                           TextSpan(
                             text: _displayTitle.isEmpty ? widget.notif.title : _displayTitle,
@@ -276,18 +280,18 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
                         ],
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    SizedBox(height: 5.sh),
                     Text(
                       DateFormat.jm().format(widget.notif.timestamp),
-                      style: TextStyle(color: widget.purple.withValues(alpha:0.4), fontSize: 12),
+                      style: TextStyle(color: widget.purple.withValues(alpha:0.4), fontSize: 12.sp),
                     ),
                   ],
                 ),
               ),
               if (!widget.notif.isRead)
                 Container(
-                  width: 8,
-                  height: 8,
+                  width: 8.sw,
+                  height: 8.sw,
                   decoration: BoxDecoration(color: widget.orange, shape: BoxShape.circle),
                 ),
             ],
@@ -326,13 +330,13 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
     }
 
     return Container(
-      width: 40,
-      height: 40,
+      width: 40.sw,
+      height: 40.sw,
       decoration: BoxDecoration(
         color: orange.withValues(alpha: 0.1),
         shape: BoxShape.circle,
       ),
-      child: Icon(icon, color: orange, size: 20),
+      child: Icon(icon, color: orange, size: 20.sw),
     );
   }
 }

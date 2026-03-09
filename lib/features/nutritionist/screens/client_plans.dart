@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/create_plan.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+
 
 class ClientPlansScreen extends StatefulWidget {
   const ClientPlansScreen({super.key});
@@ -72,6 +74,7 @@ class _ClientPlansScreenState extends State<ClientPlansScreen> {
     if (user == null) {
       return const Center(child: Text("Not logged in"));
     }
+    ResponsiveUtils.init(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -96,15 +99,15 @@ class _ClientPlansScreenState extends State<ClientPlansScreen> {
               if (plans.isEmpty) return _emptyState(user.uid);
 
               return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 22),
+                padding: EdgeInsets.symmetric(horizontal: 22.sw),
                 itemCount: plans.length + 1,
                 itemBuilder: (context, index) {
                   if (index == plans.length) {
                     return Column(
                       children: [
-                        const SizedBox(height: 32),
+                        SizedBox(height: 32.sh),
                         _publishAnotherButton(),
-                        const SizedBox(height: 120),
+                        SizedBox(height: 120.sh),
                       ],
                     );
                   }
@@ -114,7 +117,7 @@ class _ClientPlansScreenState extends State<ClientPlansScreen> {
                   final planId = doc.id;
 
                   return Padding(
-                    padding: const EdgeInsets.only(top: 20),
+                    padding: EdgeInsets.only(top: 20.sh),
                     child: _planCard(
                       planId: planId,
                       plan: plan,
@@ -136,7 +139,7 @@ class _ClientPlansScreenState extends State<ClientPlansScreen> {
 
   Widget _header() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+      padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 16.sh),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -144,7 +147,7 @@ class _ClientPlansScreenState extends State<ClientPlansScreen> {
             "Subscription Hub",
             style: TextStyle(
               color: purple,
-              fontSize: 28,
+              fontSize: 28.sp,
               fontWeight: FontWeight.w900,
               fontFamily: "Satoshi",
             ),
@@ -153,7 +156,7 @@ class _ClientPlansScreenState extends State<ClientPlansScreen> {
             "Grow your premium community",
             style: TextStyle(
               color: purple.withValues(alpha: 0.6),
-              fontSize: 14,
+              fontSize: 14.sp,
               fontFamily: "Satoshi",
             ),
           ),
@@ -195,30 +198,30 @@ class _ClientPlansScreenState extends State<ClientPlansScreen> {
             textAlign: TextAlign.center,
             style: TextStyle(
               color: purple,
-              fontSize: 24,
+              fontSize: 24.sp,
               fontWeight: FontWeight.w900,
               fontFamily: "Satoshi",
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.sh),
           Text(
             "Create exclusive subscription tiers for your clients. Each nutritionist can set their own price and benefits.",
             textAlign: TextAlign.center,
             style: TextStyle(
               color: purple.withValues(alpha: 0.6),
-              fontSize: 15,
+              fontSize: 15.sp,
               height: 1.5,
               fontFamily: "Satoshi",
             ),
           ),
           if (uid != null) ...[
-            const SizedBox(height: 8),
+            SizedBox(height: 8.sh),
             Text(
               "Account ID: $uid",
-              style: TextStyle(color: purple.withValues(alpha: 0.2), fontSize: 10),
+              style: TextStyle(color: purple.withValues(alpha: 0.2), fontSize: 10.sp),
             ),
           ],
-          const SizedBox(height: 40),
+          SizedBox(height: 40.sh),
           _publishAnotherButton(),
         ],
       ),
@@ -234,29 +237,29 @@ class _ClientPlansScreenState extends State<ClientPlansScreen> {
         );
       },
       child: Container(
-        height: 64,
+        height: 64.sh,
         width: double.infinity,
         decoration: BoxDecoration(
           color: purple,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(20.sw),
           boxShadow: [
             BoxShadow(
               color: purple.withValues(alpha: 0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              blurRadius: 20.sw,
+              offset: Offset(0, 10.sh),
             ),
           ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.add_rounded, color: Colors.white, size: 24),
-            const SizedBox(width: 12),
-            const Text(
+            Icon(Icons.add_rounded, color: Colors.white, size: 24.sw),
+            SizedBox(width: 12.sw),
+            Text(
               "Create New Tier",
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 16,
+                fontSize: 16.sp,
                 fontWeight: FontWeight.bold,
                 fontFamily: "Satoshi",
               ),
@@ -317,15 +320,15 @@ class _PlanCardItemState extends State<_PlanCardItem> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.all(24.sw),
       decoration: BoxDecoration(
         color: const Color(0xFFF9E3D5),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(24.sw),
         boxShadow: [
           BoxShadow(
             color: purple.withValues(alpha: 0.05),
-            blurRadius: 15,
-            offset: const Offset(0, 8),
+            blurRadius: 15.sw,
+            offset: Offset(0, 8.sh),
           ),
         ],
       ),
@@ -339,7 +342,7 @@ class _PlanCardItemState extends State<_PlanCardItem> {
                 widget.title,
                 style: TextStyle(
                   color: purple,
-                  fontSize: 22,
+                  fontSize: 22.sp,
                   fontWeight: FontWeight.w900,
                   fontFamily: "Satoshi",
                 ),
@@ -361,14 +364,14 @@ class _PlanCardItemState extends State<_PlanCardItem> {
           Row(
             children: [
                Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 5.sh),
                 decoration: BoxDecoration(
                   color: (widget.plan["tierLevel"] == 3 
                     ? const Color(0xFF4B0082) 
                     : widget.plan["tierLevel"] == 2 
                       ? const Color(0xFFDAA520) 
                       : const Color(0xFF708090)).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(10.sw),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -379,14 +382,14 @@ class _PlanCardItemState extends State<_PlanCardItem> {
                         : widget.plan["tierLevel"] == 2 
                           ? Icons.star_rounded 
                           : Icons.star_half_rounded, 
-                      size: 12, 
+                      size: 12.sw, 
                       color: widget.plan["tierLevel"] == 3 
                         ? const Color(0xFF4B0082) 
                         : widget.plan["tierLevel"] == 2 
                           ? const Color(0xFFDAA520) 
                           : const Color(0xFF708090)
                     ),
-                    const SizedBox(width: 4),
+                    SizedBox(width: 4.sw),
                     Text(
                       widget.plan["tierLevel"] == 3 ? "PLATINUM" : widget.plan["tierLevel"] == 2 ? "GOLD" : "SILVER",
                       style: TextStyle(
@@ -395,26 +398,26 @@ class _PlanCardItemState extends State<_PlanCardItem> {
                           : widget.plan["tierLevel"] == 2 
                             ? const Color(0xFFDAA520) 
                             : const Color(0xFF708090),
-                        fontSize: 10,
+                        fontSize: 10.sp,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: 8.sw),
               if (!_currentActive)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 5.sh),
                   decoration: BoxDecoration(
                     color: Colors.red.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
+                    borderRadius: BorderRadius.circular(10.sw),
                   ),
-                  child: const Text("HIDDEN", style: TextStyle(color: Colors.red, fontSize: 10, fontWeight: FontWeight.bold)),
+                  child: Text("HIDDEN", style: TextStyle(color: Colors.red, fontSize: 10.sp, fontWeight: FontWeight.bold)),
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: 12.sh),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -422,27 +425,27 @@ class _PlanCardItemState extends State<_PlanCardItem> {
                 "Rs. ${widget.price}",
                 style: TextStyle(
                   color: orange,
-                  fontSize: 30,
+                  fontSize: 30.sp,
                   fontWeight: FontWeight.w900,
                   fontFamily: "Satoshi",
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.only(bottom: 6, left: 4),
+                padding: EdgeInsets.only(bottom: 6.sh, left: 4.sw),
                 child: Text(
                   "/ ${widget.interval}",
                   style: TextStyle(
                     color: purple.withValues(alpha: 0.4),
-                    fontSize: 14,
+                    fontSize: 14.sp,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: 20.sh),
           ...widget.benefits.map((b) => _benefitRow(b["title"] ?? b["text"] ?? "", true)),
-          const SizedBox(height: 24),
+          SizedBox(height: 24.sh),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -465,21 +468,21 @@ class _PlanCardItemState extends State<_PlanCardItem> {
                     }
                     return Row(
                       children: [
-                        Text(
-                          "$count ACTIVE CLIENTS",
-                          style: TextStyle(
-                            color: purple.withValues(alpha: 0.4),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 0.5,
+                          Text(
+                            "$count ACTIVE CLIENTS",
+                            style: TextStyle(
+                              color: purple.withValues(alpha: 0.4),
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5.sw,
+                            ),
                           ),
-                        ),
                         const Spacer(),
                         Text(
                           "VAL: Rs. ${tierRevenue.toInt()}",
                           style: TextStyle(
                             color: orange.withValues(alpha: 0.6),
-                            fontSize: 11,
+                            fontSize: 11.sp,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
@@ -520,7 +523,7 @@ class _PlanCardItemState extends State<_PlanCardItem> {
 
   Widget _benefitRow(String text, bool active) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+      padding: EdgeInsets.only(bottom: 10.sh),
       child: Row(
         children: [
           Expanded(
@@ -528,7 +531,7 @@ class _PlanCardItemState extends State<_PlanCardItem> {
               text,
               style: TextStyle(
                 color: purple,
-                fontSize: 14,
+                fontSize: 14.sp,
                 fontWeight: FontWeight.w500,
                 fontFamily: "Satoshi",
               ),

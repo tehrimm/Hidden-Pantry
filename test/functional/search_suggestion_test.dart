@@ -32,7 +32,9 @@ void main() {
   testWidgets('Search suggestion updates query when tapped', (WidgetTester tester) async {
     final api = FakeApi();
 
-    await tester.pumpWidget(wrap(SearchScreen(apiService: api)));
+    await tester.pumpWidget(wrap(const SearchScreen(inShell: true, apiService: null)));
+    // Re-pump with API to avoid const issues
+    await tester.pumpWidget(wrap(SearchScreen(inShell: true, apiService: api)));
     await tester.pump();
 
     await tester.enterText(find.byType(TextField), 'piza');
