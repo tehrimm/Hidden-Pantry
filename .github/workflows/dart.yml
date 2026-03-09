@@ -1,0 +1,48 @@
+name: iOS-ipa-build
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write # Required for creating releases
+
+jobs:
+  build-ios:
+    name: 🎉 iOS Build
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          # architecture: arm64 # macos-latest is now ARM64
+
+      - name: Install Dependencies
+        run: |
+          flutter pub get
+          flutter precache --ios
+          
+      - name: Install Pods
+        run: |
+          cd ios
+          pod install || (pod repo update && pod install)
+
+      - name: Build iOS App Bundle
+        run: flutter build ios --release --no-codesign
+
+      - name: Create IPA (Manual hack for unsigned builds)
+        run: |
+          mkdir -p Payload
+          mv build/ios/iphoneos/Runner.app Payload/
+          zip -rk FlutterIpaExport.ipa Payload
+
+      - name: Upload Binary to Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: FlutterIpaExport.ipa
+          tag_name: v1.0
+          name: "Release v1.0"
+          body: "This is an unsigned iOS build for testing purposes."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
