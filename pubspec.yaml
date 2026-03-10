@@ -116,7 +116,6 @@ flutter:
     - assets/icons/heart.png
     - assets/icons/heart_filled.png
     - assets/icons/bookmark.png
-    - assets/icons/bookmark_filled.png
     - assets/icons/minus_orange.png
     - assets/icons/plus_orange.png
     - assets/icons/next_purple.png
