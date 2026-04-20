@@ -727,21 +727,19 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
 
           // ingredients header + servings control
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Expanded(
-                child: Text(
-                  "Ingredients",
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.w800,
-                    fontFamily: "Satoshi",
-                  ),
+              Text(
+                "Ingredients",
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 24.sp,
+                  fontWeight: FontWeight.w800,
+                  fontFamily: "Satoshi",
                 ),
               ),
-              SizedBox(width: 8.sw),
-              Flexible(child: _servingControl()),
+              _servingControl(),
             ],
           ),
 

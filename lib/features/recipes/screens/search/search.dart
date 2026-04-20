@@ -442,6 +442,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   if (_controller.text.isNotEmpty || _currentIngredients.isNotEmpty) ...[
                     const SizedBox(height: 16),
                     _ingredientsFilterRow(),
+                    const SizedBox(height: 16),
                   ],
                   Expanded(
                     child: (_controller.text.isEmpty && _currentIngredients.isEmpty && _results.isEmpty && !_hasSearched)
@@ -630,6 +631,8 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     if (_results.isEmpty && (_controller.text.isNotEmpty || _hasSearched)) {
+      final suggestion = _getSpellingSuggestion(_controller.text);
+
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -637,21 +640,42 @@ class _SearchScreenState extends State<SearchScreen> {
             Text(
               "No recipes found",
               textAlign: TextAlign.center,
-              style: TextStyle(color: purple.withValues(alpha:0.6), fontFamily: "Satoshi"),
+              style: TextStyle(color: purple.withValues(alpha:0.6), fontFamily: "Satoshi", fontSize: 16),
             ),
             const SizedBox(height: 8),
             Text(
-              "Try removing some filters.",
+              "Try removing some filters or check your spelling.",
               textAlign: TextAlign.center,
               style: TextStyle(color: purple.withValues(alpha:0.5), fontFamily: "Satoshi"),
             ),
+            if (suggestion != null) ...[
+              const SizedBox(height: 24),
+              GestureDetector(
+                onTap: () {
+                  _controller.text = suggestion;
+                  _goToFullSearch();
+                },
+                child: Text(
+                  "Did you mean '$suggestion'?",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: const Color(0xFFEF8A54),
+                    fontFamily: "Satoshi",
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    decoration: TextDecoration.underline,
+                    decorationColor: const Color(0xFFEF8A54),
+                  ),
+                ),
+              ),
+            ]
           ],
         ),
       );
     }
 
     return GridView.builder(
-      padding: const EdgeInsets.all(26),
+      padding: const EdgeInsets.all(22),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         childAspectRatio: 157 / 231, // Adjusted to match Home card proportions
@@ -770,5 +794,53 @@ class _SearchScreenState extends State<SearchScreen> {
         ],
       ),
     );
+  }
+
+  String? _getSpellingSuggestion(String query) {
+    if (query.isEmpty) return null;
+    final q = query.toLowerCase().trim();
+    
+    const words = [
+      "chocolate", "chicken", "beef", "pasta", "pizza", "cake", "cookie", 
+      "salad", "soup", "bread", "breakfast", "dinner", "lunch", "dessert", 
+      "snack", "baked", "spicy", "cheese", "potato", "fish", "pork", 
+      "vegan", "vegetarian", "healthy", "smoothie", "vanilla", "strawberry", 
+      "garlic", "onion", "tomato", "mushroom", "rice", "noodle", "apple",
+      "banana", "orange", "lemon", "sugar", "butter", "milk", "egg", "water"
+    ];
+
+    if (words.contains(q)) return null; 
+
+    int _levenshtein(String a, String b) {
+      if (a.isEmpty) return b.length;
+      if (b.isEmpty) return a.length;
+      List<int> v0 = List<int>.generate(b.length + 1, (i) => i);
+      List<int> v1 = List<int>.filled(b.length + 1, 0);
+
+      for (int i = 0; i < a.length; i++) {
+        v1[0] = i + 1;
+        for (int j = 0; j < b.length; j++) {
+          int cost = (a[i] == b[j]) ? 0 : 1;
+          v1[j + 1] = math.min(v1[j] + 1, math.min(v0[j + 1] + 1, v0[j] + cost));
+        }
+        for (int j = 0; j <= b.length; j++) {
+          v0[j] = v1[j];
+        }
+      }
+      return v1[b.length];
+    }
+
+    String? bestMatch;
+    int bestDist = 3; 
+
+    for (var w in words) {
+      if ((w.length - q.length).abs() > 2) continue;
+      int dist = _levenshtein(q, w);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestMatch = w;
+      }
+    }
+    return bestMatch; 
   }
 }

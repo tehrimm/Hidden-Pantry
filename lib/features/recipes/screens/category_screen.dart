@@ -44,17 +44,24 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   Set<String> _followedAuthorIds = {};
   final FollowService _followService = FollowService();
 
+  int _limit = 20;
+  bool _loadingMore = false;
+  bool _hasMore = true;
+
   @override
   void initState() {
     super.initState();
     _loadRecipes();
   }
 
-  Future<void> _loadRecipes() async {
-    setState(() {
-      loading = true;
-      loadError = null;
-    });
+  Future<void> _loadRecipes({bool isLoadMore = false}) async {
+    if (!isLoadMore) {
+      setState(() {
+        loading = true;
+        loadError = null;
+        _hasMore = true;
+      });
+    }
 
     try {
       try {
@@ -84,11 +91,14 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       } catch (_) {}
 
       if (widget.authorIds != null && widget.authorIds!.isNotEmpty) {
-        final res = await api.fetchFollowingFeed(widget.authorIds!, limit: 50);
+        final res = await api.fetchFollowingFeed(widget.authorIds!, limit: _limit);
         if (!mounted) return;
         setState(() {
           recipes = _rerankByPreferences(res);
-          loading = false;
+          if (isLoadMore) _loadingMore = false;
+          else loading = false;
+          
+          if (res.length < _limit) _hasMore = false;
         });
         return;
       }
@@ -103,14 +113,17 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         query: query,
         tag: tagParam,
         allergies: widget.allergies,
-        topK: 20, // Fetch more for a list
+        topK: _limit, // Fetch based on limit
         minRating: 3.5,
       );
 
       if (!mounted) return;
       setState(() {
         recipes = _rerankByPreferences(res);
-        loading = false;
+        if (isLoadMore) _loadingMore = false;
+        else loading = false;
+
+        if (res.length < _limit) _hasMore = false;
       });
     } catch (e) {
       if (!mounted) return;
@@ -137,6 +150,15 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       if (word.isEmpty) return "";
       return word[0].toUpperCase() + word.substring(1).toLowerCase();
     }).join(' ');
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore) return;
+    setState(() {
+      _loadingMore = true;
+      _limit += 10;
+    });
+    await _loadRecipes(isLoadMore: true);
   }
 
   List<Recipe> _rerankByPreferences(List<Recipe> list) {
@@ -286,19 +308,50 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       );
     }
 
-    return GridView.builder(
-      padding: EdgeInsets.only(bottom: 20.sh, top: 10.sh),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 157 / 231, // Match snippet ratio
-        crossAxisSpacing: 15.sw, // Approx space
-        mainAxisSpacing: 15.sh,
-      ),
-      itemCount: recipes.length,
-      itemBuilder: (context, index) {
-        final r = recipes[index];
-        return _buildRecipeCard(r);
-      },
+    return Column(
+      children: [
+        Expanded(
+          child: GridView.builder(
+            padding: EdgeInsets.only(bottom: 20.sh, top: 10.sh),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 157 / 231, // Match snippet ratio
+              crossAxisSpacing: 15.sw, // Approx space
+              mainAxisSpacing: 15.sh,
+            ),
+            itemCount: recipes.length,
+            itemBuilder: (context, index) {
+              final r = recipes[index];
+              return _buildRecipeCard(r);
+            },
+          ),
+        ),
+        if (_hasMore) ...[
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 10.sh),
+            child: _loadingMore
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFEF8A54)),
+                  )
+                : GestureDetector(
+                    onTap: _loadMore,
+                    child: Text(
+                      "Load 10 more recipes",
+                      style: TextStyle(
+                        color: const Color(0xFFEF8A54),
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: "Satoshi",
+                        decoration: TextDecoration.underline,
+                        decorationColor: const Color(0xFFEF8A54),
+                      ),
+                    ),
+                  ),
+          ),
+        ]
+      ],
     );
   }
 
