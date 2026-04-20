@@ -20,6 +20,7 @@ import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
 import 'ingredient_camera_screen.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
+import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
 
 class SearchScreen extends StatefulWidget {
   final bool inShell;
@@ -481,7 +482,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _searchBarRow() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
           Expanded(
@@ -607,8 +608,24 @@ class _SearchScreenState extends State<SearchScreen> {
 
   Widget _resultsList() {
     if (_isSearching) {
-      return const Center(
-        child: CircularProgressIndicator(color: Color(0xFFEF8A54)),
+      return Stack(
+        children: [
+          GridView.builder(
+            padding: const EdgeInsets.all(22),
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 157 / 231, // Adjusted to match Home card proportions
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
+            itemCount: 4,
+            itemBuilder: (_, __) => _recipeCardSkeleton(),
+          ),
+          const Center(
+            child: CircularProgressIndicator(color: Color(0xFFEF8A54)),
+          ),
+        ],
       );
     }
 
@@ -634,7 +651,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     return GridView.builder(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(26),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         childAspectRatio: 157 / 231, // Adjusted to match Home card proportions
@@ -727,5 +744,31 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  
+  Widget _recipeCardSkeleton() {
+    return SizedBox(
+      width: 160.sw,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SkeletonBox(
+            width: 160.sw,
+            height: 180.sh,
+            borderRadius: BorderRadius.all(Radius.circular(20.sw)),
+          ),
+          SizedBox(height: 10.sh),
+          SkeletonBox(
+            width: 110.sw,
+            height: 14.sh,
+            borderRadius: BorderRadius.all(Radius.circular(10.sw)),
+          ),
+          SizedBox(height: 8.sh),
+          SkeletonBox(
+            width: 70.sw,
+            height: 10.sh,
+            borderRadius: BorderRadius.all(Radius.circular(10.sw)),
+          ),
+        ],
+      ),
+    );
+  }
 }
