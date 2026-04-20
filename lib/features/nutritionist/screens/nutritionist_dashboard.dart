@@ -931,9 +931,9 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
 
   Widget _statCard(String label, String value, IconData icon, {String? subtitle}) {
     return Container(
-      padding: EdgeInsets.all(16.sw), // Reduced padding to prevent overflow
+      padding: EdgeInsets.all(16.sw), 
       decoration: BoxDecoration(
-        color: const Color(0xFFF9E3D5), // Updated to requested color
+        color: const Color(0xFFF9E3D5), 
         borderRadius: BorderRadius.circular(24.sw),
         boxShadow: [
           BoxShadow(

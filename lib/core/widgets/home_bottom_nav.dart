@@ -163,7 +163,7 @@ class HpBottomNav extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Image.asset(
-                "assets/icons/User_inactive.png",
+                "assets/icons/user_inactive.png",
                 width: 24.sp,
                 height: 24.sp,
                 fit: BoxFit.contain,

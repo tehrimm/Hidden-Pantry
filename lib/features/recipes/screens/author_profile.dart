@@ -90,11 +90,11 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
           final firestoreFollowStats = results[4] as Map<String, int>;        
           final firestoreMetricStats = results[5] as Map<String, dynamic>;    
 
-          // Override API mocked stats with real Firestore stats
+          
           _stats['followers'] = firestoreFollowStats['followers'];
           _stats['following'] = firestoreFollowStats['following'];
           
-          // NEW: Add live aggregate metrics
+          
           if (firestoreMetricStats.containsKey('recipe_count')) {
             _stats['recipe_count'] = firestoreMetricStats['recipe_count'];
           }

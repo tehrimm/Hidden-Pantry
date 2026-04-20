@@ -27,7 +27,6 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
   @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
-    final topPad = MediaQuery.of(context).padding.top;
     final user = FirebaseAuth.instance.currentUser;
 
     return Scaffold(

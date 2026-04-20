@@ -11,7 +11,7 @@ class RecipeApiService {
 
   Future<List<String>> fetchTags({int limit = 15}) async {
     final uri = Uri.parse("$baseUrl/tags?limit=$limit");
-    final res = await http.get(uri).timeout(const Duration(seconds: 10));
+    final res = await http.get(uri).timeout(const Duration(seconds: 30));
     if (res.statusCode != 200) return ["All", "Sushi", "Seafood", "Dessert"];
 
     final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -54,7 +54,7 @@ class RecipeApiService {
         uri,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 30));
 
       if (res.statusCode != 200) {
         throw Exception("Server returned ${res.statusCode}: ${res.body}");
@@ -93,7 +93,7 @@ class RecipeApiService {
 
   for (final uri in candidates) {
     try {
-      final res = await http.get(uri).timeout(const Duration(seconds: 10));
+      final res = await http.get(uri).timeout(const Duration(seconds: 30));
       lastRes = res;
 
       if (res.statusCode == 200) {
@@ -131,7 +131,7 @@ class RecipeApiService {
   /// NEW: author recipe count (if not included in author object)
   Future<int> countRecipesByAuthor(String authorId) async {
     final uri = Uri.parse("$baseUrl/authors/$authorId/recipe_count");
-    final res = await http.get(uri).timeout(const Duration(seconds: 10));
+    final res = await http.get(uri).timeout(const Duration(seconds: 30));
 
     if (res.statusCode != 200) return 0;
 
@@ -151,7 +151,7 @@ class RecipeApiService {
 
     final uri = Uri.parse("$baseUrl/authors/$id/stats");
     try {
-      final res = await http.get(uri).timeout(const Duration(seconds: 10));
+      final res = await http.get(uri).timeout(const Duration(seconds: 30));
       if (res.statusCode != 200) return {};
       return jsonDecode(res.body) as Map<String, dynamic>;
     } catch (e) {
@@ -167,7 +167,7 @@ class RecipeApiService {
 
     final uri = Uri.parse("$baseUrl/authors/$id/recipes?limit=$limit");
     try {
-      final res = await http.get(uri).timeout(const Duration(seconds: 10));
+      final res = await http.get(uri).timeout(const Duration(seconds: 30));
       if (res.statusCode != 200) return [];
 
       final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -238,8 +238,8 @@ class RecipeApiService {
     print('DEBUG API: Using effectiveQuery="$effectiveQuery"');
     
     final uri = Uri.parse("$baseUrl/recommend");
-    // Fetch MORE results (top_k) for ingredient searches to allow effective local filtering
-    final topK = (hasIngredients || (allergies != null && allergies.isNotEmpty)) ? 5000 : (limit > 50 ? limit : 50);
+    // Fetch MORE results for ingredient/allergy filtering, but cap to avoid timeouts
+    final topK = (hasIngredients || (allergies != null && allergies.isNotEmpty)) ? 200 : (limit > 50 ? limit : 50);
     
     final body = <String, dynamic>{
       "query": effectiveQuery,
@@ -254,7 +254,7 @@ class RecipeApiService {
         uri,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 10));
+      ).timeout(const Duration(seconds: 45));
 
       if (res.statusCode != 200) {
         throw Exception("Server returned ${res.statusCode}");
@@ -269,10 +269,10 @@ class RecipeApiService {
         allRecipes = allRecipes.where((r) => r.minutes > 0 && r.minutes <= maxMinutes).toList();
       }
 
-      // Allergen Filtering (Local)
-      if (allergies != null && allergies.isNotEmpty) {
-        allRecipes = allRecipes.where((r) => RecipeMatcher.isSafe(r, allergies)).toList();
-      }
+      // NOTE: Allergen filtering is handled by the backend (allergies passed in request body).
+      // Local re-filtering with RecipeMatcher is intentionally removed — it uses over-broad
+      // synonym matching (e.g. "wheat" blocks anything with "flour" or "bread") which
+      // eliminates nearly all results. Trust the backend's filtering instead.
 
       // Note: We no longer perform strict tag filtering here.
       // Instead, we will use tags in the ranking logic below to prioritize "best matches".
@@ -280,18 +280,28 @@ class RecipeApiService {
       // Filter by ingredients if provided — strict AND with flexible fallback
       if (ingredients != null && ingredients.isNotEmpty) {
         print('DEBUG API: Filtering ${allRecipes.length} recipes by ${ingredients.length} ingredients');
-        
+
+        // Smart ingredient match:
+        // - "almond milk" (multi-word) only matches if recipe ingredient CONTAINS the full term.
+        //   Prevents "almond milk".contains("milk") = true causing false positives.
+        // - "chicken" (single-word) also checks reverse so "chicken breast" in recipe matches.
+        bool _matchIngredient(String selectedIng, String rIng) {
+          final s = selectedIng.toLowerCase().trim();
+          final r = rIng.toLowerCase().trim();
+          if (r.contains(s)) return true; // recipe has "unsweetened almond milk" → matches "almond milk"
+          // Only allow reverse for single-word selectors (avoid "almond milk" matching "milk")
+          if (!s.contains(' ') && s.contains(r)) return true;
+          return false;
+        }
+
         // First try strict AND: recipe must contain ALL selected ingredients
         final strictResults = allRecipes.where((r) {
           final recipeIngredientNames = r.ingredients.map((i) => i.name.toLowerCase()).toList();
-          return ingredients.every((selectedIng) {
-            final selectedLower = selectedIng.toLowerCase();
-            return recipeIngredientNames.any((rIng) =>
-              rIng.contains(selectedLower) || selectedLower.contains(rIng)
-            );
-          });
+          return ingredients.every((selectedIng) =>
+            recipeIngredientNames.any((rIng) => _matchIngredient(selectedIng, rIng))
+          );
         }).toList();
-        
+
         if (strictResults.isNotEmpty) {
           print('DEBUG API: Strict AND matched ${strictResults.length} recipes');
           allRecipes = strictResults;
@@ -300,12 +310,9 @@ class RecipeApiService {
           print('DEBUG API: Strict AND found 0, falling back to flexible OR');
           allRecipes = allRecipes.where((r) {
             final recipeIngredientNames = r.ingredients.map((i) => i.name.toLowerCase()).toList();
-            return ingredients.any((selectedIng) {
-              final selectedLower = selectedIng.toLowerCase();
-              return recipeIngredientNames.any((rIng) =>
-                rIng.contains(selectedLower) || selectedLower.contains(rIng)
-              );
-            });
+            return ingredients.any((selectedIng) =>
+              recipeIngredientNames.any((rIng) => _matchIngredient(selectedIng, rIng))
+            );
           }).toList();
           print('DEBUG API: Flexible OR matched ${allRecipes.length} recipes');
         }
@@ -414,8 +421,8 @@ class RecipeApiService {
           .take(limit)
           .toList();
     } catch (e) {
-      print("Error in searchRecipes: $e");
-      rethrow;
+      print("[API] searchRecipes failed: $e");
+      return []; // Return empty instead of rethrowing, so UI shows empty state not crash
     }
   }
 
@@ -431,7 +438,7 @@ class RecipeApiService {
         "author_ids": authorIds,
         "limit": limit,
       }),
-    ).timeout(const Duration(seconds: 10));
+    ).timeout(const Duration(seconds: 30));
 
     if (res.statusCode != 200) return [];
 

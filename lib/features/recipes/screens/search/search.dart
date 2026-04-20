@@ -163,7 +163,9 @@ class _SearchScreenState extends State<SearchScreen> {
 
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     if (q.isNotEmpty) {
-      _performSearch(q);
+      _debounce = Timer(const Duration(milliseconds: 500), () {
+        _performSearch(q);
+      });
     }
   }
 
@@ -218,8 +220,10 @@ class _SearchScreenState extends State<SearchScreen> {
       _hasSearched = true;
       _isSearching = true;
     });
+    List<Recipe> firestoreResults = [];
+    List<Recipe> apiResults = [];
+
     try {
-      List<Recipe> firestoreResults = const [];
       if (!_isUnderTest) {
         firestoreResults = await RecipeService().searchRecipes(
           query,
@@ -229,8 +233,12 @@ class _SearchScreenState extends State<SearchScreen> {
           tags: _filterTags,
         );
       }
+    } catch (e) {
+      print('DEBUG _performSearch Firestore ERROR: $e');
+    }
 
-      final apiResults = await _api.searchRecipes(
+    try {
+      apiResults = await _api.searchRecipes(
         query, 
         limit: 50, 
         ingredients: _currentIngredients,
@@ -238,32 +246,41 @@ class _SearchScreenState extends State<SearchScreen> {
         tags: _filterTags,
         allergies: _userAllergies.isNotEmpty ? _userAllergies : null,
       );
-
-      if (mounted) {
-        setState(() {
-          final List<Recipe> combined = [];
-          if (firestoreResults.isNotEmpty) {
-            combined.addAll(firestoreResults);
-            for (var apiR in apiResults) {
-              if (!combined.any((r) => r.id == apiR.id)) {
-                combined.add(apiR);
-              }
-            }
-          } else {
-            combined.addAll(apiResults);
-          }
-          _results = combined;
-          _isSearching = false;
-        });
-        FocusScope.of(context).unfocus();
-      }
     } catch (e) {
-      print('DEBUG _performSearch ERROR: $e');
-      if (mounted) {
-        setState(() {
-          _results = [];
-          _isSearching = false;
-        });
+      print('DEBUG _performSearch API ERROR: $e');
+    }
+
+    if (mounted) {
+      final List<Recipe> combined = [];
+      if (firestoreResults.isNotEmpty) {
+        combined.addAll(firestoreResults);
+        for (var apiR in apiResults) {
+          if (!combined.any((r) => r.id == apiR.id)) {
+            combined.add(apiR);
+          }
+        }
+      } else {
+        combined.addAll(apiResults);
+      }
+
+      print('DEBUG _performSearch DONE: firestore=${firestoreResults.length}, api=${apiResults.length}, total=${combined.length}');
+
+      setState(() {
+        _results = combined;
+        _isSearching = false;
+      });
+      FocusScope.of(context).unfocus();
+
+      // Show brief snackbar if nothing was found so we know backend was reached
+      if (combined.isEmpty && _hasSearched) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No results for "$query" — check backend logs', style: const TextStyle(fontFamily: 'Satoshi')),
+            backgroundColor: const Color(0xFF462F4D),
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     }
   }
@@ -307,15 +324,17 @@ class _SearchScreenState extends State<SearchScreen> {
         _currentIngredients = result;
       });
       print('DEBUG: Selected ingredients: $_currentIngredients');
-      // Trigger search automatically with new ingredients
-      if (_currentIngredients.isNotEmpty) {
-        print('DEBUG: Triggering search with query: "${_controller.text}" and ${_currentIngredients.length} ingredients');
-        _performSearch(_controller.text);
+      // Trigger search automatically if there are ingredients, filters, or a text query
+      final q = _controller.text.trim();
+      if (_currentIngredients.isNotEmpty || q.isNotEmpty || _filterTags.isNotEmpty || _filterMaxMinutes != null) {
+        print('DEBUG: Triggering search with query: "$q" and ${_currentIngredients.length} ingredients');
+        _performSearch(q);
       } else {
-        // Clear results if no ingredients selected
-        print('DEBUG: No ingredients, clearing results');
+        // Clear results if completely empty
+        print('DEBUG: No filters/query, clearing results');
         setState(() {
           _results = [];
+          _hasSearched = false;
         });
       }
     }
