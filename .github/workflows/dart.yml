@@ -33,9 +33,10 @@ jobs:
 
       - name: Create IPA (Manual hack for unsigned builds)
         run: |
-          mkdir -p Payload
-          mv build/ios/iphoneos/Runner.app Payload/
-          zip -rk FlutterIpaExport.ipa Payload
+          mkdir Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          cd Payload
+          zip -r ../FlutterIpaExport.ipa .
 
       - name: Upload Binary to Release
         uses: softprops/action-gh-release@v1
