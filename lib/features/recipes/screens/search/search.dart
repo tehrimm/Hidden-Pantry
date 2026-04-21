@@ -285,17 +285,7 @@ class _SearchScreenState extends State<SearchScreen> {
       });
       FocusScope.of(context).unfocus();
 
-      // Show brief snackbar if nothing was found so we know backend was reached
-      if (combined.isEmpty && _hasSearched) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('No results for "$query" — check backend logs', style: const TextStyle(fontFamily: 'Satoshi')),
-            backgroundColor: const Color(0xFF462F4D),
-            duration: const Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
+      // Snackbar removed to not annoy user. The UI handles empty search perfectly.
     }
   }
 

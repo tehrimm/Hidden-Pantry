@@ -13,6 +13,7 @@ class FollowService {
   Future<void> toggleFollow(String authorId, {bool? shouldFollow, String? authorName, String? photoUrl}) async {
     final user = _auth.currentUser;
     if (user == null) return;
+    if (user.uid == authorId) return; // Prevent self-following
 
     final userFollowingRef = _firestore
         .collection('users')
@@ -119,7 +120,7 @@ class FollowService {
         .collection('following')
         .get();
     
-    return snap.docs.map((doc) => doc.id).toList();
+    return snap.docs.map((doc) => doc.id).where((id) => id != user.uid).toList();
   }
 
   /// Streams the following list for real-time Home Screen updates
@@ -132,7 +133,7 @@ class FollowService {
         .doc(user.uid)
         .collection('following')
         .snapshots()
-        .map((snap) => snap.docs.map((doc) => doc.id).toList());
+        .map((snap) => snap.docs.map((doc) => doc.id).where((id) => id != user.uid).toList());
   }
 
   /// Fetch full user profiles for the "Following" list
@@ -152,6 +153,7 @@ class FollowService {
 
       for (var doc in snap.docs) {
         final authorId = doc.id;
+        if (authorId == uid) continue; // Filter out self-follows from legacy data
         final relData = doc.data(); 
         
         var userDoc = await _firestore.collection('nutritionists').doc(authorId).get();
@@ -245,6 +247,7 @@ class FollowService {
       List<Map<String, dynamic>> profiles = [];
       for (var doc in snap.docs) {
         final followerId = doc.id;
+        if (followerId == uid) continue; // Filter out self-followers from legacy data
         var userDoc = await _firestore.collection('users').doc(followerId).get();
         if (!userDoc.exists) {
            userDoc = await _firestore.collection('nutritionists').doc(followerId).get();

@@ -304,28 +304,14 @@ class RecipeApiService {
           return false;
         }
 
-        // First try strict AND: recipe must contain ALL selected ingredients
-        final strictResults = allRecipes.where((r) {
+        // Strict AND ONLY: recipe must contain ALL selected ingredients
+        allRecipes = allRecipes.where((r) {
           final recipeIngredientNames = r.ingredients.map((i) => i.name.toLowerCase()).toList();
           return ingredients.every((selectedIng) =>
             recipeIngredientNames.any((rIng) => _matchIngredient(selectedIng, rIng))
           );
         }).toList();
-
-        if (strictResults.isNotEmpty) {
-          print('DEBUG API: Strict AND matched ${strictResults.length} recipes');
-          allRecipes = strictResults;
-        } else {
-          // Fallback to flexible OR: at least 1 ingredient must match
-          print('DEBUG API: Strict AND found 0, falling back to flexible OR');
-          allRecipes = allRecipes.where((r) {
-            final recipeIngredientNames = r.ingredients.map((i) => i.name.toLowerCase()).toList();
-            return ingredients.any((selectedIng) =>
-              recipeIngredientNames.any((rIng) => _matchIngredient(selectedIng, rIng))
-            );
-          }).toList();
-          print('DEBUG API: Flexible OR matched ${allRecipes.length} recipes');
-        }
+        print('DEBUG API: Strict AND matched ${allRecipes.length} recipes');
       }
 
       // Sorting & Ranking
