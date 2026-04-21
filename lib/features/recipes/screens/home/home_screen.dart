@@ -89,107 +89,111 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     try {
-      // 1. Fetch user allergies first
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        final doc = await FirebaseFirestore.instance.collection("users").doc(user.uid).get();
-        final data = doc.data();
-        if (data != null) {
-            final list = data['allergies'];
-            if (list is List) {
-              userAllergies = list.map((e) => e.toString()).toList();
-            }
-            photoUrl = (data['photoUrl'] as String?)?.trim();
-             // Fallback to Auth if Firestore is empty but Auth has it (rare case if not synced)
-            photoUrl ??= user.photoURL;
-            final tw = data['tagWeights'];
-            if (tw is Map) {
-              _tagWeights = tw.map((k, v) => MapEntry(k.toString().toLowerCase(), num.tryParse(v.toString()) ?? 0));
-            }
-        }
-      }
-
-      final fetchedTags = await api.fetchTags(limit: 50);
-      final fixedTags = _fixTags(fetchedTags);
-
-      // 2. Fetch liked recipes for personalization
+      // 1. Fetch user data and tags concurrently
+      List<String> fetchedTags = [];
       List<String> likedIds = [];
       List<String> followedIds = [];
+      
+      final user = FirebaseAuth.instance.currentUser;
+      final initialFutures = <Future>[
+        api.fetchTags(limit: 50).then((v) => fetchedTags = v).catchError((_) => <String>[]),
+      ];
+
       if (user != null) {
-        likedIds = await _recipeService.getLikedRecipeIds(user.uid);
-        try {
-          final recentSnap = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .collection('views')
-              .orderBy('lastViewed', descending: true)
-              .limit(200)
-              .get();
-          _recentViewed = recentSnap.docs.map((d) => d.id).toSet();
-        } catch (_) {}
-        try {
-          followedIds = await _followService.getFollowedAuthorIds();
-          _followedAuthorIds = followedIds.toSet();
-        } catch (_) {}
+        initialFutures.add(
+          FirebaseFirestore.instance.collection("users").doc(user.uid).get().then((doc) {
+            final data = doc.data();
+            if (data != null) {
+              final list = data['allergies'];
+              if (list is List) {
+                userAllergies = list.map((e) => e.toString()).toList();
+              }
+              photoUrl = (data['photoUrl'] as String?)?.trim() ?? user.photoURL;
+              final tw = data['tagWeights'];
+              if (tw is Map) {
+                _tagWeights = tw.map((k, v) => MapEntry(k.toString().toLowerCase(), num.tryParse(v.toString()) ?? 0));
+              }
+            }
+          }).catchError((_) {})
+        );
+
+        initialFutures.add(
+          _recipeService.getLikedRecipeIds(user.uid).then((v) => likedIds = v).catchError((_) => <String>[])
+        );
+
+        initialFutures.add(
+          FirebaseFirestore.instance.collection('users').doc(user.uid).collection('views')
+              .orderBy('lastViewed', descending: true).limit(200).get().then((snap) {
+            _recentViewed = snap.docs.map((d) => d.id).toSet();
+          }).catchError((_) {})
+        );
+
+        initialFutures.add(
+          _followService.getFollowedAuthorIds().then((v) {
+            followedIds = v;
+            _followedAuthorIds = v.toSet();
+          }).catchError((_) {})
+        );
       }
 
-      final rec = await api.recommend(
-        query: "popular",
-        tag: selectedTag,
-        allergies: userAllergies,
-        likedRecipeIds: likedIds,
-        topK: 50,
-        minRating: 0.0,
-      );
+      await Future.wait(initialFutures);
+      final fixedTags = _fixTags(fetchedTags);
 
-      final week = await api.recommend(
-        query: "top this week",
-        tag: null, // Always global
-        allergies: userAllergies,
-        likedRecipeIds: likedIds,
-        topK: 50,
-        minRating: 0.0,
-      );
-
-      // 3. Fetch Following Feed — try API first, fall back to Firestore
+      // 2. Fetch recipe recommendations concurrently
+      List<Recipe> rec = [];
+      List<Recipe> week = [];
       List<Recipe> feed = [];
-      if (followedIds.isNotEmpty) {
-        try {
-          feed = await api.fetchFollowingFeed(followedIds).catchError((e) {
-            log("Home: Following Feed API error: $e");
-            return <Recipe>[];
-          });
-        } catch (_) {}
 
-        // API returned nothing — fetch directly from Firestore (same as CategoriesScreen)
-        if (feed.isEmpty) {
-          try {
-            // Firestore 'whereIn' supports max 30 items per query
-            final chunks = <List<String>>[];
-            for (var i = 0; i < followedIds.length; i += 10) {
-              chunks.add(followedIds.sublist(i, i + 10 < followedIds.length ? i + 10 : followedIds.length));
-            }
-            final allDocs = <Recipe>[];
-            for (final chunk in chunks) {
-              final snap = await FirebaseFirestore.instance
-                  .collection('recipes')
-                  .where('author_id', whereIn: chunk)
-                  .where('is_public', isEqualTo: true)
-                  .limit(30)
-                  .get();
-              allDocs.addAll(snap.docs.map((d) => Recipe.fromJson(d.data())));
-            }
-            // Deduplicate and sort by newest
-            final byId = <String, Recipe>{};
-            for (final r in allDocs) {
-              if (r.id.isNotEmpty) byId[r.id] = r;
-            }
-            feed = byId.values.toList();
-          } catch (e) {
-            log("Home: Following Feed Firestore fallback error: $e");
+      final feedFallback = () async {
+        try {
+          final chunks = <List<String>>[];
+          for (var i = 0; i < followedIds.length; i += 10) {
+            chunks.add(followedIds.sublist(i, i + 10 < followedIds.length ? i + 10 : followedIds.length));
           }
+          final allDocs = <Recipe>[];
+          for (final chunk in chunks) {
+            final snap = await FirebaseFirestore.instance.collection('recipes')
+                .where('author_id', whereIn: chunk)
+                .where('is_public', isEqualTo: true).limit(30).get();
+            allDocs.addAll(snap.docs.map((d) => Recipe.fromJson(d.data())));
+          }
+          final byId = <String, Recipe>{};
+          for (final r in allDocs) if (r.id.isNotEmpty) byId[r.id] = r;
+          return byId.values.toList();
+        } catch (e) {
+          log("Home: Following Feed Firestore fallback error: $e");
+          return <Recipe>[];
         }
+      };
+
+      final recipeFutures = <Future>[
+        api.recommend(
+          query: "popular", tag: selectedTag, allergies: userAllergies,
+          likedRecipeIds: likedIds, topK: 50, minRating: 0.0,
+        ).then((v) => rec = v).catchError((_) => <Recipe>[]),
+
+        api.recommend(
+          query: "top this week", tag: null, allergies: userAllergies,
+          likedRecipeIds: likedIds, topK: 50, minRating: 0.0,
+        ).then((v) => week = v).catchError((_) => <Recipe>[]),
+      ];
+
+      if (followedIds.isNotEmpty) {
+        recipeFutures.add(
+          api.fetchFollowingFeed(followedIds).then((res) async {
+            if (res.isNotEmpty) {
+              feed = res;
+            } else {
+              feed = await feedFallback();
+            }
+          }).catchError((_) async {
+            feed = await feedFallback();
+          })
+        );
       }
+
+      await Future.wait(recipeFutures);
+
 
       if (!mounted) return;
       setState(() {

@@ -64,58 +64,50 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
     }
 
     try {
-      try {
-        final user = FirebaseAuth.instance.currentUser;
-        if (user != null) {
-          final snap = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final user = FirebaseAuth.instance.currentUser;
+      final futures = <Future>[];
+      List<Recipe> fetchedRecipes = [];
+
+      if (user != null) {
+        futures.add(FirebaseFirestore.instance.collection('users').doc(user.uid).get().then((snap) {
           final data = snap.data();
           if (data != null && data['tagWeights'] is Map) {
             final tw = data['tagWeights'] as Map;
             _tagWeights = tw.map((k, v) => MapEntry(k.toString().toLowerCase(), num.tryParse(v.toString()) ?? 0));
           }
-          try {
-            final recentSnap = await FirebaseFirestore.instance
-                .collection('users')
-                .doc(user.uid)
-                .collection('views')
-                .orderBy('lastViewed', descending: true)
-                .limit(200)
-                .get();
-            _recentViewed = recentSnap.docs.map((d) => d.id).toSet();
-          } catch (_) {}
-          try {
-            final f = await _followService.getFollowedAuthorIds();
-            _followedAuthorIds = f.toSet();
-          } catch (_) {}
-        }
-      } catch (_) {}
+        }).catchError((_) {}));
 
-      if (widget.authorIds != null && widget.authorIds!.isNotEmpty) {
-        final res = await api.fetchFollowingFeed(widget.authorIds!, limit: _limit);
-        if (!mounted) return;
-        setState(() {
-          recipes = _rerankByPreferences(res);
-          if (isLoadMore) _loadingMore = false;
-          else loading = false;
-          
-          if (res.length < _limit) _hasMore = false;
-        });
-        return;
+        futures.add(FirebaseFirestore.instance.collection('users').doc(user.uid).collection('views')
+            .orderBy('lastViewed', descending: true).limit(200).get().then((recentSnap) {
+          _recentViewed = recentSnap.docs.map((d) => d.id).toSet();
+        }).catchError((_) {}));
+
+        futures.add(_followService.getFollowedAuthorIds().then((f) {
+          _followedAuthorIds = f.toSet();
+        }).catchError((_) {}));
       }
 
-      // Determine query: Use explicit query if provided, else default logic
-      final String? query = widget.query ?? 
-          (widget.tag == null || widget.tag == "All" ? "popular" : widget.tag);
-      
-      final String? tagParam = (widget.tag == "All") ? null : widget.tag;
+      if (widget.authorIds != null && widget.authorIds!.isNotEmpty) {
+        futures.add(api.fetchFollowingFeed(widget.authorIds!, limit: _limit).then((res) {
+           fetchedRecipes = res;
+        }).catchError((_) {}));
+      } else {
+        final String? query = widget.query ?? (widget.tag == null || widget.tag == "All" ? "popular" : widget.tag);
+        final String? tagParam = (widget.tag == "All") ? null : widget.tag;
+        
+        futures.add(api.recommend(
+          query: query,
+          tag: tagParam,
+          allergies: widget.allergies,
+          topK: _limit,
+          minRating: 3.5,
+        ).then((res) {
+           fetchedRecipes = res;
+        }).catchError((_) {}));
+      }
 
-      final res = await api.recommend(
-        query: query,
-        tag: tagParam,
-        allergies: widget.allergies,
-        topK: _limit, // Fetch based on limit
-        minRating: 3.5,
-      );
+      await Future.wait(futures);
+      final res = fetchedRecipes;
 
       if (!mounted) return;
       setState(() {

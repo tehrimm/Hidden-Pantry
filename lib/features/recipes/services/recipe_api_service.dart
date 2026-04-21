@@ -188,38 +188,6 @@ class RecipeApiService {
     List<String>? tags,
     List<String>? allergies,
   }) async {
-    Map<String, num> userTagWeights = {};
-    Set<String> recentViewed = {};
-    Set<String> followedAuthors = {};
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        final snap = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-        final data = snap.data();
-        if (data != null && data['tagWeights'] is Map) {
-          final tw = data['tagWeights'] as Map;
-          userTagWeights = tw.map((k, v) => MapEntry(k.toString().toLowerCase(), num.tryParse(v.toString()) ?? 0));
-        }
-        try {
-          final vs = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .collection('views')
-              .orderBy('lastViewed', descending: true)
-              .limit(200)
-              .get();
-          recentViewed = vs.docs.map((d) => d.id).toSet();
-        } catch (_) {}
-        try {
-          final fs = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .collection('following')
-              .get();
-          followedAuthors = fs.docs.map((d) => d.id).toSet();
-        } catch (_) {}
-      }
-    } catch (_) {}
     // Allow search if we have query, ingredients, or tags
     final hasQuery = query.trim().isNotEmpty;
     final hasIngredients = ingredients != null && ingredients.isNotEmpty;
@@ -249,20 +217,62 @@ class RecipeApiService {
       "allergies": allergies ?? [], // Pass to backend if it supports it
     };
 
-    try {
-      final res = await http.post(
+    Map<String, num> userTagWeights = {};
+    Set<String> recentViewed = {};
+    Set<String> followedAuthors = {};
+    var allRecipes = <Recipe>[];
+    
+    final futures = <Future>[];
+
+    // Backend Recipe Search Fetch
+    futures.add(
+      http.post(
         uri,
         headers: {"Content-Type": "application/json"},
         body: jsonEncode(body),
-      ).timeout(const Duration(seconds: 45));
+      ).timeout(const Duration(seconds: 45)).then((res) {
+        if (res.statusCode == 200) {
+          final data = jsonDecode(res.body) as Map<String, dynamic>;
+          final resultsData = (data["results"] as List?) ?? [];
+          allRecipes = resultsData.map((e) => Recipe.fromJson(e as Map<String, dynamic>)).toList();
+        } else {
+          print("searchRecipes Server returned ${res.statusCode}");
+        }
+      }).catchError((e) {
+        print("[API] HTTP searchRecipes failed: $e");
+      })
+    );
 
-      if (res.statusCode != 200) {
-        throw Exception("Server returned ${res.statusCode}");
+    // Personalization fetch
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        futures.add(
+          FirebaseFirestore.instance.collection('users').doc(user.uid).get().then((snap) {
+            final data = snap.data();
+            if (data != null && data['tagWeights'] is Map) {
+              final tw = data['tagWeights'] as Map;
+              userTagWeights = tw.map((k, v) => MapEntry(k.toString().toLowerCase(), num.tryParse(v.toString()) ?? 0));
+            }
+          }).catchError((_) {})
+        );
+        futures.add(
+          FirebaseFirestore.instance.collection('users').doc(user.uid).collection('views')
+              .orderBy('lastViewed', descending: true).limit(200).get().then((vs) {
+            recentViewed = vs.docs.map((d) => d.id).toSet();
+          }).catchError((_) {})
+        );
+        futures.add(
+          FirebaseFirestore.instance.collection('users').doc(user.uid).collection('following').get().then((fs) {
+            followedAuthors = fs.docs.map((d) => d.id).toSet();
+          }).catchError((_) {})
+        );
       }
+    } catch (_) {}
 
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
-      final resultsData = (data["results"] as List?) ?? [];
-      var allRecipes = resultsData.map((e) => Recipe.fromJson(e as Map<String, dynamic>)).toList();
+    await Future.wait(futures);
+
+    try {
       
       // Local Filtering
       if (maxMinutes != null) {
