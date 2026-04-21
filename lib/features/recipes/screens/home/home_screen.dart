@@ -631,7 +631,7 @@ void _openUserProfile() {
         : tags;
 
     return SizedBox(
-      height: 44.sh,
+      height: 40.sh,
       child: ListView.separated(
         padding: EdgeInsets.symmetric(horizontal: 22.sw),
         scrollDirection: Axis.horizontal,

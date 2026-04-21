@@ -308,49 +308,54 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
       );
     }
 
-    return Column(
-      children: [
-        Expanded(
-          child: GridView.builder(
-            padding: EdgeInsets.only(bottom: 20.sh, top: 10.sh),
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.only(bottom: 20.sh, top: 10.sh),
+          sliver: SliverGrid(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               childAspectRatio: 157 / 231, // Match snippet ratio
               crossAxisSpacing: 15.sw, // Approx space
               mainAxisSpacing: 15.sh,
             ),
-            itemCount: recipes.length,
-            itemBuilder: (context, index) {
-              final r = recipes[index];
-              return _buildRecipeCard(r);
-            },
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final r = recipes[index];
+                return _buildRecipeCard(r);
+              },
+              childCount: recipes.length,
+            ),
           ),
         ),
-        if (_hasMore) ...[
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 10.sh),
-            child: _loadingMore
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFEF8A54)),
-                  )
-                : GestureDetector(
-                    onTap: _loadMore,
-                    child: Text(
-                      "Load 10 more recipes",
-                      style: TextStyle(
-                        color: const Color(0xFFEF8A54),
-                        fontSize: 14.sp,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: "Satoshi",
-                        decoration: TextDecoration.underline,
-                        decorationColor: const Color(0xFFEF8A54),
+        if (_hasMore)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 20.sh),
+              child: Center(
+                child: _loadingMore
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFEF8A54)),
+                      )
+                    : GestureDetector(
+                        onTap: _loadMore,
+                        child: Text(
+                          "Load 10 more recipes",
+                          style: TextStyle(
+                            color: const Color(0xFFEF8A54),
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: "Satoshi",
+                            decoration: TextDecoration.underline,
+                            decorationColor: const Color(0xFFEF8A54),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
+              ),
+            ),
           ),
-        ]
       ],
     );
   }

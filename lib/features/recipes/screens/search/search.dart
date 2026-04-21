@@ -42,6 +42,9 @@ class _SearchScreenState extends State<SearchScreen> {
   List<String> _userAllergies = [];
   bool _hasSearched = false;
   bool _isSearching = false;
+  int _limit = 20;
+  bool _loadingMore = false;
+  bool _hasMore = true;
 
   bool get _isUnderTest => widget.apiService != null;
 
@@ -215,12 +218,18 @@ class _SearchScreenState extends State<SearchScreen> {
     return bestMatch;
   }
 
-  Future<void> _performSearch(String query) async {
+  Future<void> _performSearch(String query, {bool isLoadMore = false}) async {
     print('DEBUG _performSearch: query="$query", ingredients=${_currentIngredients.length}, filters=${_filterTags.length}');
-    setState(() {
-      _hasSearched = true;
-      _isSearching = true;
-    });
+    
+    if (!isLoadMore) {
+      setState(() {
+        _hasSearched = true;
+        _isSearching = true;
+        _hasMore = true;
+        _limit = 20;
+      });
+    }
+
     List<Recipe> firestoreResults = [];
     List<Recipe> apiResults = [];
 
@@ -228,7 +237,7 @@ class _SearchScreenState extends State<SearchScreen> {
       if (!_isUnderTest) {
         firestoreResults = await RecipeService().searchRecipes(
           query,
-          limit: 20,
+          limit: _limit,
           ingredients: _currentIngredients,
           maxMinutes: _filterMaxMinutes,
           tags: _filterTags,
@@ -241,7 +250,7 @@ class _SearchScreenState extends State<SearchScreen> {
     try {
       apiResults = await _api.searchRecipes(
         query, 
-        limit: 50, 
+        limit: _limit, 
         ingredients: _currentIngredients,
         maxMinutes: _filterMaxMinutes,
         tags: _filterTags,
@@ -268,7 +277,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
       setState(() {
         _results = combined;
-        _isSearching = false;
+        if (isLoadMore) _loadingMore = false;
+        else _isSearching = false;
+
+        // Roughly guess if we have more based on what api returned
+        if (apiResults.length < _limit) _hasMore = false;
       });
       FocusScope.of(context).unfocus();
 
@@ -284,6 +297,15 @@ class _SearchScreenState extends State<SearchScreen> {
         );
       }
     }
+  }
+
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore) return;
+    setState(() {
+      _loadingMore = true;
+      _limit += 10;
+    });
+    await _performSearch(_controller.text, isLoadMore: true);
   }
 
   void _openRecipe(Recipe r) {
@@ -674,27 +696,64 @@ class _SearchScreenState extends State<SearchScreen> {
       );
     }
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(22),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 157 / 231, // Adjusted to match Home card proportions
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-      ),
-      itemCount: _results.length,
-      itemBuilder: (_, i) {
-        final r = _results[i];
-        return RecipeCard(
-          recipe: r,
-          onTap: () {
-            _saveSearch(r.name);
-            _openRecipe(r);
-          },
-        );
-      },
+    return CustomScrollView(
+      slivers: [
+        SliverPadding(
+          padding: const EdgeInsets.all(22),
+          sliver: SliverGrid(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 157 / 231, // Adjusted to match Home card proportions
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (_, i) {
+                final r = _results[i];
+                return RecipeCard(
+                  recipe: r,
+                  onTap: () {
+                    _saveSearch(r.name);
+                    _openRecipe(r);
+                  },
+                );
+              },
+              childCount: _results.length,
+            ),
+          ),
+        ),
+        if (_hasSearched && _hasMore && _results.isNotEmpty)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Center(
+                child: _loadingMore
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFEF8A54)),
+                      )
+                    : GestureDetector(
+                        onTap: _loadMore,
+                        child: Text(
+                          "Load 10 more recipes",
+                          style: TextStyle(
+                            color: const Color(0xFFEF8A54),
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: "Satoshi",
+                            decoration: TextDecoration.underline,
+                            decorationColor: const Color(0xFFEF8A54),
+                          ),
+                        ),
+                      ),
+              ),
+            ),
+          ),
+      ],
     );
   }
+
 
   Widget _recentSearchesSection() {
     if (_recentSearches.isEmpty) {
