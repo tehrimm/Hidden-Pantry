@@ -265,7 +265,11 @@ class _AddToCookbookBottomSheetState extends State<AddToCookbookBottomSheet> {
                     }
 
                   if (mounted) {
-                    Toaster.show(context, _selectedCookbookId == null ? 'Recipe unsaved' : 'Recipe saved successfully!');
+                    Toaster.show(
+                      context, 
+                      _selectedCookbookId == null ? 'Recipe unsaved' : 'Recipe saved successfully!',
+                      atTop: false,
+                    );
                     Navigator.pop(context, _selectedCookbookId != null);
                   }
                 } catch (e) {

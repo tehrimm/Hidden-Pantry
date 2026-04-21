@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class Toaster {
-  static void show(BuildContext context, String message, {bool isError = false}) {
+  static void show(BuildContext context, String message, {bool isError = false, bool atTop = true}) {
     final Color bgColor = const Color(0xFFF9E3D5);
     final Color textColor = const Color(0xFF462F4D);
     final Color orange = const Color(0xFFEF8A54);
@@ -10,18 +10,24 @@ class Toaster {
     if (overlay == null) return;
 
     final statusTop = MediaQuery.of(context).viewPadding.top;
+    final navBottom = MediaQuery.of(context).viewPadding.bottom;
+    
     final canPop = ModalRoute.of(context)?.canPop ?? Navigator.canPop(context);
     final extra = canPop ? (kToolbarHeight + 8.0) : 16.0;
+    
     final topPadding = statusTop + extra;
+    final bottomPadding = navBottom + 20.0;
 
     final entry = OverlayEntry(
       builder: (ctx) {
         return Positioned(
-          top: topPadding,
+          top: atTop ? topPadding : null,
+          bottom: atTop ? null : bottomPadding,
           left: 16,
           right: 16,
           child: SafeArea(
-            bottom: false,
+            top: atTop,
+            bottom: !atTop,
             child: Material(
               color: Colors.transparent,
               child: Container(

@@ -174,49 +174,40 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
     _setLoading(true);
 
     try {
-      // 1) Auth create
+      // 1) Auth create - this is the only thing we MUST wait for
       debugPrint("Creating user in Firebase Auth...");
       final cred = await _authService.registerWithEmail(email, pass);
+      
+      if (cred?.user == null) {
+        throw FirebaseAuthException(code: "unknown", message: "Failed to create user.");
+      }
+      
       debugPrint("Auth success: ${cred?.user?.uid}");
 
-      final bool isUnderTest = WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding');
-      if (isUnderTest) {
+      // 2) Firestore save - FIRE AND FORGET (Run in background)
+      // We don't await this to unlock the UI immediately.
+      _userService
+          .upsertCurrentUserProfile(
+            fullName: fullName,
+            phoneNumber: phone,
+            allergies: const [],
+          )
+          .then((_) => debugPrint("Background profile sync complete"))
+          .catchError((e) => debugPrint("Background profile sync failed: $e"));
+
+      if (!mounted) return;
+
+      // 3) Navigate IMMEDIATELY using the safe pattern
+      WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        Navigator.push(
+        Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => AllergiesScreen(userService: _userService)),
         );
-        return;
-      }
-
-      // 2) Firestore save (don’t block user forever)
-      try {
-        debugPrint("Saving profile to Firestore...");
-        await _userService
-            .upsertCurrentUserProfile(
-              fullName: fullName,
-              phoneNumber: phone,
-              allergies: const [],
-            )
-            .timeout(const Duration(seconds: 5), onTimeout: () {
-          debugPrint("Firestore save timed out - proceeding optimistically");
-        });
-        debugPrint("Firestore save success (or timeout skipped)");
-      } catch (e) {
-        debugPrint("Profile save error (ignoring to unblock user): $e");
-      }
-
-      if (!mounted) return;
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => AllergiesScreen(userService: _userService)),
-      );
+      });
     } on FirebaseAuthException catch (e) {
       debugPrint("FirebaseAuthException: ${e.code} / ${e.message}");
-
       if (!mounted) return;
-
       setState(() {
         if (e.code == "email-already-in-use") {
           _gmailErr = "*email already in use";
@@ -226,12 +217,10 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
           _gmailErr = "*invalid email";
         }
       });
-
-      // show message if it’s not one of the field-mapped errors
-        if (e.code != "email-already-in-use" &&
-            e.code != "weak-password" &&
-            e.code != "invalid-email") {
-          _snack("${e.message ?? "Signup failed"}", isError: true);
+      if (e.code != "email-already-in-use" &&
+          e.code != "weak-password" &&
+          e.code != "invalid-email") {
+        _snack("${e.message ?? "Signup failed"}", isError: true);
       }
     } catch (e) {
       debugPrint("Generic Error: $e");
@@ -243,8 +232,6 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
 
   Future<void> _onGoogleRegister() async {
     _setLoading(true);
-
-    UserCredential? cred;
     try {
       final googleUser = await GoogleSignIn().signIn();
       if (googleUser == null) {
@@ -253,43 +240,39 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
       }
 
       final googleAuth = await googleUser.authentication;
-
       final googleCredential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      cred = await FirebaseAuth.instance.signInWithCredential(googleCredential);
-
+      final cred = await FirebaseAuth.instance.signInWithCredential(googleCredential);
       final user = cred.user!;
       
-      // Normalizing phone (exactly like email signup)
       var rawPhone = _phoneCtrl.text.trim().replaceAll(RegExp(r'[^0-9]'), '');
       if (rawPhone.startsWith('0')) {
         rawPhone = rawPhone.replaceFirst(RegExp(r'^0+'), '');
       }
       final phone = "$_countryCode$rawPhone";
-
       final fullName = (user.displayName ?? _fullNameCtrl.text.trim()).trim();
 
-      await _userService.upsertCurrentUserProfile(
+      // OPTIMISTIC SYNC: Don't await
+      _userService.upsertCurrentUserProfile(
         fullName: fullName.isEmpty ? "User" : fullName,
         phoneNumber: phone,
         allergies: const [],
-      );
+      ).catchError((e) => debugPrint("Background Google sync failed: $e"));
 
       if (!mounted) return;
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => AllergiesScreen()),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => AllergiesScreen()),
+        );
+      });
     } catch (e) {
       debugPrint("Google signup failed: $e");
-      // rollback if auth happened but firestore failed
-      try {
-        await cred?.user?.delete();
-      } catch (_) {}
       if (mounted) _snack("Google signup failed", isError: true);
     } finally {
       if (mounted) _setLoading(false);
@@ -298,8 +281,6 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
 
   Future<void> _onAppleRegister() async {
     _setLoading(true);
-
-    UserCredential? cred;
     try {
       final apple = await SignInWithApple.getAppleIDCredential(
         scopes: [
@@ -313,17 +294,14 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
         accessToken: apple.authorizationCode,
       );
 
-      cred = await FirebaseAuth.instance.signInWithCredential(appleCredential);
-
+      final cred = await FirebaseAuth.instance.signInWithCredential(appleCredential);
       final user = cred.user!;
 
-      // Normalizing phone (exactly like email signup)
       var rawPhone = _phoneCtrl.text.trim().replaceAll(RegExp(r'[^0-9]'), '');
       if (rawPhone.startsWith('0')) {
         rawPhone = rawPhone.replaceFirst(RegExp(r'^0+'), '');
       }
       final phone = "$_countryCode$rawPhone";
-
       final appleName = [
         apple.givenName ?? "",
         apple.familyName ?? "",
@@ -334,23 +312,24 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
               : (user.displayName ?? _fullNameCtrl.text.trim()))
           .trim();
 
-      await _userService.upsertCurrentUserProfile(
+      // OPTIMISTIC SYNC: Don't await
+      _userService.upsertCurrentUserProfile(
         fullName: fullName.isEmpty ? "User" : fullName,
         phoneNumber: phone,
         allergies: const [],
-      );
+      ).catchError((e) => debugPrint("Background Apple sync failed: $e"));
 
       if (!mounted) return;
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => AllergiesScreen()),
-      );
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => AllergiesScreen()),
+        );
+      });
     } catch (e) {
       debugPrint("Apple signup failed: $e");
-      try {
-        await cred?.user?.delete();
-      } catch (_) {}
       if (mounted) _snack("Apple signup failed", isError: true);
     } finally {
       if (mounted) _setLoading(false);

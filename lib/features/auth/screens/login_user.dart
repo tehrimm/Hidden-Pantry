@@ -124,29 +124,37 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     try {
       final sw = Stopwatch()..start();
 
-      await _authService.loginWithEmail(email, pass);
+      final cred = await _authService.loginWithEmail(email, pass);
+      final user = cred?.user;
 
-      final user = _authService.currentUser;
       if (user != null) {
+        // Fetch nutritionist status and proceed
         final nutDoc = await FirebaseFirestore.instance
             .collection('nutritionists')
             .doc(user.uid)
             .get();
 
-        if (nutDoc.exists && nutDoc.data()?['verificationStatus'] != null) {
+        if (kDebugMode) debugPrint("Login auth + role check took ${sw.elapsedMilliseconds}ms");
+
+        if (!mounted) return;
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => NutritionistSignupWrapper()),
-          );
-          return;
-        }
+          if (nutDoc.exists && nutDoc.data()?['verificationStatus'] != null) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => NutritionistSignupWrapper()),
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => MainNavigationShell()),
+            );
+          }
+        });
       }
-
-      if (kDebugMode) debugPrint("Login auth took ${sw.elapsedMilliseconds}ms");
-
-      await _goHome();
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
       setState(() {
         if (e.code == "user-not-found") {
           _gmailErr = "*user not found";
@@ -161,7 +169,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     } catch (_) {
       _snack("Login failed", isError: true);
     } finally {
-      _setLoading(false);
+      if (mounted) _setLoading(false);
     }
   }
 
@@ -175,39 +183,49 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
       }
 
       final googleAuth = await googleUser.authentication;
-
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
       final cred = await FirebaseAuth.instance.signInWithCredential(credential);
+      final user = cred.user;
 
-      final nutDoc = await FirebaseFirestore.instance
-          .collection('nutritionists')
-          .doc(cred.user!.uid)
-          .get();
+      if (user != null) {
+        // Start background user doc ensuring
+        UserService().ensureUserDoc(user).catchError((e) {
+          if (kDebugMode) debugPrint("Background user sync failed: $e");
+        });
 
-      if (nutDoc.exists && nutDoc.data()?['verificationStatus'] != null) {
+        // Check if nutritionist
+        final nutDoc = await FirebaseFirestore.instance
+            .collection('nutritionists')
+            .doc(user.uid)
+            .get();
+
         if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => NutritionistSignupWrapper()),
-        );
-        return;
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (nutDoc.exists && nutDoc.data()?['verificationStatus'] != null) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => NutritionistSignupWrapper()),
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => MainNavigationShell()),
+            );
+          }
+        });
       }
-
-      UserService().ensureUserDoc(cred.user!).catchError((e) {
-        if (kDebugMode) debugPrint("Background user sync failed: $e");
-      });
-
-      await _goHome();
     } on FirebaseAuthException catch (e) {
       _snack("${e.message ?? "Google login failed"}", isError: true);
     } catch (_) {
       _snack("Google login failed", isError: true);
     } finally {
-      _setLoading(false);
+      if (mounted) _setLoading(false);
     }
   }
 
@@ -224,30 +242,41 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
       );
 
       final cred = await FirebaseAuth.instance.signInWithCredential(oauthCred);
+      final user = cred.user;
 
-      final nutDoc = await FirebaseFirestore.instance
-          .collection('nutritionists')
-          .doc(cred.user!.uid)
-          .get();
+      if (user != null) {
+        // Start background user doc ensuring
+        UserService().ensureUserDoc(user).catchError((e) {
+          if (kDebugMode) debugPrint("Background user sync failed: $e");
+        });
 
-      if (nutDoc.exists && nutDoc.data()?['verificationStatus'] != null) {
+        // Check if nutritionist
+        final nutDoc = await FirebaseFirestore.instance
+            .collection('nutritionists')
+            .doc(user.uid)
+            .get();
+
         if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => NutritionistSignupWrapper()),
-        );
-        return;
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (nutDoc.exists && nutDoc.data()?['verificationStatus'] != null) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => NutritionistSignupWrapper()),
+            );
+          } else {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => MainNavigationShell()),
+            );
+          }
+        });
       }
-
-      UserService().ensureUserDoc(cred.user!).catchError((e) {
-        if (kDebugMode) debugPrint("Background user sync failed: $e");
-      });
-
-      await _goHome();
     } catch (_) {
       _snack("Apple login failed");
     } finally {
-      _setLoading(false);
+      if (mounted) _setLoading(false);
     }
   }
 

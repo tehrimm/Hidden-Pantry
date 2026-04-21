@@ -167,7 +167,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
     }
 
     if (!_validate()) {
-      debugPrint("Validation returned false");
+      debugPrint("Validation failed");
       return;
     }
 
@@ -175,41 +175,33 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
     final organization = _organizationCtrl.text.trim();
     final expiryDate = _expiryDateCtrl.text.trim();
 
-    debugPrint("Attempting Register: ${widget.email}");
-
     _setLoading(true);
 
     try {
       User? user = FirebaseAuth.instance.currentUser;
 
-      // 1) Create Firebase Auth account IF not already logged in (social)
+      // 1) Auth creation (if not social login)
       if (user == null) {
-        if (widget.password == null) {
-          throw Exception("Missing authentication context");
-        }
+        if (widget.password == null) throw Exception("Missing authentication context");
         debugPrint("Creating user in Firebase Auth...");
         final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: widget.email,
           password: widget.password!,
         );
         user = cred.user;
-        debugPrint("Auth success: ${user?.uid}");
-      } else {
-        debugPrint("User already authenticated: ${user.uid}");
       }
 
       if (user == null) throw Exception("Authentication failed");
+      debugPrint("Auth success: ${user.uid}");
 
-      // 2) Upload certificate
+      // 2) Sequential but optimized: Upload -> Create Profile
       debugPrint("Uploading certificate...");
       final certificateUrl = await _nutritionistService.uploadCertificate(
         _certificateFile!,
         user.uid,
       );
-      debugPrint("Certificate uploaded: $certificateUrl");
-
-      // 3) Create Firestore document with all fields
-      debugPrint("Saving nutritionist profile to Firestore...");
+      
+      debugPrint("Saving nutritionist profile...");
       await _nutritionistService.createNutritionistProfile(
         fullName: widget.fullName,
         email: widget.email,
@@ -219,75 +211,49 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
         organizationName: organization,
         expiryDate: expiryDate,
       );
-      debugPrint("Firestore save success");
 
       if (!mounted) return;
 
-      // 4) Show success popup
-      await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          backgroundColor: bg,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: Text(
-            "Certificate Submitted",
-            style: TextStyle(
-              color: purple,
-              fontWeight: FontWeight.bold,
-              fontFamily: "Satoshi",
-            ),
-          ),
-          content: Text(
-            "Your certificate has been sent for approval. You will be notified once it's reviewed.",
-            style: TextStyle(
-              color: purple,
-              fontFamily: "Satoshi",
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                "OK",
-                style: TextStyle(
-                  color: btnOrange,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: "Satoshi",
-                ),
+      // 3) Success UI - Ensure no build phase conflict
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+        
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            backgroundColor: bg,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.sw)),
+            title: Text("Certificate Submitted", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+            content: Text("Your certificate has been sent for approval. You will be notified once it's reviewed.", style: TextStyle(color: purple, fontFamily: "Satoshi")),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text("OK", style: TextStyle(color: btnOrange, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
               ),
-            ),
-          ],
-        ),
-      );
+            ],
+          ),
+        );
 
-      if (!mounted) return;
+        if (!mounted) return;
 
-      // 5) Navigate to pending screen
-      debugPrint(" Navigating to NutritionistPendingScreen");
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const NutritionistPendingScreen()),
-      );
+        // 4) Final Navigation
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const NutritionistPendingScreen()),
+        );
+      });
+
     } on FirebaseAuthException catch (e) {
-      debugPrint(" FirebaseAuthException: ${e.code} / ${e.message}");
-
+      debugPrint("FirebaseAuthException: ${e.code} / ${e.message}");
       if (!mounted) return;
-
       String errorMsg = "Signup failed";
-      if (e.code == "email-already-in-use") {
-        errorMsg = "Email already in use";
-      } else if (e.code == "weak-password") {
-        errorMsg = "Password is too weak";
-      } else if (e.code == "invalid-email") {
-        errorMsg = "Invalid email";
-      }
-
-      _snack("$errorMsg");
+      if (e.code == "email-already-in-use") errorMsg = "Email already in use";
+      else if (e.code == "weak-password") errorMsg = "Password is too weak";
+      else if (e.code == "invalid-email") errorMsg = "Invalid email";
+      _snack(errorMsg);
     } catch (e) {
-      debugPrint(" Generic Error: $e");
+      debugPrint("Generic Error: $e");
       if (mounted) _snack("Signup error: $e");
     } finally {
       if (mounted) _setLoading(false);

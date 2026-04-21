@@ -473,7 +473,8 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
       floatingActionButton: _AnimatedStartCookingFab(
         isExpandedManually: _fabExpanded,
         onTap: () {
-          Future.delayed(const Duration(milliseconds: 300), () {
+          // SAFE NAVIGATION: Ensure we are not in a build phase
+          WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
             Navigator.push(
               context,
@@ -515,13 +516,17 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(20.sw, 36.sh, 20.sw, 10.sh),
+      padding: EdgeInsets.fromLTRB(20.sw, 20.sh, 20.sw, 10.sh),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           // Back Button
           _iconTile(
-            onTap: () => Navigator.maybePop(context),
+            onTap: () {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                 if (mounted) Navigator.maybePop(context);
+              });
+            },
             child: Icon(Icons.arrow_back_ios_new, size: 18.sw, color: textColor),
           ),
 
@@ -540,39 +545,53 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                     setState(() => _liked = !_liked);
                   }
                 },
-                child: Icon(
-                  _liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                  color: _liked ? Colors.red : textColor,
-                  size: 22.sw,
+                child: _HeartBurst(
+                  isLiked: _liked,
+                  child: Icon(
+                    _liked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                    color: _liked ? Colors.red : textColor,
+                    size: 22.sw,
+                  ),
                 ),
               ),
               SizedBox(width: 10.sw),
               _iconTile(
                 onTap: _toggleDownload,
-                child: Icon(
-                  _isDownloaded ? Icons.download_done_rounded : Icons.file_download_outlined,
-                  color: _isDownloaded ? orange : textColor,
-                  size: 22.sw,
+                child: _DownloadAnimatedIcon(
+                  isDownloaded: _isDownloaded,
+                  child: Icon(
+                    _isDownloaded
+                        ? Icons.download_done_rounded
+                        : Icons.file_download_outlined,
+                    color: _isDownloaded ? orange : textColor,
+                    size: 22.sw,
+                  ),
                 ),
               ),
               SizedBox(width: 10.sw),
               _iconTile(
                 onTap: () {
-                  showModalBottomSheet(
-                    context: context,
-                    backgroundColor: Colors.transparent,
-                    isScrollControlled: true,
-                    builder: (context) => AddToCookbookBottomSheet(
-                      recipe: _recipe,
-                    ),
-                  ).then((_) => _checkBookmarkStatus());
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+                    showModalBottomSheet(
+                      context: context,
+                      backgroundColor: Colors.transparent,
+                      isScrollControlled: true,
+                      builder: (context) => AddToCookbookBottomSheet(
+                        recipe: _recipe,
+                      ),
+                    ).then((_) => _checkBookmarkStatus());
+                  });
                 },
-                child: Icon(
-                  _bookmarked
-                      ? Icons.bookmark_rounded
-                      : Icons.bookmark_border_rounded,
-                  color: _bookmarked ? orange : textColor,
-                  size: 22.sw,
+                child: _BookmarkAnimatedIcon(
+                  isBookmarked: _bookmarked,
+                  child: Icon(
+                    _bookmarked
+                        ? Icons.bookmark_rounded
+                        : Icons.bookmark_border_rounded,
+                    color: _bookmarked ? orange : textColor,
+                    size: 22.sw,
+                  ),
                 ),
               ),
             ],
@@ -591,77 +610,97 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
 
     return SingleChildScrollView(
       controller: _scrollController,
-      padding: EdgeInsets.fromLTRB(18.sw, 0, 18.sw, 90.sh),
+      padding: EdgeInsets.fromLTRB(18.sw, 10.sh, 18.sw, 90.sh),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: 18.sh),
-
-          SizedBox(height: 18.sh),
-
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => AuthorProfileScreen(
-                    authorId: r.authorId,
-                    authorName: authorName,
-                    profileImageUrl: r.authorProfileImageUrl,
+          _StaggeredEntry(
+            delay: 0,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AuthorProfileScreen(
+                      authorId: r.authorId,
+                      authorName: authorName,
+                      profileImageUrl: r.authorProfileImageUrl,
+                    ),
                   ),
-                ),
-              );
-            },
-            child: Row(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(50.sw),
-                  child: _authorAvatar(r.authorProfileImageUrl),
-                ),
-                SizedBox(width: 12.sw),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        authorName,
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 15.sp,
-                          fontWeight: FontWeight.w800,
-                          fontFamily: "Satoshi",
-                        ),
-                      ),
-                      SizedBox(height: 2.sh),
-                      Text(
-                        "${_authorRecipeCount} Recipes",
-                        style: TextStyle(
-                          color: textColor,
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.w500,
-                          fontFamily: "Satoshi",
-                        ),
-                      ),
-                    ],
+                );
+              },
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(50.sw),
+                    child: _authorAvatar(r.authorProfileImageUrl),
                   ),
-                ),
-                _ratingPill(r.avgRating),
-              ],
+                  SizedBox(width: 12.sw),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          authorName,
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 15.sp,
+                            fontWeight: FontWeight.w800,
+                            fontFamily: "Satoshi",
+                          ),
+                        ),
+                        SizedBox(height: 2.sh),
+                        Text(
+                          "${_authorRecipeCount} Recipes",
+                          style: TextStyle(
+                            color: textColor,
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w500,
+                            fontFamily: "Satoshi",
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _ratingPill(r.avgRating),
+                ],
+              ),
             ),
           ),
 
           SizedBox(height: 14.sh),
 
-          // image
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20.sw),
-            child: AspectRatio(
-              aspectRatio: 331 / 209,
-              child: _netImage(
-                url: r.imageUrl,
-                fallback: Image.asset(
-                  'assets/logos/recipe_placeholder.jpg',
-                  fit: BoxFit.cover,
+          // image with parallax
+          _StaggeredEntry(
+            delay: 100,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20.sw),
+              child: AspectRatio(
+                aspectRatio: 331 / 209,
+                child: AnimatedBuilder(
+                  animation: _scrollController,
+                  builder: (context, child) {
+                    double offset = 0;
+                    double scale = 1.1;
+                    if (_scrollController.hasClients) {
+                       offset = _scrollController.offset * 0.4; // More intense parallax
+                       scale = 1.1 + (_scrollController.offset * 0.0002); // Subtle zoom on scroll
+                    }
+                    return Transform.translate(
+                      offset: Offset(0, offset),
+                      child: Transform.scale(
+                        scale: scale, 
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: _netImage(
+                    url: r.imageUrl,
+                    fallback: Image.asset(
+                      'assets/logos/recipe_placeholder.jpg',
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -670,78 +709,90 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
           SizedBox(height: 14.sh),
 
           // title + ingredients count
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Expanded(
-                child: Text(
-                  r.name,
+          _StaggeredEntry(
+            delay: 200,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: Text(
+                    r.name,
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.w800,
+                      fontFamily: "Satoshi",
+                    ),
+                  ),
+                ),
+                SizedBox(width: 10.sw),
+                Text(
+                  "$ingredientCount Ingredients",
                   style: TextStyle(
                     color: textColor,
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.w800,
+                    fontSize: 10.sp,
+                    fontWeight: FontWeight.w600,
                     fontFamily: "Satoshi",
                   ),
                 ),
-              ),
-              SizedBox(width: 10.sw),
-              Text(
-                "$ingredientCount Ingredients",
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 10.sp,
-                  fontWeight: FontWeight.w600,
-                  fontFamily: "Satoshi",
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
 
           SizedBox(height: 12.sh),
 
           // time cards
-          _threeTimeCard(
-            totalMin: r.minutes,
-            prepMin: r.prepMinutes,
-            cookMin: r.cookMinutes,
+          _StaggeredEntry(
+            delay: 300,
+            child: _threeTimeCard(
+              totalMin: r.minutes,
+              prepMin: r.prepMinutes,
+              cookMin: r.cookMinutes,
+            ),
           ),
 
           SizedBox(height: 14.sh),
 
           // tips/photos button
-          InkWell(
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => ReviewsScreen(recipe: r),
+          _StaggeredEntry(
+            delay: 400,
+            child: InkWell(
+              onTap: () {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ReviewsScreen(recipe: r),
+                    ),
+                  ).then((_) => _refreshAfterReviews());
+                });
+              },
+              borderRadius: BorderRadius.circular(20.sw),
+              child: Container(
+                width: double.infinity,
+                height: 62.sh,
+                decoration: BoxDecoration(
+                  border: Border.all(color: orange, width: 1.2.sw),
+                  borderRadius: BorderRadius.circular(20.sw),
                 ),
-              ).then((_) => _refreshAfterReviews());
-            },
-            borderRadius: BorderRadius.circular(20.sw),
-            child: Container(
-              width: double.infinity,
-              height: 62.sh,
-              decoration: BoxDecoration(
-                border: Border.all(color: orange, width: 1.2.sw),
-                borderRadius: BorderRadius.circular(20.sw),
-              ),
-              padding: EdgeInsets.symmetric(horizontal: 16.sw),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      "See all tips and Photos",
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 15.sp,
-                        fontFamily: "Satoshi",
+                padding: EdgeInsets.symmetric(horizontal: 16.sw),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        "See all tips and Photos",
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 15.sp,
+                          fontFamily: "Satoshi",
+                        ),
                       ),
                     ),
-                  ),
-                  Icon(Icons.arrow_forward_ios_rounded,
-                      size: 16.sw, color: textColor),
-                ],
+                    Icon(Icons.arrow_forward_ios_rounded,
+                        size: 16.sw, color: textColor),
+                  ],
+                ),
               ),
             ),
           ),
@@ -749,21 +800,24 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
           SizedBox(height: 18.sh),
 
           // ingredients header + servings control
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Text(
-                "Ingredients",
-                style: TextStyle(
-                  color: textColor,
-                  fontSize: 24.sp,
-                  fontWeight: FontWeight.w800,
-                  fontFamily: "Satoshi",
+          _StaggeredEntry(
+            delay: 500,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  "Ingredients",
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: "Satoshi",
+                  ),
                 ),
-              ),
-              _servingControl(),
-            ],
+                _servingControl(),
+              ],
+            ),
           ),
 
           SizedBox(height: 10.sh),
@@ -778,7 +832,9 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
               ),
             )
           else
-            Column(
+          _StaggeredEntry(
+            delay: 550,
+            child: Column(
               children: r.ingredients.map((ing) {
                 return Column(
                   children: [
@@ -818,246 +874,278 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                 );
               }).toList(),
             ),
+          ),
 
           SizedBox(height: 22.sh),
 
           // nutrition header
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Nutrition Info",
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 24.sp,
-                        fontWeight: FontWeight.w800,
-                        fontFamily: "Satoshi",
+          _StaggeredEntry(
+            delay: 600,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Nutrition Info",
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 24.sp,
+                          fontWeight: FontWeight.w800,
+                          fontFamily: "Satoshi",
+                        ),
                       ),
-                    ),
-                    Text(
-                      "scaled for $_servings ${_servings > 1 ? 'servings' : 'serving'}",
-                      style: TextStyle(
-                        color: textColor.withValues(alpha: 0.5),
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w500,
-                        fontFamily: "Satoshi",
+                      Text(
+                        "scaled for $_servings ${_servings > 1 ? 'servings' : 'serving'}",
+                        style: TextStyle(
+                          color: textColor.withValues(alpha: 0.5),
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: "Satoshi",
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              SizedBox(width: 8.sw),
-              InkWell(
-                onTap: () =>
-                    setState(() => _nutritionExpanded = !_nutritionExpanded),
-                child: Row(
-                  children: [
-                    Text(
-                      "View Info",
-                      style: TextStyle(
-                        color: orange2,
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w800,
-                        fontFamily: "Satoshi",
+                SizedBox(width: 8.sw),
+                InkWell(
+                  onTap: () =>
+                      setState(() => _nutritionExpanded = !_nutritionExpanded),
+                  child: Row(
+                    children: [
+                      Text(
+                        "View Info",
+                        style: TextStyle(
+                          color: orange2,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w800,
+                          fontFamily: "Satoshi",
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 6.sw),
-                    Text(
-                      _nutritionExpanded ? "−" : "+",
-                      style: TextStyle(
-                        color: orange2,
-                        fontSize: 22.sp,
-                        fontWeight: FontWeight.w900,
-                        fontFamily: "Satoshi",
+                      SizedBox(width: 6.sw),
+                      Text(
+                        _nutritionExpanded ? "−" : "+",
+                        style: TextStyle(
+                          color: orange2,
+                          fontSize: 22.sp,
+                          fontWeight: FontWeight.w900,
+                          fontFamily: "Satoshi",
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
 
           SizedBox(height: 10.sh),
 
-          if (_nutritionExpanded) _nutritionBlock(r),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOutCubic,
+            child: _nutritionExpanded 
+              ? _nutritionBlock(r) 
+              : const SizedBox(width: double.infinity, height: 0),
+          ),
 
           SizedBox(height: 22.sh),
 
-          Text(
-            "Directions",
-            style: TextStyle(
-              color: textColor,
-              fontSize: 24.sp,
-              fontWeight: FontWeight.w800,
-              fontFamily: "Satoshi",
+          _StaggeredEntry(
+            delay: 650,
+            child: Text(
+              "Directions",
+              style: TextStyle(
+                color: textColor,
+                fontSize: 24.sp,
+                fontWeight: FontWeight.w800,
+                fontFamily: "Satoshi",
+              ),
             ),
           ),
 
           SizedBox(height: 10.sh),
 
           if (r.directions.isEmpty)
-            Text(
-              "No directions available.",
-              style: TextStyle(
-                color: textColor,
-                fontSize: 13.sp,
-                fontFamily: "Satoshi",
+            _StaggeredEntry(
+              delay: 700,
+              child: Text(
+                "No directions available.",
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 13.sp,
+                  fontFamily: "Satoshi",
+                ),
               ),
             )
           else
-            Column(
-              children: List.generate(
-                (r.stepsDetailed != null && r.stepsDetailed!.isNotEmpty)
-                    ? r.stepsDetailed!.length
-                    : r.directions.length,
-                (i) {
-                  String text = "";
-                  String? stepImageUrl;
+            _StaggeredEntry(
+              delay: 700,
+              child: Column(
+                children: List.generate(
+                  (r.stepsDetailed != null && r.stepsDetailed!.isNotEmpty)
+                      ? r.stepsDetailed!.length
+                      : r.directions.length,
+                  (i) {
+                    String text = "";
+                    String? stepImageUrl;
 
-                  if (r.stepsDetailed != null && r.stepsDetailed!.length > i) {
-                    final detail = r.stepsDetailed![i];
-                    text = detail['text'] ?? "";
-                    stepImageUrl = detail['imageUrl'];
-                  } else if (r.directions.length > i) {
-                    text = r.directions[i];
-                  }
+                    if (r.stepsDetailed != null && r.stepsDetailed!.length > i) {
+                      final detail = r.stepsDetailed![i];
+                      text = detail['text'] ?? "";
+                      stepImageUrl = detail['imageUrl'];
+                    } else if (r.directions.length > i) {
+                      text = r.directions[i];
+                    }
 
-                  return Container(
-                    width: double.infinity,
-                    margin: EdgeInsets.only(bottom: 12.sh),
-                    padding: EdgeInsets.all(12.sw),
-                    decoration: BoxDecoration(
-                      color: cardColor,
-                      borderRadius: BorderRadius.circular(15.sw),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              width: 24.sw,
-                              height: 24.sw,
-                              decoration: BoxDecoration(
-                                color: orange.withValues(alpha:0.1),
-                                shape: BoxShape.circle,
+                    return Container(
+                      width: double.infinity,
+                      margin: EdgeInsets.only(bottom: 12.sh),
+                      padding: EdgeInsets.all(12.sw),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(15.sw),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 24.sw,
+                                height: 24.sw,
+                                decoration: BoxDecoration(
+                                  color: orange.withValues(alpha:0.1),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    "${i + 1}",
+                                    style: TextStyle(
+                                      color: orange,
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w900,
+                                      fontFamily: "Satoshi",
+                                    ),
+                                  ),
+                                ),
                               ),
-                              child: Center(
+                              SizedBox(width: 12.sw),
+                              Expanded(
                                 child: Text(
-                                  "${i + 1}",
+                                  text,
                                   style: TextStyle(
-                                    color: orange,
+                                    color: textColor,
                                     fontSize: 14.sp,
-                                    fontWeight: FontWeight.w900,
+                                    fontWeight: FontWeight.w600,
                                     fontFamily: "Satoshi",
                                   ),
                                 ),
                               ),
-                            ),
-                            SizedBox(width: 12.sw),
-                            Expanded(
-                              child: Text(
-                                text,
-                                style: TextStyle(
-                                  color: textColor,
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: "Satoshi",
-                                ),
+                            ],
+                          ),
+                          if (stepImageUrl != null && stepImageUrl.isNotEmpty) ...[
+                            SizedBox(height: 12.sh),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(10.sw),
+                              child: Image.network(
+                                stepImageUrl,
+                                width: double.infinity,
+                                height: 200.sh,
+                                fit: BoxFit.cover,
+                                loadingBuilder: (context, child, progress) {
+                                  if (progress == null) return child;
+                                  return Container(
+                                    width: double.infinity,
+                                    height: 200.sh,
+                                    color: Colors.black12,
+                                    child: const Center(child: CircularProgressIndicator()),
+                                  );
+                                },
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const SizedBox.shrink(),
                               ),
                             ),
                           ],
-                        ),
-                        if (stepImageUrl != null && stepImageUrl.isNotEmpty) ...[
-                          SizedBox(height: 12.sh),
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(10.sw),
-                            child: Image.network(
-                              stepImageUrl,
-                              width: double.infinity,
-                              height: 200.sh,
-                              fit: BoxFit.cover,
-                              loadingBuilder: (context, child, progress) {
-                                if (progress == null) return child;
-                                return Container(
-                                  width: double.infinity,
-                                  height: 200.sh,
-                                  color: Colors.black12,
-                                  child: const Center(child: CircularProgressIndicator()),
-                                );
-                              },
-                              errorBuilder: (context, error, stackTrace) =>
-                                  const SizedBox.shrink(),
-                            ),
-                          ),
                         ],
-                      ],
-                    ),
-                  );
-                },
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
 
           if (_authorRecipes.isNotEmpty) ...[
             SizedBox(height: 32.sh),
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AuthorProfileScreen(
-                      authorId: r.authorId,
-                      authorName: authorName,
-                      profileImageUrl: r.authorProfileImageUrl,
+            _StaggeredEntry(
+              delay: 750,
+              child: GestureDetector(
+                onTap: () {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (!mounted) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => AuthorProfileScreen(
+                          authorId: r.authorId,
+                          authorName: authorName,
+                          profileImageUrl: r.authorProfileImageUrl,
+                        ),
+                      ),
+                    );
+                  });
+                },
+                child: Row(
+                  children: [
+                    Text(
+                      "More from Author",
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 20.sp,
+                        fontWeight: FontWeight.w800,
+                        fontFamily: "Satoshi",
+                      ),
                     ),
-                  ),
-                );
-              },
-              child: Row(
-                children: [
-                  Text(
-                    "More from Author",
-                    style: TextStyle(
-                      color: textColor,
-                      fontSize: 20.sp,
-                      fontWeight: FontWeight.w800,
-                      fontFamily: "Satoshi",
+                    const Spacer(),
+                    Text(
+                      "See all",
+                      style: TextStyle(
+                        color: orange,
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: "Satoshi",
+                      ),
                     ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    "See all",
-                    style: TextStyle(
-                      color: orange,
-                      fontSize: 14.sp,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: "Satoshi",
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
             SizedBox(height: 14.sh),
-            SizedBox(
-              height: 200.sh,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _authorRecipes.length,
-                separatorBuilder: (_, __) => SizedBox(width: 14.sw),
-                itemBuilder: (context, index) {
-                  final ar = _authorRecipes[index];
-                  return GestureDetector(
+            _StaggeredEntry(
+              delay: 800,
+              child: SizedBox(
+                height: 200.sh,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _authorRecipes.length,
+                  separatorBuilder: (_, __) => SizedBox(width: 14.sw),
+                  itemBuilder: (context, index) {
+                    final ar = _authorRecipes[index];
+                    return _StaggeredEntry(
+                      delay: 800 + (index * 100),
+                      child: GestureDetector(
                     onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => RecipeDetailsScreen(recipe: ar),
-                        ),
-                      );
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        if (!mounted) return;
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => RecipeDetailsScreen(recipe: ar),
+                          ),
+                        );
+                      });
                     },
                     child: Container(
                       width: 140.sw,
@@ -1109,13 +1197,15 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                           ),
                         ],
                       ),
-                    ),
-                  );
-                },
-              ),
+                    ), // Container
+                  ), // GestureDetector
+                ); // _StaggeredEntry
+              },
             ),
-          ],
-        ],
+          ),
+        ),
+      ],
+    ],
       ),
     );
   }
@@ -1441,12 +1531,17 @@ class _AnimatedStartCookingFabState extends State<_AnimatedStartCookingFab> with
 
     return GestureDetector(
       onTap: () async {
+        if (_clickExpanded) return; // Prevent double trigger
+        
         if (!_isExpanded) {
           setState(() => _clickExpanded = true);
-          await Future.delayed(const Duration(milliseconds: 500));
+          await Future.delayed(const Duration(milliseconds: 400));
         }
+        
         widget.onTap();
-        await Future.delayed(const Duration(milliseconds: 800));
+        
+        // Wait for potential navigation transition to start before resetting
+        await Future.delayed(const Duration(milliseconds: 1000));
         if (mounted) setState(() => _clickExpanded = false);
       },
       child: AnimatedBuilder(
@@ -1627,4 +1722,317 @@ class _ErrorState extends StatelessWidget {
       ),
     );
   }
+}
+
+class _StaggeredEntry extends StatefulWidget {
+  final Widget child;
+  final int delay;
+
+  const _StaggeredEntry({required this.child, required this.delay});
+
+  @override
+  State<_StaggeredEntry> createState() => _StaggeredEntryState();
+}
+
+class _StaggeredEntryState extends State<_StaggeredEntry> {
+  bool _start = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration(milliseconds: widget.delay), () {
+      if (mounted) setState(() => _start = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedPadding(
+      duration: const Duration(milliseconds: 800),
+      curve: Curves.easeOutCubic,
+      padding: EdgeInsets.only(top: _start ? 0 : 30.sh),
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 800),
+        curve: Curves.easeOutCubic,
+        opacity: _start ? 1.0 : 0.0,
+        child: AnimatedScale(
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeOutCubic,
+          scale: _start ? 1.0 : 0.95,
+          child: widget.child,
+        ),
+      ),
+    );
+  }
+}
+
+class _HeartBurst extends StatefulWidget {
+  final bool isLiked;
+  final Widget child;
+
+  const _HeartBurst({required this.isLiked, required this.child});
+
+  @override
+  State<_HeartBurst> createState() => _HeartBurstState();
+}
+
+class _HeartBurstState extends State<_HeartBurst> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _burstAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    );
+
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.4).chain(CurveTween(curve: Curves.easeOut)), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 1.4, end: 1.0).chain(CurveTween(curve: Curves.elasticOut)), weight: 70),
+    ]).animate(_controller);
+
+    _burstAnimation = CurvedAnimation(
+      parent: _controller,
+      curve: const Interval(0.2, 1.0, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void didUpdateWidget(_HeartBurst oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isLiked && !oldWidget.isLiked) {
+      _controller.forward(from: 0.0);
+    } else if (!widget.isLiked) {
+      _controller.reverse(from: 0.0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        AnimatedBuilder(
+          animation: _burstAnimation,
+          builder: (context, child) {
+            return CustomPaint(
+              painter: _BurstPainter(
+                progress: _burstAnimation.value,
+                color: Colors.red.withValues(alpha: 0.5),
+              ),
+              size: Size(50.sw, 50.sw),
+            );
+          },
+        ),
+        ScaleTransition(
+          scale: _scaleAnimation,
+          child: widget.child,
+        ),
+      ],
+    );
+  }
+}
+
+class _DownloadAnimatedIcon extends StatefulWidget {
+  final bool isDownloaded;
+  final Widget child;
+
+  const _DownloadAnimatedIcon({required this.isDownloaded, required this.child});
+
+  @override
+  State<_DownloadAnimatedIcon> createState() => _DownloadAnimatedIconState();
+}
+
+class _DownloadAnimatedIconState extends State<_DownloadAnimatedIcon> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _slideAnimation;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+
+    _slideAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutBack),
+    );
+
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.2), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 1.2, end: 1.0), weight: 70),
+    ]).animate(_controller);
+  }
+
+  @override
+  void didUpdateWidget(_DownloadAnimatedIcon oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isDownloaded != oldWidget.isDownloaded) {
+      _controller.forward(from: 0.0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            if (_controller.isAnimating && widget.isDownloaded)
+              CustomPaint(
+                painter: _DownloadLinePainter(progress: _slideAnimation.value),
+                size: Size(30.sw, 30.sw),
+              ),
+            ScaleTransition(
+              scale: _scaleAnimation,
+              child: child,
+            ),
+          ],
+        );
+      },
+      child: widget.child,
+    );
+  }
+}
+
+class _BookmarkAnimatedIcon extends StatefulWidget {
+  final bool isBookmarked;
+  final Widget child;
+
+  const _BookmarkAnimatedIcon({required this.isBookmarked, required this.child});
+
+  @override
+  State<_BookmarkAnimatedIcon> createState() => _BookmarkAnimatedIconState();
+}
+
+class _BookmarkAnimatedIconState extends State<_BookmarkAnimatedIcon> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _slideAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: -5.0).chain(CurveTween(curve: Curves.easeOut)), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: -5.0, end: 0.0).chain(CurveTween(curve: Curves.elasticOut)), weight: 70),
+    ]).animate(_controller);
+  }
+
+  @override
+  void didUpdateWidget(_BookmarkAnimatedIcon oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isBookmarked != oldWidget.isBookmarked) {
+      _controller.forward(from: 0.0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _slideAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _slideAnimation.value),
+          child: child,
+        );
+      },
+      child: widget.child,
+    );
+  }
+}
+
+class _DownloadLinePainter extends CustomPainter {
+  final double progress;
+
+  _DownloadLinePainter({required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFEF8A54).withValues(alpha: (1 - progress))
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.sw
+      ..strokeCap = StrokeCap.round;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    final double startY = center.dy - 10.sh + (20.sh * progress);
+    final double endY = startY + 5.sh;
+
+    canvas.drawLine(Offset(center.dx - 8.sw, startY), Offset(center.dx - 8.sw, endY), paint);
+    canvas.drawLine(Offset(center.dx + 8.sw, startY + 2.sh), Offset(center.dx + 8.sw, endY + 2.sh), paint);
+  }
+
+  @override
+  bool shouldRepaint(_DownloadLinePainter oldDelegate) => oldDelegate.progress != progress;
+}
+
+class _BurstPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  _BurstPainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (progress == 0 || progress == 1) return;
+
+    final paint = Paint()
+      ..color = color.withValues(alpha: (1 - progress))
+      ..style = PaintingStyle.fill;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = (size.width / 2) * progress;
+    
+    // Draw expanding outline ring
+    final ringPaint = Paint()
+      ..color = color.withValues(alpha: (1 - progress) * 0.8)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.sw * (1 - progress);
+    
+    canvas.drawCircle(center, radius * 1.8, ringPaint);
+
+    for (int i = 0; i < 8; i++) {
+        double angle = i * 45 * 3.14159 / 180;
+        double dist = radius * 1.6;
+        canvas.drawCircle(
+          Offset(center.dx + dist * 0.8 * (i < 4 ? 1 : -1) * (i == 0 || i == 4 ? 1 : 0.7), 
+                 center.dy + dist * 0.8 * (i % 3 == 0 ? 1.0 : -0.8) * (i == 2 || i == 6 ? 1 : 0.7)),
+          3.sw * (1 - progress),
+          paint
+        );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_BurstPainter oldDelegate) => oldDelegate.progress != progress;
 }

@@ -134,7 +134,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
           .get();
 
       if (!doc.exists) {
-        // Not a nutritionist (maybe a homecook trying to login here?)
+        // Not a nutritionist
         await FirebaseAuth.instance.signOut();
         if (mounted) {
              _snack("No nutritionist account found for this email.");
@@ -142,14 +142,19 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
         return;
       }
 
-      // 3. Navigate to Wrapper which handles pending/approved logic
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => NutritionistSignupWrapper()),
-      );
+
+      // 3. Navigate to Wrapper using safe pattern
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => NutritionistSignupWrapper()),
+        );
+      });
 
     } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
       setState(() {
         if (e.code == "user-not-found") {
           _emailErr = "*user not found";
@@ -166,7 +171,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
     } catch (e) {
       _snack("Login failed: $e");
     } finally {
-      _setLoading(false);
+      if (mounted) _setLoading(false);
     }
   }
 
@@ -186,11 +191,14 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
       );
 
       final cred = await FirebaseAuth.instance.signInWithCredential(credential);
-      await _handleSocialLoginResult(cred.user!);
+      final user = cred.user;
+      if (user != null) {
+        await _handleSocialLoginResult(user);
+      }
     } catch (e) {
       _snack("Google login failed: $e");
     } finally {
-      _setLoading(false);
+      if (mounted) _setLoading(false);
     }
   }
 
@@ -207,11 +215,14 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
       );
 
       final cred = await FirebaseAuth.instance.signInWithCredential(oauthCred);
-      await _handleSocialLoginResult(cred.user!);
+      final user = cred.user;
+      if (user != null) {
+        await _handleSocialLoginResult(user);
+      }
     } catch (e) {
       _snack("Apple login failed: $e");
     } finally {
-      _setLoading(false);
+      if (mounted) _setLoading(false);
     }
   }
 
@@ -222,28 +233,31 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
         .doc(user.uid)
         .get();
 
-    if (doc.exists) {
-      // Existing nutritionist, go to wrapper
+    if (!mounted) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const NutritionistSignupWrapper()),
-      );
-    } else {
-      // NEW nutritionist - must upload certificate
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => SignupNutritionistStep2(
-            fullName: user.displayName ?? "Nutritionist",
-            email: user.email ?? "",
-            phoneNumber: "", // will be collected later if needed
-            password: null, // social login
+      if (doc.exists) {
+        // Existing nutritionist
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const NutritionistSignupWrapper()),
+        );
+      } else {
+        // NEW nutritionist - must upload certificate
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SignupNutritionistStep2(
+              fullName: user.displayName ?? "Nutritionist",
+              email: user.email ?? "",
+              phoneNumber: "",
+              password: null,
+            ),
           ),
-        ),
-      );
-    }
+        );
+      }
+    });
   }
 
   @override
