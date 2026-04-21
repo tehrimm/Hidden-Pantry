@@ -18,6 +18,8 @@ import 'package:hidden_pantry_app/features/nutritionist/services/nutritionist_se
 import 'package:hidden_pantry_app/features/nutritionist/widgets/recipe_selection_sheet.dart';
 import 'package:hidden_pantry_app/features/nutritionist/widgets/share_recipe_post_dialog.dart';
 import 'dart:io';
+import 'dart:ui';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -223,7 +225,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
   void _showMakePostDialog({File? initialImage, File? initialDoc, String? initialRecipeId, String? initialRecipeTitle, String? initialRecipeImageUrl}) {
     final TextEditingController tipController = TextEditingController();
     
-    showDialog(
+    GlassDialog.show(
       context: context,
       builder: (context) {
         String? selectedPlanId;
@@ -1895,7 +1897,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
   }
 
   void _showShareRecipePostDialog(Map<String, dynamic> recipe) {
-    showDialog(
+    GlassDialog.show(
       context: context,
       barrierDismissible: false,
       builder: (context) => ShareRecipePostDialog(

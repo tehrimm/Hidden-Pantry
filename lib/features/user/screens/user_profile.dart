@@ -4,6 +4,7 @@ import 'package:hidden_pantry_app/features/user/screens/my_favourites.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/features/user/screens/notifications_screen.dart';
 
@@ -140,7 +141,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   }
 
   Future<void> _deleteAccount() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await GlassDialog.show<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Account'),

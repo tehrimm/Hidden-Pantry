@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:hidden_pantry_app/features/nutritionist/services/nutritionist_service.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
@@ -194,7 +195,7 @@ class AdminCertificateReviewScreen extends StatelessWidget {
 
   Future<void> _handleReject(BuildContext context, String uid) async {
     final TextEditingController reasonController = TextEditingController();
-    final result = await showDialog<String>(
+    final result = await GlassDialog.show<String>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: bg,

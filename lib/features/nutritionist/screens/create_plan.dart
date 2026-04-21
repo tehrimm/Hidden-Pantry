@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -164,7 +165,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
   Future<void> _deletePlan() async {
     if (widget.planId == null) return;
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await GlassDialog.show<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,
@@ -579,7 +580,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
 
   void _showAddBenefitDialog() {
     final controller = TextEditingController();
-    showDialog(
+    GlassDialog.show(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: bg,

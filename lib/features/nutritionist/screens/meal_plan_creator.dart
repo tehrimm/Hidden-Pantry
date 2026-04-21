@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
@@ -340,7 +341,7 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
 
   void _showAddNoteDialog(String type) {
     final TextEditingController noteCtrl = TextEditingController();
-    showDialog(
+    GlassDialog.show(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,

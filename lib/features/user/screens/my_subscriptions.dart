@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
@@ -430,7 +431,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   }
 
   Future<void> _confirmCancel(String docId, DateTime? expiry) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await GlassDialog.show<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: _bg,

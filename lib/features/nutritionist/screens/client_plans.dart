@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/create_plan.dart';
@@ -30,7 +31,7 @@ class _ClientPlansScreenState extends State<ClientPlansScreen> {
   }
 
   void _confirmDelete(String planId) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await GlassDialog.show<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,

@@ -11,6 +11,8 @@ import 'package:add_2_calendar/add_2_calendar.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
+import 'dart:io';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'dart:async';
 
 class ChatInterface extends StatefulWidget {
@@ -236,7 +238,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
   }
 
   void _confirmClearChat() {
-    showDialog(
+    GlassDialog.show(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFFFFF3EB),
@@ -746,7 +748,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
   }
 
   void _showDeleteOptions(String docId, bool isMe) {
-    showDialog(
+    GlassDialog.show(
       context: context,
       builder: (context) => Dialog(
         backgroundColor: const Color(0xFFF9E3D5),
@@ -1047,7 +1049,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
     final TextEditingController notesCtrl = TextEditingController();
     
     if (!mounted) return;
-    await showDialog(
+    await GlassDialog.show(
       context: context,
       builder: (context) => AlertDialog(
         title: Text("Add Notes (Optional)", style: TextStyle(color: purple, fontWeight: FontWeight.bold)),

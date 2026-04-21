@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -134,7 +135,7 @@ class _TierComparisonScreenState extends State<TierComparisonScreen> {
   }
 
   Future<void> _cancelSubscription() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await GlassDialog.show<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: bg,

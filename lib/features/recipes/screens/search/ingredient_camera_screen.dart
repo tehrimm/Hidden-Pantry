@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/features/recipes/services/ingredient_recognition_service.dart';
@@ -222,7 +223,7 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
   }
 
   void _showSelectionDialog(List<({String label, double confidence})> results, File imageFile) {
-    showDialog(
+    GlassDialog.show(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(
@@ -280,7 +281,7 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
   }
 
   void _showResultDialog(String label, double confidence, File imageFile) {
-    showDialog(
+    GlassDialog.show(
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => AlertDialog(

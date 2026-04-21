@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
@@ -608,7 +609,7 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
   }
 
   void _confirmDelete(String docId, String uid) {
-    showDialog(
+    GlassDialog.show(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFFFFF3EB),

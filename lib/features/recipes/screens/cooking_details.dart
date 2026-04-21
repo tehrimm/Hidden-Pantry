@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -127,7 +128,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
   }
 
   void _cancelTimer() async {
-    final res = await showDialog<bool>(
+    final res = await GlassDialog.show<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFFFFF3EB),
@@ -358,7 +359,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
   }
 
   Future<bool> _onWillPop() async {
-    final res = await showDialog<bool>(
+    final res = await GlassDialog.show<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFFFFF3EB),

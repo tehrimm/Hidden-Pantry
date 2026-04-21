@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
@@ -111,7 +112,7 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
       );
 
       if (mounted) {
-        showDialog(
+        GlassDialog.show(
           context: context,
           barrierDismissible: false,
           builder: (context) => AlertDialog(

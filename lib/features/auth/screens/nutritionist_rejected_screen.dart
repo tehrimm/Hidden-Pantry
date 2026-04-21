@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
@@ -51,7 +52,7 @@ class _NutritionistRejectedScreenState extends State<NutritionistRejectedScreen>
 
   Future<void> _deleteAccount() async {
     // Show confirmation dialog
-    final confirmed = await showDialog<bool>(
+    final confirmed = await GlassDialog.show<bool>(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: bg,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -328,7 +329,7 @@ class _UserHelpSupportScreenState extends State<UserHelpSupportScreen> {
   }
 
   void _showContactDialog() {
-    showDialog(
+    GlassDialog.show(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: const Color(0xFFFFF3EB),

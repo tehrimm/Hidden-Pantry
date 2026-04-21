@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:hidden_pantry_app/features/onboarding/screens/loading_five.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/my_recipes.dart';
 import 'package:hidden_pantry_app/features/nutritionist/services/nutritionist_service.dart';
@@ -75,7 +76,7 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
   }
 
   Future<void> _deleteAccount() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await GlassDialog.show<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Account'),

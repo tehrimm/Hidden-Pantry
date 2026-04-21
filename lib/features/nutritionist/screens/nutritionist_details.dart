@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:hidden_pantry_app/core/services/notification_service.dart';
 import 'package:hidden_pantry_app/features/user/models/notification_model.dart';
 
@@ -1382,7 +1383,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
 
     if (!mounted) return;
 
-    showDialog(
+    GlassDialog.show(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {

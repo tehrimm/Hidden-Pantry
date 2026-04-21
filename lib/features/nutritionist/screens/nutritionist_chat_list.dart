@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/chat_interface_part.dart';
@@ -156,7 +157,7 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
   }
 
   void _confirmDeleteChat(Map<String, dynamic> client) {
-    showDialog(
+    GlassDialog.show(
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: Colors.white,

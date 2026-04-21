@@ -4,6 +4,7 @@ import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
 import 'cooking_details.dart';
 import 'package:hidden_pantry_app/core/constants/api_constants.dart';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/reviews/reviews.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -336,7 +337,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
     try {
       if (_isDownloaded) {
         // Show confirmation dialog before removing
-        final bool? confirmRemoval = await showDialog<bool>(
+        final bool? confirmRemoval = await GlassDialog.show<bool>(
           context: context,
           builder: (context) => AlertDialog(
             backgroundColor: bgColor,
@@ -1402,6 +1403,12 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   Widget _ratingPill(double rating) {
     final bool hasRating = rating > 0;
     
+    // Format to 2 decimal places but remove trailing zeros (e.g. 4.00 -> 4, 4.25 -> 4.25)
+    String ratingText = "no rating";
+    if (hasRating) {
+      ratingText = rating.toStringAsFixed(2).replaceAll(RegExp(r'0*$'), '').replaceAll(RegExp(r'\.$'), '');
+    }
+
     return Container(
       height: 34.sh,
       padding: EdgeInsets.symmetric(horizontal: 10.sw),
@@ -1417,7 +1424,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
             SizedBox(width: 6.sw),
           ],
           Text(
-            hasRating ? rating.toStringAsFixed(1) : "no rating",
+            ratingText,
             style: TextStyle(
               color: hasRating ? Colors.white : textColor.withValues(alpha: 0.5),
               fontSize: 12.sp,

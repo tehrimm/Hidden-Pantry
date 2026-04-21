@@ -1,5 +1,6 @@
 
 import 'dart:io';
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
@@ -218,7 +219,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
         
-        await showDialog(
+        await GlassDialog.show(
           context: context,
           barrierDismissible: false,
           builder: (context) => AlertDialog(
