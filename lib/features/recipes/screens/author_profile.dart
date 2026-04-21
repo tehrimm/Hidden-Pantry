@@ -9,6 +9,7 @@ import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
 import 'package:hidden_pantry_app/features/user/services/follow_service.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
 
 
 class AuthorProfileScreen extends StatefulWidget {
@@ -176,7 +177,22 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
 
                 Expanded(
                   child: _loading 
-                    ? const Center(child: CircularProgressIndicator(color: orange))
+                    ? Column(
+                        children: [
+                          SizedBox(height: 10.sh),
+                          // Subtle top loader
+                          SizedBox(
+                            width: 20.sw,
+                            height: 20.sw,
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(orange),
+                            ),
+                          ),
+                          SizedBox(height: 20.sh),
+                          const Expanded(child: _ProfileSkeleton()),
+                        ],
+                      )
                     : _buildContent(),
                 ),
               ],
@@ -377,4 +393,74 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
   }
 
   
+}
+
+class _ProfileSkeleton extends StatelessWidget {
+  const _ProfileSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.symmetric(horizontal: 18.sw),
+      child: Column(
+        children: [
+          SizedBox(height: 10.sh),
+          // Avatar
+          Center(
+            child: SkeletonBox(
+              width: 120.sw,
+              height: 120.sw,
+              borderRadius: BorderRadius.circular(60.sw),
+            ),
+          ),
+          SizedBox(height: 16.sh),
+          // Name Bar
+          SkeletonBox(width: 180.sw, height: 28.sh),
+          SizedBox(height: 16.sh),
+          // Follow Button Bar
+          SkeletonBox(
+            width: 140.sw, 
+            height: 44.sh,
+            borderRadius: BorderRadius.circular(22.sw),
+          ),
+          SizedBox(height: 28.sh),
+          // Stats Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: List.generate(4, (i) => Column(
+              children: [
+                SkeletonBox(width: 40.sw, height: 22.sh),
+                SizedBox(height: 4.sh),
+                SkeletonBox(width: 60.sw, height: 14.sh),
+              ],
+            )),
+          ),
+          SizedBox(height: 32.sh),
+          // Grid Header
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SkeletonBox(width: 150.sw, height: 24.sh),
+          ),
+          SizedBox(height: 16.sh),
+          // Grid
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              childAspectRatio: 157 / 231,
+              crossAxisSpacing: 16.sw,
+              mainAxisSpacing: 16.sh,
+            ),
+            itemCount: 4,
+            itemBuilder: (_, __) => SkeletonBox(
+              width: double.infinity,
+              height: double.infinity,
+              borderRadius: BorderRadius.circular(20.sw),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

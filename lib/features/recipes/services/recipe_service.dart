@@ -247,20 +247,27 @@ class RecipeService {
         'likedBy': [],
       });
 
-      if (recipeId.isNotEmpty && recipeRef != null && recipeDoc != null && recipeDoc.exists) {
+      if (recipeId.isNotEmpty && recipeRef != null && recipeDoc != null) {
         double currentAvg = initialAvg ?? 0.0;
         int currentCount = initialCount ?? 0;
 
-        final data = recipeDoc.data() as Map<String, dynamic>;
-        final double fsAvg = double.tryParse(data['avg_rating']?.toString() ?? "0") ?? 0.0;
-        final int fsCount = int.tryParse(data['review_count']?.toString() ?? "0") ?? 0;
+        double fsAvg = 0.0;
+        int fsCount = 0;
+
+        if (recipeDoc.exists) {
+          final data = recipeDoc.data() as Map<String, dynamic>;
+          fsAvg = double.tryParse(data['avg_rating']?.toString() ?? "0") ?? 0.0;
+          fsCount = int.tryParse(data['review_count']?.toString() ?? "0") ?? 0;
+        }
         
         final int baseCount = initialCount ?? 0;
         
-        if (fsCount >= baseCount) {
+        if (fsCount > 0 || recipeDoc.exists) {
           currentAvg = fsAvg;
           currentCount = fsCount;
-        } else {
+        }
+        
+        if (fsCount < baseCount && baseCount > 0) {
           currentAvg = initialAvg ?? 0.0;
           currentCount = baseCount;
         }

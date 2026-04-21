@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
@@ -86,36 +87,55 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
   Future<void> _pickStepImage(int index) async {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFFF9E3D5),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: const Icon(Icons.camera_alt, color: Color(0xFF462F4D)),
-              title: const Text('Take a Photo', style: TextStyle(color: Color(0xFF462F4D), fontFamily: 'Satoshi')),
-              onTap: () async {
-                Navigator.pop(context);
-                final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
-                if (photo != null) {
-                  setState(() => _steps[index].image = File(photo.path));
-                }
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.photo_library, color: Color(0xFF462F4D)),
-              title: const Text('Choose from Gallery', style: TextStyle(color: Color(0xFF462F4D), fontFamily: 'Satoshi')),
-              onTap: () async {
-                Navigator.pop(context);
+      backgroundColor: Colors.transparent,
+      builder: (context) => BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: EdgeInsets.all(24.sw),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF3EB).withValues(alpha: 0.8),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30.sw)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 40.sw, height: 4.sh, decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(2))),
+              SizedBox(height: 24.sh),
+              _sourceTile(Icons.photo_library_rounded, "Gallery", () async {
                 final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-                if (image != null) {
-                  setState(() => _steps[index].image = File(image.path));
-                }
-              },
-            ),
+                if (image != null) setState(() => _steps[index].image = File(image.path));
+              }),
+              SizedBox(height: 12.sh),
+              _sourceTile(Icons.camera_alt_rounded, "Camera", () async {
+                final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
+                if (photo != null) setState(() => _steps[index].image = File(photo.path));
+              }),
+              SizedBox(height: 24.sh),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sourceTile(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pop(context);
+        onTap();
+      },
+      child: Container(
+        padding: EdgeInsets.all(16.sw),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(15.sw),
+          border: Border.all(color: Colors.white, width: 1),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: purple),
+            SizedBox(width: 16.sw),
+            Text(label, style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.bold, fontSize: 16.sp, color: purple)),
           ],
         ),
       ),

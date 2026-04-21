@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'dart:ui' as ui;
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/reviews/post_review.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+import 'package:hidden_pantry_app/core/utils/ingredient_icon_mapper.dart';
 
 
 class CookingDetailsScreen extends StatefulWidget {
@@ -31,6 +33,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
   
   int _currentIndex = 0;
   bool _isPlaying = false;
+  bool _ttsFinished = false;
   late int _currentServings;
 
   // Timer state
@@ -43,6 +46,18 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
     super.initState();
     _currentServings = widget.initialServings;
     _initTts();
+    // Auto-speak first step and handle fallback
+    Future.delayed(const Duration(milliseconds: 1500), () {
+      if (mounted) {
+        _speak(widget.recipe.directions[_currentIndex]);
+        // Fallback: If TTS doesn't finish or fire for some reason, show it anyway after 10s
+        Future.delayed(const Duration(seconds: 10), () {
+          if (mounted && !_ttsFinished) {
+            setState(() => _ttsFinished = true);
+          }
+        });
+      }
+    });
   }
 
   void _initTts() {
@@ -50,7 +65,10 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
       setState(() => _isPlaying = true);
     });
     _tts.setCompletionHandler(() {
-      setState(() => _isPlaying = false);
+      setState(() {
+        _isPlaying = false;
+        _ttsFinished = true;
+      });
     });
     _tts.setErrorHandler((msg) {
       setState(() => _isPlaying = false);
@@ -74,6 +92,9 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
     }
     // Small delay to ensure stop state is processed
     if (force) await Future.delayed(const Duration(milliseconds: 100));
+    setState(() {
+      _ttsFinished = false;
+    });
     await _tts.speak(text);
   }
 
@@ -161,30 +182,117 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
   }
 
   void _showTimerPicker(int initialMinutes) {
-    Duration duration = Duration(minutes: initialMinutes);
-    showCupertinoModalPopup(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => Container(
-        height: 260.sh,
-        color: const Color(0xFFFFF3EB),
-        child: Column(
-          children: [
-            Container(
-              height: 200.sh,
-              child: CupertinoTimerPicker(
-                mode: CupertinoTimerPickerMode.hms,
-                initialTimerDuration: duration,
-                onTimerDurationChanged: (d) => duration = d,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+        child: Container(
+          height: 380.sh,
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF3EB).withValues(alpha: 0.85),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30.sw)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+          ),
+          child: Column(
+            children: [
+              // Drag Handle
+              SizedBox(height: 12.sh),
+              Container(
+                width: 40.sw,
+                height: 4.sh,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF462F4D).withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(2.sw),
+                ),
               ),
-            ),
-            CupertinoButton(
-              child: const Text("Start Timer", style: TextStyle(color: Color(0xFFEF8A54), fontWeight: FontWeight.bold)),
-              onPressed: () {
-                Navigator.pop(context);
-                _startTimer(duration.inSeconds);
-              },
-            )
-          ],
+              
+              // Header
+              Padding(
+                padding: EdgeInsets.all(24.sw),
+                child: Row(
+                  children: [
+                    Icon(Icons.timer_outlined, color: const Color(0xFF462F4D), size: 24.sw),
+                    SizedBox(width: 12.sw),
+                    Text(
+                      "Set Timer",
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w900,
+                        color: const Color(0xFF462F4D),
+                        fontFamily: 'Satoshi',
+                      ),
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Icon(Icons.close_rounded, color: const Color(0xFF462F4D), size: 24.sw),
+                    ),
+                  ],
+                ),
+              ),
+
+              // The Picker
+              Expanded(
+                child: CupertinoTheme(
+                  data: const CupertinoThemeData(
+                    textTheme: CupertinoTextThemeData(
+                      pickerTextStyle: TextStyle(
+                        color: Color(0xFF462F4D),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  child: CupertinoTimerPicker(
+                    mode: CupertinoTimerPickerMode.hms,
+                    initialTimerDuration: Duration(minutes: initialMinutes),
+                    onTimerDurationChanged: (d) => initialMinutes = d.inMinutes,
+                  ),
+                ),
+              ),
+
+              // Action Button
+              Padding(
+                padding: EdgeInsets.all(24.sw),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                    _startTimer(initialMinutes * 60);
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 55.sh,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF8A54),
+                      borderRadius: BorderRadius.circular(16.sw),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFEF8A54).withValues(alpha: 0.3),
+                          blurRadius: 15,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        "Start Timer",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w900,
+                          fontFamily: 'Satoshi',
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(context).padding.bottom),
+            ],
+          ),
         ),
       ),
     );
@@ -197,6 +305,21 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
   }
 
 
+
+  List<IngredientItem> _getIngredientsInStep(String text) {
+    if (text.isEmpty) return [];
+    final t = text.toLowerCase();
+    return widget.recipe.ingredients.where((ing) {
+      final name = ing.name.toLowerCase();
+      // Try to find if either the whole name or key parts of it exist in the text
+      // We check for exact words to avoid sub-string matches (like "oil" in "boil")
+      final words = name.split(' ');
+      return words.any((word) {
+        if (word.length < 3) return false;
+        return t.contains(word);
+      }) || t.contains(name);
+    }).toList();
+  }
 
   String _fmtQty(double qty) {
     final scaled = qty * _scaleFactor();
@@ -299,11 +422,12 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                 const PatternBackground(),
                 
                 // Step image (uses step-specific image when available)
-               Positioned(
-                left: 0,
-                top: 140.sh,
-                child: _stepImage(screenWidth, _currentIndex),
-              ),
+                 Positioned(
+                  left: 0,
+                  right: 0,
+                  top: 140.sh,
+                  child: _stepImage(screenWidth, _currentIndex),
+                ),
                 
                 // Header: Close Button, Step Counter, Ingredient Label
                 Positioned(
@@ -333,15 +457,33 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                           ),
                         ),
                         Expanded(
-                          child: Text(
-                            'Step ${_currentIndex + 1} of ${widget.recipe.directions.length}',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: const Color(0xFF462F4D),
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Satoshi',
-                            ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Step ${_currentIndex + 1} of ${widget.recipe.directions.length}',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: const Color(0xFF462F4D),
+                                  fontSize: 15.sp,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Satoshi',
+                                ),
+                              ),
+                              SizedBox(height: 8.sh),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10.sw),
+                                child: SizedBox(
+                                  width: 100.sw,
+                                  height: 6.sh,
+                                  child: LinearProgressIndicator(
+                                    value: (_currentIndex + 1) / widget.recipe.directions.length,
+                                    backgroundColor: const Color(0xFFF9E3D5),
+                                    valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFEF8A54)),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         GestureDetector(
@@ -366,37 +508,53 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                 Positioned(
                   left: 30.sw,
                   right: 30.sw,
-                  top: 360.sh,
+                  top: 380.sh,
                   bottom: 120.sh,
-                  child: Column(
-                    children: [
-                      Expanded(
-                        child: NotificationListener<ScrollNotification>(
-                          onNotification: (notification) {
-                            if (notification is OverscrollNotification && notification.overscroll > 5) {
-                              if (_currentIndex == widget.recipe.directions.length - 1) {
-                                _openReview();
-                                return true;
-                              }
-                            }
-                            return false;
-                          },
-                          child: PageView.builder(
-                            controller: _pageController,
-                            physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-                            itemCount: widget.recipe.directions.length,
-                            onPageChanged: (idx) {
-                              setState(() => _currentIndex = idx);
-                              // Auto-read on swipe
-                              _speak(widget.recipe.directions[idx], force: true);
-                            },
-                            itemBuilder: (context, index) {
-                              return SingleChildScrollView(
-                                physics: const BouncingScrollPhysics(),
-                                child: Padding(
-                                  padding: EdgeInsets.only(top: 10.sh),
-                                  child: Text(
-                                    widget.recipe.directions[index],
+                  child: PageView.builder(
+                    controller: _pageController,
+                    physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                    itemCount: widget.recipe.directions.length,
+                    onPageChanged: (idx) {
+                      setState(() => _currentIndex = idx);
+                      _speak(widget.recipe.directions[idx], force: true);
+                    },
+                    itemBuilder: (context, index) {
+                      final direction = widget.recipe.directions[index];
+                      final stepIngredients = _getIngredientsInStep(direction);
+                      
+                      return SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text.rich(
+                              TextSpan(
+                                children: [
+                                  WidgetSpan(
+                                    alignment: PlaceholderAlignment.middle,
+                                    child: Container(
+                                      width: 44.sw,
+                                      height: 44.sw,
+                                      margin: EdgeInsets.only(right: 16.sw),
+                                      decoration: const BoxDecoration(
+                                        color: Color(0xFFEF8A54),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          "${index + 1}",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 20.sp,
+                                            fontWeight: FontWeight.w900,
+                                            fontFamily: 'Satoshi',
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: direction,
                                     style: TextStyle(
                                       color: const Color(0xFF462F4D),
                                       fontSize: 16.sp,
@@ -405,36 +563,85 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                                       fontFamily: 'Satoshi',
                                     ),
                                   ),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
-                      ),
-                      if (_currentIndex == widget.recipe.directions.length - 1)
-                        Padding(
-                          padding: EdgeInsets.only(top: 20.sh),
-                          child: GestureDetector(
-                            onTap: _openReview,
-                            child: Container(
-                              padding: EdgeInsets.symmetric(horizontal: 24.sw, vertical: 12.sh),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFEF8A54),
-                                borderRadius: BorderRadius.circular(20.sw),
-                              ),
-                              child: Text(
-                                "Finish & Review",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'Satoshi',
-                                  fontSize: 14.sp,
-                                ),
+                                ],
                               ),
                             ),
-                          ),
+                            // "You'll Need" Section
+                            if (stepIngredients.isNotEmpty) ...[
+                              SizedBox(height: 30.sh),
+                              Text(
+                                "You'll Need",
+                                style: TextStyle(
+                                  color: const Color(0xFF462F4D),
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w800,
+                                  fontFamily: 'Satoshi',
+                                  letterSpacing: 1.2,
+                                ),
+                              ),
+                              SizedBox(height: 16.sh),
+                              Wrap(
+                                spacing: 10.sw,
+                                runSpacing: 20.sh,
+                                children: stepIngredients.map((IngredientItem ing) {
+                                  return Container(
+                                    width: (ResponsiveUtils.screenWidth - 80.sw) / 2, // Fits 2 in a row with spacing
+                                    padding: EdgeInsets.all(12.sw),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF9E3D5),
+                                      borderRadius: BorderRadius.circular(15.sw),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Icon(
+                                          IngredientIconMapper.getIcon(ing.name),
+                                          color: const Color(0xFF462F4D),
+                                          size: 20.sw,
+                                        ),
+                                        SizedBox(width: 10.sw),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                ing.name,
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  color: const Color(0xFF462F4D),
+                                                  fontSize: 13.sp,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily: 'Satoshi',
+                                                ),
+                                              ),
+                                              SizedBox(height: 2.sh),
+                                              Text(
+                                                "${_fmtQty(ing.quantity)} ${ing.unit}",
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: TextStyle(
+                                                  color: const Color(0xFFEF8A54),
+                                                  fontSize: 11.sp,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily: 'Satoshi',
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ],
+                            
+                            // Review button removed from here to be moved to fixed bottom
+                          ],
                         ),
-                    ],
+                      );
+                    },
                   ),
                 ),
 
@@ -469,66 +676,154 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                     ),
                   ),
                 
-                // Play/Pause Button
+                 // Play/Pause Button
+                // Unified Action Bar (Finish, Play, Timer)
+                // 1. Timer Button
+                if (detectedTimes.isNotEmpty || _timerRunning)
+                  Positioned(
+                    left: 25.sw,
+                    bottom: 30.sh,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          onTap: () {
+                            if (_timerRunning) {
+                              _cancelTimer();
+                            } else {
+                              _showTimerPicker(detectedTimes.isNotEmpty ? detectedTimes.first : 5);
+                            }
+                          },
+                          child: Container(
+                            width: 55.sw,
+                            height: 55.sw,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF462F4D),
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha:0.1),
+                                  blurRadius: 10.sw,
+                                  offset: Offset(0, 4.sh),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              _timerRunning ? Icons.timer_off_outlined : Icons.timer_outlined,
+                              color: Colors.white,
+                              size: 28.sw,
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 8.sh),
+                        Text(
+                          "TIMER",
+                          style: TextStyle(
+                            color: const Color(0xFF462F4D),
+                            fontSize: 9.sp,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.5,
+                            fontFamily: 'Satoshi',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                // 2. Play/Pause Button
                 Positioned(
                   left: 0,
                   right: 0,
-                  bottom: 40.sh,
+                  bottom: 25.sh,
                   child: Center(
-                    child: GestureDetector(
-                      onTap: () => _speak(widget.recipe.directions[_currentIndex]),
-                      child: Container(
-                        width: 74.sw,
-                        height: 71.sh,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFE48E5B),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Center(
-                          child: Icon(
-                            _isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
-                            color: Colors.white,
-                            size: 40.sw,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          onTap: () => _speak(widget.recipe.directions[_currentIndex]),
+                          child: Container(
+                            width: 60.sw,
+                            height: 60.sw,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFE48E5B),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Center(
+                              child: Icon(
+                                _isPlaying ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                                color: Colors.white,
+                                size: 30.sw,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                        SizedBox(height: 8.sh),
+                        Text(
+                          _isPlaying ? "STOP" : "PLAY",
+                          style: TextStyle(
+                            color: const Color(0xFFEF8A54),
+                            fontSize: 9.sp,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.5,
+                            fontFamily: 'Satoshi',
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
 
-                // Timer Button (Bottom Right)
-                if (detectedTimes.isNotEmpty || _timerRunning)
+                // 3. Finish Button
+                if (_currentIndex == widget.recipe.directions.length - 1)
                   Positioned(
-                    right: 20.sw,
-                    bottom: 50.sh,
-                    child: GestureDetector(
-                      onTap: () {
-                        if (_timerRunning) {
-                          _cancelTimer();
-                        } else {
-                          _showTimerPicker(detectedTimes.isNotEmpty ? detectedTimes.first : 5);
-                        }
-                      },
-                      child: Container(
-                        width: 55.sw,
-                        height: 55.sw,
-                        decoration: BoxDecoration(
-                          color: _timerRunning ? const Color(0xFF462F4D) : const Color(0xFFEF8A54),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha:0.1),
-                              blurRadius: 10.sw,
-                              offset: Offset(0, 4.sh),
+                    right: 25.sw,
+                    bottom: 30.sh,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          onTap: _openReview,
+                          child: Container(
+                            width: 55.sw,
+                            height: 55.sw,
+                            decoration: BoxDecoration(
+                              color: Colors.transparent,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: const Color(0xFF462F4D), width: 1.5),
                             ),
-                          ],
+                            child: Center(
+                              child: Icon(
+                                Icons.stars_rounded,
+                                color: const Color(0xFF462F4D),
+                                size: 24.sw,
+                              ),
+                            ),
+                          ),
                         ),
-                        child: Icon(
-                          _timerRunning ? Icons.timer_off_outlined : Icons.timer_outlined,
-                          color: Colors.white,
-                          size: 28.sw,
+                        SizedBox(height: 8.sh),
+                        Text(
+                          "FINISH",
+                          style: TextStyle(
+                            color: const Color(0xFF462F4D),
+                            fontSize: 9.sp,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.5,
+                            fontFamily: 'Satoshi',
+                          ),
                         ),
-                      ),
+                      ],
+                    ),
+                  ),
+                
+                // Swipe Reminder (Glassy Corner Peel)
+                if (_currentIndex == 0 && _ttsFinished)
+                  Positioned(
+                    right: 0,
+                    bottom: 140.sh,
+                    child: SizedBox(
+                      width: 160.sw,
+                      height: 160.sw,
+                      child: const _SwipeReminder(),
                     ),
                   ),
               ],
@@ -618,20 +913,25 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
     final hasImage = url != null && url.trim().isNotEmpty;
 
     return Container(
-      width: width,
-      height: 180.sh,
-      decoration: const BoxDecoration(
+      width: double.infinity,
+      height: 220.sh,
+      margin: EdgeInsets.symmetric(horizontal: 30.sw),
+      decoration: BoxDecoration(
         color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20.sw),
       ),
-      child: hasImage
-          ? Image.network(
-              url,
-              width: width,
-              height: 180.sh,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => _placeholder(width),
-            )
-          : _placeholder(width),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20.sw),
+        child: hasImage
+            ? Image.network(
+                url,
+                width: width,
+                height: 220.sh,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _placeholder(width),
+              )
+            : _placeholder(width),
+      ),
     );
   }
 
@@ -639,10 +939,146 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
     return Image.asset(
       'assets/logos/recipe_placeholder.jpg',
       width: width,
-      height: 180.sh,
+      height: 220.sh,
       fit: BoxFit.cover,
     );
   }
+}
+
+class _SwipeReminder extends StatefulWidget {
+  const _SwipeReminder();
+
+  @override
+  State<_SwipeReminder> createState() => _SwipeReminderState();
+}
+
+class _SwipeReminderState extends State<_SwipeReminder> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _peelAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+
+    _peelAnimation = Tween<double>(begin: 0.2, end: 0.5).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _peelAnimation,
+      builder: (context, child) {
+        return Stack(
+          children: [
+            // The Glassy Peel
+            ClipPath(
+              clipper: _PeelClipper(_peelAnimation.value),
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
+                ),
+              ),
+            ),
+            // The Peel Lines and Shadow
+            CustomPaint(
+              size: Size(160.sw, 160.sw),
+              painter: _PagePeelPainter(_peelAnimation.value),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _PeelClipper extends CustomClipper<Path> {
+  final double amount;
+  _PeelClipper(this.amount);
+
+  @override
+  Path getClip(Size size) {
+    final path = Path();
+    // Triangular area for the fold at bottom-right
+    path.moveTo(size.width, size.height * (1 - amount * 2));
+    path.quadraticBezierTo(
+      size.width * (1.1 - amount), size.height * (1.1 - amount),
+      size.width * (1 - amount * 2), size.height,
+    );
+    path.lineTo(size.width, size.height);
+    path.close();
+    return path;
+  }
+
+  @override
+  bool shouldReclip(_PeelClipper oldClipper) => oldClipper.amount != amount;
+}
+
+class _PagePeelPainter extends CustomPainter {
+  final double amount;
+  _PagePeelPainter(this.amount);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3;
+
+    final foldPath = Path();
+    // The curved line representing the "fold"
+    foldPath.moveTo(size.width, size.height * (1 - amount * 2));
+    foldPath.quadraticBezierTo(
+      size.width * (1.1 - amount), size.height * (1.1 - amount),
+      size.width * (1 - amount * 2), size.height,
+    );
+
+    // Draw a stronger shadow under the fold
+    final shadowPaint = Paint()
+      ..color = Colors.black.withValues(alpha: 0.2)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+    
+    canvas.drawPath(foldPath, shadowPaint);
+
+    // Draw the highlights
+    canvas.drawPath(foldPath, paint);
+    
+    // A little "SWIPE" hint inside the peel
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: "→",
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 24.sp,
+          fontWeight: FontWeight.w900,
+          shadows: [
+            Shadow(color: Colors.black.withValues(alpha:0.3), blurRadius: 4, offset: const Offset(1, 1)),
+          ],
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    // Position it slightly inside the fold
+    textPainter.paint(canvas, Offset(size.width - 45.sw, size.height - 45.sw));
+  }
+
+  @override
+  bool shouldRepaint(_PagePeelPainter oldDelegate) => oldDelegate.amount != amount;
 }
 
 

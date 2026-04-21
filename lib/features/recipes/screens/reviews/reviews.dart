@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -89,6 +90,7 @@ class ReviewsScreen extends StatelessWidget {
                         }
 
                         return ListView.builder(
+                          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                           padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 10.sh),
                           itemCount: docs.length,
                           itemBuilder: (context, index) {
@@ -96,12 +98,15 @@ class ReviewsScreen extends StatelessWidget {
                             final data = doc.data() as Map<String, dynamic>;
                             return Padding(
                               padding: EdgeInsets.only(bottom: 16.sh),
-                              child: _ReviewCard(
-                                reviewId: doc.id,
-                                data: data,
-                                purple: purple,
-                                orange: orange,
-                                recipeService: recipeService,
+                              child: _StaggeredItem(
+                                index: index,
+                                child: _ReviewCard(
+                                  reviewId: doc.id,
+                                  data: data,
+                                  purple: purple,
+                                  orange: orange,
+                                  recipeService: recipeService,
+                                ),
                               ),
                             );
                           },
@@ -300,29 +305,61 @@ class _ReviewCardState extends State<_ReviewCard> {
   }
 
   Future<void> _confirmDelete(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showGeneralDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFFF9E3D5),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.sw)),
-        title: Text(
-          "Delete Review",
-          style: TextStyle(color: widget.purple, fontWeight: FontWeight.bold, fontFamily: "Satoshi", fontSize: 18.sp),
-        ),
-        content: Text(
-          "Are you sure you want to delete your review? This will also revert your rating for this recipe.",
-          style: TextStyle(color: widget.purple.withValues(alpha:0.8), fontFamily: "Satoshi", fontSize: 14.sp),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text("Cancel", style: TextStyle(color: widget.purple, fontWeight: FontWeight.bold, fontSize: 14.sp)),
+      barrierColor: Colors.black.withValues(alpha: 0.3),
+      barrierDismissible: true,
+      barrierLabel: 'Delete Review',
+      transitionDuration: const Duration(milliseconds: 300),
+      transitionBuilder: (context, anim1, anim2, child) {
+        return Transform.scale(
+          scale: Curves.easeOutBack.transform(anim1.value),
+          child: Opacity(
+            opacity: anim1.value,
+            child: child,
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text("Delete", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14.sp)),
+        );
+      },
+      pageBuilder: (context, anim1, anim2) => BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: AlertDialog(
+          backgroundColor: const Color(0xFFFFF3EB).withValues(alpha: 0.8),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30.sw),
+            side: const BorderSide(color: Colors.white, width: 1.5),
           ),
-        ],
+          title: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.red, size: 28.sw),
+              SizedBox(width: 10.sw),
+              Text(
+                "Delete Review",
+                style: TextStyle(color: widget.purple, fontWeight: FontWeight.w900, fontFamily: "Satoshi", fontSize: 18.sp),
+              ),
+            ],
+          ),
+          content: Text(
+            "Are you sure you want to delete your review? This will also revert your rating for this recipe.",
+            style: TextStyle(color: widget.purple.withValues(alpha: 0.8), fontFamily: "Satoshi", fontSize: 14.sp),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text("Cancel", style: TextStyle(color: widget.purple, fontWeight: FontWeight.bold, fontSize: 14.sp)),
+            ),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.red.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10.sw),
+              ),
+              child: TextButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: Text("Delete", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14.sp)),
+              ),
+            ),
+          ],
+        ),
       ),
     );
 
@@ -443,14 +480,27 @@ class _ReviewCardState extends State<_ReviewCard> {
           
           if (imageUrl != null && imageUrl.isNotEmpty) ...[
             SizedBox(height: 12.sh),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(15.sw),
-              child: Image.network(
-                imageUrl,
-                width: double.infinity,
-                height: 180.sh,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _placeholder(),
+            GestureDetector(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => _FullScreenGallery(imageUrl: imageUrl, heroTag: "review_photo_${widget.reviewId}"),
+                  ),
+                );
+              },
+              child: Hero(
+                tag: "review_photo_${widget.reviewId}",
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(15.sw),
+                  child: Image.network(
+                    imageUrl,
+                    width: double.infinity,
+                    height: 180.sh,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _placeholder(),
+                  ),
+                ),
               ),
             ),
           ],
@@ -464,27 +514,12 @@ class _ReviewCardState extends State<_ReviewCard> {
           // Actions: Like, Reply & Delete
           Row(
             children: [
-              GestureDetector(
+              _AnimatedLikeButton(
+                isLiked: isLiked,
+                likes: likes,
+                purple: widget.purple,
+                orange: widget.orange,
                 onTap: user == null ? null : () => widget.recipeService.toggleLike(widget.reviewId, user.uid),
-                child: Row(
-                  children: [
-                    Icon(
-                      isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
-                      size: 18.sp,
-                      color: isLiked ? widget.orange : widget.purple.withValues(alpha:0.6),
-                    ),
-                    SizedBox(width: 6.sw),
-                    Text(
-                      likes > 0 ? likes.toString() : "Like",
-                      style: TextStyle(
-                        color: isLiked ? widget.orange : widget.purple.withValues(alpha:0.6),
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: "Satoshi",
-                      ),
-                    ),
-                  ],
-                ),
               ),
               SizedBox(width: 24.sw),
               GestureDetector(
@@ -690,28 +725,13 @@ class _ReplyItem extends StatelessWidget {
                 SizedBox(height: 6.sh),
                 Row(
                   children: [
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
+                    _AnimatedLikeButton(
+                      isLiked: isLiked,
+                      likes: likes,
+                      purple: purple,
+                      orange: orange,
+                      size: 14.sp,
                       onTap: user == null ? null : () => recipeService.toggleReplyLike(reviewId, replyId, user.uid),
-                      child: Row(
-                        children: [
-                          Icon(
-                            isLiked ? Icons.thumb_up : Icons.thumb_up_outlined,
-                            size: 14.sp,
-                            color: isLiked ? orange : purple.withValues(alpha:0.6),
-                          ),
-                          SizedBox(width: 4.sw),
-                          Text(
-                            likes > 0 ? likes.toString() : "Like",
-                            style: TextStyle(
-                              color: isLiked ? orange : purple.withValues(alpha:0.6),
-                              fontSize: 10.sp,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: "Satoshi",
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
                     SizedBox(width: 24.sw),
                     GestureDetector(
@@ -773,4 +793,202 @@ Widget _buildCommentWithMentions(String text, Color purple, Color orange, double
       children: spans,
     ),
   );
+}
+
+class _AnimatedLikeButton extends StatefulWidget {
+  final bool isLiked;
+  final int likes;
+  final Color purple;
+  final Color orange;
+  final double? size;
+  final VoidCallback? onTap;
+
+  const _AnimatedLikeButton({
+    required this.isLiked,
+    required this.likes,
+    required this.purple,
+    required this.orange,
+    this.size,
+    this.onTap,
+  });
+
+  @override
+  State<_AnimatedLikeButton> createState() => _AnimatedLikeButtonState();
+}
+
+class _AnimatedLikeButtonState extends State<_AnimatedLikeButton> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scale;
+  late Animation<double> _rotation;
+  late Animation<Offset> _translation;
+
+  @override
+  void initState() {
+    super.initState();
+    // YouTube style: slightly longer duration to allow the hop and settle
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
+    
+    // Scale up then elastic recoil
+    _scale = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 1.4).chain(CurveTween(curve: Curves.easeOutCubic)), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 1.4, end: 1.0).chain(CurveTween(curve: Curves.elasticOut)), weight: 70),
+    ]).animate(_controller);
+
+    // Jump up (-Y) and slightly right (+X), then bounce back
+    _translation = TweenSequence<Offset>([
+      TweenSequenceItem(
+        tween: Tween(begin: const Offset(0, 0), end: const Offset(6, -12)).chain(CurveTween(curve: Curves.easeOutCubic)), 
+        weight: 30
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: const Offset(6, -12), end: const Offset(0, 0)).chain(CurveTween(curve: Curves.elasticOut)), 
+        weight: 70
+      ),
+    ]).animate(_controller);
+
+    // Tilt (rotate) backwards to emphasize the thumb, then spring back
+    _rotation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: -0.4).chain(CurveTween(curve: Curves.easeOutCubic)), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: -0.4, end: 0.0).chain(CurveTween(curve: Curves.elasticOut)), weight: 70),
+    ]).animate(_controller);
+  }
+
+  @override
+  void didUpdateWidget(_AnimatedLikeButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isLiked && !oldWidget.isLiked) {
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final iconSize = widget.size ?? 18.sp;
+    final fontSize = (widget.size != null) ? 10.sp : 12.sp;
+
+    return GestureDetector(
+      onTap: widget.onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return Transform.translate(
+                offset: _translation.value,
+                child: Transform.rotate(
+                  angle: _rotation.value,
+                  child: Transform.scale(
+                    scale: _scale.value,
+                    child: child,
+                  ),
+                ),
+              );
+            },
+            child: Icon(
+              widget.isLiked ? Icons.thumb_up_rounded : Icons.thumb_up_outlined,
+              size: iconSize,
+              color: widget.isLiked ? widget.orange : widget.purple.withValues(alpha: 0.6),
+            ),
+          ),
+          SizedBox(width: 6.sw),
+          Text(
+            widget.likes > 0 ? widget.likes.toString() : "Like",
+            style: TextStyle(
+              color: widget.isLiked ? widget.orange : widget.purple.withValues(alpha: 0.6),
+              fontSize: fontSize,
+              fontWeight: FontWeight.bold,
+              fontFamily: "Satoshi",
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FullScreenGallery extends StatelessWidget {
+  final String imageUrl;
+  final String heroTag;
+
+  const _FullScreenGallery({required this.imageUrl, required this.heroTag});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          Center(
+            child: Hero(
+              tag: heroTag,
+              child: InteractiveViewer(
+                minScale: 0.5,
+                maxScale: 4.0,
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: EdgeInsets.all(16.sw),
+              child: IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StaggeredItem extends StatefulWidget {
+  final Widget child;
+  final int index;
+
+  const _StaggeredItem({required this.child, required this.index});
+
+  @override
+  State<_StaggeredItem> createState() => _StaggeredItemState();
+}
+
+class _StaggeredItemState extends State<_StaggeredItem> {
+  bool _visible = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final delay = 50 + (widget.index * 100);
+    Future.delayed(Duration(milliseconds: delay > 500 ? 500 : delay), () {
+      if (mounted) setState(() => _visible = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedOpacity(
+      duration: const Duration(milliseconds: 600),
+      opacity: _visible ? 1.0 : 0.0,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 600),
+        curve: Curves.easeOutCubic,
+        transform: Matrix4.translationValues(0, _visible ? 0 : 30.sh, 0),
+        child: widget.child,
+      ),
+    );
+  }
 }

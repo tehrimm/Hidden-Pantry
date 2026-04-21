@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
@@ -37,36 +38,55 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
   Future<void> _pickImage() async {
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFFF9E3D5),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30.sw)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.camera_alt, color: Color(0xFF462F4D), size: 24.sw),
-              title: Text('Take a Photo', style: TextStyle(color: Color(0xFF462F4D), fontFamily: 'Satoshi', fontSize: 16.sp)),
-              onTap: () async {
-                Navigator.pop(context);
-                final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
-                if (photo != null) {
-                  setState(() => _image = File(photo.path));
-                }
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.photo_library, color: Color(0xFF462F4D), size: 24.sw),
-              title: Text('Choose from Gallery', style: TextStyle(color: Color(0xFF462F4D), fontFamily: 'Satoshi', fontSize: 16.sp)),
-              onTap: () async {
-                Navigator.pop(context);
+      backgroundColor: Colors.transparent,
+      builder: (context) => BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: EdgeInsets.all(24.sw),
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF3EB).withValues(alpha: 0.8),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30.sw)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(width: 40.sw, height: 4.sh, decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(2))),
+              SizedBox(height: 24.sh),
+              _sourceTile(Icons.photo_library_rounded, "Gallery", () async {
                 final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-                if (image != null) {
-                  setState(() => _image = File(image.path));
-                }
-              },
-            ),
+                if (image != null) setState(() => _image = File(image.path));
+              }),
+              SizedBox(height: 12.sh),
+              _sourceTile(Icons.camera_alt_rounded, "Camera", () async {
+                final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
+                if (photo != null) setState(() => _image = File(photo.path));
+              }),
+              SizedBox(height: 24.sh),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _sourceTile(IconData icon, String label, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pop(context);
+        onTap();
+      },
+      child: Container(
+        padding: EdgeInsets.all(16.sw),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(15.sw),
+          border: Border.all(color: Colors.white, width: 1),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: purple),
+            SizedBox(width: 16.sw),
+            Text(label, style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.bold, fontSize: 16.sp, color: purple)),
           ],
         ),
       ),
@@ -176,45 +196,40 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                           GestureDetector(
                             onTap: _pickImage,
                             child: Container(
+                              height: 220.sh,
                               width: double.infinity,
-                              height: 294.sh,
                               decoration: BoxDecoration(
                                 color: cardBg,
-                                borderRadius: BorderRadius.circular(20.sw),
+                                borderRadius: BorderRadius.circular(23.sw),
                               ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(20),
-                                child: _image != null
-                                    ? Image.file(_image!, fit: BoxFit.cover)
-                                    : (widget.editingRecipe?.imageUrl != null
-                                        ? Image.network(widget.editingRecipe!.imageUrl!, fit: BoxFit.cover)
-                                        : Column(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Icon(Icons.file_upload_outlined, size: 40.sw, color: purple),
-                                              SizedBox(height: 15.sh),
-                                              Text(
-                                                'Upload your recipe picture',
-                                                style: TextStyle(
-                                                  color: purple,
-                                                  fontSize: 12.sp,
-                                                  fontWeight: FontWeight.w500,
-                                                  letterSpacing: 0.2,
-                                                  fontFamily: 'Satoshi',
-                                                ),
-                                              ),
-                                              SizedBox(height: 5.sh),
-                                              Text(
-                                                '*maximum size 2MB',
-                                                style: TextStyle(
-                                                  color: purple,
-                                                  fontSize: 9.sp,
-                                                  fontFamily: 'Satoshi',
-                                                ),
-                                              ),
-                                            ],
-                                          )),
-                              ),
+                              child: _image != null
+                                  ? ClipRRect(
+                                      borderRadius: BorderRadius.circular(23.sw),
+                                      child: Image.file(_image!, fit: BoxFit.cover),
+                                    )
+                                  : (widget.editingRecipe?.imageUrl != null
+                                      ? ClipRRect(
+                                          borderRadius: BorderRadius.circular(23.sw),
+                                          child: Image.network(widget.editingRecipe!.imageUrl!, fit: BoxFit.cover),
+                                        )
+                                      : Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.add_photo_alternate_rounded, size: 48.sw, color: purple.withValues(alpha: 0.4)),
+                                            SizedBox(height: 12.sh),
+                                            Text('Add Recipe Photo', style: TextStyle(color: purple.withValues(alpha: 0.4), fontSize: 16.sp, fontWeight: FontWeight.w900, fontFamily: 'Satoshi')),
+                                            Text('Make them hungry!', style: TextStyle(color: purple.withValues(alpha: 0.25), fontSize: 12.sp, fontFamily: 'Satoshi')),
+                                          ],
+                                        )),
+                            ),
+                          ),
+                          SizedBox(height: 5.sh),
+                          Text(
+                            '*maximum size 2MB',
+                            style: TextStyle(
+                              color: purple,
+                              fontSize: 9.sp,
+                              fontFamily: 'Satoshi',
                             ),
                           ),
                         ],

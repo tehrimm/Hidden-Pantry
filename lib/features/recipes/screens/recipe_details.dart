@@ -6,6 +6,7 @@ import 'cooking_details.dart';
 import 'package:hidden_pantry_app/core/constants/api_constants.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/reviews/reviews.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 import 'package:hidden_pantry_app/features/recipes/services/local_recipe_service.dart';
 import 'package:hidden_pantry_app/core/widgets/add_to_cookbook_bottom_sheet.dart';
@@ -74,7 +75,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
     
     // Immediately fetch full details
     _scrollController.addListener(_scrollListener);
-    _authorPageController = PageController(viewportFraction: 0.7);
+    _authorPageController = PageController(viewportFraction: 0.6);
     _authorPageController.addListener(() {
       if (mounted) setState(() => _authorPage = _authorPageController.page ?? 0.0);
     });
@@ -116,12 +117,14 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
 
   Future<void> _refreshAfterReviews() async {
     try {
-      final firestoreRecipe = await _recipeService.getRecipeById(_recipe.id).timeout(const Duration(seconds: 3));
-      if (firestoreRecipe != null && mounted) {
+      final docId = _recipe.id.toString();
+      final doc = await FirebaseFirestore.instance.collection('recipes').doc(docId).get();
+      if (doc.exists && mounted) {
+        final data = doc.data()!;
         setState(() {
           _recipe = _recipe.copyWith(
-            avgRating: firestoreRecipe.avgRating,
-            reviewCount: firestoreRecipe.reviewCount,
+            avgRating: double.tryParse(data['avg_rating']?.toString() ?? "0") ?? _recipe.avgRating,
+            reviewCount: int.tryParse(data['review_count']?.toString() ?? "0") ?? _recipe.reviewCount,
           );
         });
       }
@@ -1192,9 +1195,10 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
             _StaggeredEntry(
               delay: 800,
               child: SizedBox(
-                height: 240.sh,
+                height: 200.sh,
                 child: PageView.builder(
                   controller: _authorPageController,
+                  padEnds: false,
                   itemCount: _authorRecipes.length,
                   itemBuilder: (context, index) {
                     final ar = _authorRecipes[index];
