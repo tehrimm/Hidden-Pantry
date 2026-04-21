@@ -14,6 +14,7 @@ import 'package:hidden_pantry_app/features/recipes/widgets/recipe_rating_widget.
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+import 'package:flutter/rendering.dart';
 
 class RecipeDetailsScreen extends StatefulWidget {
   final Recipe recipe;
@@ -54,6 +55,8 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
 
   late final RecipeService _recipeService;
   final LocalRecipeService _localService = LocalRecipeService();
+  final ScrollController _scrollController = ScrollController();
+  bool _fabExpanded = true;
   bool get _isUnderTest => widget.apiService != null;
 
   @override
@@ -67,6 +70,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
     _servings = (_recipe.baseServings <= 0) ? 1 : _recipe.baseServings;
     
     // Immediately fetch full details
+    _scrollController.addListener(_scrollListener);
     _loadFullDetails();
     _checkBookmarkStatus();
     _checkLikeStatus();
@@ -85,6 +89,21 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
         tags: _recipe.tags,
       );
     } catch (_) {}
+  }
+
+  void _scrollListener() {
+    if (_scrollController.position.userScrollDirection == ScrollDirection.reverse) {
+      if (_fabExpanded) setState(() => _fabExpanded = false);
+    } else if (_scrollController.position.userScrollDirection == ScrollDirection.forward) {
+      if (!_fabExpanded) setState(() => _fabExpanded = true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_scrollListener);
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _refreshAfterReviews() async {
@@ -451,18 +470,21 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
         ],
       ),
 
-      // Sticky CTA stays
-      bottomNavigationBar: _StickyStartCooking(
+      floatingActionButton: _AnimatedStartCookingFab(
+        isExpandedManually: _fabExpanded,
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => CookingDetailsScreen(
-                recipe: _recipe,
-                initialServings: _servings,
+          Future.delayed(const Duration(milliseconds: 300), () {
+            if (!mounted) return;
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => CookingDetailsScreen(
+                  recipe: _recipe,
+                  initialServings: _servings,
+                ),
               ),
-            ),
-          );
+            );
+          });
         },
       ),
     );
@@ -568,6 +590,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
     final ingredientCount = r.ingredients.length;
 
     return SingleChildScrollView(
+      controller: _scrollController,
       padding: EdgeInsets.fromLTRB(18.sw, 0, 18.sw, 90.sh),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1374,64 +1397,83 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   }
 }
 
- 
-
-class _StickyStartCooking extends StatelessWidget {
-  static const Color orange = Color(0xFFEF8A54);
+class _AnimatedStartCookingFab extends StatefulWidget {
   final VoidCallback onTap;
+  final bool isExpandedManually;
 
-  const _StickyStartCooking({required this.onTap});
+  const _AnimatedStartCookingFab({
+    required this.onTap,
+    required this.isExpandedManually,
+  });
+
+  @override
+  State<_AnimatedStartCookingFab> createState() => _AnimatedStartCookingFabState();
+}
+
+class _AnimatedStartCookingFabState extends State<_AnimatedStartCookingFab> {
+  bool _clickExpanded = false;
+  static const Color orange = Color(0xFFEF8A54);
+
+  bool get _isExpanded => widget.isExpandedManually || _clickExpanded;
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: SizedBox(
-        height: 86.sh, // keeps body from becoming 0
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(18.sw, 10.sh, 18.sw, 12.sh),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.end, // pinned right
-            children: [
-              InkWell(
-                onTap: onTap,
-                borderRadius: BorderRadius.circular(30.sw),
-                child: Container(
-                  height: 56.sh,
-                  width: 190.sw,
-                  decoration: BoxDecoration(
-                    color: orange,
-                    borderRadius: BorderRadius.circular(30.sw),
-                  ),
-                  padding: EdgeInsets.symmetric(horizontal: 18.sw),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          "Start Cooking",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w800,
-                            fontFamily: "Satoshi",
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      SizedBox(width: 10.sw),
-                      Image.asset(
-                        'assets/icons/next_filled.png',
-                        width: 9.sw,
-                        height: 7.sh,
-                      ),
-                    ],
+    return GestureDetector(
+      onTap: () async {
+        if (!_isExpanded) {
+          setState(() => _clickExpanded = true);
+          // Wait longer for the stretch animation to be seen
+          await Future.delayed(const Duration(milliseconds: 500));
+        }
+        widget.onTap();
+        // Reset click state after a while
+        await Future.delayed(const Duration(milliseconds: 800));
+        if (mounted) setState(() => _clickExpanded = false);
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 400), // Slightly slower for better feel
+        curve: Curves.fastOutSlowIn,
+        height: 56.sw,
+        width: _isExpanded ? 180.sw : 56.sw,
+        decoration: BoxDecoration(
+          color: orange,
+          borderRadius: BorderRadius.circular(30.sw),
+          boxShadow: [
+            BoxShadow(
+              color: orange.withValues(alpha: 0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (_isExpanded) ...[
+              const Flexible(
+                child: Padding(
+                  padding: EdgeInsets.only(left: 4),
+                  child: Text(
+                    "Start Cooking",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      fontFamily: "Satoshi",
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),
+              const SizedBox(width: 4),
             ],
-          ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 18.sw,
+              color: Colors.white,
+            ),
+          ],
         ),
       ),
     );

@@ -78,7 +78,7 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
               // Back button
               Positioned(
                 left: 30.sw,
-                top: MediaQuery.paddingOf(context).top + 51.sh,
+                top: MediaQuery.paddingOf(context).top + 30.sh,
                 child: GestureDetector(
                 onTap: () {
                   if (widget.viewOnly) {
