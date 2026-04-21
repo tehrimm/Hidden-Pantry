@@ -1328,7 +1328,7 @@ void _openUserProfile() {
           padding: EdgeInsets.symmetric(horizontal: 22.sw),
           scrollDirection: Axis.horizontal,
           itemBuilder: (_, __) => _recipeCardSkeleton(),
-          separatorBuilder: (_, __) => SizedBox(width: 16.sw),
+          separatorBuilder: (_, __) => SizedBox(width: 8.sw),
           itemCount: 3,
         ),
       );
@@ -1354,7 +1354,7 @@ void _openUserProfile() {
         padding: EdgeInsets.symmetric(horizontal: 22.sw),
         scrollDirection: Axis.horizontal,
         itemBuilder: (_, i) => _recipeCard(list[i]),
-        separatorBuilder: (_, __) => SizedBox(width: 16.sw),
+        separatorBuilder: (_, __) => SizedBox(width: 8.sw),
         itemCount: list.length,
       ),
     );

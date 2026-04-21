@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../models/recipe.dart';
 import '../../recipes/widgets/recipe_rating_widget.dart';
@@ -42,39 +43,70 @@ class RecipeCard extends StatelessWidget {
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
           // Image
           Positioned.fill(
             bottom: showManagement ? 70 : 66,
+            child: Padding(
+              padding: const EdgeInsets.all(5.0),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  color: const Color(0xFFF9E3D5),
+                  child: hasImage
+                      ? Image.network(
+                          imageUrl,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, progress) => progress == null
+                              ? child
+                              : const SkeletonBox(
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  borderRadius: BorderRadius.all(Radius.circular(16)),
+                                ),
+                          errorBuilder: (context, error, stackTrace) {
+                            print("RecipeCard Image Error: $error for $imageUrl");
+                            return Image.asset(
+                              'assets/logos/recipe_placeholder.jpg',
+                              fit: BoxFit.cover,
+                            );
+                          },
+                        )
+                      : Image.asset(
+                          'assets/logos/recipe_placeholder.jpg',
+                          fit: BoxFit.cover,
+                        ),
+                ),
+              ),
+            ),
+          ),
+
+          // Glassy Bottom Section
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: showManagement ? 70 : 66,
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                color: const Color(0xFFF9E3D5),
-                child: hasImage
-                    ? Image.network(
-                        imageUrl,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, progress) => progress == null
-                            ? child
-                            : const SkeletonBox(
-                                width: double.infinity,
-                                height: double.infinity,
-                                borderRadius: BorderRadius.all(Radius.circular(20)),
-                              ),
-                        errorBuilder: (context, error, stackTrace) {
-                          print("RecipeCard Image Error: $error for $imageUrl");
-                          return Image.asset(
-                            'assets/logos/recipe_placeholder.jpg',
-                            fit: BoxFit.cover,
-                          );
-                        },
-                      )
-                    : Image.asset(
-                        'assets/logos/recipe_placeholder.jpg',
-                        fit: BoxFit.cover,
-                      ),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+              clipBehavior: Clip.antiAlias,
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF3EB).withValues(alpha: 0.45),
+                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 0.5,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -170,7 +202,8 @@ class RecipeCard extends StatelessWidget {
             ),
         ],
       ),
-    );
+    ),
+  );
 
     return GestureDetector(
       onTap: onTap,
