@@ -318,7 +318,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   Future<void> _toggleDownload() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      Toaster.show(context, 'Please login to download recipes', isError: true);
+      Toaster.show(context, 'Please login to download recipes', isError: true, atTop: false);
       return;
     }
 
@@ -375,14 +375,14 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
           await _localService.removeRecipeOffline(_recipe.id, user.uid);
           if (mounted) {
             setState(() => _isDownloaded = false);
-            Toaster.show(context, 'Removed from offline cache');
+            Toaster.show(context, 'Removed from offline cache', atTop: false);
           }
         }
       } else {
         await _localService.saveRecipeOffline(_recipe, user.uid);
         if (mounted) {
           setState(() => _isDownloaded = true);
-          Toaster.show(context, 'Saved for offline use!');
+          Toaster.show(context, 'Saved for offline use!', atTop: false);
         }
       }
     } catch (e) {
@@ -408,36 +408,44 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
     final scaled = qty * _scaleFactor();
     if (scaled <= 0) return "";
     
-    // Check for whole numbers
-    if ((scaled - scaled.roundToDouble()).abs() < 0.0001) {
-      return scaled.round().toString();
-    }
-    
-    // Split into whole and fractional parts
     final int wholePart = scaled.floor();
     final double fractionPart = scaled - wholePart;
     
-    // Fraction lookup table for common cooking decimals
-    String? fraction;
-    if ((fractionPart - 0.5).abs() < 0.02) fraction = "1/2";
-    else if ((fractionPart - 0.25).abs() < 0.02) fraction = "1/4";
-    else if ((fractionPart - 0.75).abs() < 0.02) fraction = "3/4";
-    else if ((fractionPart - 0.33).abs() < 0.04) fraction = "1/3";
-    else if ((fractionPart - 0.66).abs() < 0.04) fraction = "2/3";
-    else if ((fractionPart - 0.125).abs() < 0.02) fraction = "1/8";
-    else if ((fractionPart - 0.375).abs() < 0.02) fraction = "3/8";
-    else if ((fractionPart - 0.625).abs() < 0.02) fraction = "5/8";
-    else if ((fractionPart - 0.875).abs() < 0.02) fraction = "7/8";
+    // Define standard cooking fractions
+    final List<Map<String, dynamic>> fractions = [
+      {'val': 0.0, 'str': ""},
+      {'val': 0.125, 'str': "1/8"},
+      {'val': 0.25, 'str': "1/4"},
+      {'val': 0.333, 'str': "1/3"},
+      {'val': 0.375, 'str': "3/8"},
+      {'val': 0.5, 'str': "1/2"},
+      {'val': 0.625, 'str': "5/8"},
+      {'val': 0.666, 'str': "2/3"},
+      {'val': 0.75, 'str': "3/4"},
+      {'val': 0.875, 'str': "7/8"},
+      {'val': 1.0, 'str': "UP"}, // Special marker for rounding up
+    ];
 
-    if (fraction != null) {
-      return wholePart > 0 ? "$wholePart $fraction" : fraction;
+    double minDiff = 999.0;
+    Map<String, dynamic> bestMatch = fractions.first;
+
+    for (var f in fractions) {
+      double diff = (fractionPart - f['val']).abs();
+      if (diff < minDiff) {
+        minDiff = diff;
+        bestMatch = f;
+      }
     }
 
-    // Fallback to decimal if no common fraction match
-    return scaled
-        .toStringAsFixed(2)
-        .replaceAll(RegExp(r"0+$"), "")
-        .replaceAll(RegExp(r"\.$"), "");
+    if (bestMatch['str'] == "UP") {
+      return (wholePart + 1).toString();
+    }
+    
+    if (bestMatch['val'] == 0.0) {
+      return wholePart > 0 ? wholePart.toString() : "0";
+    }
+
+    return wholePart > 0 ? "$wholePart ${bestMatch['str']}" : bestMatch['str'];
   }
 
   @override
@@ -1126,7 +1134,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
             _StaggeredEntry(
               delay: 800,
               child: SizedBox(
-                height: 200.sh,
+                height: 230.sh,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: _authorRecipes.length,
@@ -1747,18 +1755,24 @@ class _StaggeredEntryState extends State<_StaggeredEntry> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedPadding(
+    return AnimatedScale(
       duration: const Duration(milliseconds: 800),
       curve: Curves.easeOutCubic,
-      padding: EdgeInsets.only(top: _start ? 0 : 30.sh),
+      scale: _start ? 1.0 : 0.95,
       child: AnimatedOpacity(
         duration: const Duration(milliseconds: 800),
         curve: Curves.easeOutCubic,
         opacity: _start ? 1.0 : 0.0,
-        child: AnimatedScale(
+        child: TweenAnimationBuilder<double>(
           duration: const Duration(milliseconds: 800),
           curve: Curves.easeOutCubic,
-          scale: _start ? 1.0 : 0.95,
+          tween: Tween(begin: 30.sh, end: 0.0),
+          builder: (context, value, child) {
+            return Transform.translate(
+              offset: Offset(0, _start ? 0 : value),
+              child: child,
+            );
+          },
           child: widget.child,
         ),
       ),

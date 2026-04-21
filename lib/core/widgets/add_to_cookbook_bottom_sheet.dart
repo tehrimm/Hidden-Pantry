@@ -70,7 +70,7 @@ class _AddToCookbookBottomSheetState extends State<AddToCookbookBottomSheet> {
 
     return Container(
       width: double.infinity,
-      height: 480,
+      height: 400,
       margin: const EdgeInsets.all(20),
       clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
@@ -303,6 +303,3 @@ class _AddToCookbookBottomSheetState extends State<AddToCookbookBottomSheet> {
     );
   }
 }
-
-
-
