@@ -781,24 +781,38 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                 width: double.infinity,
                 height: 62.sh,
                 decoration: BoxDecoration(
-                  border: Border.all(color: orange, width: 1.2.sw),
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF462F4D), Color(0xFF5D4164)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.circular(20.sw),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF462F4D).withValues(alpha: 0.2),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-                padding: EdgeInsets.symmetric(horizontal: 16.sw),
+                padding: EdgeInsets.symmetric(horizontal: 20.sw),
                 child: Row(
                   children: [
+                    Icon(Icons.rate_review_rounded, size: 22.sw, color: const Color(0xFFFFF2EA)),
+                    SizedBox(width: 14.sw),
                     Expanded(
                       child: Text(
                         "See all tips and Photos",
                         style: TextStyle(
-                          color: textColor,
+                          color: const Color(0xFFFFF2EA),
                           fontSize: 15.sp,
+                          fontWeight: FontWeight.w700,
                           fontFamily: "Satoshi",
                         ),
                       ),
                     ),
                     Icon(Icons.arrow_forward_ios_rounded,
-                        size: 16.sw, color: textColor),
+                        size: 14.sw, color: const Color(0xFFFFF2EA).withValues(alpha: 0.5)),
                   ],
                 ),
               ),
@@ -1452,43 +1466,64 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
       child: Row(
         children: [
           Expanded(
-            child: _timeCol("Total Time", "$totalMin min"),
+            child: _timeCol(Icons.schedule_rounded, "Total", "$totalMin min"),
           ),
+          Container(width: 1.sw, height: 30.sh, color: textColor.withValues(alpha: 0.1)),
           Expanded(
-            child: _timeCol("Prep Time", prep),
+            child: _timeCol(Icons.restaurant_rounded, "Prep", prep),
           ),
+          Container(width: 1.sw, height: 30.sh, color: textColor.withValues(alpha: 0.1)),
           Expanded(
-            child: _timeCol("Cook Time", cook),
+            child: _timeCol(Icons.local_fire_department_rounded, "Cook", cook),
           ),
         ],
       ),
     );
   }
 
-  Widget _timeCol(String label, String value) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+  Widget _timeCol(IconData icon, String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: textColor,
-            fontSize: 14.sp,
-            fontWeight: FontWeight.w800,
-            fontFamily: "Satoshi",
-          ),
-          textAlign: TextAlign.center,
-        ),
-        SizedBox(height: 6.sh),
-        Text(
-          value,
-          style: TextStyle(
+        Container(
+          width: 28.sw,
+          height: 28.sw,
+          decoration: const BoxDecoration(
             color: orange,
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w800,
-            fontFamily: "Satoshi",
+            shape: BoxShape.circle,
           ),
-          textAlign: TextAlign.center,
+          child: Icon(icon, color: Colors.white, size: 14.sw),
+        ),
+        SizedBox(width: 6.sw),
+        Flexible(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: textColor.withValues(alpha: 0.6),
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.w800,
+                  fontFamily: "Satoshi",
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              Text(
+                value,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: "Satoshi",
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
         ),
       ],
     );
