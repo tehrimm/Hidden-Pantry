@@ -47,7 +47,7 @@ class RecipeCard extends StatelessWidget {
         children: [
           // Image
           Positioned.fill(
-            bottom: showManagement ? 70 : 50,
+            bottom: showManagement ? 70 : 66,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: Container(
@@ -103,17 +103,22 @@ class RecipeCard extends StatelessWidget {
           // Recipe Name
           Positioned(
             left: 12,
-            bottom: 28,
+            bottom: 22,
             right: 12,
-            child: Text(
-              recipe.name.trim().isEmpty ? "Recipe" : recipe.name,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: purple,
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Satoshi',
+            height: 36, // Enough for 2 lines
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: Text(
+                recipe.name.trim().isEmpty ? "Recipe" : recipe.name,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: purple,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Satoshi',
+                  height: 1.1,
+                ),
               ),
             ),
           ),
@@ -121,7 +126,7 @@ class RecipeCard extends StatelessWidget {
           // Time and Rating row
           Positioned(
             left: 11,
-            bottom: 8,
+            bottom: 6,
             right: 12,
             child: Row(
               children: [

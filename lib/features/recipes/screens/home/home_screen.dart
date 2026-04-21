@@ -25,6 +25,7 @@ import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_das
 import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_settings.dart';
 import 'package:hidden_pantry_app/features/user/services/follow_service.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
+import 'package:hidden_pantry_app/features/user/screens/notifications_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool inShell;
@@ -43,7 +44,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final Color bg = const Color(0xFFFFF3EB);
   final Color chipBg = const Color(0xFFF9E3D5);
   final Color purple = const Color(0xFF462F4D);
-  final Color brown = const Color(0xFF433020);
   final Color orange = const Color(0xFFEF8A54);
 
   List<String> tags = const [];
@@ -67,6 +67,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
   int bottomIndex = 0; // 0 home, 1 search, 2 plus, 3 bookmark, 4 nutritionist
   bool isNutritionistInUserView = false;
+
+  final ScrollController _tagScrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _tagScrollController.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -408,6 +416,13 @@ void _openUserProfile() {
     );
   }
 
+  void _openNotifications() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const NotificationsScreen()),
+    );
+  }
+
   void _onBottomTap(int i) {
     setState(() => bottomIndex = i);
 
@@ -456,6 +471,86 @@ void _openUserProfile() {
     );
   }
 
+  // ──────────────────── TAG ICON MAPPING (outline) ────────────────────
+  IconData _tagIcon(String tag) {
+    final t = tag.toLowerCase().replaceAll("recipes", "").trim();
+
+    // Time
+    if (t.contains('min') || t.contains('hour')) return Icons.timer_outlined;
+
+    // Exact match first
+    if (t == 'all') return Icons.grid_view_outlined;
+    if (t == 'easy') return Icons.thumb_up_outlined;
+
+    // Meal types
+    if (t.contains('breakfast')) return Icons.free_breakfast_outlined;
+    if (t.contains('lunch')) return Icons.lunch_dining_outlined;
+    if (t.contains('dinner')) return Icons.dinner_dining_outlined;
+    if (t.contains('snack')) return Icons.fastfood_outlined;
+
+    // Food categories
+    if (t.contains('dessert') || t.contains('desert')) return Icons.cake_outlined;
+    if (t.contains('soup')) return Icons.soup_kitchen_outlined;
+    if (t.contains('salad')) return Icons.eco_outlined;
+    if (t.contains('pasta')) return Icons.ramen_dining_outlined;
+    if (t.contains('rice')) return Icons.rice_bowl_outlined;
+    if (t.contains('bread')) return Icons.bakery_dining_outlined;
+    if (t.contains('sandwich')) return Icons.lunch_dining_outlined;
+    if (t.contains('cookie') || t.contains('brownie')) return Icons.cookie_outlined;
+    if (t.contains('beverage') || t.contains('drink')) return Icons.local_cafe_outlined;
+
+    // Ingredients
+    if (t.contains('chicken') || t.contains('poultry')) return Icons.set_meal_outlined;
+    if (t.contains('beef') || t.contains('meat') || t.contains('pork')) return Icons.kebab_dining_outlined;
+    if (t.contains('fish') || t.contains('seafood')) return Icons.set_meal_outlined;
+    if (t.contains('egg')) return Icons.egg_outlined;
+    if (t.contains('vegetable')) return Icons.spa_outlined;
+    if (t.contains('fruit')) return Icons.apple_outlined;
+    if (t.contains('cheese')) return Icons.circle_outlined;
+    if (t.contains('nuts')) return Icons.scatter_plot_outlined;
+    if (t.contains('beans')) return Icons.grain_outlined;
+    if (t.contains('grain')) return Icons.grass_outlined;
+
+    // Flavor / style
+    if (t.contains('spicy')) return Icons.local_fire_department_outlined;
+    if (t.contains('sweet')) return Icons.icecream_outlined;
+
+    // Cuisine
+    if (t.contains('asian')) return Icons.ramen_dining_outlined;
+    if (t.contains('mexican') || t.contains('southwestern')) return Icons.restaurant_outlined;
+    if (t.contains('italian')) return Icons.local_pizza_outlined;
+    if (t.contains('european') || t.contains('canadian')) return Icons.public_outlined;
+    if (t.contains('kosher')) return Icons.star_outline;
+
+    // Health / diet
+    if (t.contains('vegan') || t.contains('vegetarian')) return Icons.eco_outlined;
+    if (t.contains('healthy')) return Icons.favorite_outline;
+    if (t.contains('low') || t.contains('free of')) return Icons.do_not_disturb_alt_outlined;
+    if (t.contains('high in') || t.contains('high protein')) return Icons.fitness_center_outlined;
+
+    // Cooking method
+    if (t.contains('oven') || t.contains('baked')) return Icons.bakery_dining_outlined;
+    if (t.contains('stove')) return Icons.whatshot_outlined;
+    if (t.contains('no cook')) return Icons.block_outlined;
+
+    // Occasion / audience
+    if (t.contains('kid')) return Icons.child_care_outlined;
+    if (t.contains('large group') || t.contains('potluck')) return Icons.groups_outlined;
+    if (t.contains('beginner')) return Icons.school_outlined;
+    if (t.contains('inexpensive')) return Icons.savings_outlined;
+    if (t.contains('weeknight')) return Icons.nightlight_outlined;
+
+    // Season / holiday
+    if (t.contains('winter') || t.contains('christmas')) return Icons.ac_unit_outlined;
+    if (t.contains('summer')) return Icons.wb_sunny_outlined;
+    if (t.contains('spring')) return Icons.local_florist_outlined;
+    if (t.contains('thanksgiving')) return Icons.celebration_outlined;
+
+    // Default
+    return Icons.fastfood_outlined;
+  }
+
+  // ──────────────────── BUILD ────────────────────
   @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
@@ -476,10 +571,10 @@ void _openUserProfile() {
                 bottom: false,
                 child: Column(
                   children: [
-                    SizedBox(height: 36.sh),
+                    SizedBox(height: 16.sh),
                     // Fixed Header
                     _topRow(),
-                    SizedBox(height: 10.sh),
+                    SizedBox(height: 6.sh),
 
                     // Scrollable Content
                     Expanded(
@@ -490,23 +585,30 @@ void _openUserProfile() {
                         child: ListView(
                           padding: EdgeInsets.only(bottom: 180.sh),
                           children: [
-                            SizedBox(height: 10.sh),
+                            SizedBox(height: 6.sh),
                             _headline(),
+                            SizedBox(height: 14.sh),
+
+                            _searchBar(),
                             SizedBox(height: 18.sh),
+
                             _tagRow(),
+                            SizedBox(height: 18.sh),
+
+                            _heroCard(),
                             SizedBox(height: 22.sh),
 
                             _sectionHeader(
-                              selectedTag == "All" ? "Recommendation" : _beautify(selectedTag),
+                              selectedTag == "All" ? "Quick ideas for you" : _beautify(selectedTag),
                               onSeeAll: _openCategoryView,
                             ),
                             SizedBox(height: 12.sh),
                             _horizontalCards(loading ? null : recommendations),
 
-                            SizedBox(height: 18.sh),
-                            _sectionHeader("Recipes of the Week", onSeeAll: _openWeeklyRecipes),
+                            SizedBox(height: 24.sh),
+                            _weeklyHeader(),
                             SizedBox(height: 12.sh),
-                            _horizontalCards(loading ? null : weekly),
+                            _weeklyFeatureCard(),
 
                             if (_followedAuthorIds.isNotEmpty) ...[
                               SizedBox(height: 24.sh),
@@ -561,8 +663,8 @@ void _openUserProfile() {
     );
   }
 
+  // ──────────────────── TOP ROW ────────────────────
   Widget _topRow() {
-    // Use the fetched photoUrl, fallback to Auth if not loaded yet (though loading handles this)
     final displayUrl = photoUrl ?? FirebaseAuth.instance.currentUser?.photoURL;
     final hasPhoto = displayUrl != null && displayUrl.trim().isNotEmpty;
 
@@ -604,39 +706,118 @@ void _openUserProfile() {
             ),
           ),
           const Spacer(),
+          // Notification icon (replaced search)
           GestureDetector(
-            onTap: _openSearch,
-            child: Image.asset("assets/icons/search.png", width: 22.sw, height: 22.sw),
+            onTap: _openNotifications,
+            child: Container(
+              width: 44.sw,
+              height: 44.sw,
+              decoration: BoxDecoration(
+                color: chipBg,
+                borderRadius: BorderRadius.circular(14.sw),
+              ),
+              child: Center(
+                child: Image.asset(
+                  "assets/icons/notification.png",
+                  width: 22.sw,
+                  height: 22.sw,
+                  color: purple,
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
+  // ──────────────────── HEADLINE (with orange "cook") ────────────────────
   Widget _headline() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 22.sw),
-      child: Text(
-        "What would you\nlike to cook?",
-        style: TextStyle(
-          color: purple,
-          fontSize: 40.sp,
-          fontWeight: FontWeight.w900,
-          height: 1.1,
-          fontFamily: "Satoshi",
+      child: RichText(
+        text: TextSpan(
+          style: TextStyle(
+            color: purple,
+            fontSize: 38.sp,
+            fontWeight: FontWeight.w900,
+            height: 1.1,
+            fontFamily: "Satoshi",
+          ),
+          children: [
+            const TextSpan(text: "What would you\nlike to "),
+            TextSpan(
+              text: "cook",
+              style: TextStyle(color: orange),
+            ),
+            const TextSpan(text: "?"),
+          ],
         ),
       ),
     );
   }
 
+  // ──────────────────── SEARCH BAR (with filter icon) ────────────────────
+  Widget _searchBar() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 22.sw),
+      child: GestureDetector(
+        onTap: _openSearch,
+        child: Container(
+          height: 44.sh,
+          padding: EdgeInsets.only(left: 16.sw, right: 4.sw),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(28.sw),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.search_rounded, color: purple.withValues(alpha: 0.45), size: 20.sw),
+              SizedBox(width: 10.sw),
+              Expanded(
+                child: Text(
+                  "Search recipes, ingredients...",
+                  style: TextStyle(
+                    color: purple.withValues(alpha: 0.45),
+                    fontSize: 13.sp,
+                    fontFamily: "Satoshi",
+                  ),
+                ),
+              ),
+              // Filter button
+              Container(
+                width: 36.sw,
+                height: 36.sw,
+                decoration: BoxDecoration(
+                  color: purple,
+                  borderRadius: BorderRadius.circular(18.sw),
+                ),
+                child: Icon(Icons.tune_rounded, color: Colors.white, size: 16.sw),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ──────────────────── TAG ROW (rounded squares with icon + underline) ────────────────────
   Widget _tagRow() {
     final chips = tags.isEmpty
         ? const ["All", "Breakfast", "Lunch", "Dinner", "Dessert", "Snack", "Soup", "Salad", "Pasta", "Sandwich", "Chicken", "Seafood", "Rice", "Beverage", "Baked", "Spicy"]
         : tags;
 
     return SizedBox(
-      height: 40.sh,
+      height: 68.sh,
       child: ListView.separated(
+        controller: _tagScrollController,
         padding: EdgeInsets.symmetric(horizontal: 22.sw),
         scrollDirection: Axis.horizontal,
         itemBuilder: (_, i) {
@@ -644,31 +825,256 @@ void _openUserProfile() {
           final isSelected = t == selectedTag;
 
           return GestureDetector(
-            onTap: () => _onTagTap(t),
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 18.sw, vertical: 10.sh),
-              decoration: BoxDecoration(
-                color: isSelected ? orange : chipBg,
-                borderRadius: BorderRadius.circular(20.sw),
-              ),
-              child: Text(
-                _beautify(t),
-                style: TextStyle(
-                  color: isSelected ? Colors.white : purple,
-                  fontSize: 14.sp,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  fontFamily: "Satoshi",
-                ),
+            onTap: () {
+              // Smooth scroll to center the tapped tag
+              final screenW = MediaQuery.of(context).size.width;
+              final scale = screenW / 375;
+              final targetOffset = (i * (54 + 8) * scale) - (screenW / 2) + ((54 / 2 + 22) * scale);
+              _tagScrollController.animateTo(
+                targetOffset.clamp(0.0, _tagScrollController.position.maxScrollExtent),
+                duration: const Duration(milliseconds: 350),
+                curve: Curves.easeOutCubic,
+              );
+              _onTagTap(t);
+            },
+            child: SizedBox(
+              width: 54.sw,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOut,
+                    width: 54.sw,
+                    height: 52.sh,
+                    decoration: BoxDecoration(
+                      color: isSelected ? purple : chipBg,
+                      borderRadius: BorderRadius.circular(12.sw),
+                      boxShadow: isSelected
+                          ? [
+                              BoxShadow(
+                                color: purple.withValues(alpha: 0.25),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ]
+                          : [],
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          _tagIcon(t),
+                          color: isSelected ? orange : purple,
+                          size: 16.sw,
+                        ),
+                        SizedBox(height: 3.sh),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 3.sw),
+                          child: Text(
+                            _beautify(t),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: isSelected ? orange : purple,
+                              fontSize: 8.sp,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                              fontFamily: "Satoshi",
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // Orange underline — fixed width, animate opacity
+                  SizedBox(height: 3.sh),
+                  AnimatedOpacity(
+                    duration: const Duration(milliseconds: 250),
+                    opacity: isSelected ? 1.0 : 0.0,
+                    child: Container(
+                      width: 20.sw,
+                      height: 2.5.sh,
+                      decoration: BoxDecoration(
+                        color: orange,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           );
         },
-        separatorBuilder: (_, __) => SizedBox(width: 10.sw),
+        separatorBuilder: (_, __) => SizedBox(width: 8.sw),
         itemCount: chips.length,
       ),
     );
   }
 
+  // ──────────────────── HERO CARD (Stack with ClipPath) ────────────────────
+  Widget _heroCard() {
+    if (recommendations.isEmpty) return const SizedBox();
+
+    final r = recommendations.first;
+    final timeText = r.minutes > 0 ? "${r.minutes} min" : "";
+    final diffText = r.difficulty ?? "";
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 22.sw),
+      child: GestureDetector(
+        onTap: () => _openRecipe(r),
+        child: Container(
+          height: 180.sh,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24.sw),
+            boxShadow: [
+              BoxShadow(
+                color: purple.withValues(alpha: 0.18),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24.sw),
+            child: Stack(
+              children: [
+                // Background image (full)
+                Positioned.fill(
+                  child: Image.network(
+                    r.imageUrl ?? "",
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(color: chipBg),
+                  ),
+                ),
+                // Dark gradient overlay
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          purple,
+                          purple.withValues(alpha: 0.92),
+                          purple.withValues(alpha: 0.45),
+                          Colors.transparent,
+                        ],
+                        stops: const [0.0, 0.45, 0.7, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
+                // Text content on left
+                Positioned(
+                  left: 18.sw,
+                  top: 18.sh,
+                  bottom: 18.sh,
+                  right: 120.sw,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 4.sh),
+                        decoration: BoxDecoration(
+                          color: orange.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(8.sw),
+                        ),
+                        child: Text(
+                          "🔥 TODAY'S PICK",
+                          style: TextStyle(
+                            color: orange,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w800,
+                            fontFamily: "Satoshi",
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 8.sh),
+                      Text(
+                        r.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w800,
+                          fontFamily: "Satoshi",
+                          height: 1.2,
+                        ),
+                      ),
+                      if (timeText.isNotEmpty || diffText.isNotEmpty) ...[
+                        SizedBox(height: 6.sh),
+                        Row(
+                          children: [
+                            if (timeText.isNotEmpty) ...[
+                              Icon(Icons.access_time_rounded, color: Colors.white70, size: 14.sw),
+                              SizedBox(width: 4.sw),
+                              Text(
+                                timeText,
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 11.sp,
+                                  fontFamily: "Satoshi",
+                                ),
+                              ),
+                            ],
+                            if (timeText.isNotEmpty && diffText.isNotEmpty)
+                              SizedBox(width: 10.sw),
+                            if (diffText.isNotEmpty) ...[
+                              Icon(Icons.signal_cellular_alt_rounded, color: Colors.white70, size: 14.sw),
+                              SizedBox(width: 4.sw),
+                              Text(
+                                diffText,
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 11.sp,
+                                  fontFamily: "Satoshi",
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                      SizedBox(height: 10.sh),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 14.sw, vertical: 8.sh),
+                        decoration: BoxDecoration(
+                          color: orange,
+                          borderRadius: BorderRadius.circular(20.sw),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "View Recipe",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: "Satoshi",
+                              ),
+                            ),
+                            SizedBox(width: 4.sw),
+                            Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 14.sw),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ──────────────────── SECTION HEADER ────────────────────
   Widget _sectionHeader(String title, {required VoidCallback onSeeAll}) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 22.sw),
@@ -679,7 +1085,7 @@ void _openUserProfile() {
               title,
               style: TextStyle(
                 color: purple,
-                fontSize: 24.sp,
+                fontSize: 22.sp,
                 fontWeight: FontWeight.bold,
                 fontFamily: "Satoshi",
               ),
@@ -691,7 +1097,7 @@ void _openUserProfile() {
             child: Text(
               "See all",
               style: TextStyle(
-                color: brown,
+                color: purple,
                 fontSize: 12.sp,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.2,
@@ -704,10 +1110,220 @@ void _openUserProfile() {
     );
   }
 
+  // ──────────────────── WEEKLY HEADER (RichText underline) ────────────────────
+  Widget _weeklyHeader() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 22.sw),
+      child: Row(
+        children: [
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(
+                  color: purple,
+                  fontSize: 22.sp,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: "Satoshi",
+                ),
+                children: [
+                  const TextSpan(text: "Recipes of the "),
+                  WidgetSpan(
+                    alignment: PlaceholderAlignment.baseline,
+                    baseline: TextBaseline.alphabetic,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Week",
+                          style: TextStyle(
+                            color: purple,
+                            fontSize: 22.sp,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: "Satoshi",
+                          ),
+                        ),
+                        Container(
+                          height: 3.sh,
+                          width: 50.sw,
+                          decoration: BoxDecoration(
+                            color: orange,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SizedBox(width: 8.sw),
+          GestureDetector(
+            onTap: _openWeeklyRecipes,
+            child: Text(
+              "See all",
+              style: TextStyle(
+                color: purple,
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.2,
+                fontFamily: "Satoshi",
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ──────────────────── WEEKLY FEATURE CARD (single big card) ────────────────────
+  Widget _weeklyFeatureCard() {
+    if (loading) {
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 22.sw),
+        child: SkeletonBox(
+          width: double.infinity,
+          height: 160.sh,
+          borderRadius: BorderRadius.all(Radius.circular(24.sw)),
+        ),
+      );
+    }
+
+    if (weekly.isEmpty) return const SizedBox();
+
+    final r = weekly.first;
+    final timeText = r.minutes > 0 ? "${r.minutes} min" : "";
+    final diffText = r.difficulty ?? "";
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 22.sw),
+      child: GestureDetector(
+        onTap: () => _openRecipe(r),
+        child: Container(
+          height: 160.sh,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24.sw),
+            boxShadow: [
+              BoxShadow(
+                color: purple.withValues(alpha: 0.15),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24.sw),
+            child: Stack(
+              children: [
+                // Background Image (full)
+                Positioned.fill(
+                  child: Image.network(
+                    r.imageUrl ?? "",
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(color: chipBg),
+                  ),
+                ),
+                // Gradient Overlay
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          purple.withValues(alpha: 0.2),
+                          purple.withValues(alpha: 0.85),
+                        ],
+                        stops: const [0.0, 0.4, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
+                // Badge
+                Positioned(
+                  top: 14.sh,
+                  left: 14.sw,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 4.sh),
+                    decoration: BoxDecoration(
+                      color: orange,
+                      borderRadius: BorderRadius.circular(8.sw),
+                    ),
+                    child: Text(
+                      "🔥 TRENDING",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 9.sp,
+                        fontWeight: FontWeight.w900,
+                        fontFamily: "Satoshi",
+                      ),
+                    ),
+                  ),
+                ),
+                // Content
+                Positioned(
+                  left: 16.sw,
+                  bottom: 16.sh,
+                  right: 60.sw,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        r.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w800,
+                          fontFamily: "Satoshi",
+                        ),
+                      ),
+                      SizedBox(height: 4.sh),
+                      Row(
+                        children: [
+                          if (timeText.isNotEmpty) ...[
+                            Icon(Icons.access_time_rounded, color: Colors.white70, size: 12.sw),
+                            SizedBox(width: 4.sw),
+                            Text(timeText, style: TextStyle(color: Colors.white70, fontSize: 11.sp)),
+                          ],
+                          if (timeText.isNotEmpty && diffText.isNotEmpty) SizedBox(width: 10.sw),
+                          if (diffText.isNotEmpty) ...[
+                            Icon(Icons.signal_cellular_alt_rounded, color: Colors.white70, size: 12.sw),
+                            SizedBox(width: 4.sw),
+                            Text(diffText, style: TextStyle(color: Colors.white70, fontSize: 11.sp)),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // Arrow
+                Positioned(
+                  right: 16.sw,
+                  bottom: 16.sh,
+                  child: Container(
+                    width: 36.sw,
+                    height: 36.sw,
+                    decoration: BoxDecoration(color: orange, shape: BoxShape.circle),
+                    child: Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18.sw),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ──────────────────── CARDS ────────────────────
   Widget _horizontalCards(List<Recipe>? list) {
     if (list == null) {
       return SizedBox(
-        height: 270.sh,
+        height: 240.sh,
         child: ListView.separated(
           padding: EdgeInsets.symmetric(horizontal: 22.sw),
           scrollDirection: Axis.horizontal,
@@ -733,7 +1349,7 @@ void _openUserProfile() {
     }
 
     return SizedBox(
-      height: 231.sh,
+      height: 190.sh,
       child: ListView.separated(
         padding: EdgeInsets.symmetric(horizontal: 22.sw),
         scrollDirection: Axis.horizontal,
@@ -746,14 +1362,14 @@ void _openUserProfile() {
 
   Widget _recipeCardSkeleton() {
     return SizedBox(
-      width: 160.sw,
+      width: 155.sw,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SkeletonBox(
-            width: 160.sw,
-            height: 180.sh,
-            borderRadius: BorderRadius.all(Radius.circular(20.sw)),
+            width: 135.sw,
+            height: 150.sh,
+            borderRadius: BorderRadius.all(Radius.circular(18.sw)),
           ),
           SizedBox(height: 10.sh),
           SkeletonBox(
@@ -774,11 +1390,11 @@ void _openUserProfile() {
 
   Widget _recipeCard(Recipe r) {
     return SizedBox(
-      width: 161.sw,
+      width: 135.sw,
       child: RecipeCard(
         recipe: r,
-        width: 161.sw,
-        aspectRatio: 161 / 231,
+        width: 135.sw,
+        aspectRatio: 135 / 190,
         onTap: () => _openRecipe(r),
       ),
     );

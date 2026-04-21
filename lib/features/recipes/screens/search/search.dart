@@ -57,7 +57,6 @@ class _SearchScreenState extends State<SearchScreen> {
   final Color bg = const Color(0xFFFFF3EB);
   final Color searchBarBg = const Color(0xFFFDECE4);
   final Color purple = const Color(0xFF462F4D);
-  final Color brown = const Color(0xFF433020);
   final Color orange = const Color(0xFFEF8A54);
 
   @override
@@ -562,7 +561,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 'assets/food/pantry.png', 
                 width: 28,
                 height: 28,
-                errorBuilder: (_, __, ___) => Icon(Icons.shopping_bag, size: 30, color: brown),
+                errorBuilder: (_, __, ___) => Icon(Icons.shopping_bag, size: 30, color: purple),
               ),
             )
           else

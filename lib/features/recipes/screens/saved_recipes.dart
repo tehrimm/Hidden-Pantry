@@ -590,7 +590,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
               color: cardColor,
               borderRadius: BorderRadius.circular(38.sw),
             ),
-            child: Icon(Icons.add, color: const Color(0xFF74503C), size: 30.sp),
+            child: Icon(Icons.add, color: purple, size: 30.sp),
           ),
         ),
         SizedBox(height: 8.sh),

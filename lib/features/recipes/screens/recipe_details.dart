@@ -793,8 +793,11 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                 width: double.infinity,
                 height: 62.sh,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF462F4D), Color(0xFF5D4164)],
+                  gradient: LinearGradient(
+                    colors: [
+                      textColor,
+                      textColor.withValues(alpha: 0.85),
+                    ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
