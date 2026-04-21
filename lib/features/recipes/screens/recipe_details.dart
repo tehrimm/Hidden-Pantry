@@ -12,6 +12,7 @@ import 'package:hidden_pantry_app/core/widgets/add_to_cookbook_bottom_sheet.dart
 import 'author_profile.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_rating_widget.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
+import 'package:hidden_pantry_app/core/utils/ingredient_icon_mapper.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:flutter/rendering.dart';
@@ -56,6 +57,8 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   late final RecipeService _recipeService;
   final LocalRecipeService _localService = LocalRecipeService();
   final ScrollController _scrollController = ScrollController();
+  late final PageController _authorPageController;
+  double _authorPage = 0.0;
   bool _fabExpanded = false;
   bool get _isUnderTest => widget.apiService != null;
 
@@ -71,6 +74,10 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
     
     // Immediately fetch full details
     _scrollController.addListener(_scrollListener);
+    _authorPageController = PageController(viewportFraction: 0.7);
+    _authorPageController.addListener(() {
+      if (mounted) setState(() => _authorPage = _authorPageController.page ?? 0.0);
+    });
     _loadFullDetails();
     _checkBookmarkStatus();
     _checkLikeStatus();
@@ -103,6 +110,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   void dispose() {
     _scrollController.removeListener(_scrollListener);
     _scrollController.dispose();
+    _authorPageController.dispose();
     super.dispose();
   }
 
@@ -798,7 +806,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                 padding: EdgeInsets.symmetric(horizontal: 20.sw),
                 child: Row(
                   children: [
-                    Icon(Icons.rate_review_rounded, size: 22.sw, color: const Color(0xFFFFF2EA)),
+                    Icon(Icons.star_outline_rounded, size: 22.sw, color: orange),
                     SizedBox(width: 14.sw),
                     Expanded(
                       child: Text(
@@ -812,7 +820,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                       ),
                     ),
                     Icon(Icons.arrow_forward_ios_rounded,
-                        size: 14.sw, color: const Color(0xFFFFF2EA).withValues(alpha: 0.5)),
+                        size: 14.sw, color: const Color(0xFFFFF2EA)),
                   ],
                 ),
               ),
@@ -828,14 +836,28 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  "Ingredients",
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.w800,
-                    fontFamily: "Satoshi",
-                  ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Ingredients",
+                      style: TextStyle(
+                        color: textColor,
+                        fontSize: 24.sp,
+                        fontWeight: FontWeight.w800,
+                        fontFamily: "Satoshi",
+                      ),
+                    ),
+                    SizedBox(height: 4.sh),
+                    Container(
+                      width: 60.sw,
+                      height: 4.sh,
+                      decoration: BoxDecoration(
+                        color: orange,
+                        borderRadius: BorderRadius.circular(2.sw),
+                      ),
+                    ),
+                  ],
                 ),
                 _servingControl(),
               ],
@@ -862,6 +884,21 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                   children: [
                     Row(
                       children: [
+                        Container(
+                          width: 32.sw,
+                          height: 32.sw,
+                          decoration: BoxDecoration(
+                            color: cardColor,
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: Icon(
+                            IngredientIconMapper.getIcon(ing.name),
+                            color: textColor,
+                            size: 16.sw,
+                          ),
+                        ),
+                        SizedBox(width: 12.sw),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -976,14 +1013,28 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
 
           _StaggeredEntry(
             delay: 650,
-            child: Text(
-              "Directions",
-              style: TextStyle(
-                color: textColor,
-                fontSize: 24.sp,
-                fontWeight: FontWeight.w800,
-                fontFamily: "Satoshi",
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Cooking Directions",
+                  style: TextStyle(
+                    color: textColor,
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: "Satoshi",
+                  ),
+                ),
+                SizedBox(height: 4.sh),
+                Container(
+                  width: 40.sw,
+                  height: 4.sh,
+                  decoration: BoxDecoration(
+                    color: orange,
+                    borderRadius: BorderRadius.circular(2.sw),
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -1035,22 +1086,15 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                           Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                width: 24.sw,
-                                height: 24.sw,
-                                decoration: BoxDecoration(
-                                  color: orange.withValues(alpha:0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    "${i + 1}",
-                                    style: TextStyle(
-                                      color: orange,
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w900,
-                                      fontFamily: "Satoshi",
-                                    ),
+                              Padding(
+                                padding: EdgeInsets.only(top: 2.sh),
+                                child: Text(
+                                  "${i + 1}.",
+                                  style: TextStyle(
+                                    color: orange,
+                                    fontSize: 16.sp,
+                                    fontWeight: FontWeight.w900,
+                                    fontFamily: "Satoshi",
                                   ),
                                 ),
                               ),
@@ -1148,86 +1192,141 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
             _StaggeredEntry(
               delay: 800,
               child: SizedBox(
-                height: 230.sh,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
+                height: 240.sh,
+                child: PageView.builder(
+                  controller: _authorPageController,
                   itemCount: _authorRecipes.length,
-                  separatorBuilder: (_, __) => SizedBox(width: 14.sw),
                   itemBuilder: (context, index) {
                     final ar = _authorRecipes[index];
-                    return _StaggeredEntry(
-                      delay: 800 + (index * 100),
-                      child: GestureDetector(
-                    onTap: () {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (!mounted) return;
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => RecipeDetailsScreen(recipe: ar),
-                          ),
-                        );
-                      });
-                    },
-                    child: Container(
-                      width: 140.sw,
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(15.sw),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(15.sw)),
-                            child: AspectRatio(
-                              aspectRatio: 1,
-                              child: _netImage(
-                                url: ar.imageUrl,
-                                fallback: Image.asset('assets/logos/recipe_placeholder.jpg', fit: BoxFit.cover),
-                              ),
+                    final double diff = (index - _authorPage).abs();
+                    final double scale = (1.0 - (diff * 0.15)).clamp(0.85, 1.0);
+                    final double opacity = (1.0 - (diff * 0.3)).clamp(0.5, 1.0);
+
+                    return Transform.scale(
+                      scale: scale,
+                      child: Opacity(
+                        opacity: opacity,
+                        child: GestureDetector(
+                          onTap: () {
+                            WidgetsBinding.instance.addPostFrameCallback((_) {
+                              if (!mounted) return;
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => RecipeDetailsScreen(recipe: ar),
+                                ),
+                              );
+                            });
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: cardColor,
+                              borderRadius: BorderRadius.circular(20.sw),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: textColor.withValues(alpha: 0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 8.sw, vertical: 4.sh),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  ar.name,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: TextStyle(
-                                    color: textColor,
-                                    fontSize: 13.sp,
-                                    fontWeight: FontWeight.w700,
-                                    fontFamily: "Satoshi",
+                                Expanded(
+                                  child: Stack(
+                                    children: [
+                                      Positioned.fill(
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.vertical(top: Radius.circular(20.sw)),
+                                          child: _netImage(
+                                            url: ar.imageUrl,
+                                            fallback: Image.asset('assets/logos/recipe_placeholder.jpg', fit: BoxFit.cover),
+                                          ),
+                                        ),
+                                      ),
+                                      Positioned(
+                                        right: 8.sw,
+                                        top: 8.sw,
+                                        child: Container(
+                                          padding: EdgeInsets.symmetric(horizontal: 8.sw, vertical: 4.sh),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black54,
+                                            borderRadius: BorderRadius.circular(10.sw),
+                                          ),
+                                          child: Row(
+                                            children: [
+                                              Icon(Icons.schedule_rounded, color: Colors.white, size: 10.sw),
+                                              SizedBox(width: 4.sw),
+                                              Text(
+                                                "${ar.minutes} min",
+                                                style: TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 10.sp,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
-                                SizedBox(height: 2.sh),
-                                RecipeRatingWidget(
-                                  recipeId: ar.id,
-                                  initialRating: ar.avgRating,
-                                  style: TextStyle(
-                                    color: textColor,
-                                    fontSize: 10.sp,
-                                    fontFamily: "Satoshi",
+                                Padding(
+                                  padding: EdgeInsets.all(10.sw),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        ar.name,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: textColor,
+                                          fontSize: 13.sp,
+                                          fontWeight: FontWeight.w800,
+                                          fontFamily: "Satoshi",
+                                        ),
+                                      ),
+                                      SizedBox(height: 4.sh),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          RecipeRatingWidget(
+                                            recipeId: ar.id,
+                                            initialRating: ar.avgRating,
+                                            style: TextStyle(
+                                              color: textColor.withValues(alpha: 0.7),
+                                              fontSize: 10.sp,
+                                              fontFamily: "Satoshi",
+                                            ),
+                                          ),
+                                          Text(
+                                            ar.difficulty ?? "Easy",
+                                            style: TextStyle(
+                                              color: orange,
+                                              fontSize: 10.sp,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
                             ),
                           ),
-                        ],
+                        ),
                       ),
-                    ), // Container
-                  ), // GestureDetector
-                ); // _StaggeredEntry
-              },
+                    );
+                  },
+                ),
+              ),
             ),
-          ),
-        ),
-      ],
-    ],
+          ],
+        ],
       ),
     );
   }
