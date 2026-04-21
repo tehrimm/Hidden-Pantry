@@ -30,7 +30,7 @@ class SavedRecipesScreen extends StatefulWidget {
 class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
   final Color bg = const Color(0xFFFFF3EB);
   final Color purple = const Color(0xFF462F4D);
-  final Color cardColor = const Color(0xFFF9E3D5);
+  final Color cardColor = const Color(0xFFFDECE4);
   final Color orange = const Color(0xFFEF8A54);
 
   final RecipeService _recipeService = RecipeService();
