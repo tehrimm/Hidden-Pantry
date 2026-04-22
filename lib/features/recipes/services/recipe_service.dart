@@ -720,6 +720,7 @@ class RecipeService {
             
         // 1. Process valid docs from Firestore
         final List<String> validFetchedIds = [];
+        final Map<String, Map<String, dynamic>> partialDocs = {};
         
         for (var doc in snap.docs) {
           final data = doc.data();
@@ -734,6 +735,7 @@ class RecipeService {
           } else {
             // It's a partial doc. Don't add to results, let it be fetched from API
             print("[RecipeService] Found partial doc for ${doc.id}, will fetch from API.");
+            partialDocs[doc.id] = data;
           }
         }
         
@@ -747,6 +749,21 @@ class RecipeService {
             results.add(r);
           } catch (e) {
             print("[RecipeService] API fallback failed for $id: $e");
+            if (partialDocs.containsKey(id)) {
+               final data = partialDocs[id]!;
+               data['name'] = "Recipe Unavailable";
+               data['minutes'] = 0;
+               results.add(Recipe.fromJson(data));
+            } else {
+               results.add(Recipe(
+                 id: id, 
+                 name: "Recipe Unavailable", 
+                 minutes: 0, 
+                 avgRating: 0.0, 
+                 authorName: "System",
+                 imageUrl: null
+               ));
+            }
           }
         }
       } catch (e) {
