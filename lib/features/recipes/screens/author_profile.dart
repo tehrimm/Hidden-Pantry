@@ -42,21 +42,34 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
   Map<String, dynamic> _stats = {};
   bool _isFollowing = false;
 
+  int _limit = 20;
+  bool _loadingMore = false;
+  bool _hasMore = true;
+
   @override
   void initState() {
     super.initState();
     _loadData();
   }
 
-  Future<void> _loadData() async {
-    setState(() => _loading = true);
+  Future<void> _loadMore() async {
+    if (_loadingMore || !_hasMore) return;
+    setState(() {
+      _loadingMore = true;
+      _limit += 10;
+    });
+    await _loadData(isLoadMore: true);
+  }
+
+  Future<void> _loadData({bool isLoadMore = false}) async {
+    if (!isLoadMore) setState(() => _loading = true);
     try {
       final results = await Future.wait([
         _api.getAuthorStats(widget.authorId).catchError((e) {
           print("[AuthorProfile] Stats error: $e");
           return <String, dynamic>{};
         }),
-        _api.fetchRecipesByAuthor(widget.authorId, limit: 20).catchError((e) {
+        _api.fetchRecipesByAuthor(widget.authorId, limit: _limit).catchError((e) {
           print("[AuthorProfile] Recipes error: $e");
           return <Recipe>[];
         }),
@@ -85,7 +98,9 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
             if (r.id.isNotEmpty && r.isPublic) byId[r.id] = r;
           }
           _recipes = byId.values.toList();
-          _stats['recipe_count'] = _recipes.length;
+          if (_stats['recipe_count'] == null || _stats['recipe_count'] == 0) {
+            _stats['recipe_count'] = _recipes.length;
+          }
           _isFollowing = results[3] as bool;                                  
 
           final firestoreFollowStats = results[4] as Map<String, int>;        
@@ -96,19 +111,27 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
           _stats['following'] = firestoreFollowStats['following'];
           
           
-          if (firestoreMetricStats.containsKey('recipe_count')) {
+          if (firestoreMetricStats.containsKey('recipe_count') && (firestoreMetricStats['recipe_count'] as int) > 0) {
             _stats['recipe_count'] = firestoreMetricStats['recipe_count'];
           }
           if (firestoreMetricStats.containsKey('avg_rating')) {
             _stats['avg_rating'] = firestoreMetricStats['avg_rating'];
           }
 
-          _loading = false;
+          if (isLoadMore) _loadingMore = false;
+          else _loading = false;
+          
+          if (_recipes.length < _limit) _hasMore = false;
         });
       }
     } catch (e) {
       print("[AuthorProfile] Error loading data: $e");
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _loadingMore = false;
+        });
+      }
     }
   }
 
@@ -324,8 +347,35 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
               padding: EdgeInsets.only(top: 40.sh),
               child: Text("No recipes posted yet.", style: TextStyle(color: textColor.withValues(alpha:0.5), fontSize: 14.sp)),
             )
-          else
+          else ...[
             _buildRecipeGrid(),
+            if (_hasMore)
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: 20.sh),
+                child: Center(
+                  child: _loadingMore
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: orange),
+                        )
+                      : GestureDetector(
+                          onTap: _loadMore,
+                          child: Text(
+                            "Load 10 more recipes",
+                            style: TextStyle(
+                              color: orange,
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: "Satoshi",
+                              decoration: TextDecoration.underline,
+                              decorationColor: orange,
+                            ),
+                          ),
+                        ),
+                ),
+              ),
+          ],
           
           SizedBox(height: 40.sh),
         ],

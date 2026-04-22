@@ -47,5 +47,9 @@
 		<true/>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>NSSpeechRecognitionUsageDescription</key>
+		<string>We use speech recognition to let you search recipes by voice.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>We use your microphone to capture your voice for recipe searching.</string>
 	</dict>
 </plist>

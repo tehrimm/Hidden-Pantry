@@ -12,6 +12,7 @@ import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart'
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
+import 'package:hidden_pantry_app/core/utils/toaster.dart';
 
 import 'package:hidden_pantry_app/features/recipes/screens/category_screen.dart';
 import 'package:hidden_pantry_app/features/user/screens/user_profile.dart';
@@ -29,6 +30,8 @@ import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
 import 'package:hidden_pantry_app/features/user/screens/notifications_screen.dart';
 import 'package:hidden_pantry_app/core/services/notification_service.dart';
 import 'package:hidden_pantry_app/features/user/models/notification_model.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:permission_handler/permission_handler.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool inShell;
@@ -73,6 +76,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final ScrollController _tagScrollController = ScrollController();
 
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isSpeechAvailable = false;
+  bool _isListening = false;
+
   @override
   void dispose() {
     _tagScrollController.dispose();
@@ -84,6 +91,65 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _checkNutritionistStatus();
     _loadHome();
+    _initSpeech();
+  }
+
+  Future<void> _initSpeech() async {
+    try {
+      _isSpeechAvailable = await _speech.initialize(
+        onStatus: (status) => print("[Speech] Status: $status"),
+        onError: (errorNotification) => print("[Speech] Error: $errorNotification"),
+      );
+      if (mounted) setState(() {});
+    } catch (e) {
+      print("[Speech] Init error: $e");
+    }
+  }
+
+  void _toggleListening() async {
+    // Check permission first
+    try {
+      var status = await Permission.microphone.status;
+      if (status.isDenied) {
+        status = await Permission.microphone.request();
+        if (!status.isGranted) {
+          if (mounted) Toaster.show(context, "Microphone permission is required for voice search.", isError: true);
+          return;
+        }
+        // If just granted, re-init speech
+        await _initSpeech();
+      }
+    } catch (e) {
+      print("[Speech] Permission check error: $e");
+      if (mounted) Toaster.show(context, "Could not access microphone. Please restart the app.", isError: true);
+      return;
+    }
+
+    if (_isListening) {
+      await _speech.stop();
+      setState(() => _isListening = false);
+    } else {
+      if (_isSpeechAvailable) {
+        setState(() => _isListening = true);
+        await _speech.listen(
+          onResult: (result) {
+            if (result.finalResult) {
+              setState(() => _isListening = false);
+              if (result.recognizedWords.isNotEmpty) {
+                // Navigate to search with the words
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => SearchScreen(initialQuery: result.recognizedWords)),
+                );
+              }
+            }
+          },
+        );
+      } else {
+        Toaster.show(context, "Voice search is not ready. Please try again in a moment.", isError: true);
+        _initSpeech();
+      }
+    }
   }
 
   Future<void> _checkNutritionistStatus() async {
@@ -812,21 +878,28 @@ void _openUserProfile() {
                   ),
                 ),
               ),
-              // Filter button
+              // Voice search button (formerly filter)
               GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
-                  HapticFeedback.lightImpact();
-                  _openSearch(openFilters: true);
+                  HapticFeedback.mediumImpact();
+                  _toggleListening();
                 },
                 child: Container(
                   width: 36.sw,
                   height: 36.sw,
                   decoration: BoxDecoration(
-                    color: purple,
+                    color: _isListening ? orange : purple,
                     borderRadius: BorderRadius.circular(18.sw),
+                    boxShadow: _isListening ? [
+                      BoxShadow(color: orange.withValues(alpha: 0.4), blurRadius: 10, spreadRadius: 2)
+                    ] : null,
                   ),
-                  child: Icon(Icons.tune_rounded, color: Colors.white, size: 16.sw),
+                  child: Icon(
+                    _isListening ? Icons.graphic_eq_rounded : Icons.mic_rounded, 
+                    color: Colors.white, 
+                    size: 18.sw
+                  ),
                 ),
               ),
             ],
@@ -1368,7 +1441,7 @@ void _openUserProfile() {
           padding: EdgeInsets.symmetric(horizontal: 22.sw),
           scrollDirection: Axis.horizontal,
           itemBuilder: (_, __) => _recipeCardSkeleton(),
-          separatorBuilder: (_, __) => SizedBox(width: 12.sw),
+          separatorBuilder: (_, __) => SizedBox(width: 8.sw),
           itemCount: 3,
         ),
       );

@@ -26,7 +26,14 @@ class SearchScreen extends StatefulWidget {
   final bool inShell;
   final RecipeApiService? apiService;
   final bool openFilters;
-  const SearchScreen({super.key, this.inShell = false, this.apiService, this.openFilters = false});
+  final String? initialQuery; // Added this
+  const SearchScreen({
+    super.key, 
+    this.inShell = false, 
+    this.apiService, 
+    this.openFilters = false,
+    this.initialQuery,
+  });
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -79,6 +86,14 @@ class _SearchScreenState extends State<SearchScreen> {
     if (widget.openFilters) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _openFilters();
+      });
+    }
+
+    if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
+      _controller.text = widget.initialQuery!;
+      _hasSearched = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _performSearch(widget.initialQuery!);
       });
     }
   }
