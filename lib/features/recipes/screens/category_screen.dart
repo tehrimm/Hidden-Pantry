@@ -262,7 +262,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
         padding: EdgeInsets.only(bottom: 20.sh, top: 10.sh),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          childAspectRatio: 157 / 231,
+          childAspectRatio: 157 / 250,
           crossAxisSpacing: 16.sw,
           mainAxisSpacing: 16.sh,
         ),
@@ -307,7 +307,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           sliver: SliverGrid(
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 157 / 231, // Match snippet ratio
+              childAspectRatio: 157 / 250, // Match snippet ratio
               crossAxisSpacing: 15.sw, // Approx space
               mainAxisSpacing: 15.sh,
             ),
@@ -410,4 +410,3 @@ class _CategoryBackgroundPattern extends StatelessWidget {
     );
   }
 }
-

@@ -53,7 +53,7 @@ class RecipeCard extends StatelessWidget {
           Positioned.fill(
             bottom: showManagement ? 70 : 66,
             child: Padding(
-              padding: const EdgeInsets.all(5.0),
+              padding: const EdgeInsets.all(2.0),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(16),
                 child: Container(

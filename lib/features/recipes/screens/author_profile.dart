@@ -365,7 +365,7 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 157 / 231, // Standard aspect ratio for cards
+        childAspectRatio: 157 / 250, // Standard aspect ratio for cards
         crossAxisSpacing: 16.sw,
         mainAxisSpacing: 16.sh,
       ),
@@ -448,7 +448,7 @@ class _ProfileSkeleton extends StatelessWidget {
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 157 / 231,
+              childAspectRatio: 157 / 250,
               crossAxisSpacing: 16.sw,
               mainAxisSpacing: 16.sh,
             ),

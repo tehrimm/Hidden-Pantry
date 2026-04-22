@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_api_service.dart';
@@ -26,6 +27,8 @@ import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_set
 import 'package:hidden_pantry_app/features/user/services/follow_service.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
 import 'package:hidden_pantry_app/features/user/screens/notifications_screen.dart';
+import 'package:hidden_pantry_app/core/services/notification_service.dart';
+import 'package:hidden_pantry_app/features/user/models/notification_model.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool inShell;
@@ -338,7 +341,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => CategoriesScreen(
-          title: isAll ? "Recommendation" : selectedTag,
+          title: isAll ? "Quick ideas for you" : selectedTag,
           tag: selectedTag,
           allergies: userAllergies,
         ),
@@ -346,8 +349,11 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  void _openSearch() {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen())).then((_) {
+  void _openSearch({bool openFilters = false}) {
+    Navigator.push(
+      context, 
+      MaterialPageRoute(builder: (_) => SearchScreen(openFilters: openFilters))
+    ).then((_) {
       // Reset bottom nav to home when returning from search
       if (mounted) {
         setState(() => bottomIndex = 0);
@@ -709,21 +715,36 @@ void _openUserProfile() {
           // Notification icon (replaced search)
           GestureDetector(
             onTap: _openNotifications,
-            child: Container(
-              width: 44.sw,
-              height: 44.sw,
-              decoration: BoxDecoration(
-                color: chipBg,
-                borderRadius: BorderRadius.circular(14.sw),
-              ),
-              child: Center(
-                child: Image.asset(
-                  "assets/icons/notification.png",
-                  width: 22.sw,
-                  height: 22.sw,
-                  color: purple,
-                ),
-              ),
+            child: StreamBuilder<List<AppNotification>>(
+              stream: NotificationService().streamNotifications(),
+              builder: (context, snapshot) {
+                final hasUnread = snapshot.hasData && snapshot.data!.any((n) => !n.isRead);
+                return Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Image.asset(
+                      "assets/icons/notification.png",
+                      width: 26.sw,
+                      height: 26.sw,
+                      color: purple,
+                    ),
+                    if (hasUnread)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          width: 8.sw,
+                          height: 8.sw,
+                          decoration: BoxDecoration(
+                            color: orange,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: bg, width: 1.5),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              }
             ),
           ),
         ],
@@ -792,14 +813,21 @@ void _openUserProfile() {
                 ),
               ),
               // Filter button
-              Container(
-                width: 36.sw,
-                height: 36.sw,
-                decoration: BoxDecoration(
-                  color: purple,
-                  borderRadius: BorderRadius.circular(18.sw),
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _openSearch(openFilters: true);
+                },
+                child: Container(
+                  width: 36.sw,
+                  height: 36.sw,
+                  decoration: BoxDecoration(
+                    color: purple,
+                    borderRadius: BorderRadius.circular(18.sw),
+                  ),
+                  child: Icon(Icons.tune_rounded, color: Colors.white, size: 16.sw),
                 ),
-                child: Icon(Icons.tune_rounded, color: Colors.white, size: 16.sw),
               ),
             ],
           ),
@@ -906,7 +934,7 @@ void _openUserProfile() {
             ),
           );
         },
-        separatorBuilder: (_, __) => SizedBox(width: 8.sw),
+        separatorBuilder: (_, __) => SizedBox(width: 6.sw),
         itemCount: chips.length,
       ),
     );
@@ -914,7 +942,19 @@ void _openUserProfile() {
 
   // ──────────────────── HERO CARD (Stack with ClipPath) ────────────────────
   Widget _heroCard() {
-    if (recommendations.isEmpty) return const SizedBox();
+    if (recommendations.isEmpty) {
+      if (loading) {
+        return Padding(
+          padding: EdgeInsets.symmetric(horizontal: 22.sw),
+          child: SkeletonBox(
+            width: double.infinity,
+            height: 180.sh,
+            borderRadius: BorderRadius.circular(24.sw),
+          ),
+        );
+      }
+      return const SizedBox();
+    }
 
     final r = recommendations.first;
     final timeText = r.minutes > 0 ? "${r.minutes} min" : "";
@@ -1328,7 +1368,7 @@ void _openUserProfile() {
           padding: EdgeInsets.symmetric(horizontal: 22.sw),
           scrollDirection: Axis.horizontal,
           itemBuilder: (_, __) => _recipeCardSkeleton(),
-          separatorBuilder: (_, __) => SizedBox(width: 8.sw),
+          separatorBuilder: (_, __) => SizedBox(width: 12.sw),
           itemCount: 3,
         ),
       );
@@ -1354,7 +1394,7 @@ void _openUserProfile() {
         padding: EdgeInsets.symmetric(horizontal: 22.sw),
         scrollDirection: Axis.horizontal,
         itemBuilder: (_, i) => _recipeCard(list[i]),
-        separatorBuilder: (_, __) => SizedBox(width: 8.sw),
+        separatorBuilder: (_, __) => SizedBox(width: 14.sw),
         itemCount: list.length,
       ),
     );

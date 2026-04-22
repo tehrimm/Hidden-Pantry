@@ -450,7 +450,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.65,
+        childAspectRatio: 157 / 250,
         crossAxisSpacing: 15.sw,
         mainAxisSpacing: 15.sh,
       ),

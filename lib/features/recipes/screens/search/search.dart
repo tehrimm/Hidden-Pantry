@@ -25,7 +25,8 @@ import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
 class SearchScreen extends StatefulWidget {
   final bool inShell;
   final RecipeApiService? apiService;
-  const SearchScreen({super.key, this.inShell = false, this.apiService});
+  final bool openFilters;
+  const SearchScreen({super.key, this.inShell = false, this.apiService, this.openFilters = false});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -74,6 +75,12 @@ class _SearchScreenState extends State<SearchScreen> {
     _loadRecentSearches();
     _loadUserAllergies();
     _searchFocus.addListener(_onFocusChange);
+
+    if (widget.openFilters) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _openFilters();
+      });
+    }
   }
 
   void _onFocusChange() {
@@ -677,7 +684,7 @@ class _SearchScreenState extends State<SearchScreen> {
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 157 / 231,
+              childAspectRatio: 157 / 250,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
             ),
@@ -741,7 +748,7 @@ class _SearchScreenState extends State<SearchScreen> {
           sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 157 / 231,
+              childAspectRatio: 157 / 250,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
             ),
