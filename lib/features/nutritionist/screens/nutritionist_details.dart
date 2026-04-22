@@ -1,27 +1,27 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
-import 'package:hidden_pantry_app/core/services/notification_service.dart';
-import 'package:hidden_pantry_app/features/user/models/notification_model.dart';
-
-import 'dart:ui'; // For ImageFilter
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
+import 'package:hidden_pantry_app/core/services/notification_service.dart';
+import 'package:hidden_pantry_app/features/user/models/notification_model.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/features/user/services/stripe_service.dart';
-import 'package:hidden_pantry_app/features/user/screens/tier_comparison_screen.dart'; // NEW
+import 'package:hidden_pantry_app/features/user/screens/tier_comparison_screen.dart';
 import 'package:hidden_pantry_app/features/user/screens/meal_plan_view.dart';
 import 'package:hidden_pantry_app/core/services/view_mode_service.dart';
-import 'package:flutter/services.dart';
 import 'package:hidden_pantry_app/features/nutritionist/services/nutritionist_service.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
-import 'chat_interface_part.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+import 'chat_interface_part.dart';
 
 class NutritionistDetailsScreen extends StatefulWidget {
   final String nutritionistId;
@@ -65,6 +65,11 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        HapticFeedback.lightImpact();
+      }
+    });
     _checkSubscription();
     _checkUserRole();
     _countsFuture = _fetchCountsDetailed(); // Initialize once
@@ -413,7 +418,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
             final doc = snapshot.data!.docs[index];
             final Map<String, dynamic> data = Map<String, dynamic>.from(doc.data() as Map<String, dynamic>);
             data["id"] = doc.id; // Correctly pass document ID
-            return _tipCard(data);
+            return _animatedItem(index, _tipCard(data));
           },
         );
       },
@@ -442,7 +447,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
             final Timestamp? ts = d['timestamp'] as Timestamp?;
             final String time = ts != null ? _timeAgo(ts.toDate()) : '';
 
-            return Container(
+            return _animatedItem(index, Container(
               margin: EdgeInsets.only(bottom: 14.sh),
               padding: EdgeInsets.all(16.sw),
               decoration: BoxDecoration(
@@ -479,7 +484,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
                   ],
                 ],
               ),
-            );
+            ));
           },
         );
       },
@@ -1236,124 +1241,240 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
             final data = plans[index].data() as Map<String, dynamic>;
             // Ensure ID is passed for payment
             data['id'] = plans[index].id;
-            return _planCard(data);
+            return _planCard(data, index);
           },
         );
       },
     );
   }
 
-  // Reuse _planCard but ensure it handles button text correctly
-  Widget _planCard(Map<String, dynamic> data) {
+  Widget _planCard(Map<String, dynamic> data, int index) {
     final List benefits = data["benefits"] ?? [];
-    // ... (rest of logic)
-    // Check if this plan is the current one
     final int tier = data["tierLevel"] ?? 1;
     final bool isCurrent = _isSubscribed && _currentTier == tier;
     
-    return Container(
-      margin: EdgeInsets.only(bottom: 20.sh),
-      padding: EdgeInsets.all(24.sw),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24.sw),
-        boxShadow: [
-          BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 15.sw, offset: Offset(0, 8.sh)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-                Text(data["title"] ?? "Tier", style: TextStyle(color: purple, fontSize: 20.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
-               Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 5.sh),
-                decoration: BoxDecoration(
-                  color: (tier == 3 
-                    ? const Color(0xFF4B0082) 
-                    : tier == 2 
-                      ? const Color(0xFFDAA520) 
-                      : const Color(0xFF708090)).withValues(alpha:0.15),
-                  borderRadius: BorderRadius.circular(10.sw),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+    // Tier-specific styling
+    Color tierColor;
+    Color accentColor;
+    IconData tierIcon;
+    String tierName;
+
+    if (tier == 3) {
+      tierColor = purple; // Deep Purple for Platinum
+      accentColor = purple.withValues(alpha: 0.1);
+      tierIcon = Icons.diamond_rounded;
+      tierName = "PLATINUM";
+    } else if (tier == 2) {
+      tierColor = orange; // Vibrant Orange for Gold
+      accentColor = orange.withValues(alpha: 0.1);
+      tierIcon = Icons.star_rounded;
+      tierName = "GOLD";
+    } else {
+      // Silver tier using a soft brand purple
+      tierColor = purple.withValues(alpha: 0.6); 
+      accentColor = bg; // Beige
+      tierIcon = Icons.star_half_rounded;
+      tierName = "SILVER";
+    }
+
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 600 + (index * 100)),
+      tween: Tween(begin: 0.0, end: 1.0),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(0, 30 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: Container(
+              margin: EdgeInsets.only(bottom: 20.sh),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30.sw),
+                boxShadow: [
+                  BoxShadow(
+                    color: tierColor.withValues(alpha: 0.1),
+                    blurRadius: 20.sw.clamp(0.0, 100.0).toDouble(),
+                    offset: Offset(0, 10.sh),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(30.sw),
+                child: Stack(
                   children: [
-                    Icon(
-                      tier == 3 ? Icons.diamond_rounded : (tier == 2 ? Icons.star_rounded : Icons.star_half_rounded), 
-                      size: 12.sw, 
-                      color: tier == 3 ? const Color(0xFF4B0082) : (tier == 2 ? const Color(0xFFDAA520) : const Color(0xFF708090))
+                    // Top Accent Blob
+                    Positioned(
+                      top: -40,
+                      right: -40,
+                      child: Container(
+                        width: 120.sw,
+                        height: 120.sw,
+                        decoration: BoxDecoration(
+                          color: orange.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
                     ),
-                    SizedBox(width: 4.sw),
-                    Text(
-                      tier == 3 ? "PLATINUM" : tier == 2 ? "GOLD" : "SILVER",
-                      style: TextStyle(
-                        color: tier == 3 ? const Color(0xFF4B0082) : (tier == 2 ? const Color(0xFFDAA520) : const Color(0xFF708090)),
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.bold,
+                    
+                    Padding(
+                      padding: EdgeInsets.all(24.sw),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    data["title"] ?? "Plan",
+                                    style: TextStyle(
+                                      color: purple,
+                                      fontSize: 22.sp,
+                                      fontWeight: FontWeight.w900,
+                                      fontFamily: "Satoshi",
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Container(
+                                    padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 4.sh),
+                                    decoration: BoxDecoration(
+                                      color: accentColor,
+                                      borderRadius: BorderRadius.circular(8.sw),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(tierIcon, size: 12.sw, color: orange),
+                                        SizedBox(width: 6.sw),
+                                        Text(
+                                          tierName,
+                                          style: TextStyle(
+                                            color: orange,
+                                            fontSize: 10.sp,
+                                            fontWeight: FontWeight.w900,
+                                            letterSpacing: 1.1,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if (isCurrent)
+                                Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 6.sh),
+                                  decoration: BoxDecoration(
+                                    color: orange.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(12.sw),
+                                    border: Border.all(color: orange.withValues(alpha: 0.2)),
+                                  ),
+                                  child: Text(
+                                    "ACTIVE",
+                                    style: TextStyle(color: orange, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          SizedBox(height: 20.sh),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Text(
+                                "Rs. ${data["price"]}",
+                                style: TextStyle(
+                                  color: orange,
+                                  fontSize: 32.sp,
+                                  fontWeight: FontWeight.w900,
+                                  fontFamily: "Satoshi",
+                                ),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.only(bottom: 6.sh, left: 6.sw),
+                                child: Text(
+                                  "/ ${data["interval"]}",
+                                  style: TextStyle(
+                                    color: purple.withValues(alpha: 0.4),
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 24.sh),
+                          Divider(color: purple.withValues(alpha: 0.05)),
+                          SizedBox(height: 20.sh),
+                          ...benefits.map((b) => Padding(
+                                padding: EdgeInsets.only(bottom: 12.sh),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      padding: EdgeInsets.all(4.sw),
+                                      decoration: BoxDecoration(
+                                        color: orange.withValues(alpha: 0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Icon(Icons.check, color: orange, size: 12.sw),
+                                    ),
+                                    SizedBox(width: 14.sw),
+                                    Expanded(
+                                      child: Text(
+                                        b["title"] ?? "",
+                                        style: TextStyle(
+                                          color: purple.withValues(alpha: 0.8),
+                                          fontSize: 14.sp,
+                                          fontFamily: "Satoshi",
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )),
+                          SizedBox(height: 28.sh),
+                          
+                          if (isCurrent)
+                            SizedBox(
+                              width: double.infinity,
+                              height: 56.sh,
+                              child: OutlinedButton(
+                                onPressed: null,
+                                style: OutlinedButton.styleFrom(
+                                  side: BorderSide(color: purple),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18.sw)),
+                                ),
+                                child: Text("Current Plan", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp)),
+                              ),
+                            )
+                          else 
+                            ElevatedButton(
+                              onPressed: () => _checkPaymentMethodsAndSubscribe(data),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: purple,
+                                foregroundColor: Colors.white,
+                                minimumSize: Size(double.infinity, 56.sh),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18.sw)),
+                                elevation: 8.sh,
+                                shadowColor: tierColor.withValues(alpha: 0.3),
+                              ),
+                              child: Text(
+                                _isSubscribed ? "Switch Plan" : "Get Started Now", 
+                                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi")
+                              ),
+                            )
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
+            ),
           ),
-          SizedBox(height: 8.sh),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text("Rs. ${data["price"]}", style: TextStyle(color: orange, fontSize: 28.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
-              Padding(
-                padding: EdgeInsets.only(bottom: 4.sh, left: 4.sw),
-                child: Text("/ ${data["interval"]}", style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 13.sp, fontWeight: FontWeight.bold)),
-              ),
-            ],
-          ),
-          SizedBox(height: 20.sh),
-          ...benefits.map((b) => Padding(
-                padding: EdgeInsets.only(bottom: 10.sh),
-                child: Row(
-                  children: [
-                    Icon(Icons.check_circle_rounded, color: orange, size: 18.sw),
-                    SizedBox(width: 12.sw),
-                    Expanded(child: Text(b["title"] ?? "", style: TextStyle(color: purple, fontSize: 14.sp))),
-                  ],
-                ),
-              )),
-          SizedBox(height: 24.sh),
-          
-          if (isCurrent)
-            SizedBox(
-              width: double.infinity,
-              height: 56.sh,
-              child: OutlinedButton(
-                onPressed: null,
-                style: OutlinedButton.styleFrom(
-                   side: BorderSide(color: orange),
-                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.sw))
-                ),
-                child: Text("Current Plan", style: TextStyle(color: orange, fontWeight: FontWeight.bold, fontSize: 16.sp)),
-              ),
-            )
-          else 
-            ElevatedButton(
-              onPressed: () => _checkPaymentMethodsAndSubscribe(data),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: purple,
-                foregroundColor: Colors.white,
-                minimumSize: Size(double.infinity, 56.sh),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.sw)),
-                elevation: 0,
-              ),
-              child: Text(
-                _isSubscribed ? "Switch to this Plan" : "Subscribe Now", 
-                style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold)
-              ),
-            )
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -1517,10 +1638,27 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
        if (mounted) {
          setState(() => _isLoadingSubscription = false);
          ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text("Checkout error: $e")),
+           SnackBar(content: Text(StripeService.friendlyError(e))),
          );
        }
      }
+  }
+
+  Widget _animatedItem(int index, Widget child) {
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 400 + (index * 100)),
+      tween: Tween(begin: 0.0, end: 1.0),
+      curve: Curves.easeOutQuart,
+      builder: (context, value, _) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 30 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+    );
   }
 
   Widget _actionButton({

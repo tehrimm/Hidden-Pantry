@@ -341,7 +341,7 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
                   final url = await StripeService().onboardNutritionist();
                   await StripeService().launchStripeUrl(url);
                 } catch (e) {
-                  Toaster.show(context, "Error: $e", isError: true);
+                  Toaster.show(context, StripeService.friendlyError(e), isError: true);
                 }
               },
               style: ElevatedButton.styleFrom(

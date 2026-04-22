@@ -136,6 +136,9 @@ class StripeService {
     if (msg.contains('processing_error')) {
       return 'A processing error occurred. Please try again in a moment.';
     }
+    if (msg.contains('transfers') || msg.contains('capabilities')) {
+      return 'The nutritionist has not fully set up their payments yet. Please inform them to complete their Stripe onboarding.';
+    }
     if (msg.contains('network') || msg.contains('connection')) {
       return 'Network error. Please check your connection and try again.';
     }
