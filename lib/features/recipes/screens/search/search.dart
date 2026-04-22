@@ -55,7 +55,6 @@ class _SearchScreenState extends State<SearchScreen> {
   final FocusNode _searchFocus = FocusNode();
 
   final Color bg = const Color(0xFFFFF3EB);
-  final Color searchBarBg = const Color(0xFFFDECE4);
   final Color purple = const Color(0xFF462F4D);
   final Color orange = const Color(0xFFEF8A54);
 
@@ -74,6 +73,11 @@ class _SearchScreenState extends State<SearchScreen> {
     _api = widget.apiService ?? const RecipeApiService(baseUrl: ApiConstants.baseUrl);
     _loadRecentSearches();
     _loadUserAllergies();
+    _searchFocus.addListener(_onFocusChange);
+  }
+
+  void _onFocusChange() {
+    if (mounted) setState(() {});
   }
 
   Future<void> _loadUserAllergies() async {
@@ -93,8 +97,6 @@ class _SearchScreenState extends State<SearchScreen> {
       debugPrint('[SearchScreen] Error loading allergens: $e');
     }
   }
-
-  // Focus change handler removed (unused)
 
   String get _historyKey {
     final user = FirebaseAuth.instance.currentUser;
@@ -119,11 +121,9 @@ class _SearchScreenState extends State<SearchScreen> {
     final prefs = await SharedPreferences.getInstance();
     List<String> history = prefs.getStringList(_historyKey) ?? [];
     
-    // Remove if already exists to move to top
     history.remove(q);
     history.insert(0, q);
     
-    // Limit to 10
     if (history.length > 10) history = history.sublist(0, 10);
     
     await prefs.setStringList(_historyKey, history);
@@ -202,14 +202,14 @@ class _SearchScreenState extends State<SearchScreen> {
     ];
     
     String? bestMatch;
-    int bestDist = 3; // Max tolerance
+    int bestDist = 3;
     final lowerQ = query.toLowerCase();
     
     if (lowerQ.length < 3) return null;
     
     for (var kw in knownKeywords) {
       int d = _levenshtein(lowerQ, kw);
-      if (d < bestDist && d > 0) { // Don't suggest if exact match
+      if (d < bestDist && d > 0) {
         bestDist = d;
         bestMatch = kw;
       }
@@ -218,8 +218,6 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> _performSearch(String query, {bool isLoadMore = false}) async {
-    print('DEBUG _performSearch: query="$query", ingredients=${_currentIngredients.length}, filters=${_filterTags.length}');
-    
     if (!isLoadMore) {
       setState(() {
         _hasSearched = true;
@@ -243,7 +241,7 @@ class _SearchScreenState extends State<SearchScreen> {
         );
       }
     } catch (e) {
-      print('DEBUG _performSearch Firestore ERROR: $e');
+      debugPrint('DEBUG _performSearch Firestore ERROR: $e');
     }
 
     try {
@@ -256,7 +254,7 @@ class _SearchScreenState extends State<SearchScreen> {
         allergies: _userAllergies.isNotEmpty ? _userAllergies : null,
       );
     } catch (e) {
-      print('DEBUG _performSearch API ERROR: $e');
+      debugPrint('DEBUG _performSearch API ERROR: $e');
     }
 
     if (mounted) {
@@ -272,19 +270,14 @@ class _SearchScreenState extends State<SearchScreen> {
         combined.addAll(apiResults);
       }
 
-      print('DEBUG _performSearch DONE: firestore=${firestoreResults.length}, api=${apiResults.length}, total=${combined.length}');
-
       setState(() {
         _results = combined;
         if (isLoadMore) _loadingMore = false;
         else _isSearching = false;
 
-        // Roughly guess if we have more based on what api returned
         if (apiResults.length < _limit) _hasMore = false;
       });
       FocusScope.of(context).unfocus();
-
-      // Snackbar removed to not annoy user. The UI handles empty search perfectly.
     }
   }
 
@@ -311,13 +304,8 @@ class _SearchScreenState extends State<SearchScreen> {
     final q = _controller.text.trim();
     if (q.isEmpty) return;
     await _saveSearch(q);
-    
-    // Dismiss keyboard
     FocusScope.of(context).unfocus();
-    
-    // Perform search in place
     await _performSearch(q);
-    // Add to history is already done by _saveSearch
   }
 
   Future<void> _openPantry() async {
@@ -335,15 +323,10 @@ class _SearchScreenState extends State<SearchScreen> {
       setState(() {
         _currentIngredients = result;
       });
-      print('DEBUG: Selected ingredients: $_currentIngredients');
-      // Trigger search automatically if there are ingredients, filters, or a text query
       final q = _controller.text.trim();
       if (_currentIngredients.isNotEmpty || q.isNotEmpty || _filterTags.isNotEmpty || _filterMaxMinutes != null) {
-        print('DEBUG: Triggering search with query: "$q" and ${_currentIngredients.length} ingredients');
         _performSearch(q);
       } else {
-        // Clear results if completely empty
-        print('DEBUG: No filters/query, clearing results');
         setState(() {
           _results = [];
           _hasSearched = false;
@@ -352,8 +335,6 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-
-
   Future<void> _openCamera() async {
     final result = await Navigator.push(
       context,
@@ -361,7 +342,6 @@ class _SearchScreenState extends State<SearchScreen> {
     );
 
     if (result != null && result is List<String>) {
-      // Add new unique ingredients
       bool changed = false;
       for (var ingredient in result) {
         if (!_currentIngredients.contains(ingredient)) {
@@ -371,8 +351,7 @@ class _SearchScreenState extends State<SearchScreen> {
       }
       
       if (changed) {
-        setState(() {}); // Update UI
-        // Proceed to Pantry as requested
+        setState(() {});
         _openPantry();
       }
     }
@@ -391,9 +370,6 @@ class _SearchScreenState extends State<SearchScreen> {
             _filterMaxMinutes = maxMinutes;
             _filterTags = tags;
           });
-          // Check if we should trigger search
-          // If query is empty but filters are set, we might want to show filtered recommendations?
-          // The searchRecipes API update we made handles empty query if filters exist.
           if (_controller.text.isNotEmpty || _currentIngredients.isNotEmpty || _filterTags.isNotEmpty || _filterMaxMinutes != null) {
              _performSearch(_controller.text);
           }
@@ -410,71 +386,109 @@ class _SearchScreenState extends State<SearchScreen> {
       body: Stack(
         children: [
           PatternBackground(),
-            SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: 36.sh),
-                  _searchBarRow(),
-                  if (_controller.text.isNotEmpty && _suggestedQuery != null) ...[
-                    const SizedBox(height: 12),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 22),
-                      child: Row(
-                        children: [
-                          Text("Did you mean: ", style: TextStyle(color: purple, fontFamily: "Satoshi")),
-                          GestureDetector(
-                            onTap: () {
-                              final newQ = _suggestedQuery!;
-                              _controller.text = newQ;
-                              _controller.selection = TextSelection.fromPosition(TextPosition(offset: newQ.length));
-                              setState(() {
-                                _suggestedQuery = null;
-                              });
-                              if (_debounce?.isActive ?? false) _debounce!.cancel();
-                              _performSearch(newQ);
-                            },
-                            child: Text(
-                              '"$_suggestedQuery"',
-                              style: TextStyle(
-                                color: orange,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: "Satoshi",
-                                decoration: TextDecoration.underline,
-                                decorationColor: orange,
-                              ),
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 36.sh),
+                _searchBarRow(),
+                if (_controller.text.isNotEmpty && _suggestedQuery != null) ...[
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 22),
+                    child: Row(
+                      children: [
+                        Text("Did you mean: ", style: TextStyle(color: purple, fontFamily: "Satoshi")),
+                        GestureDetector(
+                          onTap: () {
+                            final newQ = _suggestedQuery!;
+                            _controller.text = newQ;
+                            _controller.selection = TextSelection.fromPosition(TextPosition(offset: newQ.length));
+                            setState(() {
+                              _suggestedQuery = null;
+                            });
+                            if (_debounce?.isActive ?? false) _debounce!.cancel();
+                            _performSearch(newQ);
+                          },
+                          child: Text(
+                            '"$_suggestedQuery"',
+                            style: TextStyle(
+                              color: orange,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: "Satoshi",
+                              decoration: TextDecoration.underline,
+                              decorationColor: orange,
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
-                  ],
-                  if (_controller.text.isNotEmpty || _currentIngredients.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    _ingredientsFilterRow(),
-                    const SizedBox(height: 16),
-                  ],
-                  Expanded(
-                    child: (_controller.text.isEmpty && _currentIngredients.isEmpty && _results.isEmpty && !_hasSearched)
-                        ? _recentSearchesSection()
-                        : _resultsList(),
                   ),
                 ],
-              ),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  child: (_controller.text.isNotEmpty || _currentIngredients.isNotEmpty) 
+                    ? Column(
+                        children: [
+                          const SizedBox(height: 16),
+                          _ingredientsFilterRow(),
+                          const SizedBox(height: 16),
+                        ],
+                      )
+                    : const SizedBox(width: double.infinity),
+                ),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 400),
+                    switchInCurve: Curves.easeOutCubic,
+                    switchOutCurve: Curves.easeInQuad,
+                    layoutBuilder: (child, List<Widget> previousChildren) {
+                      return Stack(
+                        children: [
+                          ...previousChildren,
+                          if (child != null) child,
+                        ],
+                      );
+                    },
+                    transitionBuilder: (child, animation) {
+                      final slide = Tween<Offset>(
+                        begin: const Offset(0, 0.05),
+                        end: Offset.zero,
+                      ).animate(animation);
+                      return FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: slide,
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: (_controller.text.isEmpty && _currentIngredients.isEmpty && _results.isEmpty && !_hasSearched)
+                        ? KeyedSubtree(
+                            key: const ValueKey('recent_searches'),
+                            child: _recentSearchesSection(),
+                          )
+                        : KeyedSubtree(
+                            key: const ValueKey('results_list'),
+                            child: _resultsList(),
+                          ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
       bottomNavigationBar: widget.inShell || _searchFocus.hasFocus 
           ? null 
           : HpBottomNav(
               currentIndex: 1,
               orange: orange,
               onTap: (index) {
-                debugPrint('[SearchScreen] _onBottomTap: $index');
                 if (index == 1) return;
                 if (index == 0) {
-                  // If we got here, we are NOT in shell, so we should probably go TO the shell
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(builder: (_) => MainNavigationShell()),
@@ -493,16 +507,31 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _searchBarRow() {
+    final bool isFocused = _searchFocus.hasFocus;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
           Expanded(
-            child: Container(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
               height: 54,
               decoration: BoxDecoration(
-                color: const Color(0xFFFDECE4), // Match searchBarBg
+                color: isFocused ? Colors.white : const Color(0xFFFDECE4),
                 borderRadius: BorderRadius.circular(27),
+                boxShadow: [
+                  BoxShadow(
+                    color: purple.withValues(alpha: isFocused ? 0.12 : 0.0),
+                    blurRadius: 15,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+                border: Border.all(
+                  color: isFocused ? orange.withValues(alpha: 0.3) : Colors.transparent,
+                  width: 1.5,
+                ),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
@@ -523,7 +552,11 @@ class _SearchScreenState extends State<SearchScreen> {
                         }
                       }
                     },
-                    child: Icon(Icons.arrow_back, size: 24, color: purple),
+                    child: Icon(
+                      isFocused ? Icons.close_rounded : Icons.arrow_back, 
+                      size: 24, 
+                      color: purple
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -553,30 +586,45 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          // Show Pantry icon in initial state, Filter icon when searching/results are showing
-          if (_results.isEmpty && _controller.text.isEmpty && _currentIngredients.isEmpty && _filterTags.isEmpty && _filterMaxMinutes == null)
-            GestureDetector(
-              onTap: _openPantry,
-              child: Image.asset(
-                'assets/food/pantry.png', 
-                width: 28,
-                height: 28,
-                errorBuilder: (_, __, ___) => Icon(Icons.shopping_bag, size: 30, color: purple),
-              ),
-            )
-          else
-            GestureDetector(
-              onTap: _openFilters,
-              child: Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF9E3D5),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Icon(Icons.tune_rounded, size: 24, color: purple),
-              ),
-            ),
-    
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (child, animation) => ScaleTransition(scale: animation, child: child),
+            child: (_results.isEmpty && _controller.text.isEmpty && _currentIngredients.isEmpty && _filterTags.isEmpty && _filterMaxMinutes == null)
+                ? GestureDetector(
+                    key: const ValueKey('pantry_btn'),
+                    onTap: _openPantry,
+                    child: Image.asset(
+                      'assets/food/pantry.png', 
+                      width: 28,
+                      height: 28,
+                      errorBuilder: (_, __, ___) => Icon(Icons.shopping_bag, size: 30, color: purple),
+                    ),
+                  )
+                : GestureDetector(
+                    key: const ValueKey('filter_btn'),
+                    onTap: _openFilters,
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF9E3D5),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          if (_filterTags.isNotEmpty || _filterMaxMinutes != null)
+                            BoxShadow(
+                              color: orange.withValues(alpha: 0.3),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            ),
+                        ]
+                      ),
+                      child: Icon(
+                        Icons.tune_rounded, 
+                        size: 24, 
+                        color: _filterTags.isNotEmpty || _filterMaxMinutes != null ? orange : purple
+                      ),
+                    ),
+                  ),
+          ),
         ],
       ),
     );
@@ -585,38 +633,40 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _ingredientsFilterRow() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 22),
-      child: GestureDetector(
-        onTap: _openPantry,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: const Color(0xFFF9E3D5),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _currentIngredients.isNotEmpty 
-                    ? "Ingredients (${_currentIngredients.length})"
-                    : "Ingredients",
-                style: TextStyle(
-                  color: purple,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  fontFamily: "Satoshi",
+      child: AnimatedOpacity(
+        duration: const Duration(milliseconds: 300),
+        opacity: (_controller.text.isNotEmpty || _currentIngredients.isNotEmpty) ? 1.0 : 0.0,
+        child: GestureDetector(
+          onTap: _openPantry,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF9E3D5),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _currentIngredients.isNotEmpty 
+                      ? "Ingredients (${_currentIngredients.length})"
+                      : "Ingredients",
+                  style: TextStyle(
+                    color: purple,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Satoshi",
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Icon(Icons.edit_outlined, size: 16, color: purple.withValues(alpha:0.6)),
-            ],
+                const SizedBox(width: 8),
+                Icon(Icons.edit_outlined, size: 16, color: purple.withValues(alpha:0.6)),
+              ],
+            ),
           ),
         ),
       ),
     );
   }
-
-
 
   Widget _resultsList() {
     if (_isSearching) {
@@ -627,12 +677,12 @@ class _SearchScreenState extends State<SearchScreen> {
             physics: const NeverScrollableScrollPhysics(),
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 157 / 231, // Adjusted to match Home card proportions
+              childAspectRatio: 157 / 231,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
             ),
             itemCount: 4,
-            itemBuilder: (_, __) => _recipeCardSkeleton(),
+            itemBuilder: (_, i) => _StaggeredItem(index: i, child: _recipeCardSkeleton()),
           ),
           const Center(
             child: CircularProgressIndicator(color: Color(0xFFEF8A54)),
@@ -643,7 +693,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
     if (_results.isEmpty && (_controller.text.isNotEmpty || _hasSearched)) {
       final suggestion = _getSpellingSuggestion(_controller.text);
-
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -692,19 +741,22 @@ class _SearchScreenState extends State<SearchScreen> {
           sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 157 / 231, // Adjusted to match Home card proportions
+              childAspectRatio: 157 / 231,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
             ),
             delegate: SliverChildBuilderDelegate(
               (_, i) {
                 final r = _results[i];
-                return RecipeCard(
-                  recipe: r,
-                  onTap: () {
-                    _saveSearch(r.name);
-                    _openRecipe(r);
-                  },
+                return _StaggeredItem(
+                  index: i,
+                  child: RecipeCard(
+                    recipe: r,
+                    onTap: () {
+                      _saveSearch(r.name);
+                      _openRecipe(r);
+                    },
+                  ),
                 );
               },
               childCount: _results.length,
@@ -742,7 +794,6 @@ class _SearchScreenState extends State<SearchScreen> {
       ],
     );
   }
-
 
   Widget _recentSearchesSection() {
     if (_recentSearches.isEmpty) {
@@ -799,7 +850,6 @@ class _SearchScreenState extends State<SearchScreen> {
                 _controller.text = q;
                 _controller.selection = TextSelection.fromPosition(TextPosition(offset: q.length));
                 _performSearch(q);
-                
               },
               child: Text(
                 q,
@@ -847,42 +897,12 @@ class _SearchScreenState extends State<SearchScreen> {
   String? _getSpellingSuggestion(String query) {
     if (query.isEmpty) return null;
     final q = query.toLowerCase().trim();
-    
-    const words = [
-      "chocolate", "chicken", "beef", "pasta", "pizza", "cake", "cookie", 
-      "salad", "soup", "bread", "breakfast", "dinner", "lunch", "dessert", 
-      "snack", "baked", "spicy", "cheese", "potato", "fish", "pork", 
-      "vegan", "vegetarian", "healthy", "smoothie", "vanilla", "strawberry", 
-      "garlic", "onion", "tomato", "mushroom", "rice", "noodle", "apple",
-      "banana", "orange", "lemon", "sugar", "butter", "milk", "egg", "water"
-    ];
-
-    if (words.contains(q)) return null; 
-
-    int _levenshtein(String a, String b) {
-      if (a.isEmpty) return b.length;
-      if (b.isEmpty) return a.length;
-      List<int> v0 = List<int>.generate(b.length + 1, (i) => i);
-      List<int> v1 = List<int>.filled(b.length + 1, 0);
-
-      for (int i = 0; i < a.length; i++) {
-        v1[0] = i + 1;
-        for (int j = 0; j < b.length; j++) {
-          int cost = (a[i] == b[j]) ? 0 : 1;
-          v1[j + 1] = math.min(v1[j] + 1, math.min(v0[j + 1] + 1, v0[j] + cost));
-        }
-        for (int j = 0; j <= b.length; j++) {
-          v0[j] = v1[j];
-        }
-      }
-      return v1[b.length];
-    }
+    const words = ["chocolate", "chicken", "beef", "pasta", "pizza", "cake", "cookie", "salad", "soup", "bread", "breakfast", "dinner", "lunch", "dessert", "snack"];
 
     String? bestMatch;
     int bestDist = 3; 
 
     for (var w in words) {
-      if ((w.length - q.length).abs() > 2) continue;
       int dist = _levenshtein(q, w);
       if (dist < bestDist) {
         bestDist = dist;
@@ -890,5 +910,30 @@ class _SearchScreenState extends State<SearchScreen> {
       }
     }
     return bestMatch; 
+  }
+}
+
+class _StaggeredItem extends StatelessWidget {
+  final Widget child;
+  final int index;
+  const _StaggeredItem({required this.child, required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 400 + (index * 50).clamp(0, 400)),
+      curve: Curves.easeOutCubic,
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 30 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
   }
 }
