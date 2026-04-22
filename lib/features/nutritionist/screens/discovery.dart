@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -153,39 +154,60 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
   @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
+    Widget content = Stack(
+      children: [
+        const PatternBackground(),
+        
+        // Force the Stack to be at least screen-sized to prevent RenderFlex overflow
+        const SizedBox.expand(),
+        
+        // Salad Illustration (Bleeding from top of screen)
+        _headerIllustration(),
+
+        Positioned.fill(
+          child: SafeArea(
+            bottom: !widget.inShell, // Only pad bottom if NOT in shell (shell has its own nav)
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    _header(),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: -28.sh,
+                      child: _searchBar(),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 38.sh),
+                _domainFilters(),
+                Expanded(
+                  child: _isLoadingSubs 
+                      ? const Center(child: CircularProgressIndicator())
+                      : _contentList(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+
+    if (widget.inShell) return content;
+
     return Scaffold(
       backgroundColor: bg,
       resizeToAvoidBottomInset: false,
-      bottomNavigationBar: widget.inShell 
-          ? null 
-          : HpBottomNav(
-              currentIndex: _bottomIndex,
-              onTap: _onBottomTap,
-              orange: orange,
-              isNutritionistInUserView: false, // In discovery, we are a user viewing experts
-            ),
-      body: Stack(
-        children: [
-          const PatternBackground(),
-          
-          SafeArea(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                   const SizedBox(height: 12),
-                  _header(),
-                  _searchBar(),
-                  _domainFilters(),
-                  Expanded(
-                     child: _isLoadingSubs 
-                         ? const Center(child: CircularProgressIndicator())
-                         : _contentList(),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
+      bottomNavigationBar: HpBottomNav(
+        currentIndex: _bottomIndex,
+        onTap: _onBottomTap,
+        orange: orange,
+        isNutritionistInUserView: false,
+      ),
+      body: content,
     );
   }
 
@@ -298,19 +320,134 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
     );
   }
 
-  Widget _header() {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(22.sw, 10.sh, 22.sw, 10.sh),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Explore Nutritionists",
-            style: TextStyle(color: purple, fontSize: 28.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+  Widget _headerIllustration() {
+    return Positioned(
+      top: -45.sh,
+      right: -35.sw,
+      child: Opacity(
+        opacity: 1.0,
+        child: Container(
+          width: 210.sw,
+          height: 210.sw,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 25.clamp(0.0, 100.0).toDouble(),
+                offset: const Offset(0, 12),
+              ),
+            ],
           ),
-          Text(
-            "Get personalized guidance for your health",
-            style: TextStyle(color: purple.withValues(alpha: 0.6), fontSize: 14.sp, fontFamily: "Satoshi"),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(105.sw),
+            child: Image.asset(
+              'assets/illustration/salad.png',
+              fit: BoxFit.cover,
+              errorBuilder: (_,__,___) => Container(
+                color: Colors.white,
+                child: Icon(Icons.restaurant_menu, color: orange.withValues(alpha:0.2), size: 60.sp),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _header() {
+    return Container(
+      width: double.infinity,
+      height: 220.sh,
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(40.sw),
+          bottomRight: Radius.circular(40.sw),
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Decorative Blobs
+          Positioned(
+            top: -40.sh,
+            right: -20.sw,
+            child: Container(
+              width: 180.sw,
+              height: 180.sw,
+              decoration: BoxDecoration(
+                color: orange.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          Positioned(
+            top: 60.sh,
+            right: 40.sw,
+            child: Container(
+              width: 60.sw,
+              height: 60.sw,
+              decoration: BoxDecoration(
+                color: orange.withValues(alpha: 0.05),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+
+          // Text Content
+          Padding(
+            padding: EdgeInsets.fromLTRB(25.sw, 40.sh, 140.sw, 20.sh),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 4.sh),
+                  decoration: BoxDecoration(
+                    color: orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10.sw),
+                  ),
+                  child: Text(
+                    "PREMIUM GUIDANCE",
+                    style: TextStyle(
+                      color: orange,
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                      fontFamily: "Satoshi",
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12.sh),
+                RichText(
+                  text: TextSpan(
+                    style: TextStyle(
+                      color: purple,
+                      fontSize: 30.sp,
+                      fontWeight: FontWeight.w900,
+                      fontFamily: "Satoshi",
+                      height: 1.1,
+                    ),
+                    children: [
+                      const TextSpan(text: "Explore\n"),
+                      TextSpan(
+                        text: "Nutritionists",
+                        style: TextStyle(color: orange),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 10.sh),
+                Text(
+                  "Get personalized guidance for your health",
+                  style: TextStyle(
+                    color: purple.withValues(alpha: 0.6),
+                    fontSize: 13.sp,
+                    fontFamily: "Satoshi",
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -319,26 +456,53 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
 
   Widget _searchBar() {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 8.sh),
-      child: Container(
-        height: 54.sh,
-        decoration: BoxDecoration(
-          color: searchBarBg,
-          borderRadius: BorderRadius.circular(27.sw),
-        ),
-        padding: EdgeInsets.symmetric(horizontal: 20.sw),
+      padding: EdgeInsets.symmetric(horizontal: 22.sw),
+      child: TweenAnimationBuilder<double>(
+        duration: const Duration(milliseconds: 300),
+        tween: Tween(begin: 0.0, end: 1.0),
+        builder: (context, value, child) {
+          return Container(
+            height: 56.sh,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(28.sw),
+              boxShadow: [
+                BoxShadow(
+                  color: purple.withValues(alpha: 0.08),
+                  blurRadius: (15 * value).clamp(0.0, 100.0).toDouble(),
+                  offset: Offset(0, 8 * value),
+                ),
+              ],
+              border: Border.all(
+                color: orange.withValues(alpha: 0.1),
+                width: 1.5,
+              ),
+            ),
+            padding: EdgeInsets.symmetric(horizontal: 20.sw),
+            child: child,
+          );
+        },
         child: Row(
           children: [
-            Image.asset("assets/icons/search.png", width: 20.sw, height: 20.sw),
+            Icon(Icons.search_rounded, color: orange, size: 24.sw),
             SizedBox(width: 12.sw),
             Expanded(
               child: TextField(
                 controller: _searchCtrl,
                 onChanged: (val) => setState(() => _searchQuery = val),
-                 style: TextStyle(color: purple, fontSize: 16.sp, fontFamily: "Satoshi"),
+                style: TextStyle(
+                  color: purple,
+                  fontSize: 15.sp,
+                  fontFamily: "Satoshi",
+                  fontWeight: FontWeight.w600,
+                ),
                 decoration: InputDecoration(
-                  hintText: "Search nutritionist...",
-                  hintStyle: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 16.sp, fontFamily: "Satoshi"),
+                  hintText: "Search your expert...",
+                  hintStyle: TextStyle(
+                    color: purple.withValues(alpha: 0.4),
+                    fontSize: 15.sp,
+                    fontFamily: "Satoshi",
+                  ),
                   border: InputBorder.none,
                 ),
               ),
@@ -346,10 +510,15 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
             if (_searchQuery.isNotEmpty)
               GestureDetector(
                 onTap: () {
+                  HapticFeedback.lightImpact();
                   _searchCtrl.clear();
                   setState(() => _searchQuery = "");
                 },
-                child: Icon(Icons.close, color: purple, size: 20.sw),
+                child: CircleAvatar(
+                  radius: 12.sw,
+                  backgroundColor: orange.withValues(alpha: 0.1),
+                  child: Icon(Icons.close, color: orange, size: 16.sw),
+                ),
               ),
           ],
         ),
@@ -360,27 +529,73 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
   Widget _domainFilters() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: EdgeInsets.only(left: 22.sw, right: 22.sw, bottom: 16.sh, top: 16.sh),
+      padding: EdgeInsets.only(left: 22.sw, right: 22.sw, bottom: 24.sh, top: 12.sh),
       child: Row(
         children: _domains.map((domain) {
           final isSelected = _selectedDomain == domain;
+          
+          IconData icon;
+          if (domain.contains("⭐")) {
+            icon = Icons.auto_awesome_rounded;
+          } else if (domain == "All") {
+            icon = Icons.grid_view_rounded;
+          } else if (domain.contains("Clinical")) {
+            icon = Icons.health_and_safety_rounded;
+          } else if (domain.contains("Sports")) {
+            icon = Icons.fitness_center_rounded;
+          } else if (domain.contains("Pediatric")) {
+            icon = Icons.child_care_rounded;
+          } else if (domain.contains("Weight")) {
+            icon = Icons.monitor_weight_rounded;
+          } else {
+            icon = Icons.spa_rounded;
+          }
+
+          final cleanDomain = domain.replaceAll("⭐ ", "");
+
           return GestureDetector(
-            onTap: () => setState(() => _selectedDomain = domain),
-            child: Container(
-              margin: EdgeInsets.only(right: 10.sw),
-              padding: EdgeInsets.symmetric(horizontal: 18.sw, vertical: 10.sh),
+            onTap: () {
+              HapticFeedback.selectionClick();
+              setState(() => _selectedDomain = domain);
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              margin: EdgeInsets.only(right: 12.sw),
+              padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 10.sh),
               decoration: BoxDecoration(
-                color: isSelected ? orange : const Color(0xFFF9E3D5),
+                color: isSelected ? orange : Colors.white.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(20.sw),
-              ),
-              child: Text(
-                domain,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : purple,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                  fontSize: 14.sp,
-                  fontFamily: "Satoshi",
+                boxShadow: isSelected ? [
+                  BoxShadow(
+                    color: orange.withValues(alpha: 0.3),
+                    blurRadius: 10.0.clamp(0.0, 100.0).toDouble(),
+                    offset: const Offset(0, 4),
+                  )
+                ] : [],
+                border: Border.all(
+                  color: isSelected ? Colors.transparent : orange.withValues(alpha: 0.1),
+                  width: 1,
                 ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    icon, 
+                    color: isSelected ? Colors.white : orange, 
+                    size: 16.sw,
+                  ),
+                  SizedBox(width: 8.sw),
+                  Text(
+                    cleanDomain,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : purple,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                      fontSize: 13.sp,
+                      fontFamily: "Satoshi",
+                    ),
+                  ),
+                ],
               ),
             ),
           );
@@ -466,23 +681,20 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
                         ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   if (domain != null)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(color: orange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-                        child: Text(domain.toUpperCase(), style: TextStyle(color: orange, fontSize: 9, fontWeight: FontWeight.w900)),
+                    Container(
+                      margin: const EdgeInsets.only(bottom: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        domain.toUpperCase(),
+                        style: TextStyle(color: orange, fontSize: 9, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
                       ),
                     ),
-                  Text(
-                    bio,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 13.sp, fontFamily: "Satoshi"),
-                  ),
-                  const SizedBox(height: 6),
                   Row(
                     children: [
                       if (avgRating > 0) ...[
@@ -490,16 +702,31 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
                         const SizedBox(width: 4),
                         Text(
                           "${avgRating.toStringAsFixed(1)} ($reviewCount)",
-                          style: TextStyle(color: purple, fontSize: 12.sp, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: purple, fontSize: 12.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
                         ),
                         const SizedBox(width: 12),
                       ],
                       if (data["verificationStatus"] == "approved") ...[
                         Icon(Icons.verified_rounded, color: orange, size: 16),
                         const SizedBox(width: 4),
-                        Text("Verified", style: TextStyle(color: orange, fontSize: 12, fontWeight: FontWeight.bold)),
+                        Text(
+                          "Verified",
+                          style: TextStyle(color: orange, fontSize: 12, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+                        ),
                       ],
                     ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    bio,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: purple.withValues(alpha: 0.5),
+                      fontSize: 13.sp,
+                      fontFamily: "Satoshi",
+                      height: 1.3,
+                    ),
                   ),
                 ],
               ),

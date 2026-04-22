@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 import 'create_cookbook_bottom_sheet.dart';
@@ -143,68 +144,101 @@ class _AddToCookbookBottomSheetState extends State<AddToCookbookBottomSheet> {
                       final id = item['id'];
                       final isSelected = _selectedCookbookId == id;
 
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            if (_selectedCookbookId == id) {
-                              _selectedCookbookId = null; // Unselect
-                            } else {
-                              _selectedCookbookId = id;
-                            }
-                          });
+                      return TweenAnimationBuilder<double>(
+                        duration: Duration(milliseconds: 300 + (index * 50)),
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        curve: Curves.easeOutBack,
+                        builder: (context, value, child) {
+                          return Transform.scale(
+                            scale: value,
+                            child: Opacity(
+                              opacity: value.clamp(0.0, 1.0),
+                              child: child,
+                            ),
+                          );
                         },
-                        child: Container(
-                          height: 61,
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFF462F4D) : const Color(0xFFFFF2EA),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Row(
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: Container(
-                                  width: 44,
-                                  height: 38,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[300],
-                                    image: item['imageUrl'] != null 
-                                      ? DecorationImage(image: NetworkImage(item['imageUrl']), fit: BoxFit.cover)
-                                      : null,
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            setState(() {
+                              if (_selectedCookbookId == id) {
+                                _selectedCookbookId = null; // Unselect
+                              } else {
+                                _selectedCookbookId = id;
+                              }
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            curve: Curves.easeInOut,
+                            height: 61,
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            decoration: BoxDecoration(
+                              color: isSelected ? const Color(0xFF462F4D) : const Color(0xFFFFF2EA),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: isSelected ? [
+                                BoxShadow(
+                                  color: const Color(0xFF462F4D).withValues(alpha: 0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                )
+                              ] : [],
+                              border: Border.all(
+                                color: isSelected ? Colors.transparent : const Color(0xFF74503C).withValues(alpha: 0.1),
+                                width: 1,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 250),
+                                  width: isSelected ? 48 : 44,
+                                  height: isSelected ? 42 : 38,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(10),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey[300],
+                                        image: item['imageUrl'] != null 
+                                          ? DecorationImage(image: NetworkImage(item['imageUrl']), fit: BoxFit.cover)
+                                          : null,
+                                      ),
+                                      child: item['imageUrl'] == null 
+                                        ? const Icon(Icons.restaurant, size: 20)
+                                        : null,
+                                    ),
                                   ),
-                                  child: item['imageUrl'] == null 
-                                    ? const Icon(Icons.restaurant, size: 20)
-                                    : null,
                                 ),
-                              ),
-                              const SizedBox(width: 15),
-                              Expanded(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      item['title'],
-                                      style: TextStyle(
-                                        color: isSelected ? const Color(0xFFFFF2EA) : Colors.black,
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: 'Satoshi',
+                                const SizedBox(width: 15),
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item['title'],
+                                        style: TextStyle(
+                                          color: isSelected ? const Color(0xFFFFF2EA) : Colors.black,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: 'Satoshi',
+                                        ),
                                       ),
-                                    ),
-                                    Text(
-                                      '${(item['recipeIds'] as List?)?.length ?? 0} recipes',
-                                      style: TextStyle(
-                                        color: isSelected ? const Color(0xFFFFF2EA) : Colors.black,
-                                        fontSize: 9,
-                                        fontFamily: 'Satoshi',
+                                      Text(
+                                        '${(item['recipeIds'] as List?)?.length ?? 0} recipes',
+                                        style: TextStyle(
+                                          color: isSelected ? const Color(0xFFFFF2EA).withValues(alpha: 0.7) : Colors.black54,
+                                          fontSize: 10,
+                                          fontFamily: 'Satoshi',
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                                if (isSelected)
+                                  const Icon(Icons.check_circle, color: Color(0xFFEF8A54), size: 22),
+                              ],
+                            ),
                           ),
                         ),
                       );

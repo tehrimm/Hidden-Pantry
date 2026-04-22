@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
@@ -167,239 +168,221 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
     ResponsiveUtils.init(context);
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return const Scaffold(body: Center(child: Text("Please login")));
-    final double topPad = MediaQuery.of(context).padding.top;
 
-    return Scaffold(
-      backgroundColor: bg,
-      body: Container(
-        color: bg,
-        child: Stack(
-          children: [
-            const PatternBackground(),
-            if (!widget.inShell)
-              Positioned(
-                left: 30.sw,
-                top: topPad + 36.sh,
-                child: const BackButtonWidget(),
-              ),
-            Positioned(
-              left: 0,
-              right: 0,
-              top: topPad + 36.sh,
-              height: 50.sh,
-              child: Center(
-                child: Text(
-                  'My Saved',
-                  style: TextStyle(
-                    color: purple,
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Satoshi',
-                  ),
-                ),
-              ),
-            ),
-            SafeArea(
-              bottom: false,
-              child: Column(
-                children: [
-                  SizedBox(height: 96.sh),
-                  Expanded(
-                    child: StreamBuilder<List<Map<String, dynamic>>>(
-                      stream: _recipeService.getUserCookbooks(user.uid),
-                      builder: (context, snapshot) {
-                        final cookbooksData = snapshot.data ?? [];
-                        List<Map<String, dynamic>> consolidatedCookbooks = List.from(cookbooksData);
-                        final bool hasFavInDb = consolidatedCookbooks.any((c) => (c['title']?.toString() ?? '').toLowerCase() == 'favorite');
-                        if (!hasFavInDb) {
-                          consolidatedCookbooks.insert(0, {
-                            'id': 'favorite_internal',
-                            'title': 'Favorite',
-                            'recipeIds': [],
-                            'imageUrl': null,
-                            'isDefault': true,
-                          });
+    Widget content = Stack(
+      children: [
+        const PatternBackground(),
+        
+        // Force the Stack to be at least screen-sized to prevent RenderFlex overflow
+        const SizedBox.expand(),
+        
+        // Header Illustration (Bleeding from top of screen)
+        _headerIllustration(),
+
+        Positioned.fill(
+          child: SafeArea(
+            bottom: !widget.inShell,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _headerText(),
+                
+                // Back button if not in shell
+                if (!widget.inShell)
+                   Padding(
+                     padding: EdgeInsets.only(left: 25.sw, top: 10.sh),
+                     child: const BackButtonWidget(),
+                   ),
+
+                Expanded(
+                  child: StreamBuilder<List<Map<String, dynamic>>>(
+                    stream: _recipeService.getUserCookbooks(user.uid),
+                    builder: (context, snapshot) {
+                      final cookbooksData = snapshot.data ?? [];
+                      List<Map<String, dynamic>> consolidatedCookbooks = List.from(cookbooksData);
+                      final bool hasFavInDb = consolidatedCookbooks.any((c) => (c['title']?.toString() ?? '').toLowerCase() == 'favorite');
+                      if (!hasFavInDb) {
+                        consolidatedCookbooks.insert(0, {
+                          'id': 'favorite_internal',
+                          'title': 'Favorite',
+                          'recipeIds': [],
+                          'imageUrl': null,
+                          'isDefault': true,
+                        });
+                      }
+
+                      List<String> currentRecipeIds = [];
+                      String? currentDesc;
+                      if (!_isOfflineView) {
+                        Map<String, dynamic>? selected;
+                        if (_selectedCookbookId != null) {
+                          selected = consolidatedCookbooks.cast<Map<String, dynamic>?>().firstWhere(
+                            (c) => c?['id'] == _selectedCookbookId,
+                            orElse: () => null,
+                          );
                         }
-
-                        List<String> currentRecipeIds = [];
-                        String? currentDesc;
-                        if (!_isOfflineView) {
-                          Map<String, dynamic>? selected;
-                          if (_selectedCookbookId != null) {
-                            selected = consolidatedCookbooks.cast<Map<String, dynamic>?>().firstWhere(
-                              (c) => c?['id'] == _selectedCookbookId,
-                              orElse: () => null,
-                            );
-                          }
-                          if (selected == null && consolidatedCookbooks.isNotEmpty) {
-                            selected = consolidatedCookbooks.first;
-                          }
-                          if (selected != null) {
-                            currentRecipeIds = List<String>.from(selected['recipeIds'] ?? []);
-                            currentDesc = selected['description'];
-                          }
+                        if (selected == null && consolidatedCookbooks.isNotEmpty) {
+                          selected = consolidatedCookbooks.first;
                         }
+                        if (selected != null) {
+                          currentRecipeIds = List<String>.from(selected['recipeIds'] ?? []);
+                          currentDesc = selected['description'];
+                        }
+                      }
 
-                        return SingleChildScrollView(
-                          padding: EdgeInsets.symmetric(horizontal: 30.sw),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SizedBox(height: 20.sh),
-                              Center(child: _buildProfileSection()),
+                      return SingleChildScrollView(
+                        padding: EdgeInsets.symmetric(horizontal: 30.sw),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: 20.sh),
+                            _buildToggle(),
+                            SizedBox(height: 30.sh),
+                            if (!_isOfflineView) ...[
+                              _buildCookbookGrid(consolidatedCookbooks),
                               SizedBox(height: 30.sh),
-                              _buildToggle(),
-                              SizedBox(height: 30.sh),
-                              if (!_isOfflineView) ...[
-                                _buildCookbookGrid(consolidatedCookbooks),
-                                SizedBox(height: 30.sh),
-                                if (currentRecipeIds.isNotEmpty || (_selectedCookbookId != null)) ...[
-                                  if (currentDesc != null && currentDesc.isNotEmpty) ...[
-                                    Text(
-                                      currentDesc,
-                                      style: TextStyle(
-                                        color: purple.withValues(alpha: 0.7),
-                                        fontSize: 14.sp,
-                                        fontStyle: FontStyle.italic,
-                                        fontFamily: 'Satoshi',
-                                      ),
-                                    ),
-                                    SizedBox(height: 20.sh),
-                                  ],
+                              if (currentRecipeIds.isNotEmpty || (_selectedCookbookId != null)) ...[
+                                if (currentDesc != null && currentDesc.isNotEmpty) ...[
                                   Text(
-                                    "Saved Recipes",
+                                    currentDesc,
                                     style: TextStyle(
-                                      color: purple,
-                                      fontSize: 20.sp,
-                                      fontWeight: FontWeight.bold,
+                                      color: purple.withValues(alpha: 0.7),
+                                      fontSize: 14.sp,
+                                      fontStyle: FontStyle.italic,
                                       fontFamily: 'Satoshi',
                                     ),
                                   ),
                                   SizedBox(height: 20.sh),
-                                  _buildRecipeList(currentRecipeIds),
                                 ],
-                              ] else ...[
-                                _buildOfflineSection(),
+                                Text(
+                                  "Saved Recipes",
+                                  style: TextStyle(
+                                    color: purple,
+                                    fontSize: 20.sp,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: 'Satoshi',
+                                  ),
+                                ),
+                                SizedBox(height: 20.sh),
+                                _buildRecipeList(currentRecipeIds),
                               ],
-                              SizedBox(height: 30.sh),
+                            ] else ...[
+                              _buildOfflineSection(),
                             ],
-                          ),
-                        );
-                      },
-                    ),
+                            SizedBox(height: 30.sh),
+                          ],
+                        ),
+                      );
+                    },
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: widget.inShell
-          ? null
-          : HpBottomNav(
-              currentIndex: 3,
-              onTap: _onBottomTap,
-              orange: orange,
-              isNutritionistInUserView: _isNutritionistInUserView,
-            ),
-    );
-  }
-
-
-  Widget _buildProfileSection() {
-    return Column(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(50.sw),
-          child: Container(
-            width: 80.sw,
-            height: 80.sw,
-            color: const Color(0xFFD9D9D9),
-            child: _photoUrl != null
-                ? Image.network(_photoUrl!, fit: BoxFit.cover)
-                : Image.asset('assets/logos/profile_placeholder.png', scale: 2),
-          ),
-        ),
-        SizedBox(height: 10.sh),
-        Text(
-          _name ?? 'Hidden Pantry',
-          style: TextStyle(
-            color: purple,
-            fontSize: 15.sp,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Satoshi',
-          ),
-        ),
-        SizedBox(height: 5.sh),
-        Text(
-          _bio ?? 'Passionate about cooking.',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: purple,
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.2,
-            fontFamily: 'Satoshi',
           ),
         ),
       ],
     );
+
+    if (widget.inShell) return content;
+
+    return Scaffold(
+      backgroundColor: bg,
+      body: content,
+      bottomNavigationBar: HpBottomNav(
+        currentIndex: 3,
+        onTap: _onBottomTap,
+        orange: orange,
+        isNutritionistInUserView: _isNutritionistInUserView,
+      ),
+    );
   }
 
+
+
+
   Widget _buildToggle() {
-    return Container(
-      height: 50.sh,
-      decoration: BoxDecoration(
-        color: cardColor.withValues(alpha:0.5),
-        borderRadius: BorderRadius.circular(25.sw),
-      ),
-      padding: EdgeInsets.all(4.sw),
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _isOfflineView = false),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: !_isOfflineView ? orange : Colors.transparent,
-                  borderRadius: BorderRadius.circular(21.sw),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  "Cookbooks",
-                  style: TextStyle(
-                    color: !_isOfflineView ? Colors.white : purple,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Satoshi',
-                    fontSize: 14.sp,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final totalWidth = constraints.maxWidth;
+        final sliderWidth = (totalWidth - 8.sw) / 2;
+        
+        return Container(
+          height: 50.sh,
+          decoration: BoxDecoration(
+            color: cardColor.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(25.sw),
+          ),
+          child: Stack(
+            children: [
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                left: _isOfflineView ? totalWidth / 2 : 4.sw,
+                top: 4.sh,
+                bottom: 4.sh,
+                width: sliderWidth,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: orange,
+                    borderRadius: BorderRadius.circular(21.sw),
+                    boxShadow: [
+                      BoxShadow(
+                        color: orange.withValues(alpha: 0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            ),
-          ),
-          Expanded(
-            child: GestureDetector(
-              onTap: () => setState(() => _isOfflineView = true),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: _isOfflineView ? orange : Colors.transparent,
-                  borderRadius: BorderRadius.circular(21.sw),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  "Downloads",
-                  style: TextStyle(
-                    color: _isOfflineView ? Colors.white : purple,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'Satoshi',
-                    fontSize: 14.sp,
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        setState(() => _isOfflineView = false);
+                      },
+                      child: Center(
+                        child: Text(
+                          "Cookbooks",
+                          style: TextStyle(
+                            color: !_isOfflineView ? Colors.white : purple,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Satoshi',
+                            fontSize: 14.sp,
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                  Expanded(
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        setState(() => _isOfflineView = true);
+                      },
+                      child: Center(
+                        child: Text(
+                          "Downloads",
+                          style: TextStyle(
+                            color: _isOfflineView ? Colors.white : purple,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'Satoshi',
+                            fontSize: 14.sp,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      }
     );
   }
 
@@ -456,8 +439,31 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
       ),
       itemCount: recipes.length,
       itemBuilder: (context, index) {
-        final recipe = recipes[index];
-        return _recipeCard(recipe);
+        return TweenAnimationBuilder<double>(
+          duration: Duration(milliseconds: 400 + (index * 100)),
+          tween: Tween(begin: 0.0, end: 1.0),
+          curve: Curves.easeOutQuart,
+          builder: (context, value, child) {
+            return Transform.translate(
+              offset: Offset(0, 20 * (1 - value)),
+              child: Opacity(
+                opacity: value,
+                child: child,
+              ),
+            );
+          },
+          child: RecipeCard(
+            recipe: recipes[index],
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => RecipeDetailsScreen(recipe: recipes[index]),
+                ),
+              );
+            },
+          ),
+        );
       },
     );
   }
@@ -515,65 +521,82 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
 
     return GestureDetector(
       onTap: () {
+        HapticFeedback.selectionClick();
         setState(() {
           _selectedCookbookId = id;
         });
       },
-      child: Column(
-        children: [
-          Container(
-            width: 75.sw,
-            height: 75.sw,
-            clipBehavior: Clip.hardEdge,
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(38.sw),
-            ),
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD9D9D9),
-                      image: (imageUrl != null && imageUrl.trim().isNotEmpty)
-                          ? DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover)
-                          : isDefault 
-                              ? const DecorationImage(
-                                  image: NetworkImage('https://firebasestorage.googleapis.com/v0/b/codeless-app.appspot.com/o/projects%2F0SFgeaWcBaf42xoFOlKx%2F30e754093184968999456bbb19bc604bae3ef8f7image%2037.png?alt=media&token=d46a734b-2eda-4f61-8278-aa825a23d4b4'),
-                                  fit: BoxFit.cover,
-                                )
-                              : null,
-                    ),
-                    child: (imageUrl == null && !isDefault) 
-                      ? Icon(Icons.restaurant_menu, color: purple.withValues(alpha:0.5), size: 30.sp)
-                      : null,
-                  ),
+      child: AnimatedScale(
+        scale: isSelected ? 1.05 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        child: Column(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              width: 75.sw,
+              height: 75.sw,
+              clipBehavior: Clip.hardEdge,
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(38.sw),
+                boxShadow: isSelected ? [
+                  BoxShadow(
+                    color: purple.withValues(alpha: 0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  )
+                ] : [],
+                border: Border.all(
+                  color: isSelected ? orange : Colors.transparent,
+                  width: 2,
                 ),
-                if (isSelected)
+              ),
+              child: Stack(
+                children: [
                   Positioned.fill(
                     child: Container(
-                      color: purple.withValues(alpha:0.4),
-                      child: Center(
-                        child: Icon(Icons.check, color: Colors.white, size: 24.sp),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFD9D9D9),
+                        image: (imageUrl != null && imageUrl.trim().isNotEmpty)
+                            ? DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover)
+                            : isDefault 
+                                ? const DecorationImage(
+                                    image: NetworkImage('https://firebasestorage.googleapis.com/v0/b/codeless-app.appspot.com/o/projects%2F0SFgeaWcBaf42xoFOlKx%2F30e754093184968999456bbb19bc604bae3ef8f7image%2037.png?alt=media&token=d46a734b-2eda-4f61-8278-aa825a23d4b4'),
+                                    fit: BoxFit.cover,
+                                  )
+                                : null,
                       ),
+                      child: (imageUrl == null && !isDefault) 
+                        ? Icon(Icons.restaurant_menu, color: purple.withValues(alpha:0.5), size: 30.sp)
+                        : null,
                     ),
                   ),
-              ],
+                  if (isSelected)
+                    Positioned.fill(
+                      child: Container(
+                        color: purple.withValues(alpha:0.2),
+                        child: Center(
+                          child: Icon(Icons.check, color: Colors.white, size: 24.sp),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
-          ),
-          SizedBox(height: 8.sh),
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: purple,
-              fontSize: 12.sp,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Satoshi',
+            SizedBox(height: 8.sh),
+            Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: isSelected ? orange : purple,
+                fontSize: 12.sp,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                fontFamily: 'Satoshi',
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -582,23 +605,30 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
     return Column(
       children: [
         GestureDetector(
-          onTap: _showCreateCookbook,
-          child: Container(
-            width: 75.sw,
-            height: 75.sw,
-            decoration: BoxDecoration(
-              color: cardColor,
-              borderRadius: BorderRadius.circular(38.sw),
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            _showCreateCookbook();
+          },
+          child: CustomPaint(
+            painter: _DottedCirclePainter(color: orange),
+            child: Container(
+              width: 75.sw,
+              height: 75.sw,
+              decoration: BoxDecoration(
+                color: Colors.transparent,
+                borderRadius: BorderRadius.circular(38.sw),
+              ),
+              child: Icon(Icons.add_rounded, color: orange, size: 32.sp),
             ),
-            child: Icon(Icons.add, color: purple, size: 30.sp),
           ),
         ),
         SizedBox(height: 8.sh),
         Text(
-          'Add',
+          'Add new',
           style: TextStyle(
-            color: Colors.transparent,
+            color: orange,
             fontSize: 12.sp,
+            fontWeight: FontWeight.w600,
             fontFamily: 'Satoshi',
           ),
         ),
@@ -640,5 +670,155 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
       },
     );
   }
+
+  Widget _headerIllustration() {
+    return Positioned(
+      top: -45.sh,
+      right: -35.sw,
+      child: Container(
+        width: 210.sw,
+        height: 210.sw,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 25.clamp(0.0, 100.0).toDouble(),
+              offset: const Offset(0, 12),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(105.sw),
+          child: Image.asset(
+            'assets/illustration/saves.png',
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              color: Colors.white,
+              child: Icon(Icons.bookmark_rounded, color: orange.withValues(alpha: 0.2), size: 60.sp),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _headerText() {
+    return Container(
+      width: double.infinity,
+      height: 220.sh,
+      decoration: const BoxDecoration(
+        color: Colors.transparent,
+      ),
+      child: Stack(
+        children: [
+          // Decorative Blobs
+          Positioned(
+            top: -40.sh,
+            right: -20.sw,
+            child: Container(
+              width: 180.sw,
+              height: 180.sw,
+              decoration: BoxDecoration(
+                color: orange.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+
+          // Text Content
+          Padding(
+            padding: EdgeInsets.fromLTRB(25.sw, 40.sh, 140.sw, 20.sh),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 4.sh),
+                  decoration: BoxDecoration(
+                    color: orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10.sw),
+                  ),
+                  child: Text(
+                    "MY LIBRARY",
+                    style: TextStyle(
+                      color: orange,
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                      fontFamily: "Satoshi",
+                    ),
+                  ),
+                ),
+                SizedBox(height: 12.sh),
+                RichText(
+                  text: TextSpan(
+                    style: TextStyle(
+                      color: purple,
+                      fontSize: 30.sp,
+                      fontWeight: FontWeight.w900,
+                      fontFamily: "Satoshi",
+                      height: 1.1,
+                    ),
+                    children: [
+                      const TextSpan(text: "Saved\n"),
+                      TextSpan(
+                        text: "Collection",
+                        style: TextStyle(color: orange),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 10.sh),
+                Text(
+                  "All your favorite recipes\nin one place.",
+                  style: TextStyle(
+                    color: purple.withValues(alpha: 0.6),
+                    fontSize: 13.sp,
+                    fontFamily: "Satoshi",
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DottedCirclePainter extends CustomPainter {
+  final Color color;
+  _DottedCirclePainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final double radius = size.width / 2;
+    final Paint paint = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    const double dashWidth = 5;
+    const double dashSpace = 3;
+    double currentAngle = 0;
+
+    final double circumference = 2 * 3.141592653589793 * radius;
+    final int dashCount = (circumference / (dashWidth + dashSpace)).floor();
+
+    for (int i = 0; i < dashCount; i++) {
+      canvas.drawArc(
+        Rect.fromCircle(center: Offset(radius, radius), radius: radius),
+        currentAngle,
+        (dashWidth / circumference) * 2 * 3.141592653589793,
+        false,
+        paint,
+      );
+      currentAngle += ((dashWidth + dashSpace) / circumference) * 2 * 3.141592653589793;
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
