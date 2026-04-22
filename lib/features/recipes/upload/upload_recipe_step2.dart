@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'upload_recipe_step3.dart';
 
 class UploadRecipeStep2 extends StatefulWidget {
@@ -133,7 +134,7 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
   };
 
   final Color purple = const Color(0xFF462F4D);
-  final Color orange = const Color(0xFFF2894F);
+  final Color orange = const Color(0xFFEF8A54);
   final Color cardBg = const Color(0xFFF9E3D5);
   final Color textBrown = const Color(0xFF433020);
 
@@ -148,7 +149,24 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
     return t[0].toUpperCase() + t.substring(1);
   }
 
-  
+  IconData _getCategoryIcon(String category) {
+    switch (category) {
+      case 'Time': return Icons.timer_outlined;
+      case 'Dietary': return Icons.spa_outlined;
+      case 'Nutrition': return Icons.analytics_outlined;
+      case 'Cuisine': return Icons.public;
+      case 'Meat & Protein': return Icons.kebab_dining;
+      case 'Seafood': return Icons.set_meal;
+      case 'Vegetables & Grains': return Icons.eco;
+      case 'Dairy & Eggs': return Icons.egg_outlined;
+      case 'Course': return Icons.restaurant_menu;
+      case 'Dish Type': return Icons.flatware;
+      case 'Equipment': return Icons.microwave_outlined;
+      case 'Occasion': return Icons.celebration;
+      case 'Season': return Icons.wb_sunny_outlined;
+      default: return Icons.tag;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,8 +175,7 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
       backgroundColor: const Color(0xFFFFF3EB),
       body: Stack(
         children: [
-          // Background Patterns
-          const _BackgroundPatterns(),
+          PatternBackground(),
 
               Column(
                 children: [
@@ -210,93 +227,101 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                       children: [
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 27.sw),
-                          child: Text(
-                            'Information',
-                            style: TextStyle(
-                              color: purple,
-                              fontSize: 40.sp,
-                              fontWeight: FontWeight.w900,
-                              height: 1.1,
-                              fontFamily: 'Satoshi',
+                          child: _StaggeredFadeIn(
+                            child: Text(
+                              'Information',
+                              style: TextStyle(
+                                color: purple,
+                                fontSize: 40.sp,
+                                fontWeight: FontWeight.w900,
+                                height: 1.1,
+                                fontFamily: 'Satoshi',
+                              ),
                             ),
                           ),
                         ),
                         SizedBox(height: 30.sh),
 
-                        _buildCounterResponsive(
-                          label: 'Preparation Time',
-                          value: _prepTime,
-                          unit: 'min',
-                          onChanged: (v) => setState(() => _prepTime = v),
-                        ),
-                        _buildCounterResponsive(
-                          label: 'Cooking Time',
-                          value: _cookTime,
-                          unit: 'min',
-                          onChanged: (v) => setState(() => _cookTime = v),
-                        ),
-                        _buildCounterResponsive(
-                          label: 'Serving',
-                          value: _servings,
-                          unit: '',
-                          onChanged: (v) => setState(() => _servings = v),
-                        ),
-
-                        // Difficulty Dropdown
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 29.sw, vertical: 8.sh),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        _StaggeredFadeIn(
+                          delay: 1,
+                          child: Column(
                             children: [
-                              Text(
-                                'Difficulty',
-                                style: TextStyle(
-                                  color: purple,
-                                  fontSize: 15.sp,
-                                  fontFamily: 'Satoshi',
-                                ),
+                              _buildCounterResponsive(
+                                label: 'Preparation Time',
+                                value: _prepTime,
+                                unit: 'min',
+                                onChanged: (v) => setState(() => _prepTime = v),
                               ),
-                              Container(
-                                width: 176.sw,
-                                height: 61.sh,
-                                decoration: BoxDecoration(
-                                  color: cardBg,
-                                  borderRadius: BorderRadius.circular(20.sw),
-                                ),
-                                padding: EdgeInsets.symmetric(horizontal: 20.sw),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<String>(
-                                    value: _difficulty,
-                                    hint: Text(
-                                      'Select',
+                              _buildCounterResponsive(
+                                label: 'Cooking Time',
+                                value: _cookTime,
+                                unit: 'min',
+                                onChanged: (v) => setState(() => _cookTime = v),
+                              ),
+                              _buildCounterResponsive(
+                                label: 'Serving',
+                                value: _servings,
+                                unit: '',
+                                onChanged: (v) => setState(() => _servings = v),
+                              ),
+                                              // Difficulty Dropdown
+                              Padding(
+                                padding: EdgeInsets.symmetric(horizontal: 29.sw, vertical: 8.sh),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Difficulty',
                                       style: TextStyle(
-                                        color: purple.withValues(alpha: 0.5),
+                                        color: purple,
                                         fontSize: 15.sp,
                                         fontFamily: 'Satoshi',
                                       ),
                                     ),
-                                    icon: Icon(Icons.keyboard_arrow_down, color: purple, size: 24.sw),
-                                    items: ['Easy', 'Medium', 'Hard'].map((String level) {
-                                      return DropdownMenuItem<String>(
-                                        value: level,
-                                        child: Text(
-                                          level,
-                                          style: TextStyle(
-                                            color: purple,
-                                            fontSize: 15.sp,
-                                            fontFamily: 'Satoshi',
+                                    Container(
+                                      width: 176.sw,
+                                      height: 61.sh,
+                                      decoration: BoxDecoration(
+                                        color: cardBg,
+                                        borderRadius: BorderRadius.circular(20.sw),
+                                      ),
+                                      padding: EdgeInsets.symmetric(horizontal: 20.sw),
+                                      child: DropdownButtonHideUnderline(
+                                        child: DropdownButton<String>(
+                                          value: _difficulty,
+                                          hint: Text(
+                                            'Select',
+                                            style: TextStyle(
+                                              color: purple.withValues(alpha: 0.5),
+                                              fontSize: 15.sp,
+                                              fontFamily: 'Satoshi',
+                                            ),
                                           ),
+                                          icon: Icon(Icons.keyboard_arrow_down, color: purple, size: 24.sw),
+                                          items: ['Easy', 'Medium', 'Hard'].map((String level) {
+                                            return DropdownMenuItem<String>(
+                                              value: level,
+                                              child: Text(
+                                                level,
+                                                style: TextStyle(
+                                                  color: purple,
+                                                  fontSize: 15.sp,
+                                                  fontFamily: 'Satoshi',
+                                                ),
+                                              ),
+                                            );
+                                          }).toList(),
+                                          onChanged: (String? newValue) {
+                                            setState(() {
+                                              _difficulty = newValue;
+                                            });
+                                          },
+                                          dropdownColor: cardBg,
+                                          borderRadius: BorderRadius.circular(20.sw),
                                         ),
-                                      );
-                                    }).toList(),
-                                    onChanged: (String? newValue) {
-                                      setState(() {
-                                        _difficulty = newValue;
-                                      });
-                                    },
-                                    dropdownColor: cardBg,
-                                    borderRadius: BorderRadius.circular(20.sw),
-                                  ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
@@ -304,115 +329,134 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                         ),
 
                         SizedBox(height: 20.sh),
-                        // All Categorized Tags
-                        ..._allCategories.entries.map((entry) {
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Padding(
-                                padding: EdgeInsets.only(left: 29.sw, top: 16.sh, bottom: 8.sh),
-                                child: Text(
-                                  entry.key,
-                                  style: TextStyle(
-                                    color: purple,
-                                    fontSize: 15.sp,
-                                    fontFamily: 'Satoshi',
-                                  ),
-                                ),
-                              ),
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 29.sw),
-                                child: Wrap(
-                                  spacing: 10.sw,
-                                  runSpacing: 10.sh,
-                                  children: entry.value.map((tag) {
-                                    final isSelected = _selectedTags.contains(tag);
-                                    return GestureDetector(
-                                      onTap: () {
-                                        setState(() {
-                                          if (isSelected) {
-                                            _selectedTags.remove(tag);
-                                          } else {
-                                            _selectedTags.add(tag);
-                                          }
-                                        });
-                                      },
-                                      child: Container(
-                                        padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 10.sh),
-                                        decoration: BoxDecoration(
-                                          color: isSelected ? purple : cardBg,
-                                          borderRadius: BorderRadius.circular(30.sw),
-                                        ),
-                                        child: Text(
-                                          _beautify(tag),
-                                          style: TextStyle(
-                                            color: isSelected ? const Color(0xFFFFF2EA) : purple,
-                                            fontSize: 12.sp,
-                                            fontWeight: FontWeight.w500,
-                                            fontFamily: 'Satoshi',
+                        SizedBox(height: 10.sh),
+                        _StaggeredFadeIn(
+                          delay: 2,
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 29.sw),
+                            child: Theme(
+                              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+                              child: Column(
+                                children: _allCategories.entries.map((entry) {
+                                  final categoryName = entry.key;
+                                  final categoryTags = entry.value;
+                                  final selectedInCategory = categoryTags.where((t) => _selectedTags.contains(t)).length;
+                                  final icon = _getCategoryIcon(categoryName);
+
+                                  return Container(
+                                    margin: EdgeInsets.only(bottom: 12.sh),
+                                    decoration: BoxDecoration(
+                                      color: cardBg.withValues(alpha: 0.5),
+                                      borderRadius: BorderRadius.circular(20.sw),
+                                      border: Border.all(color: cardBg),
+                                    ),
+                                    child: ExpansionTile(
+                                      leading: Icon(icon, color: purple, size: 22.sw),
+                                      title: Row(
+                                        children: [
+                                          Text(
+                                            categoryName,
+                                            style: TextStyle(
+                                              color: purple,
+                                              fontSize: 15.sp,
+                                              fontWeight: FontWeight.bold,
+                                              fontFamily: 'Satoshi',
+                                            ),
+                                          ),
+                                          if (selectedInCategory > 0) ...[
+                                            const SizedBox(width: 8),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: orange,
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
+                                              child: Text(
+                                                selectedInCategory.toString(),
+                                                style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                      iconColor: purple,
+                                      collapsedIconColor: purple.withValues(alpha: 0.6),
+                                      children: [
+                                        Padding(
+                                          padding: EdgeInsets.fromLTRB(16.sw, 0, 16.sw, 16.sh),
+                                          child: Wrap(
+                                            spacing: 10.sw,
+                                            runSpacing: 10.sh,
+                                            children: categoryTags.map((tag) {
+                                              final isSelected = _selectedTags.contains(tag);
+                                              return GestureDetector(
+                                                onTap: () {
+                                                  setState(() {
+                                                    if (isSelected) {
+                                                      _selectedTags.remove(tag);
+                                                    } else {
+                                                      _selectedTags.add(tag);
+                                                    }
+                                                  });
+                                                },
+                                                child: AnimatedContainer(
+                                                  duration: const Duration(milliseconds: 200),
+                                                  padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 10.sh),
+                                                  decoration: BoxDecoration(
+                                                    color: isSelected ? purple : cardBg.withValues(alpha: 0.3),
+                                                    borderRadius: BorderRadius.circular(30.sw),
+                                                    border: Border.all(color: isSelected ? purple : purple.withValues(alpha: 0.1)),
+                                                  ),
+                                                  child: Text(
+                                                    _beautify(tag),
+                                                    style: TextStyle(
+                                                      color: isSelected ? const Color(0xFFFFF2EA) : purple,
+                                                      fontSize: 12.sp,
+                                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                                      fontFamily: 'Satoshi',
+                                                    ),
+                                                  ),
+                                                ),
+                                              );
+                                            }).toList(),
                                           ),
                                         ),
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
                               ),
-                            ],
-                          );
-                        }).toList(),
+                            ),
+                          ),
+                        ),
 
                         // Bottom buttons inside the scrollable area
                         Padding(
                           padding: EdgeInsets.fromLTRB(30.sw, 42.sh, 29.sw, 42.sh),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => UploadRecipeStep3(
-                                          title: widget.title,
-                                          image: widget.image,
-                                          prepTime: _prepTime,
-                                          cookTime: _cookTime,
-                                          servings: _servings,
-                                          difficulty: _difficulty,
-                                          tags: _selectedTags,
-                                          editingRecipe: widget.editingRecipe,
-                                        ),
+                          child: _StaggeredFadeIn(
+                            delay: 3,
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: _AnimatedNextButton(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => UploadRecipeStep3(
+                                        title: widget.title,
+                                        image: widget.image,
+                                        prepTime: _prepTime,
+                                        cookTime: _cookTime,
+                                        servings: _servings,
+                                        difficulty: _difficulty,
+                                        tags: _selectedTags,
+                                        editingRecipe: widget.editingRecipe,
                                       ),
-                                    );
-                                  },
-                                  child: Container(
-                                    height: 62.sh,
-                                    decoration: BoxDecoration(
-                                      color: orange,
-                                      borderRadius: BorderRadius.circular(20.sw),
                                     ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          'Next',
-                                          style: TextStyle(
-                                            color: Color(0xFFFFF2EA),
-                                            fontSize: 15.sp,
-                                            fontWeight: FontWeight.bold,
-                                            fontFamily: 'Satoshi',
-                                          ),
-                                        ),
-                                        SizedBox(width: 10.sw),
-                                        Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16.sw),
-                                      ],
-                                    ),
-                                  ),
-                                ),
+                                  );
+                                },
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ],
@@ -422,7 +466,7 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
               ),
             ],
           ),
-    );
+        );
   }
 
   Widget _buildCounterResponsive({
@@ -580,47 +624,111 @@ class _CounterInputState extends State<_CounterInput> {
   }
 }
 
+class _StaggeredFadeIn extends StatelessWidget {
+  final Widget child;
+  final int delay;
+  const _StaggeredFadeIn({required this.child, this.delay = 0});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 600 + (delay * 100)),
+      curve: Curves.easeOutCubic,
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+}
+
+class _AnimatedNextButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _AnimatedNextButton({required this.onTap});
+
+  @override
+  State<_AnimatedNextButton> createState() => _AnimatedNextButtonState();
+}
+
+class _AnimatedNextButtonState extends State<_AnimatedNextButton> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 100));
+    _scale = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final orange = const Color(0xFFEF8A54);
+    return GestureDetector(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) => _controller.reverse(),
+      onTapCancel: () => _controller.reverse(),
+      onTap: widget.onTap,
+      child: ScaleTransition(
+        scale: _scale,
+        child: Container(
+          width: 184.sw,
+          height: 62.sh,
+          decoration: BoxDecoration(
+            color: orange,
+            borderRadius: BorderRadius.circular(20.sw),
+            boxShadow: [
+              BoxShadow(
+                color: orange.withValues(alpha:0.3),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Next Step',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Satoshi',
+                  letterSpacing: 0.5,
+                ),
+              ),
+              SizedBox(width: 12.sw),
+              const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 14),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _BackgroundPatterns extends StatelessWidget {
   const _BackgroundPatterns();
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Stack(
-        children: [
-          Positioned(
-            left: -154.sw,
-            top: -14.sh,
-            child: Transform.rotate(
-              angle: 21 * math.pi / 180,
-              child: Container(
-                width: 271.sw,
-                height: 159.sh,
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFF5DDCE)),
-                  borderRadius: BorderRadius.all(Radius.elliptical(136.sw, 80.sh)),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: -149.sw,
-            top: -100.sh,
-            child: Transform.rotate(
-              angle: 4 * math.pi / 180,
-              child: Container(
-                width: 303.sw,
-                height: 329.sh,
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFF5DDCE)),
-                  borderRadius: BorderRadius.all(Radius.elliptical(152.sw, 165.sh)),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 }
 

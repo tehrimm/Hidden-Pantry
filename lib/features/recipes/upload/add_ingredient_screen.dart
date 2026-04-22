@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 
 
 class AddIngredientScreen extends StatefulWidget {
@@ -113,6 +114,7 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
     }
     return m[a.length][b.length];
   }
+
   void _save() {
     final name = _searchController.text.trim();
     final quantity = _quantityController.text.trim();
@@ -148,7 +150,7 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
         ),
         child: Stack(
           children: [
-            const _BackgroundPatterns(),
+            PatternBackground(),
             SafeArea(
               bottom: false,
               child: SingleChildScrollView(
@@ -186,64 +188,93 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
                       ),
                     ),
                     
-                      SizedBox(height: 24.sh),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 30.sw),
-                        child: Column(
-                          children: [
-                            Container(
-                              height: 70.sh,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF9E3D5),
-                                borderRadius: BorderRadius.circular(20.sw),
-                              ),
-                              padding: EdgeInsets.symmetric(horizontal: 31.sw),
-                              alignment: Alignment.center,
-                              child: TextField(
-                                controller: _searchController,
-                                onChanged: _onSearchChanged,
-                                textAlign: TextAlign.center,
-                                textAlignVertical: TextAlignVertical.center,
-                                style: TextStyle(color: purple, fontSize: 15.sp, fontFamily: 'Satoshi'),
-                                decoration: InputDecoration(
-                                  hintText: 'Search Ingredient',
-                                  hintStyle: TextStyle(
-                                    color: purple.withValues(alpha: 0.5),
-                                    fontSize: 15.sp,
-                                    fontFamily: 'Satoshi',
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding: EdgeInsets.zero,
+                    SizedBox(height: 24.sh),
+                    TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 600),
+                      curve: Curves.easeOutBack,
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      builder: (context, value, child) {
+                        return Center(
+                          child: SizedBox(
+                            width: (350.sw) * value,
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: Column(
+                        children: [
+                          Container(
+                            height: 70.sh,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF9E3D5),
+                              borderRadius: BorderRadius.circular(20.sw),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: purple.withValues(alpha: 0.1),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
                                 ),
+                              ],
+                            ),
+                            padding: EdgeInsets.symmetric(horizontal: 20.sw),
+                            alignment: Alignment.center,
+                            child: TextField(
+                              controller: _searchController,
+                              onChanged: _onSearchChanged,
+                              textAlign: TextAlign.left,
+                              textAlignVertical: TextAlignVertical.center,
+                              style: TextStyle(color: purple, fontSize: 16.sp, fontFamily: 'Satoshi', fontWeight: FontWeight.w600),
+                              decoration: InputDecoration(
+                                hintText: 'Search Ingredient',
+                                hintStyle: TextStyle(
+                                  color: purple.withValues(alpha: 0.5),
+                                  fontSize: 16.sp,
+                                  fontFamily: 'Satoshi',
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.only(bottom: 5.sh),
+                                suffixIcon: Icon(Icons.search, color: purple, size: 22.sw),
                               ),
                             ),
-                            
-                            if (_suggestions.isNotEmpty)
-                              Container(
-                                margin: EdgeInsets.only(top: 4.sh),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF9E3D5),
-                                  borderRadius: BorderRadius.circular(15.sw),
-                                ),
-                                child: Column(
-                                  children: _suggestions.map((s) => ListTile(
-                                    title: Text(s, style: TextStyle(color: purple, fontSize: 14.sp, fontFamily: 'Satoshi')),
-                                    onTap: () {
-                                      setState(() {
-                                        _searchController.text = s;
-                                        _suggestions = [];
-                                      });
-                                    },
-                                  )).toList(),
-                                ),
+                          ),
+                          
+                          if (_suggestions.isNotEmpty)
+                            Container(
+                              margin: EdgeInsets.only(top: 4.sh),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF9E3D5),
+                                borderRadius: BorderRadius.circular(15.sw),
                               ),
-                          ],
-                        ),
+                              child: Column(
+                                children: _suggestions.map((s) => ListTile(
+                                  title: Text(s, style: TextStyle(color: purple, fontSize: 14.sp, fontFamily: 'Satoshi')),
+                                  onTap: () {
+                                    setState(() {
+                                      _searchController.text = s;
+                                      _suggestions = [];
+                                    });
+                                  },
+                                )).toList(),
+                              ),
+                            ),
+                        ],
                       ),
+                    ),
                     
-                    SizedBox(height: 26.sh),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 30.sw),
+                    SizedBox(height: 16.sh),
+                    TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 600),
+                      curve: Curves.easeOutBack,
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      builder: (context, value, child) {
+                        return Center(
+                          child: SizedBox(
+                            width: (350.sw) * value,
+                            child: child,
+                          ),
+                        );
+                      },
                       child: Container(
                         height: 70.sh,
                         decoration: BoxDecoration(
@@ -257,18 +288,19 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
                               child: TextField(
                                 controller: _quantityController,
                                 keyboardType: TextInputType.text,
-                                textAlign: TextAlign.center,
+                                textAlign: TextAlign.left,
                                 textAlignVertical: TextAlignVertical.center,
-                                style: TextStyle(color: purple, fontSize: 15.sp, fontFamily: 'Satoshi'),
+                                style: TextStyle(color: purple, fontSize: 16.sp, fontFamily: 'Satoshi', fontWeight: FontWeight.w600),
                                 decoration: InputDecoration(
-                                  hintText: 'Enter Quantity',
+                                  hintText: 'Quantity',
                                   hintStyle: TextStyle(
                                     color: purple.withValues(alpha: 0.5),
-                                    fontSize: 15.sp,
+                                    fontSize: 16.sp,
                                     fontFamily: 'Satoshi',
+                                    fontWeight: FontWeight.w600,
                                   ),
                                   border: InputBorder.none,
-                                  contentPadding: EdgeInsets.zero,
+                                  contentPadding: EdgeInsets.only(bottom: 7.sh),
                                 ),
                               ),
                             ),
@@ -285,13 +317,18 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
                                 child: DropdownButton<String>(
                                   isExpanded: true,
                                   value: _unit,
-                                  hint: Center(
-                                    child: Text(
-                                      'Unit',
-                                      style: TextStyle(
-                                        color: purple.withValues(alpha: 0.5),
-                                        fontSize: 15.sp,
-                                        fontFamily: 'Satoshi',
+                                  hint: Padding(
+                                    padding: EdgeInsets.only(bottom: 5.sh),
+                                    child: Align(
+                                      alignment: Alignment.centerLeft,
+                                      child: Text(
+                                        'Unit',
+                                        style: TextStyle(
+                                          color: purple.withValues(alpha: 0.5),
+                                          fontSize: 16.sp,
+                                          fontFamily: 'Satoshi',
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -299,20 +336,28 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
                                   items: _units.map((u) {
                                     return DropdownMenuItem<String>(
                                       value: u,
-                                      child: Center(
-                                        child: Text(
-                                          u,
-                                          style: TextStyle(color: purple, fontSize: 15.sp, fontFamily: 'Satoshi'),
+                                      child: Padding(
+                                        padding: EdgeInsets.only(bottom: 5.sh),
+                                        child: Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            u,
+                                            style: TextStyle(color: purple, fontSize: 16.sp, fontFamily: 'Satoshi', fontWeight: FontWeight.w600),
+                                          ),
                                         ),
                                       ),
                                     );
                                   }).toList(),
                                   selectedItemBuilder: (context) {
                                     return _units.map((u) {
-                                      return Center(
-                                        child: Text(
-                                          u,
-                                          style: TextStyle(color: purple, fontSize: 15.sp, fontFamily: 'Satoshi'),
+                                      return Padding(
+                                        padding: EdgeInsets.only(bottom: 5.sh),
+                                        child: Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                            u,
+                                            style: TextStyle(color: purple, fontSize: 16.sp, fontFamily: 'Satoshi', fontWeight: FontWeight.w600),
+                                          ),
                                         ),
                                       );
                                     }).toList();
@@ -363,52 +408,5 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
         ),
       ),
     );
-}
-}
-
-class _BackgroundPatterns extends StatelessWidget {
-  const _BackgroundPatterns();
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Stack(
-        children: [
-          Positioned(
-            left: -154.sw,
-            top: -14.sh,
-            child: Transform.rotate(
-              angle: 21 * math.pi / 180,
-              child: Container(
-                width: 271.sw,
-                height: 159.sh,
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFF5DDCE)),
-                  borderRadius: BorderRadius.all(Radius.elliptical(136.sw, 80.sh)),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: -149.sw,
-            top: -100.sh,
-            child: Transform.rotate(
-              angle: 4 * math.pi / 180,
-              child: Container(
-                width: 303.sw,
-                height: 329.sh,
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFF5DDCE)),
-                  borderRadius: BorderRadius.all(Radius.elliptical(152.sw, 165.sh)),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
-
-
-

@@ -8,6 +8,7 @@ import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'upload_recipe_step2.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 
 
 class UploadRecipeStep1 extends StatefulWidget {
@@ -54,12 +55,26 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
               SizedBox(height: 24.sh),
               _sourceTile(Icons.photo_library_rounded, "Gallery", () async {
                 final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-                if (image != null) setState(() => _image = File(image.path));
+                if (image != null) {
+                  final int bytes = await image.length();
+                  if (bytes > 5 * 1024 * 1024) {
+                    if (mounted) Toaster.show(context, 'Image too large (Max 5MB)', isError: true);
+                    return;
+                  }
+                  setState(() => _image = File(image.path));
+                }
               }),
               SizedBox(height: 12.sh),
               _sourceTile(Icons.camera_alt_rounded, "Camera", () async {
                 final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
-                if (photo != null) setState(() => _image = File(photo.path));
+                if (photo != null) {
+                  final int bytes = await photo.length();
+                  if (bytes > 5 * 1024 * 1024) {
+                    if (mounted) Toaster.show(context, 'Image too large (Max 5MB)', isError: true);
+                    return;
+                  }
+                  setState(() => _image = File(photo.path));
+                }
               }),
               SizedBox(height: 24.sh),
             ],
@@ -94,7 +109,7 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
   }
 
   final Color purple = const Color(0xFF462F4D);
-  final Color orange = const Color(0xFFF2894F);
+  final Color orange = const Color(0xFFEF8A54);
   final Color cardBg = const Color(0xFFF9E3D5);
 
   @override
@@ -106,7 +121,7 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
       body: Stack(
         children: [
           // Background Patterns
-          const _BackgroundPatterns(),
+          PatternBackground(),
 
           Column(
             children: [
@@ -157,82 +172,85 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                   children: [
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 29.sw),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Title',
-                            style: TextStyle(
-                              color: Color(0xFF462F4D),
-                              fontSize: 40,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Satoshi',
-                            ),
-                          ),
-                          SizedBox(height: 32.sh),
-                          Container(
-                            height: 70.sh,
-                            decoration: BoxDecoration(
-                              color: cardBg,
-                              borderRadius: BorderRadius.circular(20.sw),
-                            ),
-                            padding: EdgeInsets.symmetric(horizontal: 25.sw),
-                            alignment: Alignment.centerLeft,
-                            child: TextField(
-                              controller: _titleController,
+                      child: _StaggeredFadeIn(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Title',
                               style: TextStyle(
-                                color: purple,
-                                fontSize: 15.sp,
+                                color: Color(0xFF462F4D),
+                                fontSize: 40,
+                                fontWeight: FontWeight.bold,
                                 fontFamily: 'Satoshi',
                               ),
-                              decoration: InputDecoration(
-                                hintText: 'Enter recipe title',
-                                border: InputBorder.none,
-                                hintStyle: TextStyle(color: Color(0x66462F4D), fontSize: 15.sp),
-                              ),
                             ),
-                          ),
-                          SizedBox(height: 23.sh),
-                          GestureDetector(
-                            onTap: _pickImage,
-                            child: Container(
-                              height: 220.sh,
-                              width: double.infinity,
+                            SizedBox(height: 32.sh),
+                            Container(
+                              height: 70.sh,
                               decoration: BoxDecoration(
                                 color: cardBg,
-                                borderRadius: BorderRadius.circular(23.sw),
+                                borderRadius: BorderRadius.circular(20.sw),
                               ),
-                              child: _image != null
-                                  ? ClipRRect(
-                                      borderRadius: BorderRadius.circular(23.sw),
-                                      child: Image.file(_image!, fit: BoxFit.cover),
-                                    )
-                                  : (widget.editingRecipe?.imageUrl != null
-                                      ? ClipRRect(
-                                          borderRadius: BorderRadius.circular(23.sw),
-                                          child: Image.network(widget.editingRecipe!.imageUrl!, fit: BoxFit.cover),
-                                        )
-                                      : Column(
-                                          mainAxisAlignment: MainAxisAlignment.center,
-                                          children: [
-                                            Icon(Icons.add_photo_alternate_rounded, size: 48.sw, color: purple.withValues(alpha: 0.4)),
-                                            SizedBox(height: 12.sh),
-                                            Text('Add Recipe Photo', style: TextStyle(color: purple.withValues(alpha: 0.4), fontSize: 16.sp, fontWeight: FontWeight.w900, fontFamily: 'Satoshi')),
-                                            Text('Make them hungry!', style: TextStyle(color: purple.withValues(alpha: 0.25), fontSize: 12.sp, fontFamily: 'Satoshi')),
-                                          ],
-                                        )),
+                              padding: EdgeInsets.symmetric(horizontal: 25.sw),
+                              alignment: Alignment.centerLeft,
+                              child: TextField(
+                                controller: _titleController,
+                                style: TextStyle(
+                                  color: purple,
+                                  fontSize: 15.sp,
+                                  fontFamily: 'Satoshi',
+                                ),
+                                decoration: InputDecoration(
+                                  hintText: 'Enter recipe title',
+                                  border: InputBorder.none,
+                                  hintStyle: TextStyle(color: Color(0x66462F4D), fontSize: 15.sp),
+                                ),
+                              ),
                             ),
-                          ),
-                          SizedBox(height: 5.sh),
-                          Text(
-                            '*maximum size 2MB',
-                            style: TextStyle(
-                              color: purple,
-                              fontSize: 9.sp,
-                              fontFamily: 'Satoshi',
+                            SizedBox(height: 23.sh),
+                            GestureDetector(
+                              onTap: _pickImage,
+                              child: Container(
+                                height: 220.sh,
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: cardBg,
+                                  borderRadius: BorderRadius.circular(23.sw),
+                                ),
+                                child: _image != null
+                                    ? ClipRRect(
+                                        borderRadius: BorderRadius.circular(23.sw),
+                                        child: Image.file(_image!, fit: BoxFit.cover),
+                                      )
+                                    : (widget.editingRecipe?.imageUrl != null
+                                        ? ClipRRect(
+                                            borderRadius: BorderRadius.circular(23.sw),
+                                            child: Image.network(widget.editingRecipe!.imageUrl!, fit: BoxFit.cover),
+                                          )
+                                        : Column(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Icon(Icons.add_photo_alternate_rounded, size: 48.sw, color: purple.withValues(alpha: 0.4)),
+                                              SizedBox(height: 12.sh),
+                                              Text('Add Recipe Photo', style: TextStyle(color: purple.withValues(alpha: 0.4), fontSize: 16.sp, fontWeight: FontWeight.w900, fontFamily: 'Satoshi')),
+                                              Text('High quality photos get more likes', style: TextStyle(color: purple.withValues(alpha: 0.25), fontSize: 12.sp, fontFamily: 'Satoshi')),
+                                            ],
+                                          )),
+                              ),
                             ),
-                          ),
-                        ],
+                            SizedBox(height: 5.sh),
+                            Text(
+                              '*Maximum size 5MB (1080x1080 recommended)',
+                              style: TextStyle(
+                                color: purple.withValues(alpha: 0.6),
+                                fontSize: 10.sp,
+                                fontFamily: 'Satoshi',
+                                fontStyle: FontStyle.italic,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                     // Next Button at the end of scrollable content
@@ -240,7 +258,7 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                       padding: EdgeInsets.fromLTRB(29.sw, 42.sh, 29.sw, 42.sh),
                       child: Align(
                         alignment: Alignment.centerRight,
-                        child: GestureDetector(
+                        child: _AnimatedNextButton(
                           onTap: () {
                             if (_titleController.text.isEmpty || (_image == null && widget.editingRecipe?.imageUrl == null)) {
                               Toaster.show(context, 'Please enter a title and select an image', isError: true);
@@ -257,30 +275,6 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                               ),
                             );
                           },
-                          child: Container(
-                            width: 220.sw,
-                            height: 62.sh,
-                            decoration: BoxDecoration(
-                              color: orange,
-                              borderRadius: BorderRadius.circular(20.sw),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'Next',
-                                  style: TextStyle(
-                                    color: Color(0xFFFFF2EA),
-                                    fontSize: 15.sp,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'Satoshi',
-                                  ),
-                                ),
-                                SizedBox(width: 10.sw),
-                                Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16.sw),
-                              ],
-                            ),
-                          ),
                         ),
                       ),
                     ),
@@ -295,47 +289,110 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
   }
 }
 
+class _StaggeredFadeIn extends StatelessWidget {
+  final Widget child;
+  const _StaggeredFadeIn({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 600),
+      curve: Curves.easeOutCubic,
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+}
+
+class _AnimatedNextButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _AnimatedNextButton({required this.onTap});
+
+  @override
+  State<_AnimatedNextButton> createState() => _AnimatedNextButtonState();
+}
+
+class _AnimatedNextButtonState extends State<_AnimatedNextButton> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 100));
+    _scale = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final orange = const Color(0xFFF2894F);
+    return GestureDetector(
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) => _controller.reverse(),
+      onTapCancel: () => _controller.reverse(),
+      onTap: widget.onTap,
+      child: ScaleTransition(
+        scale: _scale,
+        child: Container(
+          width: 184.sw,
+          height: 62.sh,
+          decoration: BoxDecoration(
+            color: orange,
+            borderRadius: BorderRadius.circular(20.sw),
+            boxShadow: [
+              BoxShadow(
+                color: orange.withValues(alpha:0.3),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Next Step',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Satoshi',
+                  letterSpacing: 0.5,
+                ),
+              ),
+              SizedBox(width: 12.sw),
+              const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 14),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _BackgroundPatterns extends StatelessWidget {
   const _BackgroundPatterns();
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Stack(
-        children: [
-          Positioned(
-            left: -154,
-            top: -14,
-            child: Transform.rotate(
-              angle: 21 * math.pi / 180,
-              child: Container(
-                width: 271,
-                height: 159,
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFF5DDCE)),
-                  borderRadius: const BorderRadius.all(Radius.elliptical(136, 80)),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: -149,
-            top: -100,
-            child: Transform.rotate(
-              angle: 4 * math.pi / 180,
-              child: Container(
-                width: 303,
-                height: 329,
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFF5DDCE)),
-                  borderRadius: const BorderRadius.all(Radius.elliptical(152, 165)),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 }
 

@@ -8,6 +8,7 @@ import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart'
 import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 
 
 class UploadRecipeStep5 extends StatefulWidget {
@@ -52,7 +53,7 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
   };
 
   final Color purple = const Color(0xFF462F4D);
-  final Color orange = const Color(0xFFF2894F);
+  final Color orange = const Color(0xFFEF8A54);
   final Color cardBg = const Color(0xFFF9E3D5);
   final Color bg = const Color(0xFFFFF3EB);
   final RecipeService _recipeService = RecipeService();
@@ -156,7 +157,7 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
         ),
         child: Stack(
           children: [
-            const _BackgroundPatterns(),
+          PatternBackground(),
             SafeArea(
               child: Column(
                 children: [
@@ -236,47 +237,12 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
  
                         Padding(
                           padding: EdgeInsets.symmetric(vertical: 42.sh),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: _isSubmitting ? null : _submit,
-                                  child: Container(
-                                    height: 62.sh,
-                                    decoration: BoxDecoration(
-                                      color: orange,
-                                      borderRadius: BorderRadius.circular(20.sw),
-                                    ),
-                                    child: _isSubmitting
-                                        ? Center(
-                                            child: SizedBox(
-                                              width: 24.sw,
-                                              height: 24.sh,
-                                              child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                                            ),
-                                          )
-                                        : Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Text(
-                                                'Submit',
-                                                style: TextStyle(
-                                                  color: const Color(0xFFFFF2EA),
-                                                  fontSize: 15.sp,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontFamily: 'Satoshi',
-                                                ),
-                                              ),
-                                              SizedBox(width: 10.sw),
-                                              Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16.sw),
-                                            ],
-                                          ),
-                                  ),
-                                ),
-                              ),
-                            ],
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: _AnimatedSubmitButton(
+                              isLoading: _isSubmitting,
+                              onTap: _submit,
+                            ),
                           ),
                         ),
                       ],
@@ -387,46 +353,88 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
   }
 }
 
+class _AnimatedSubmitButton extends StatefulWidget {
+  final VoidCallback onTap;
+  final bool isLoading;
+  const _AnimatedSubmitButton({required this.onTap, this.isLoading = false});
+
+  @override
+  State<_AnimatedSubmitButton> createState() => _AnimatedSubmitButtonState();
+}
+
+class _AnimatedSubmitButtonState extends State<_AnimatedSubmitButton> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scale;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 100));
+    _scale = Tween<double>(begin: 1.0, end: 0.95).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final orange = const Color(0xFFEF8A54);
+    return GestureDetector(
+      onTapDown: (_) => widget.isLoading ? null : _controller.forward(),
+      onTapUp: (_) => _controller.reverse(),
+      onTapCancel: () => _controller.reverse(),
+      onTap: widget.isLoading ? null : widget.onTap,
+      child: ScaleTransition(
+        scale: _scale,
+        child: Container(
+          width: 184.sw,
+          height: 62.sh,
+          decoration: BoxDecoration(
+            color: orange,
+            borderRadius: BorderRadius.circular(20.sw),
+            boxShadow: [
+              BoxShadow(
+                color: orange.withValues(alpha:0.3),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: widget.isLoading
+              ? const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      'Complete Upload',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16.sp,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'Satoshi',
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    SizedBox(width: 12.sw),
+                    const Icon(Icons.check_circle_outline_rounded, color: Colors.white, size: 18),
+                  ],
+                ),
+        ),
+      ),
+    );
+  }
+}
+
 class _BackgroundPatterns extends StatelessWidget {
   const _BackgroundPatterns();
 
   @override
   Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Stack(
-        children: [
-          Positioned(
-            left: -154.sw,
-            top: -14.sh,
-            child: Transform.rotate(
-              angle: 21 * math.pi / 180,
-              child: Container(
-                width: 271.sw,
-                height: 159.sh,
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFF5DDCE)),
-                  borderRadius: BorderRadius.all(Radius.elliptical(136.sw, 80.sh)),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: -149.sw,
-            top: -100.sh,
-            child: Transform.rotate(
-              angle: 4 * math.pi / 180,
-              child: Container(
-                width: 303.sw,
-                height: 329.sh,
-                decoration: BoxDecoration(
-                  border: Border.all(color: const Color(0xFFF5DDCE)),
-                  borderRadius: BorderRadius.all(Radius.elliptical(152.sw, 165.sh)),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+    return const SizedBox.shrink();
   }
 }
