@@ -297,57 +297,45 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
           body: Stack(
             children: [
               const PatternBackground(),
-              NestedScrollView(
-                headerSliverBuilder: (context, innerBoxIsScrolled) {
-                  return [
-                    SliverToBoxAdapter(
-                      child: Column(
-                        children: [
-                          SizedBox(height: 50.sh),
-                          _customAppBar(nutritionistData["fullName"] ?? "Expert Profile"),
-                          _profileHeader(nutritionistData),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 8.sh),
-                            child: Text(
-                              nutritionistData["bio"] ?? "Dedicated health professional.",
-                              style: TextStyle(color: purple.withValues(alpha:0.7), fontSize: 14.sp, height: 1.5),
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          SizedBox(height: 24.sh),
-                        ],
-                      ),
+              Column(
+                children: [
+                  SizedBox(height: 50.sh),
+                  _customAppBar(nutritionistData["fullName"] ?? "Expert Profile"),
+                  _profileHeader(nutritionistData),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 8.sh),
+                    child: Text(
+                      nutritionistData["bio"] ?? "Dedicated health professional.",
+                      style: TextStyle(color: purple.withValues(alpha:0.7), fontSize: 14.sp, height: 1.5),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    SliverPersistentHeader(
-                      delegate: _SliverAppBarDelegate(
-                        TabBar(
-                          controller: _tabController,
-                          labelColor: orange,
-                          unselectedLabelColor: purple.withValues(alpha:0.4),
-                          indicatorColor: orange,
-                        isScrollable: false,
-                          labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp, fontFamily: "Satoshi"),
-                          tabs: const [
-                            Tab(text: "Feed"),
-                            Tab(text: "Reviews"),
-                            Tab(text: "Plans"),
-                          ],
-                        ),
-                        backgroundColor: bg,
-                      ),
-                      pinned: true,
+                  ),
+                  SizedBox(height: 24.sh),
+                  TabBar(
+                    controller: _tabController,
+                    labelColor: orange,
+                    unselectedLabelColor: purple.withValues(alpha:0.4),
+                    indicatorColor: orange,
+                    isScrollable: false,
+                    labelStyle: TextStyle(fontWeight: FontWeight.bold, fontSize: 14.sp, fontFamily: "Satoshi"),
+                    tabs: const [
+                      Tab(text: "Feed"),
+                      Tab(text: "Reviews"),
+                      Tab(text: "Plans"),
+                    ],
+                  ),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _feedTab(),
+                        _reviewsTab(),
+                        _plansTab(),
+                      ],
                     ),
-                  ];
-                },
-                body: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _feedTab(),
-                    _reviewsTab(),
-                    _plansTab(),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -436,11 +424,70 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
         if (docs.isEmpty) {
           return _placeholderTab("No reviews yet. Be the first!", icon: Icons.rate_review_rounded);
         }
+
+        // Calculate Average
+        double totalRating = 0;
+        for (var d in docs) {
+          totalRating += (d.data() as Map<String, dynamic>)['rating'] ?? 0.0;
+        }
+        double avg = docs.isEmpty ? 0 : totalRating / docs.length;
+
         return ListView.builder(
           padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 16.sh),
-          itemCount: docs.length,
+          itemCount: docs.length + 1,
           itemBuilder: (context, index) {
-            final d = docs[index].data() as Map<String, dynamic>;
+            if (index == 0) {
+              // Rating Overview Header
+              return Container(
+                margin: EdgeInsets.only(bottom: 24.sh),
+                padding: EdgeInsets.all(20.sw),
+                decoration: BoxDecoration(
+                  color: orange.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(24.sw),
+                  border: Border.all(color: orange.withValues(alpha: 0.1)),
+                ),
+                child: Row(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          avg.toStringAsFixed(1),
+                          style: TextStyle(color: purple, fontSize: 40.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+                        ),
+                        Row(
+                          children: List.generate(5, (i) => Icon(
+                            i < avg.floor() ? Icons.star_rounded : (i < avg ? Icons.star_half_rounded : Icons.star_outline_rounded),
+                            color: orange,
+                            size: 16.sw,
+                          )),
+                        ),
+                        SizedBox(height: 4.sh),
+                        Text(
+                          "Based on ${docs.length} reviews",
+                          style: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 11.sp),
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    Container(
+                      width: 60.sw,
+                      height: 60.sw,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(color: orange.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4)),
+                        ],
+                      ),
+                      child: Icon(Icons.star_rounded, color: orange, size: 32.sw),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final d = docs[index - 1].data() as Map<String, dynamic>;
             final double rating = (d['rating'] as num?)?.toDouble() ?? 0.0;
             final String name = d['userName'] ?? 'User';
             final String text = d['reviewText'] ?? '';
@@ -448,39 +495,72 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
             final String time = ts != null ? _timeAgo(ts.toDate()) : '';
 
             return _animatedItem(index, Container(
-              margin: EdgeInsets.only(bottom: 14.sh),
+              margin: EdgeInsets.only(bottom: 16.sh),
               padding: EdgeInsets.all(16.sw),
               decoration: BoxDecoration(
-                color: cardBg,
-                borderRadius: BorderRadius.circular(18.sw),
+                color: const Color(0xFFFFF9F5),
+                borderRadius: BorderRadius.circular(22.sw),
+                boxShadow: [
+                  BoxShadow(
+                    color: purple.withValues(alpha: 0.03),
+                    blurRadius: 15.sw,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      CircleAvatar(radius: 16.sw, backgroundColor: cardInner, child: Icon(Icons.person, size: 16.sw, color: orange)),
-                      SizedBox(width: 10.sw),
+                      Container(
+                        padding: EdgeInsets.all(2.sw),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: orange.withValues(alpha: 0.1)),
+                        ),
+                        child: CircleAvatar(
+                          radius: 14.sw, 
+                          backgroundColor: cardInner, 
+                          child: Icon(Icons.person, size: 14.sw, color: orange)
+                        ),
+                      ),
+                      SizedBox(width: 12.sw),
                       Expanded(
-                        child: Text(name, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14.sp)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(name, style: TextStyle(color: purple, fontWeight: FontWeight.w900, fontSize: 13.sp, fontFamily: "Satoshi")),
+                            if (time.isNotEmpty)
+                              Text(time, style: TextStyle(color: purple.withValues(alpha: 0.3), fontSize: 10.sp)),
+                          ],
+                        ),
                       ),
                       // Stars
                       Row(
                         children: List.generate(5, (i) => Icon(
                           i < rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                          color: const Color(0xFFDAA520),
+                          color: orange,
                           size: 14.sw,
                         )),
                       ),
                     ],
                   ),
                   if (text.isNotEmpty) ...[
-                    SizedBox(height: 10.sh),
-                    Text(text, style: TextStyle(color: purple.withValues(alpha: 0.75), fontSize: 13.sp, height: 1.5)),
-                  ],
-                  if (time.isNotEmpty) ...[
-                    SizedBox(height: 8.sh),
-                    Text(time, style: TextStyle(color: purple.withValues(alpha: 0.35), fontSize: 11.sp)),
+                    SizedBox(height: 12.sh),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.format_quote_rounded, color: orange.withValues(alpha: 0.2), size: 16.sw),
+                        SizedBox(width: 8.sw),
+                        Expanded(
+                          child: Text(
+                            text, 
+                            style: TextStyle(color: purple.withValues(alpha: 0.7), fontSize: 13.sp, height: 1.5, fontStyle: FontStyle.italic)
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ],
               ),
@@ -528,75 +608,67 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
     String timeAgo = ts != null ? _timeAgo(ts.toDate()) : "Just now";
 
     return Container(
-      margin: EdgeInsets.only(bottom: 16.sh),
+      margin: EdgeInsets.only(bottom: 14.sh),
       decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(24.sw),
+        color: const Color(0xFFFFF9F5),
+        borderRadius: BorderRadius.circular(22.sw),
         boxShadow: [
-          BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 15.sw, offset: Offset(0, 4.sh)),
+          BoxShadow(
+            color: purple.withValues(alpha: 0.03),
+            blurRadius: 15.sw,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Header Row ──
           Padding(
-            padding: EdgeInsets.fromLTRB(16.sw, 16.sh, 16.sw, 0),
+            padding: EdgeInsets.fromLTRB(12.sw, 12.sh, 12.sw, 0),
             child: Row(
               children: [
-                CircleAvatar(
-                     radius: 18.sw, 
-                     backgroundColor: cardInner,
-                     backgroundImage: widget.nutritionistData["photoUrl"] != null && widget.nutritionistData["photoUrl"].toString().startsWith("http")
-                        ? NetworkImage(widget.nutritionistData["photoUrl"]) 
-                        : null,
-                     child: (widget.nutritionistData["photoUrl"] == null) ? Icon(Icons.person, color: orange, size: 18.sw) : null,
-                ),
-                SizedBox(width: 10.sw),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.nutritionistData["fullName"] ?? "Nutritionist",
-                      style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13.sp, fontFamily: "Satoshi"),
-                    ),
-                    Text(
-                      timeAgo, 
-                      style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 11.sp),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                if (_isSubscribed && _expiryDate != null && minTier > 0 && !isLocked)
-                  Container(
-                    margin: EdgeInsets.only(right: 8.sw),
-                    padding: EdgeInsets.symmetric(horizontal: 8.sw, vertical: 4.sh),
-                    decoration: BoxDecoration(
-                      color: Colors.green.withValues(alpha:0.1),
-                      borderRadius: BorderRadius.circular(8.sw),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.timer_outlined, size: 10.sw, color: Colors.green),
-                        SizedBox(width: 4.sw),
-                        Text(
-                          "Active until ${_expiryDate!.day}/${_expiryDate!.month}",
-                          style: TextStyle(color: Colors.green, fontSize: 9.sp, fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
+                Container(
+                  padding: EdgeInsets.all(2.sw),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: orange.withValues(alpha: 0.2), width: 1.5),
                   ),
+                  child: CircleAvatar(
+                       radius: 16.sw, 
+                       backgroundColor: cardInner,
+                       backgroundImage: widget.nutritionistData["photoUrl"] != null && widget.nutritionistData["photoUrl"].toString().startsWith("http")
+                          ? NetworkImage(widget.nutritionistData["photoUrl"]) 
+                          : null,
+                       child: (widget.nutritionistData["photoUrl"] == null) ? Icon(Icons.person, color: orange, size: 16.sw) : null,
+                  ),
+                ),
+                SizedBox(width: 12.sw),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.nutritionistData["fullName"] ?? "Nutritionist",
+                        style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13.sp, fontFamily: "Satoshi"),
+                      ),
+                      Text(
+                        timeAgo, 
+                        style: TextStyle(color: purple.withValues(alpha:0.3), fontSize: 10.sp),
+                      ),
+                    ],
+                  ),
+                ),
                 if (minTier > 0)
                   Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 5.sh),
+                    padding: EdgeInsets.symmetric(horizontal: 8.sw, vertical: 4.sh),
                     decoration: BoxDecoration(
                       color: isLocked 
-                          ? Colors.grey[200] 
+                          ? Colors.grey[100] 
                           : (minTier == 3 
-                              ? const Color(0xFF4B0082) 
+                              ? const Color(0xFF6A4C93) // Platinum
                               : minTier == 2 
-                                ? const Color(0xFFDAA520) 
-                                : const Color(0xFF708090)).withValues(alpha:0.15),
+                                ? const Color(0xFFD4AF37) // Gold
+                                : const Color(0xFF8A9EA7)).withValues(alpha:0.1), // Silver
                       borderRadius: BorderRadius.circular(10.sw),
                     ),
                     child: Row(
@@ -604,16 +676,17 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
                       children: [
                         Icon(
                           isLocked ? Icons.lock_rounded : (minTier == 3 ? Icons.diamond_rounded : (minTier == 2 ? Icons.star_rounded : Icons.star_half_rounded)), 
-                          size: 12.sw, 
-                          color: isLocked ? Colors.grey : (minTier == 3 ? const Color(0xFF4B0082) : (minTier == 2 ? const Color(0xFFDAA520) : const Color(0xFF708090)))
+                          size: 10.sw, 
+                          color: isLocked ? Colors.grey : (minTier == 3 ? const Color(0xFF6A4C93) : (minTier == 2 ? const Color(0xFFD4AF37) : const Color(0xFF8A9EA7)))
                         ),
                         SizedBox(width: 4.sw),
                         Text(
                           minTier == 3 ? "PLATINUM" : minTier == 2 ? "GOLD" : "SILVER",
                           style: TextStyle(
-                            color: isLocked ? Colors.grey : (minTier == 3 ? const Color(0xFF4B0082) : (minTier == 2 ? const Color(0xFFDAA520) : const Color(0xFF708090))),
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.bold,
+                            color: isLocked ? Colors.grey : (minTier == 3 ? const Color(0xFF6A4C93) : (minTier == 2 ? const Color(0xFFD4AF37) : const Color(0xFF8A9EA7))),
+                            fontSize: 9.sp,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ],
@@ -627,73 +700,94 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
 
           // ── Content ──
           if (isLocked)
-            ClipRRect(
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(24.sw)),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  // Blurred Content
-                  ImageFiltered(
-                    imageFilter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-                    child: Container(
-                      width: double.infinity,
-                      padding: EdgeInsets.fromLTRB(16.sw, 0, 16.sw, 20.sh),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (data["imageUrl"] != null) ...[
-                            Container(height: 150.sh, decoration: BoxDecoration(color: purple.withValues(alpha:0.1), borderRadius: BorderRadius.circular(16.sw))),
-                            SizedBox(height: 12.sh),
-                          ],
-                          if (type == "meal_plan" || data["mealPlanId"] != null) ...[
-                             _mealPlanPlaceholder(),
-                             SizedBox(height: 12.sh),
-                          ],
-                          if (data["docUrl"] != null) ...[
-                             Container(height: 50.sh, decoration: BoxDecoration(color: purple.withValues(alpha:0.1), borderRadius: BorderRadius.circular(12.sw))),
-                             SizedBox(height: 12.sh),
-                          ],
-                          Text(
-                            content.isNotEmpty ? content : "This content is exclusive to ${minTier == 3 ? 'Platinum' : minTier == 2 ? 'Gold' : 'Silver'} subscribers. Upgrade your plan to unlock.",
-                            style: TextStyle(color: const Color(0xFF433020).withValues(alpha:0.35), fontSize: 15.sp, height: 1.6, fontFamily: "Satoshi"),
-                          ),
-                        ],
+            Container(
+              width: double.infinity,
+              height: 175.sh,
+              decoration: BoxDecoration(
+                color: cardBg.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.vertical(bottom: Radius.circular(22.sw)),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20.sw),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Decorative Background Circles
+                    Positioned(
+                      top: -20.sh,
+                      right: -20.sw,
+                      child: Container(
+                        width: 140.sw,
+                        height: 140.sw,
+                        decoration: BoxDecoration(
+                          color: orange.withValues(alpha: 0.1),
+                          shape: BoxShape.circle,
+                        ),
                       ),
                     ),
-                  ),
-                  // Subtle Overlay & Lock
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(vertical: 24.sh),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          purple.withValues(alpha:0.05),
-                          purple.withValues(alpha:0.1),
-                        ],
+                    Positioned(
+                      bottom: -40.sh,
+                      left: -10.sw,
+                      child: Container(
+                        width: 120.sw,
+                        height: 120.sw,
+                        decoration: BoxDecoration(
+                          color: purple.withValues(alpha: 0.05),
+                          shape: BoxShape.circle,
+                        ),
                       ),
                     ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
+                    Positioned(
+                      top: 40.sh,
+                      left: 60.sw,
+                      child: Container(
+                        width: 40.sw,
+                        height: 40.sw,
+                        decoration: BoxDecoration(
+                          color: orange.withValues(alpha: 0.05),
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+
+                    // Centered Content
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Container(
-                          padding: EdgeInsets.all(10.sw),
+                          padding: EdgeInsets.all(16.sw),
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha:0.9),
+                            color: Colors.white,
                             shape: BoxShape.circle,
                             boxShadow: [
-                              BoxShadow(color: purple.withValues(alpha:0.1), blurRadius: 10.sw, offset: Offset(0, 4.sh)),
+                              BoxShadow(
+                                color: orange.withValues(alpha: 0.2),
+                                blurRadius: 20.sw,
+                                offset: const Offset(0, 8),
+                              ),
                             ],
                           ),
-                          child: Icon(Icons.lock_rounded, color: purple, size: 20.sw),
+                          child: Icon(Icons.lock_rounded, color: orange, size: 24.sw),
                         ),
                         SizedBox(height: 12.sh),
                         Text(
-                          "Exclusive ${minTier == 3 ? 'PLATINUM' : minTier == 2 ? 'GOLD' : 'SILVER'} ${type == 'meal_plan' || data['mealPlanId'] != null ? 'Meal Plan' : (data['recipeId'] != null) ? 'Recipe' : 'Update'}",
-                          style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14.sp, fontFamily: "Satoshi")
+                          "EXCLUSIVE ${minTier == 3 ? 'PLATINUM' : minTier == 2 ? 'GOLD' : 'SILVER'} CONTENT",
+                          style: TextStyle(
+                            color: purple,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 12.sp,
+                            letterSpacing: 1.2,
+                            fontFamily: "Satoshi",
+                          ),
+                        ),
+                        SizedBox(height: 8.sh),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 40.sw),
+                          child: Text(
+                            "This ${type == 'meal_plan' || data['mealPlanId'] != null ? 'Meal Plan' : 'Update'} is locked.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 12.sp),
+                          ),
                         ),
                         SizedBox(height: 12.sh),
                         ElevatedButton(
@@ -701,31 +795,30 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
                           style: ElevatedButton.styleFrom(
                             backgroundColor: orange,
                             foregroundColor: Colors.white,
-                            elevation: 8.sw,
-                            shadowColor: orange.withValues(alpha:0.4),
-                            padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 10.sh),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.sw)),
+                            elevation: 0,
+                            padding: EdgeInsets.symmetric(horizontal: 24.sw, vertical: 12.sh),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.sw)),
                           ),
-                          child: Text("Unlock Now", style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.bold)),
+                          child: Text("Unlock Plan", style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w900)),
                         ),
                       ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             )
           else ...[
             Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.sw),
+              padding: EdgeInsets.symmetric(horizontal: 12.sw),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (content.isNotEmpty)
                     Padding(
-                      padding: EdgeInsets.only(bottom: 12.sh),
+                      padding: EdgeInsets.only(bottom: 8.sh),
                       child: Text(
                         content,
-                        style: TextStyle(color: purple.withValues(alpha:0.85), fontSize: 15.sp, height: 1.6),
+                        style: TextStyle(color: purple.withValues(alpha:0.75), fontSize: 13.sp, height: 1.4),
                       ),
                     ),
                   
@@ -733,13 +826,17 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
                   if (data["imageUrl"] != null)
                     Padding(
                       padding: EdgeInsets.only(bottom: 12.sh),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16.sw),
-                        child: Image.network(
-                          data["imageUrl"],
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, loadingProgress) => loadingProgress == null ? child : Container(height: 200.sh, color: purple.withValues(alpha:0.05), child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: orange))),
+                      child: GestureDetector(
+                        onTap: () => _showFullScreenImage(context, data["imageUrl"]),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(16.sw),
+                          child: Image.network(
+                            data["imageUrl"],
+                            width: double.infinity,
+                            height: 180.sh,
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) => loadingProgress == null ? child : Container(height: 180.sh, color: purple.withValues(alpha:0.05), child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: orange))),
+                          ),
                         ),
                       ),
                     ),
@@ -1169,11 +1266,6 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
                             avgRating.toStringAsFixed(1),
                             style: TextStyle(color: purple, fontSize: 14.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
                           ),
-                          SizedBox(width: 4.sw),
-                          Text(
-                            "($reviewCount)",
-                            style: TextStyle(color: purple.withValues(alpha: 0.45), fontSize: 11.sp, fontWeight: FontWeight.w600),
-                          ),
                         ],
                       ],
                     );
@@ -1260,19 +1352,18 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
     String tierName;
 
     if (tier == 3) {
-      tierColor = purple; // Deep Purple for Platinum
-      accentColor = purple.withValues(alpha: 0.1);
+      tierColor = const Color(0xFF6A4C93); // Royal Purple for Platinum
+      accentColor = tierColor.withValues(alpha: 0.1);
       tierIcon = Icons.diamond_rounded;
       tierName = "PLATINUM";
     } else if (tier == 2) {
-      tierColor = orange; // Vibrant Orange for Gold
-      accentColor = orange.withValues(alpha: 0.1);
+      tierColor = const Color(0xFFD4AF37); // Gold
+      accentColor = tierColor.withValues(alpha: 0.1);
       tierIcon = Icons.star_rounded;
       tierName = "GOLD";
     } else {
-      // Silver tier using a soft brand purple
-      tierColor = purple.withValues(alpha: 0.6); 
-      accentColor = bg; // Beige
+      tierColor = const Color(0xFF8A9EA7); // Cool Silver
+      accentColor = tierColor.withValues(alpha: 0.1);
       tierIcon = Icons.star_half_rounded;
       tierName = "SILVER";
     }
@@ -1287,15 +1378,15 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
           child: Opacity(
             opacity: value,
             child: Container(
-              margin: EdgeInsets.only(bottom: 20.sh),
+              margin: EdgeInsets.only(bottom: 16.sh),
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30.sw),
+                color: const Color(0xFFFFF9F5),
+                borderRadius: BorderRadius.circular(24.sw),
                 boxShadow: [
                   BoxShadow(
-                    color: tierColor.withValues(alpha: 0.1),
-                    blurRadius: 20.sw.clamp(0.0, 100.0).toDouble(),
-                    offset: Offset(0, 10.sh),
+                    color: purple.withValues(alpha: 0.03),
+                    blurRadius: 15.sw,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
@@ -1347,12 +1438,12 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
                                     child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(tierIcon, size: 12.sw, color: orange),
+                                        Icon(tierIcon, size: 12.sw, color: tierColor),
                                         SizedBox(width: 6.sw),
                                         Text(
                                           tierName,
                                           style: TextStyle(
-                                            color: orange,
+                                            color: tierColor,
                                             fontSize: 10.sp,
                                             fontWeight: FontWeight.w900,
                                             letterSpacing: 1.1,
@@ -1642,6 +1733,49 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
          );
        }
      }
+  }
+
+  void _showFullScreenImage(BuildContext context, String imageUrl) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "Image",
+      barrierColor: Colors.black.withValues(alpha:0.9),
+      pageBuilder: (context, anim1, anim2) {
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Stack(
+            children: [
+              Center(
+                child: InteractiveViewer(
+                  minScale: 0.5,
+                  maxScale: 4.0,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 40.sh,
+                right: 20.sw,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    padding: EdgeInsets.all(8.sw),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha:0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.close_rounded, color: Colors.white, size: 24.sw),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _animatedItem(int index, Widget child) {

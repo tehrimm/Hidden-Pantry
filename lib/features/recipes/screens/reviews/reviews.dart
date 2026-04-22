@@ -424,8 +424,15 @@ class _ReviewCardState extends State<_ReviewCard> {
     return Container(
       padding: EdgeInsets.all(16.sw),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9E3D5),
+        color: const Color(0xFFFFF9F5),
         borderRadius: BorderRadius.circular(20.sw),
+        boxShadow: [
+          BoxShadow(
+            color: widget.purple.withValues(alpha: 0.03),
+            blurRadius: 15.sw,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
