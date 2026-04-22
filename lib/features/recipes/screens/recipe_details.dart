@@ -1645,8 +1645,3 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
     );
   }
 }
-
-
-
-
-

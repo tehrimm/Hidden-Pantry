@@ -7,12 +7,12 @@ import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/features/user/screens/notifications_screen.dart';
+import 'package:flutter/services.dart';
 
 import 'package:hidden_pantry_app/features/onboarding/screens/loading_five.dart';
 import 'package:hidden_pantry_app/features/onboarding/screens/starting_screen.dart' show StartingScreen;
 import 'profile_setting.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/my_recipes.dart';
-// import 'notifications.dart'; // Removed duplicate
 import 'package:hidden_pantry_app/features/admin/screens/admin_certificate_review.dart';
 import 'package:hidden_pantry_app/features/user/services/user_service.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
@@ -245,71 +245,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       padding: EdgeInsets.only(bottom: 120.sh),
                       children: [
                         // Profile block
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 22.sw),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              _avatar(),
-                              SizedBox(width: 16.sw),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (_hasError) ...[
-                                      Text(
-                                        "Error loading profile",
-                                        style: TextStyle(
-                                          color: Colors.red[700],
-                                          fontSize: 16.sp,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: "Satoshi",
-                                        ),
-                                      ),
-                                      SizedBox(height: 4.sh),
-                                      GestureDetector(
-                                        onTap: _loadProfile,
-                                        child: Text(
-                                          "Tap to Retry",
-                                          style: TextStyle(
-                                            color: purple,
-                                            fontSize: 14.sp,
-                                            decoration: TextDecoration.underline,
-                                            fontFamily: "Satoshi",
-                                          ),
-                                        ),
-                                      ),
-                                    ] else ...[
-                                      Text(
-                                        loading ? "..." : (name ?? "Hidden Pantry"),
-                                        style: TextStyle(
-                                          color: purple,
-                                          fontSize: 20.sp,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: "Satoshi",
-                                        ),
-                                      ),
-                                      SizedBox(height: 4.sh),
-                                      Opacity(
-                                        opacity: 0.55,
-                                        child: Text(
-                                          loading ? "" : (email ?? ""),
-                                          style: TextStyle(
-                                            color: purple,
-                                            fontSize: 15.sp,
-                                            fontFamily: "Satoshi",
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        _modernProfileHeader(),
 
-                        SizedBox(height: 30.sh),
+                        SizedBox(height: 20.sh),
 
                         // Buttons
                         _tile(
@@ -338,11 +276,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           title: "My Subscriptions",
                           onTap: () => _go(const MySubscriptionsScreen()),
                         ),
-                        _tile(
-                          icon: "assets/icons/notification.png",
-                          title: "Notification",
-                          onTap: () => _go(const NotificationsScreen()),
-                        ),
+                        // Notifications removed as per user request
                         _tile(
                           icon: "assets/icons/users.png", // Using existing icon
                           title: "My Network",
@@ -366,14 +300,26 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
                         // Logout button
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 22),
+                          padding: EdgeInsets.symmetric(horizontal: 22.sw),
                           child: GestureDetector(
-                            onTap: _logout,
+                            onTap: () {
+                               HapticFeedback.lightImpact();
+                               _logout();
+                            },
                             child: Container(
                               height: 70.sh,
                               decoration: BoxDecoration(
-                                color: orange,
-                                borderRadius: BorderRadius.circular(20.sw),
+                                gradient: LinearGradient(
+                                  colors: [orange, const Color(0xFFFFA06A)],
+                                ),
+                                borderRadius: BorderRadius.circular(22.sw),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: orange.withValues(alpha: 0.3),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 6),
+                                  )
+                                ],
                               ),
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -383,14 +329,15 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                                     width: 18.sw,
                                     height: 18.sh,
                                     fit: BoxFit.contain,
+                                    color: Colors.white,
                                   ),
                                   SizedBox(width: 12.sw),
                                   Text(
                                     "Logout",
                                     style: TextStyle(
-                                      color: const Color(0xFFFFF2EA),
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w600,
+                                      color: Colors.white,
+                                      fontSize: 15.sp,
+                                      fontWeight: FontWeight.w700,
                                       letterSpacing: 0.2,
                                       fontFamily: "Satoshi",
                                     ),
@@ -434,8 +381,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   "My profile",
                   style: TextStyle(
                     color: purple,
-                    fontSize: 24.sp,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 26.sp,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.3,
                     fontFamily: "Satoshi",
                   ),
                 ),
@@ -450,15 +398,94 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
 
 
+  Widget _modernProfileHeader() {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 22.sw),
+      child: Container(
+        padding: EdgeInsets.all(16.sw),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(24.sw),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Stack(
+              children: [
+                _avatar(),
+                Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    width: 18.sw,
+                    height: 18.sw,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                  ),
+                )
+              ],
+            ),
+            SizedBox(width: 14.sw),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name ?? "Hidden Pantry",
+                    style: TextStyle(
+                      color: purple,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: "Satoshi",
+                    ),
+                  ),
+                  SizedBox(height: 4.sh),
+                  Text(
+                    email ?? "",
+                    style: TextStyle(
+                      color: purple.withValues(alpha: 0.6),
+                      fontSize: 13.sp,
+                      fontFamily: "Satoshi",
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.edit_rounded, color: orange, size: 20.sw),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _avatar() {
     final hasNet = photoUrl != null && photoUrl!.trim().isNotEmpty;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(30.sw),
-      child: Container(
-        width: 60.sw,
-        height: 60.sw,
+    return Container(
+      width: 60.sw,
+      height: 60.sw,
+      decoration: BoxDecoration(
         color: const Color(0xFFD9D9D9),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 10,
+          )
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30.sw),
         child: hasNet
             ? Image.network(
                 photoUrl!,
@@ -491,43 +518,67 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     required VoidCallback onTap,
   }) {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 10.sh),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          height: 70.sh,
-          decoration: BoxDecoration(
-            color: tileBg,
-            borderRadius: BorderRadius.circular(20.sw),
-          ),
-          child: Row(
-            children: [
-              SizedBox(width: 20.sw),
-              if (icon != null)
-                Image.asset(icon, width: 18.sw, height: 18.sh, fit: BoxFit.contain)
-              else if (iconData != null)
-                Icon(iconData, color: purple, size: 20.sw),
-              SizedBox(width: 16.sw),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    color: purple,
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.2,
-                    fontFamily: "Satoshi",
+      padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 8.sh),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22.sw),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            onTap();
+          },
+          child: Ink(
+            height: 70.sh,
+            decoration: BoxDecoration(
+              color: tileBg,
+              borderRadius: BorderRadius.circular(22.sw),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 15,
+                  offset: const Offset(0, 6),
+                )
+              ],
+            ),
+            child: Row(
+              children: [
+                SizedBox(width: 18.sw),
+
+                // Icon Container
+                Container(
+                  width: 40.sw,
+                  height: 40.sw,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(12.sw),
+                  ),
+                  child: Center(
+                    child: icon != null
+                        ? Image.asset(icon, width: 18.sw, fit: BoxFit.contain)
+                        : Icon(iconData, color: purple, size: 20.sw),
                   ),
                 ),
-              ),
-              Image.asset(
-                "assets/icons/next_brown.png",
-                width: 18.sw,
-                height: 14.sh,
-                fit: BoxFit.contain,
-              ),
-              SizedBox(width: 20.sw),
-            ],
+
+                SizedBox(width: 14.sw),
+
+                Expanded(
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      color: purple,
+                      fontSize: 15.sp,
+                      fontWeight: FontWeight.w600,
+                      fontFamily: "Satoshi",
+                    ),
+                  ),
+                ),
+
+                Icon(Icons.arrow_forward_ios_rounded,
+                    size: 16.sw, color: purple.withValues(alpha: 0.5)),
+
+                SizedBox(width: 18.sw),
+              ],
+            ),
           ),
         ),
       ),
