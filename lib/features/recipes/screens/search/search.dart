@@ -22,6 +22,8 @@ import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
 
+import 'package:hidden_pantry_app/core/widgets/food_loader.dart';
+
 class SearchScreen extends StatefulWidget {
   final bool inShell;
   final RecipeApiService? apiService;
@@ -92,6 +94,7 @@ class _SearchScreenState extends State<SearchScreen> {
     if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
       _controller.text = widget.initialQuery!;
       _hasSearched = true;
+      _saveSearch(widget.initialQuery!);
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _performSearch(widget.initialQuery!);
       });
@@ -707,7 +710,7 @@ class _SearchScreenState extends State<SearchScreen> {
             itemBuilder: (_, i) => _StaggeredItem(index: i, child: _recipeCardSkeleton()),
           ),
           const Center(
-            child: CircularProgressIndicator(color: Color(0xFFEF8A54)),
+            child: FoodLoader(size: 60),
           ),
         ],
       );
@@ -792,9 +795,9 @@ class _SearchScreenState extends State<SearchScreen> {
               child: Center(
                 child: _loadingMore
                     ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFEF8A54)),
+                        width: 40,
+                        height: 40,
+                        child: FoodLoader(size: 30),
                       )
                     : GestureDetector(
                         onTap: _loadMore,

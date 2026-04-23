@@ -327,7 +327,54 @@ class _PantryScreenState extends State<PantryScreen> {
                     ),
                   ),
                   SizedBox(height: 16.sh),
-
+                  
+                  // Horizontal Selected Items
+                  if (widget.showSelectedSection)
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      height: _selected.isNotEmpty ? 40.sh : 0,
+                      margin: EdgeInsets.only(bottom: _selected.isNotEmpty ? 12.sh : 0),
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: EdgeInsets.symmetric(horizontal: 20.sw),
+                        itemCount: _selected.length,
+                        separatorBuilder: (_, __) => SizedBox(width: 8.sw),
+                        itemBuilder: (context, index) {
+                          final item = _selected.elementAt(index);
+                          return InkWell(
+                            onTap: () => _toggleIngredient(item),
+                            borderRadius: BorderRadius.circular(20.sw),
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 14.sw),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: primary,
+                                borderRadius: BorderRadius.circular(20.sw),
+                                boxShadow: [
+                                  BoxShadow(color: primary.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    item,
+                                    style: TextStyle(
+                                      color: const Color(0xFFFFF2EA),
+                                      fontSize: 13.sp,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: 'Satoshi',
+                                    ),
+                                  ),
+                                  SizedBox(width: 6.sw),
+                                  Icon(Icons.close_rounded, size: 16.sp, color: const Color(0xFFFFF2EA).withValues(alpha: 0.8)),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
                   Expanded(
                     child: _loading
                         ? const Center(child: CircularProgressIndicator())
@@ -422,8 +469,6 @@ class _PantryScreenState extends State<PantryScreen> {
   }
 
   Widget _listView({required double padBottom}) {
-    final showSelected = _selected.isNotEmpty && widget.showSelectedSection;
-    
     // Build list of visible categories (those with matching items)
     final visibleCategories = <int>[];
     for (int i = 0; i < _categories.length; i++) {
@@ -466,37 +511,14 @@ class _PantryScreenState extends State<PantryScreen> {
       });
     }
     
-    final itemCount = visibleCategories.length + (showSelected ? 1 : 0);
+    final itemCount = visibleCategories.length;
 
     return ListView.separated(
       padding: EdgeInsets.only(left: 20.sw, right: 20.sw, bottom: padBottom),
       itemCount: itemCount,
       separatorBuilder: (_, __) => SizedBox(height: 16.sh),
       itemBuilder: (context, index) {
-        if (showSelected && index == 0) {
-          // Selected Ingredients Section as a Category Card
-          return _CategoryCard(
-            meta: const _CategoryMeta(
-              keyName: 'Selected',
-              title: 'Selected',
-              iconAsset: 'assets/food/packed_food.png',
-            ),
-            subtitle: "${_selected.length} items",
-            allItems: _selected.toList(),
-            isExpanded: true, // Always show all selected
-            isSelected: (s) => true,
-            onToggleChip: _toggleIngredient,
-            onToggleExpansion: () {}, 
-            primary: primary,
-            chipBg: chipBg,
-            chipText: chipText,
-            showExpandButton: false, // No arrow for Selected
-          );
-        }
-
-        // Adjust index if showSelected is true
-        final visibleIndex = showSelected ? index - 1 : index;
-        final categoryIndex = visibleCategories[visibleIndex];
+        final categoryIndex = visibleCategories[index];
         final meta = _categories[categoryIndex];
         final allItems = _byCategory[meta.keyName] ?? const <String>[];
         

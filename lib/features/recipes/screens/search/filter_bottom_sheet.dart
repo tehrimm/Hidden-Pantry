@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 class FilterBottomSheet extends StatefulWidget {
   final int? initialMaxMinutes;
@@ -18,11 +20,7 @@ class FilterBottomSheet extends StatefulWidget {
 
 class _FilterBottomSheetState extends State<FilterBottomSheet> {
   final Color primary = const Color(0xFF462F4D);
-  final Color cardBg = const Color(0xFFF9E3D5); // Updated card background
-  final Color unactivatedBg = const Color(0xFFFFF2EA); // Updated unactivated tag color
-  final Color selectedBg = const Color(0xFF462F4D); // Purple
-  final Color selectedText = Colors.white;
-  final Color unselectedText = const Color(0xFF462F4D);
+  final Color bg = const Color(0xFFFFF3EB);
   final Color orange = const Color(0xFFEF8A54);
 
   int? _maxMinutes;
@@ -31,22 +29,17 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   final List<String> _dietTags = [
     "Vegetarian",
     "Vegan",
-    "Halal",
-    "Kosher",
-    "Heart Healthy",
-    "Gluten-Free",
-    "Dairy-Free",
-    "Keto",
-    "Paleo",
-    "Low-Carb",
-    "Low-Fat",
-    "Sugar-Free",
+    "Low Carb",
+    "High Protein",
+    "High Fiber",
+    "Diabetic-Friendly",
+    "Low Sodium",
   ];
 
   final List<String> _cuisineTags = [
     "Italian",
-    "Chinese",
     "Mexican",
+    "Chinese",
     "Indian",
     "Japanese",
     "Thai",
@@ -54,15 +47,45 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     "American",
     "French",
     "Korean",
+    "Amish & Mennonite",
   ];
 
   final List<String> _mealTypes = [
     "Breakfast",
+    "Brunch",
     "Lunch",
     "Dinner",
     "Snack",
     "Dessert",
     "Appetizer",
+  ];
+
+  final List<String> _methodTags = [
+    "No Bake",
+    "Pressure Cooker",
+    "Deep Fried",
+    "Stir-Fry",
+    "Steaming",
+    "Broil/Grill",
+    "Make-Ahead",
+  ];
+
+  final List<String> _flavorTags = [
+    "Spicy & Hot",
+    "Creamy & Cheesy",
+    "Crunchy & Crispy",
+    "Tangy & Sour",
+    "Gooey",
+    "Smoky",
+  ];
+
+  final List<String> _themeTags = [
+    "5 Ingredients or Less",
+    "One-Pot/One-Dish",
+    "Freezer-Friendly",
+    "Kids Can Make",
+    "Tailgate & Game Day",
+    "Thanksgiving/Christmas",
   ];
 
   @override
@@ -73,6 +96,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   }
 
   void _toggleTag(String tag) {
+    HapticFeedback.lightImpact();
     setState(() {
       if (_selectedTags.contains(tag)) {
         _selectedTags.remove(tag);
@@ -83,6 +107,7 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
   }
 
   void _toggleTime(int minutes) {
+    HapticFeedback.lightImpact();
     setState(() {
       if (_maxMinutes == minutes) {
         _maxMinutes = null;
@@ -94,80 +119,113 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
     return Container(
       decoration: BoxDecoration(
-        color: cardBg, // Updated to F9E3D5
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        color: bg,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32.sw)),
+        boxShadow: [
+          BoxShadow(color: primary.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, -5))
+        ],
       ),
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.50, // Max 50% of screen
+        maxHeight: MediaQuery.of(context).size.height * 0.85, 
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           // Handle bar
           Padding(
-            padding: const EdgeInsets.only(top: 10, bottom: 20),
+            padding: EdgeInsets.only(top: 12.sh, bottom: 24.sh),
             child: Container(
-              width: 40,
-              height: 4,
+              width: 48.sw,
+              height: 5.sh,
               decoration: BoxDecoration(
-                color: orange,
-                borderRadius: BorderRadius.circular(2),
+                color: primary.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(3.sw),
               ),
             ),
           ),
           
-          // Scrollable content
           Flexible(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 30),
+              padding: EdgeInsets.fromLTRB(24.sw, 0, 24.sw, 40.sh),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildSection("Time", [
-                    _buildTimeChip("Under 15 Minutes", 15),
-                    _buildTimeChip("Under 30 Minutes", 30),
-                    _buildTimeChip("Under 1 Hour", 60),
-                  ]),
+                  _FadeSlideEntry(
+                    delayMs: 100,
+                    child: _buildSection("Time", [
+                      _buildTimeChip("Under 15 Minutes", 15),
+                      _buildTimeChip("Under 30 Minutes", 30),
+                      _buildTimeChip("Under 1 Hour", 60),
+                    ]),
+                  ),
+                  SizedBox(height: 32.sh),
 
-                  const SizedBox(height: 24),
+                  _FadeSlideEntry(
+                    delayMs: 200,
+                    child: _buildSection("Diet", _dietTags.map((t) => _buildTagChip(t)).toList()),
+                  ),
+                  SizedBox(height: 32.sh),
 
-                  _buildSection("Diet", _dietTags.map((t) => _buildTagChip(t)).toList()),
+                  _FadeSlideEntry(
+                    delayMs: 300,
+                    child: _buildSection("Meal Type", _mealTypes.map((t) => _buildTagChip(t)).toList()),
+                  ),
+                  SizedBox(height: 32.sh),
 
-                  const SizedBox(height: 24),
+                  _FadeSlideEntry(
+                    delayMs: 400,
+                    child: _buildSection("Cuisine", _cuisineTags.map((t) => _buildTagChip(t)).toList()),
+                  ),
+                  SizedBox(height: 32.sh),
 
-                  _buildSection("Cuisine", _cuisineTags.map((t) => _buildTagChip(t)).toList()),
+                  _FadeSlideEntry(
+                    delayMs: 500,
+                    child: _buildSection("Cooking Method", _methodTags.map((t) => _buildTagChip(t)).toList()),
+                  ),
+                  SizedBox(height: 32.sh),
 
-                  const SizedBox(height: 24),
+                  _FadeSlideEntry(
+                    delayMs: 600,
+                    child: _buildSection("Flavor & Texture", _flavorTags.map((t) => _buildTagChip(t)).toList()),
+                  ),
+                  SizedBox(height: 32.sh),
 
-                  _buildSection("Meal Type", _mealTypes.map((t) => _buildTagChip(t)).toList()),
+                  _FadeSlideEntry(
+                    delayMs: 700,
+                    child: _buildSection("Occasion & Theme", _themeTags.map((t) => _buildTagChip(t)).toList()),
+                  ),
+                  SizedBox(height: 48.sh),
 
-                  const SizedBox(height: 32),
-
-                  // Apply Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        widget.onApply(_maxMinutes, _selectedTags.toList());
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(28),
+                  _FadeSlideEntry(
+                    delayMs: 500,
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 56.sh,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          HapticFeedback.mediumImpact();
+                          Navigator.pop(context);
+                          widget.onApply(_maxMinutes, _selectedTags.toList());
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: orange,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20.sw),
+                          ),
+                          elevation: 8,
+                          shadowColor: orange.withValues(alpha: 0.4),
                         ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        "Apply Filters",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: "Satoshi",
+                        child: Text(
+                          "Apply Filters",
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: "Satoshi",
+                          ),
                         ),
                       ),
                     ),
@@ -189,15 +247,15 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
           title,
           style: TextStyle(
             color: primary,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+            fontSize: 20.sp,
+            fontWeight: FontWeight.w900,
             fontFamily: "Satoshi",
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: 16.sh),
         Wrap(
-          spacing: 10,
-          runSpacing: 10,
+          spacing: 12.sw,
+          runSpacing: 12.sh,
           children: chips,
         ),
       ],
@@ -208,18 +266,23 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     final isSelected = _maxMinutes == minutes;
     return GestureDetector(
       onTap: () => _toggleTime(minutes),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 12.sh),
         decoration: BoxDecoration(
-          color: isSelected ? selectedBg : unactivatedBg, // Updated unactivated color
-          borderRadius: BorderRadius.circular(20),
+          color: isSelected ? primary : Colors.white.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(24.sw),
+          border: Border.all(color: isSelected ? primary : Colors.white, width: 1.5),
+          boxShadow: isSelected 
+             ? [BoxShadow(color: primary.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))]
+             : [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 3))],
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? selectedText : unselectedText,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : primary,
+            fontSize: 14.sp,
+            fontWeight: FontWeight.bold,
             fontFamily: "Satoshi",
           ),
         ),
@@ -231,22 +294,62 @@ class _FilterBottomSheetState extends State<FilterBottomSheet> {
     final isSelected = _selectedTags.contains(tag);
     return GestureDetector(
       onTap: () => _toggleTag(tag),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 12.sh),
         decoration: BoxDecoration(
-          color: isSelected ? selectedBg : unactivatedBg, // Updated unactivated color
-          borderRadius: BorderRadius.circular(20),
+          color: isSelected ? primary : Colors.white.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(24.sw),
+          border: Border.all(color: isSelected ? primary : Colors.white, width: 1.5),
+          boxShadow: isSelected 
+             ? [BoxShadow(color: primary.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 4))]
+             : [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 3))],
         ),
         child: Text(
           tag,
           style: TextStyle(
-            color: isSelected ? selectedText : unselectedText,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
+            color: isSelected ? Colors.white : primary,
+            fontSize: 14.sp,
+            fontWeight: FontWeight.bold,
             fontFamily: "Satoshi",
           ),
         ),
       ),
     );
+  }
+}
+
+class _FadeSlideEntry extends StatefulWidget {
+  final Widget child;
+  final int delayMs;
+  const _FadeSlideEntry({required this.child, this.delayMs = 0});
+  @override
+  State<_FadeSlideEntry> createState() => _FadeSlideEntryState();
+}
+
+class _FadeSlideEntryState extends State<_FadeSlideEntry> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _fade = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _slide = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    Future.delayed(Duration(milliseconds: widget.delayMs), () {
+      if (mounted) _ctrl.forward();
+    });
+  }
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child));
   }
 }

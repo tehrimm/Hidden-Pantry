@@ -11,6 +11,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hidden_pantry_app/features/user/services/follow_service.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+import 'package:hidden_pantry_app/core/widgets/food_loader.dart';
 
 
 class CategoriesScreen extends StatefulWidget {
@@ -327,9 +328,9 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
               child: Center(
                 child: _loadingMore
                     ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFFEF8A54)),
+                        width: 40,
+                        height: 40,
+                        child: FoodLoader(size: 30),
                       )
                     : GestureDetector(
                         onTap: _loadMore,

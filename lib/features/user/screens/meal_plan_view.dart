@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -144,264 +145,301 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     }
     final avgMeals = duration > 0 ? (totalMeals / duration).round() : 0;
 
-    // Default hero image (healthy food bowl placeholder)
-    final heroImage = "https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=2053&auto=format&fit=crop";
-
     return Scaffold(
       backgroundColor: bg,
       body: Stack(
         children: [
-          // Pattern background for the lower half
-          const Positioned.fill(child: PatternBackground()),
-          
-          CustomScrollView(
-            slivers: [
-              // 1. Visual Hero Header
-              SliverAppBar(
-                expandedHeight: 280.sh,
-                pinned: true,
-                backgroundColor: bg,
-                elevation: 0,
-                leading: Padding(
-                  padding: EdgeInsets.all(8.0.sw),
-                  child: BackButtonWidget(color: purple),
+          const PatternBackground(),
+
+          // Decorative corner shapes
+          Positioned(
+            top: -30.sh, right: -30.sw,
+            child: Container(width: 120.sw, height: 120.sw,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: orange.withValues(alpha: 0.06))),
+          ),
+          Positioned(
+            bottom: -40.sh, left: -40.sw,
+            child: Container(width: 160.sw, height: 160.sw,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: purple.withValues(alpha: 0.04))),
+          ),
+          Positioned(
+            top: 200.sh, left: 16.sw,
+            child: Container(width: 10.sw, height: 10.sw,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: orange.withValues(alpha: 0.15))),
+          ),
+          Positioned(
+            top: 320.sh, right: 20.sw,
+            child: Transform.rotate(angle: math.pi / 4,
+              child: Container(width: 16.sw, height: 16.sw,
+                decoration: BoxDecoration(color: purple.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(3.sw)))),
+          ),
+
+          // Top right illustration
+          Positioned(
+            top: MediaQuery.of(context).padding.top - 20.sh,
+            right: -20.sw,
+            child: Image.asset(
+              'assets/illustration/meal.png',
+              width: 200.sw,
+              height: 200.sw,
+            ),
+          ),
+
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.only(left: 24.sw, top: 16.sh, right: 24.sw, bottom: 8.sh),
+                  child: BackButtonWidget(
+                    color: purple,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
                 ),
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Stack(
-                    fit: StackFit.expand,
+                
+                // Static content that doesn't scroll
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.sw),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Hero Image
-                      Image.network(heroImage, fit: BoxFit.cover),
-                      // Gradient Overlay for text readability
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withValues(alpha:0.3),
-                              purple.withValues(alpha:0.8),
+                      // Glass Plan Card
+                      _FadeSlideEntry(
+                        delayMs: 100,
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(20.sw),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(24.sw),
+                            border: Border.all(color: Colors.white, width: 1.5),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 15, offset: const Offset(0, 6)),
                             ],
-                            stops: const [0.0, 0.5, 1.0],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 4.sh),
+                                decoration: BoxDecoration(
+                                  color: orange.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(8.sw),
+                                ),
+                                child: Text(
+                                  "NUTRITION PLAN",
+                                  style: TextStyle(color: orange, fontSize: 10.sp, fontWeight: FontWeight.bold, letterSpacing: 1),
+                                ),
+                              ),
+                              SizedBox(height: 12.sh),
+                              SizedBox(
+                                width: 220.sw, // More width since image is not in the card
+                                child: Text(
+                                  title,
+                                  style: TextStyle(
+                                    color: purple,
+                                    fontSize: 26.sp,
+                                    fontWeight: FontWeight.w900,
+                                    fontFamily: "Satoshi",
+                                    height: 1.1,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 24.sh),
+                              Row(
+                                children: [
+                                  Expanded(child: _buildStatCard(Icons.calendar_month_rounded, "$duration", "Days")),
+                                  SizedBox(width: 8.sw),
+                                  Expanded(child: _buildStatCard(Icons.local_fire_department_rounded, "~$targetCalories", "kcal/d")),
+                                  SizedBox(width: 8.sw),
+                                  Expanded(child: _buildStatCard(Icons.restaurant_rounded, "$avgMeals", "Meals/d")),
+                                ],
+                              ),
+                            ],
                           ),
                         ),
                       ),
-                      // Overlaid Metadata
-                      Positioned(
-                        bottom: 24.sh,
-                        left: 24.sw,
-                        right: 24.sw,
+                      SizedBox(height: 20.sh),
+
+                      // Professional Guidance (Nutritionist's Note)
+                      if (notes.isNotEmpty) ...[
+                        _FadeSlideEntry(
+                          delayMs: 200,
+                          child: Container(
+                            padding: EdgeInsets.all(16.sw),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(20.sw),
+                              border: Border.all(color: Colors.white, width: 1.5),
+                              boxShadow: [
+                                BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 15, offset: const Offset(0, 6)),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Icon(Icons.format_quote_rounded, color: orange, size: 20.sp),
+                                    SizedBox(width: 8.sw),
+                                    Expanded(
+                                      child: Text(
+                                        "Nutritionist's Note",
+                                        style: TextStyle(color: purple, fontSize: 15.sp, fontWeight: FontWeight.bold),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: 8.sh),
+                                Text(notes, style: TextStyle(color: purple.withValues(alpha:0.7), fontSize: 13.sp, height: 1.4)),
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 20.sh),
+                      ],
+
+                      _FadeSlideEntry(
+                        delayMs: 300,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 4.sh),
-                              decoration: BoxDecoration(
-                                color: orange,
-                                borderRadius: BorderRadius.circular(8.sw),
-                              ),
-                              child: Text(
-                                "NUTRITION PLAN",
-                                style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold, letterSpacing: 1),
-                              ),
-                            ),
-                            SizedBox(height: 8.sh),
                             Text(
-                              title,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 28.sp,
-                                fontWeight: FontWeight.w900,
-                                fontFamily: "Satoshi",
-                                height: 1.1,
+                              "Meal Schedule",
+                              style: TextStyle(color: purple, fontSize: 20.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+                            ),
+                            SizedBox(height: 12.sh),
+                            
+                            // Horizontal Stepper (thinned)
+                            SizedBox(
+                              height: 38.sh,
+                              child: ListView.separated(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: duration,
+                                separatorBuilder: (_, __) => SizedBox(width: 10.sw),
+                                itemBuilder: (context, index) {
+                                  final dayNum = index + 1;
+                                  final isSelected = _selectedDay == dayNum;
+                                  
+                                  return GestureDetector(
+                                    onTap: () => setState(() => _selectedDay = dayNum),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      padding: EdgeInsets.symmetric(horizontal: 20.sw),
+                                      decoration: BoxDecoration(
+                                        color: isSelected ? purple : Colors.white.withValues(alpha: 0.6),
+                                        borderRadius: BorderRadius.circular(20.sw),
+                                        border: Border.all(color: isSelected ? purple : Colors.white, width: 1.5),
+                                        boxShadow: isSelected 
+                                            ? [BoxShadow(color: purple.withValues(alpha:0.3), blurRadius: 6, offset: const Offset(0, 3))]
+                                            : [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 4, offset: const Offset(0, 2))],
+                                      ),
+                                      alignment: Alignment.center,
+                                      child: Text(
+                                        "Day $dayNum",
+                                        style: TextStyle(
+                                          color: isSelected ? Colors.white : purple,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14.sp,
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
+                            SizedBox(height: 16.sh),
                           ],
                         ),
                       ),
                     ],
                   ),
                 ),
-              ),
-
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 24.sh),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // 2. High-Level Statistics (The Dashboard Row)
-                      Row(
-                        children: [
-                          Expanded(child: _buildStatCard(Icons.calendar_month_rounded, "$duration", "Days")),
-                          SizedBox(width: 12.sw),
-                          Expanded(child: _buildStatCard(Icons.local_fire_department_rounded, "~$targetCalories", "kcal/day")),
-                          SizedBox(width: 12.sw),
-                          Expanded(child: _buildStatCard(Icons.restaurant_rounded, "$avgMeals", "Meals/day")),
-                        ],
-                      ),
-                      SizedBox(height: 24.sh),
-
-                      // 3. Professional Guidance (Nutritionist's Note)
-                      if (notes.isNotEmpty) ...[
-                        Container(
-                          padding: EdgeInsets.all(20.sw),
-                          decoration: BoxDecoration(
-                            color: cardColor,
-                            borderRadius: BorderRadius.circular(20.sw),
-                            border: Border.all(color: orange.withValues(alpha:0.3)),
-                            boxShadow: [
-                              BoxShadow(color: purple.withValues(alpha:0.04), blurRadius: 10, offset: const Offset(0, 4))
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Icon(Icons.format_quote_rounded, color: orange, size: 24.sp),
-                                  SizedBox(width: 8.sw),
-                                  Expanded(
-                                    child: Text(
-                                      "Nutritionist's Note",
-                                      style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.bold),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 12.sh),
-                              Text(notes, style: TextStyle(color: purple.withValues(alpha:0.7), fontSize: 14.sp, height: 1.5)),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 32.sh),
+                
+                // Only the vertical timeline scrolls now
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.symmetric(horizontal: 24.sw),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSelectedDayTimeline(days),
+                        SizedBox(height: 140.sh),
                       ],
-
-                      // 4. Interactive Timeline (Daily Schedule)
-                      Text(
-                        "Meal Schedule",
-                        style: TextStyle(color: purple, fontSize: 22.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
-                      ),
-                      SizedBox(height: 16.sh),
-                      
-                      // Horizontal Stepper
-                      SizedBox(
-                        height: 50.sh,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: duration,
-                          separatorBuilder: (_, __) => SizedBox(width: 12.sw),
-                          itemBuilder: (context, index) {
-                            final dayNum = index + 1;
-                            final isSelected = _selectedDay == dayNum;
-                            
-                            return GestureDetector(
-                              onTap: () => setState(() => _selectedDay = dayNum),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: EdgeInsets.symmetric(horizontal: 24.sw),
-                                decoration: BoxDecoration(
-                                  color: isSelected ? purple : Colors.white,
-                                  borderRadius: BorderRadius.circular(25.sw),
-                                  border: Border.all(color: isSelected ? purple : purple.withValues(alpha:0.1)),
-                                  boxShadow: isSelected 
-                                      ? [BoxShadow(color: purple.withValues(alpha:0.3), blurRadius: 8, offset: const Offset(0, 4))]
-                                      : [],
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  "Day $dayNum",
-                                  style: TextStyle(
-                                    color: isSelected ? Colors.white : purple,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15.sp,
-                                  ),
-                                ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      SizedBox(height: 24.sh),
-
-                      // Vertical Chronology for the Selected Day
-                      _buildSelectedDayTimeline(days),
-                      
-                      SizedBox(height: 240.sh), // Extra bottom padding for floating CTA to avoid overlap in small viewports
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-
-          // 6. Persistent Call-to-Action (CTA) Footer (Hidden for Nutritionists viewing their sent plans)
           if (!widget.isViewingSavedPlan && !_isUnderTest)
             Positioned(
               left: 0,
               right: 0,
               bottom: 0,
-              child: Container(
-                padding: EdgeInsets.fromLTRB(24.sw, 16.sh, 24.sw, 32.sh),
-                decoration: BoxDecoration(
-                  color: bg,
-                  boxShadow: [
-                    BoxShadow(color: purple.withValues(alpha:0.08), blurRadius: 20, offset: const Offset(0, -5))
-                  ],
-                ),
-                child: widget.isViewingSavedPlan // This nested check is technically true/false but wrapped in an if
-                  ? ElevatedButton(
-                      onPressed: _isSaving ? null : _removePlan,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFF0F0),
-                        foregroundColor: Colors.red,
-                        padding: EdgeInsets.symmetric(vertical: 18.sh),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16.sw),
-                          side: BorderSide(color: Colors.red.withValues(alpha:0.3)),
+              child: _FadeSlideEntry(
+                delayMs: 400,
+                child: Container(
+                  padding: EdgeInsets.fromLTRB(24.sw, 16.sh, 24.sw, 32.sh),
+                  decoration: BoxDecoration(
+                    color: bg,
+                    boxShadow: [
+                      BoxShadow(color: purple.withValues(alpha:0.08), blurRadius: 20, offset: const Offset(0, -5))
+                    ],
+                  ),
+                  child: widget.isViewingSavedPlan // This nested check is technically true/false but wrapped in an if
+                    ? ElevatedButton(
+                        onPressed: _isSaving ? null : _removePlan,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFFFF0F0),
+                          foregroundColor: Colors.red,
+                          padding: EdgeInsets.symmetric(vertical: 18.sh),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16.sw),
+                            side: BorderSide(color: Colors.red.withValues(alpha:0.3)),
+                          ),
+                          elevation: 0,
                         ),
-                        elevation: 0,
+                        child: _isSaving
+                            ? SizedBox(width: 24.sw, height: 24.sw, child: const CircularProgressIndicator(color: Colors.red, strokeWidth: 3))
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.bookmark_remove_rounded, color: Colors.red, size: 24.sp),
+                                  SizedBox(width: 12.sw),
+                                  Text(
+                                    "Remove from My Plans",
+                                    style: TextStyle(color: Colors.red, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+                                  ),
+                                ],
+                              ),
+                      )
+                    : ElevatedButton(
+                        onPressed: _isSaving ? null : _savePlan,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: orange,
+                          padding: EdgeInsets.symmetric(vertical: 18.sh),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.sw)),
+                          elevation: 4,
+                          shadowColor: orange.withValues(alpha:0.4),
+                        ),
+                        child: _isSaving
+                            ? SizedBox(width: 24.sw, height: 24.sw, child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
+                            : Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.bookmark_add_rounded, color: Colors.white, size: 24.sp),
+                                  SizedBox(width: 12.sw),
+                                  Text(
+                                    "Save to My Plans",
+                                    style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+                                  ),
+                                ],
+                              ),
                       ),
-                      child: _isSaving
-                          ? SizedBox(width: 24.sw, height: 24.sw, child: const CircularProgressIndicator(color: Colors.red, strokeWidth: 3))
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.bookmark_remove_rounded, color: Colors.red, size: 24.sp),
-                                SizedBox(width: 12.sw),
-                                Text(
-                                  "Remove from My Plans",
-                                  style: TextStyle(color: Colors.red, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
-                                ),
-                              ],
-                            ),
-                    )
-                  : ElevatedButton(
-                      onPressed: _isSaving ? null : _savePlan,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: orange,
-                        padding: EdgeInsets.symmetric(vertical: 18.sh),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.sw)),
-                        elevation: 4,
-                        shadowColor: orange.withValues(alpha:0.4),
-                      ),
-                      child: _isSaving
-                          ? SizedBox(width: 24.sw, height: 24.sw, child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.bookmark_add_rounded, color: Colors.white, size: 24.sp),
-                                SizedBox(width: 12.sw),
-                                Text(
-                                  "Save to My Plans",
-                                  style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
-                                ),
-                              ],
-                            ),
-                    ),
+                ),
               ),
             ),
         ],
@@ -411,19 +449,19 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
 
   Widget _buildStatCard(IconData icon, String value, String label) {
     return Container(
-      padding: EdgeInsets.symmetric(vertical: 16.sh, horizontal: 8.sw),
+      padding: EdgeInsets.symmetric(vertical: 12.sh, horizontal: 4.sw),
       decoration: BoxDecoration(
-        color: cardColor,
+        color: Colors.white.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(16.sw),
-        boxShadow: [BoxShadow(color: purple.withValues(alpha:0.04), blurRadius: 8, offset: const Offset(0, 3))],
+        border: Border.all(color: Colors.white, width: 1.5),
       ),
       child: Column(
         children: [
-          Icon(icon, color: orange, size: 28.sp),
+          Icon(icon, color: orange, size: 24.sp),
           SizedBox(height: 8.sh),
-          Text(value, style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
-          SizedBox(height: 4.sh),
-        Text(label, style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 12.sp)),
+          Text(value, style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+          SizedBox(height: 2.sh),
+          Text(label, style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 11.sp)),
         ],
       ),
     );
@@ -741,5 +779,40 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
 
       ],
     );
+  }
+}
+
+class _FadeSlideEntry extends StatefulWidget {
+  final Widget child;
+  final int delayMs;
+  const _FadeSlideEntry({required this.child, this.delayMs = 0});
+  @override
+  State<_FadeSlideEntry> createState() => _FadeSlideEntryState();
+}
+
+class _FadeSlideEntryState extends State<_FadeSlideEntry> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _fade = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _slide = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    Future.delayed(Duration(milliseconds: widget.delayMs), () {
+      if (mounted) _ctrl.forward();
+    });
+  }
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child));
   }
 }
