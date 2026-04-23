@@ -58,6 +58,9 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
   bool _isManuallyStopped = false;
   Timer? _listenWatchdog;
 
+  int _lastTtsProgress = 0; // Tracks progress for "Continue" command
+  String _lastFullSpokenText = ""; // Stores the text currently being read
+
   @override
   void initState() {
     super.initState();
@@ -70,15 +73,10 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
   }
 
   Future<void> _checkVoicePreference() async {
-    // 1. Read the first step aloud safely
-    await Future.delayed(const Duration(milliseconds: 1500));
-    if (!mounted) return;
-    _safeSpeak(widget.recipe.directions[_currentIndex]);
-
-    // 2. Check if voice mode should be auto-enabled
+    // 1. Check preference and enable voice mode immediately
     try {
       final user = FirebaseAuth.instance.currentUser;
-      bool voiceOn = true; // Default
+      bool voiceOn = true; 
       
       if (user != null) {
         final doc = await FirebaseFirestore.instance
@@ -89,13 +87,17 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
       }
 
       if (voiceOn && mounted) {
-        _toggleVoiceMode();
+        await _toggleVoiceMode();
       }
     } catch (e) {
       debugPrint("Error fetching voice preference: $e");
-      // Fallback: auto-enable if we can't check
-      if (mounted) _toggleVoiceMode();
+      if (mounted) await _toggleVoiceMode();
     }
+
+    // 2. Read the first step aloud safely after a shorter delay
+    await Future.delayed(const Duration(milliseconds: 800));
+    if (!mounted) return;
+    _safeSpeak(widget.recipe.directions[_currentIndex]);
   }
 
   void _initTts() {
@@ -107,6 +109,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
       setState(() {
         _isPlaying = false;
         _ttsFinished = true;
+        _lastTtsProgress = 0; // Reset progress when finished
       });
       
       // Control central restart - only if NOT manually stopped
@@ -118,6 +121,9 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
     });
     _tts.setErrorHandler((msg) {
       setState(() => _isPlaying = false);
+    });
+    _tts.setProgressHandler((text, start, end, word) {
+      _lastTtsProgress = start;
     });
   }
 
@@ -144,13 +150,25 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
         onStatus: (status) {
           debugPrint('🎙️ Status: $status');
           if (status == 'notListening') {
-            _safeRestartListening();
+            // Instant restart
+            Future.delayed(const Duration(milliseconds: 50), () {
+               if (mounted) _safeRestartListening(); 
+            });
           }
           if (mounted) setState(() => _lastStatus = status);
         },
         onError: (err) {
-          debugPrint('❌ Error: $err');
-          _safeRestartListening();
+          debugPrint('❌ Speech Error: $err');
+          
+          // 🛠️ HEALING: If the error is permanent or a "client" error, 
+          // try to re-initialize the whole engine.
+          if (err.permanent || err.errorMsg == 'error_client') {
+            Future.delayed(const Duration(milliseconds: 800), () {
+               if (mounted && _isVoiceEnabled) _initVoiceControl();
+            });
+          } else {
+            _safeRestartListening();
+          }
         },
       );
       return _speechEnabled;
@@ -161,12 +179,11 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
 
   void _startListenLoop() {
     _listenWatchdog?.cancel();
-    _listenWatchdog = Timer.periodic(const Duration(seconds: 2), (timer) {
-      if (!_isVoiceEnabled || _isPlaying || _isManuallyStopped) return;
-      
-      if (!_speech.isListening && !(_lastStatus == 'initializing')) {
-        debugPrint("🔁 Watchdog: Restarting speech engine...");
-        _startListening();
+    // 🔋 Optimized: Slow down watchdog to 8 seconds. 
+    // We rely more on onStatus now to save battery and reduce overhead.
+    _listenWatchdog = Timer.periodic(const Duration(seconds: 6), (timer) {
+      if (_isVoiceEnabled && !_isManuallyStopped && !_speech.isListening) {
+        _safeRestartListening();
       }
     });
   }
@@ -177,19 +194,22 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
   }
 
   void _safeRestartListening() async {
-    if (!_isVoiceEnabled || _isManuallyStopped || _isPlaying) return;
+    if (!_isVoiceEnabled || _isManuallyStopped) return;
 
-    // Restart Cooldown (Prevent rapid-fire loops)
+    // Minimal Cooldown
     if (_lastRestart != null &&
-        DateTime.now().difference(_lastRestart!) < const Duration(seconds: 2)) {
+        DateTime.now().difference(_lastRestart!) < const Duration(milliseconds: 200)) {
       return;
     }
     _lastRestart = DateTime.now();
 
     try {
-      // 🔥 Force clean reset before listening again
-      await _speech.cancel();
-      await Future.delayed(const Duration(milliseconds: 400));
+      // 🔇 MUTE OPTIMIZATION: Only cancel if actually listening. 
+      // This reduces the number of "stop beeps".
+      if (_speech.isListening) {
+        await _speech.cancel();
+        await Future.delayed(const Duration(milliseconds: 400));
+      }
 
       if (!mounted || !_isVoiceEnabled || _isManuallyStopped || _isPlaying) return;
 
@@ -224,8 +244,18 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
     }
   }
 
+  // ⚡ Force an immediate restart (used during step transitions)
+  Future<void> _forceRestartMic() async {
+    if (!_isVoiceEnabled || _isManuallyStopped) return;
+    try {
+      await _speech.cancel();
+      await Future.delayed(const Duration(milliseconds: 100)); 
+      if (mounted) _startListening();
+    } catch (_) {}
+  }
+
   Future<void> _startListening() async {
-    if (!_speechEnabled || !_isVoiceEnabled || _isManuallyStopped || _isPlaying) return;
+    if (!_speechEnabled || !_isVoiceEnabled || _isManuallyStopped) return;
 
     // 🔥 Safety guard: reset if already active
     if (_speech.isListening) {
@@ -236,15 +266,13 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
     try {
       await _speech.listen(
         onResult: (result) {
-          if (result.finalResult) {
-            _handleVoiceCommand(result.recognizedWords);
-          }
+          _handleVoiceCommand(result.recognizedWords, isFinal: result.finalResult);
         },
-        listenFor: const Duration(seconds: 30),
-        pauseFor: const Duration(seconds: 5),
-        partialResults: false, // 🔥 Fixed: More reliable on Android
-        cancelOnError: true,
-        listenMode: ListenMode.confirmation,
+        listenFor: const Duration(minutes: 20), 
+        pauseFor: const Duration(seconds: 120),  
+        partialResults: true, 
+        cancelOnError: false, // 🛠️ STABILITY: Don't kill the session on minor errors
+        listenMode: ListenMode.dictation, // 🛠️ RELIABILITY: Dictation is usually more stable for continuous use
       );
     } catch (e) {
       debugPrint("🎙️ Listen error: $e");
@@ -255,12 +283,25 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
     await _speech.cancel();
   }
 
-  Future<void> _handleVoiceCommand(String text) async {
+  void _handleVoiceCommand(String text, {bool isFinal = true}) async {
     if (text.trim().isEmpty) return;
     
     final command = text.toLowerCase().trim();
     final words = command.split(" ");
     
+    // ⚡ IMMEDIATE STOP: Process stop/silence immediately even on partial results
+    final isStop = words.contains("stop") || words.contains("shh") || words.contains("silence");
+    if (isStop) {
+      await _tts.stop();
+      if (mounted) {
+        setState(() => _isPlaying = false);
+      }
+      if (!isFinal) return; // Don't process further until we get the final result
+    }
+
+    // Only process other commands on the final result to avoid double-triggers
+    if (!isFinal) return;
+
     // Time-based Debounce
     if (_lastCommandTime != null && 
         DateTime.now().difference(_lastCommandTime!) < const Duration(milliseconds: 1200)) {
@@ -269,7 +310,15 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
     _lastCommandTime = DateTime.now();
 
     bool processed = false;
-    debugPrint("🧠 Processing: $command");
+    debugPrint("🧠 Processing Final: $command");
+
+    // 🛡️ ECHO GUARD: If the recognized words are too similar to the 
+    // current direction text, ignore it (the mic is hearing the TTS).
+    final currentDir = widget.recipe.directions[_currentIndex].toLowerCase();
+    if (command.length > 5 && currentDir.contains(command)) {
+       debugPrint("🚫 Ignoring echo: $command");
+       return;
+    }
 
     // STRICT WORD-LEVEL MAPPING
     final isNext = words.contains("next") || words.contains("forward") || 
@@ -282,30 +331,37 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
                      words.contains("read");
 
     if (isNext) {
-      await _speakConfirmation("Next step");
-      _nextStep();
+      if (_currentIndex < widget.recipe.directions.length - 1) {
+        await _speakConfirmation("Next step");
+        _nextStep();
+      } else {
+        await _speakConfirmation("Already at the last step");
+      }
       processed = true;
     }
     else if (isBack) {
-      await _speakConfirmation("Going back");
-      _prevStep();
+      if (_currentIndex > 0) {
+        await _speakConfirmation("Going back");
+        _prevStep();
+      } else {
+        await _speakConfirmation("No previous step");
+      }
       processed = true;
     }
     else if (isRepeat) {
       _speak(widget.recipe.directions[_currentIndex], force: true);
       processed = true;
     }
-    else if (words.contains("stop") || words.contains("shh") || words.contains("silence")) {
-      _isManuallyStopped = true;
-      _tts.stop();
-      _shouldListen = false;
-      await _speech.cancel();
-      if (mounted) {
-        setState(() {
-          _isPlaying = false;
-          _isVoiceEnabled = false;
-        });
+    else if (words.contains("continue") || words.contains("resume") || words.contains("go on")) {
+      String textToSpeak = _lastFullSpokenText;
+      if (_lastTtsProgress > 0 && _lastTtsProgress < _lastFullSpokenText.length) {
+         textToSpeak = _lastFullSpokenText.substring(_lastTtsProgress);
       }
+      _speak(textToSpeak, force: true, isResume: true);
+      processed = true;
+    }
+    else if (isStop) {
+      // Already handled by the immediate stop check above
       processed = true;
     }
     else if (words.contains("exit") || words.contains("quit") || words.contains("cancel") || words.contains("close")) {
@@ -314,12 +370,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
     }
 
     if (processed) {
-       await _speech.cancel(); // 🔥 Use cancel for instant reset
-       Future.delayed(const Duration(milliseconds: 600), () {
-         if (_isVoiceEnabled && !_isManuallyStopped) {
-           _safeRestartListening();
-         }
-       });
+       _forceRestartMic();
     }
   }
 
@@ -332,6 +383,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
 
   void _nextStep() {
     if (_currentIndex < widget.recipe.directions.length - 1) {
+      _lastTtsProgress = 0; // Reset progress for new step
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
@@ -341,6 +393,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
 
   void _prevStep() {
     if (_currentIndex > 0) {
+      _lastTtsProgress = 0; // Reset progress for new step
       _pageController.previousPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
@@ -355,20 +408,20 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
     _speak(text, force: true);
   }
 
-  Future<void> _speak(String text, {bool force = false}) async {
+  Future<void> _speak(String text, {bool force = false, bool isResume = false}) async {
     if (_isPlaying) {
       await _tts.stop();
       if (mounted) setState(() => _isPlaying = false);
       if (!force) return;
     }
 
-    // Use cancel for cleaner transition
-    if (_isVoiceEnabled) await _speech.cancel();
-
     if (force) await Future.delayed(const Duration(milliseconds: 100));
     if (mounted) setState(() => _ttsFinished = false);
     
-    final spokenText = "Step ${_currentIndex + 1}. $text";
+    // Only add "Step X" prefix if we aren't resuming in the middle
+    final spokenText = isResume ? text : "Step ${_currentIndex + 1}. $text";
+    _lastFullSpokenText = spokenText; 
+    
     await _tts.speak(spokenText);
   }
 
@@ -817,6 +870,11 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
                       if (!mounted) return;
                       setState(() => _currentIndex = idx);
                       _safeSpeak(widget.recipe.directions[idx]);
+                      
+                      // 🎙️ Force mic on IMMEDIATELY for the new step
+                      if (_isVoiceEnabled && !_isManuallyStopped) {
+                        _forceRestartMic();
+                      }
                     },
                     itemBuilder: (context, index) {
                       final direction = widget.recipe.directions[index];
