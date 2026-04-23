@@ -1,6 +1,8 @@
+import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
@@ -289,42 +291,50 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
         borderRadius: BorderRadius.circular(30.sw),
         child: Container(
           color: bg,
-            child: Stack(
-              children: [
-                const PatternBackground(),
+          child: Stack(
+            children: [
+              const PatternBackground(),
 
-                // Standardized Header - Back Button
-                Positioned(
-                  left: 30.sw,
-                  top: topPad + 36.sh,
-                  child: BackButtonWidget(color: purple),
+              // Decorative corner shapes
+              Positioned(
+                top: -30.sh, right: -30.sw,
+                child: Container(width: 120.sw, height: 120.sw,
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: orange.withValues(alpha: 0.06))),
+              ),
+              Positioned(
+                bottom: -40.sh, left: -40.sw,
+                child: Container(width: 160.sw, height: 160.sw,
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: purple.withValues(alpha: 0.04))),
+              ),
+              Positioned(
+                top: 200.sh, left: 16.sw,
+                child: Container(width: 10.sw, height: 10.sw,
+                  decoration: BoxDecoration(shape: BoxShape.circle, color: orange.withValues(alpha: 0.15))),
+              ),
+              Positioned(
+                top: 320.sh, right: 20.sw,
+                child: Transform.rotate(angle: math.pi / 4,
+                  child: Container(width: 16.sw, height: 16.sw,
+                    decoration: BoxDecoration(color: purple.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(3.sw)))),
+              ),
+
+              // Header
+              Positioned(
+                left: 30.sw, top: topPad + 36.sh,
+                child: BackButtonWidget(color: purple),
+              ),
+              Positioned(
+                left: 0, right: 0, top: topPad + 36.sh, height: 50.sh,
+                child: Center(
+                  child: Text('My Recipes',
+                    style: TextStyle(color: purple, fontSize: 24.sp, fontWeight: FontWeight.bold, fontFamily: 'Satoshi')),
                 ),
+              ),
 
-                // Standardized Header - Title
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  top: topPad + 36.sh,
-                  height: 50.sh,
-                  child: Center(
-                    child: Text(
-                      'My Recipes',
-                      style: TextStyle(
-                        color: purple,
-                        fontSize: 24.sp,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Satoshi',
-                      ),
-                    ),
-                  ),
-                ),
-
-
-
-                SafeArea(
-                  child: Column(
-                    children: [
-                      SizedBox(height: 96.sh), // Standardized gap for fixed header
+              SafeArea(
+                child: Column(
+                  children: [
+                    SizedBox(height: 96.sh),
                     Expanded(
                       child: SingleChildScrollView(
                         padding: EdgeInsets.symmetric(horizontal: 30.sw),
@@ -332,19 +342,9 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             SizedBox(height: 20.sh),
-                            Center(child: _buildProfileSection()),
+                            _FadeSlideEntry(delayMs: 100, child: Center(child: _buildProfileSection())),
                             SizedBox(height: 30.sh),
-                            Text(
-                              "My Recipes",
-                              style: TextStyle(
-                                color: purple,
-                                fontSize: 20.sp,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Satoshi',
-                              ),
-                            ),
-                            SizedBox(height: 20.sh),
-                            _buildRecipeList(user.uid),
+                            _FadeSlideEntry(delayMs: 250, child: _buildRecipeList(user.uid)),
                             SizedBox(height: 30.sh),
                           ],
                         ),
@@ -584,39 +584,30 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
   Widget _buildProfileSection() {
     return Column(
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(50.sw),
-          child: Container(
-            width: 80.sw,
-            height: 80.sw,
+        Container(
+          width: 80.sw, height: 80.sw,
+          decoration: BoxDecoration(
             color: const Color(0xFFD9D9D9),
-            child: _photoUrl != null
-                ? Image.network(_photoUrl!, fit: BoxFit.cover)
-                : Image.asset('assets/logos/profile_placeholder.png', scale: 2),
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.white, width: 3),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 12)],
+          ),
+          child: ClipOval(
+            child: SizedBox(
+              width: 80.sw, height: 80.sw,
+              child: _photoUrl != null
+                  ? Image.network(_photoUrl!, fit: BoxFit.cover)
+                  : Image.asset('assets/logos/profile_placeholder.png', scale: 2),
+            ),
           ),
         ),
-        SizedBox(height: 10.sh),
-        Text(
-          _name ?? 'Hidden Pantry',
-          style: TextStyle(
-            color: purple,
-            fontSize: 15.sp,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Satoshi',
-          ),
-        ),
-        SizedBox(height: 5.sh),
-        Text(
-          _bio ?? 'Passionate about cooking.',
+        SizedBox(height: 12.sh),
+        Text(_name ?? 'Hidden Pantry',
+          style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.w700, fontFamily: 'Satoshi')),
+        SizedBox(height: 4.sh),
+        Text(_bio ?? 'Passionate about cooking.',
           textAlign: TextAlign.center,
-          style: TextStyle(
-            color: purple,
-            fontSize: 12.sp,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.2,
-            fontFamily: 'Satoshi',
-          ),
-        ),
+          style: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 13.sp, fontWeight: FontWeight.w500, fontFamily: 'Satoshi')),
       ],
     );
   }
@@ -629,7 +620,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return Center(child: CircularProgressIndicator(color: orange, strokeWidth: 2.5));
         }
         
         final docs = snapshot.data?.docs ?? [];
@@ -637,9 +628,26 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
           return Center(
             child: Padding(
               padding: EdgeInsets.only(top: 40.sh),
-              child: Text(
-                "You haven't uploaded any recipes yet.",
-                style: TextStyle(color: purple.withValues(alpha:0.6), fontFamily: "Satoshi", fontSize: 14.sp),
+              child: Column(
+                children: [
+                  Container(
+                    width: 80.sw, height: 80.sw,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [orange.withValues(alpha: 0.15), orange.withValues(alpha: 0.05)],
+                        begin: Alignment.topLeft, end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: Icon(Icons.restaurant_menu_rounded, color: orange, size: 36.sw),
+                  ),
+                  SizedBox(height: 20.sh),
+                  Text("No recipes yet",
+                    style: TextStyle(color: purple, fontSize: 17.sp, fontWeight: FontWeight.w700, fontFamily: 'Satoshi')),
+                  SizedBox(height: 6.sh),
+                  Text("Upload your first recipe to see it here!",
+                    style: TextStyle(color: purple.withValues(alpha: 0.45), fontSize: 13.sp, fontFamily: 'Satoshi')),
+                ],
               ),
             ),
           );
@@ -662,12 +670,8 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
             return RecipeCard(
               recipe: recipe,
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => RecipeDetailsScreen(recipe: recipe),
-                  ),
-                );
+                HapticFeedback.lightImpact();
+                Navigator.push(context, MaterialPageRoute(builder: (_) => RecipeDetailsScreen(recipe: recipe)));
               },
               onLongPress: () => (_isNutritionist ? _showEditShareSheet(recipe) : _showManagementOptions(recipe)),
               onShareTap: _isNutritionist ? () => _showShareOptions(recipe) : null,
@@ -682,6 +686,37 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
   }
 }
 
+class _FadeSlideEntry extends StatefulWidget {
+  final Widget child;
+  final int delayMs;
+  const _FadeSlideEntry({required this.child, this.delayMs = 0});
+  @override
+  State<_FadeSlideEntry> createState() => _FadeSlideEntryState();
+}
 
+class _FadeSlideEntryState extends State<_FadeSlideEntry> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
 
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _fade = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _slide = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    Future.delayed(Duration(milliseconds: widget.delayMs), () {
+      if (mounted) _ctrl.forward();
+    });
+  }
 
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child));
+  }
+}

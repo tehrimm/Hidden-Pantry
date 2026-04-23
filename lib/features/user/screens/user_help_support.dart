@@ -1,4 +1,6 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
@@ -56,6 +58,30 @@ class _UserHelpSupportScreenState extends State<UserHelpSupportScreen> {
       body: Stack(
         children: [
           const Positioned.fill(child: PatternBackground()),
+
+          // Decorative corner shapes
+          Positioned(
+            top: -30.sh, right: -30.sw,
+            child: Container(width: 120.sw, height: 120.sw,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: orange.withValues(alpha: 0.06))),
+          ),
+          Positioned(
+            bottom: -40.sh, left: -40.sw,
+            child: Container(width: 160.sw, height: 160.sw,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: purple.withValues(alpha: 0.04))),
+          ),
+          Positioned(
+            top: 200.sh, left: 16.sw,
+            child: Container(width: 10.sw, height: 10.sw,
+              decoration: BoxDecoration(shape: BoxShape.circle, color: orange.withValues(alpha: 0.15))),
+          ),
+          Positioned(
+            top: 320.sh, right: 20.sw,
+            child: Transform.rotate(angle: math.pi / 4,
+              child: Container(width: 16.sw, height: 16.sw,
+                decoration: BoxDecoration(color: purple.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(3.sw)))),
+          ),
+
           SafeArea(
             child: Column(
               children: [
@@ -79,66 +105,66 @@ class _UserHelpSupportScreenState extends State<UserHelpSupportScreen> {
                     padding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 6.sh),
                     children: [
                       // Contact Support Card
-                      Container(
-                        padding: EdgeInsets.all(22.sw),
-                        decoration: BoxDecoration(
-                          color: purple,
-                          borderRadius: BorderRadius.circular(22.sw),
-                          boxShadow: [
-                            BoxShadow(color: purple.withValues(alpha: 0.2), blurRadius: 16.sw, offset: Offset(0, 6.sh)),
-                          ],
-                        ),
-                        child: Column(
-                          children: [
-                            Container(
-                              width: 56.sw,
-                              height: 56.sw,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(16.sw),
-                              ),
-                              child: Icon(Icons.headset_mic_rounded, color: Colors.white, size: 28.sw),
-                            ),
-                            SizedBox(height: 14.sh),
-                            Text(
-                              "Need Help?",
-                              style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
-                            ),
-                            SizedBox(height: 6.sh),
-                            Text(
-                              "Our support team is available to help you with any questions or issues.",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13.sp, height: 1.4),
-                            ),
-                            SizedBox(height: 18.sh),
-                            GestureDetector(
-                              onTap: () => _showContactDialog(),
-                              child: Container(
-                                height: 48,
+                      _FadeSlideEntry(
+                        delayMs: 100,
+                        child: Container(
+                          padding: EdgeInsets.all(22.sw),
+                          decoration: BoxDecoration(
+                            color: purple,
+                            borderRadius: BorderRadius.circular(22.sw),
+                            boxShadow: [
+                              BoxShadow(color: purple.withValues(alpha: 0.2), blurRadius: 16.sw, offset: Offset(0, 6.sh)),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Container(
+                                width: 56.sw, height: 56.sw,
                                 decoration: BoxDecoration(
-                                  color: orange,
-                                  borderRadius: BorderRadius.circular(14),
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                  shape: BoxShape.circle,
                                 ),
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.email_rounded, color: Colors.white, size: 18),
-                                    SizedBox(width: 8),
-                                    Text("Contact Us", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
-                                  ],
+                                child: Icon(Icons.headset_mic_rounded, color: Colors.white, size: 28.sw),
+                              ),
+                              SizedBox(height: 14.sh),
+                              Text("Need Help?",
+                                style: TextStyle(color: Colors.white, fontSize: 20.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+                              SizedBox(height: 6.sh),
+                              Text("Our support team is available to help you with any questions or issues.",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13.sp, height: 1.4)),
+                              SizedBox(height: 18.sh),
+                              GestureDetector(
+                                onTap: () { HapticFeedback.lightImpact(); _showContactDialog(); },
+                                child: Container(
+                                  height: 48.sh,
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(colors: [orange, const Color(0xFFFFA06A)]),
+                                    borderRadius: BorderRadius.circular(14.sw),
+                                    boxShadow: [BoxShadow(color: orange.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4))],
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.email_rounded, color: Colors.white, size: 18.sw),
+                                      SizedBox(width: 8.sw),
+                                      Text("Contact Us", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14.sp, fontFamily: 'Satoshi')),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
 
                       SizedBox(height: 28.sh),
 
                       // FAQ Section Header
-                      Text(
-                        "Frequently Asked Questions",
-                        style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+                      _FadeSlideEntry(
+                        delayMs: 250,
+                        child: Text("Frequently Asked Questions",
+                          style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
                       ),
                       SizedBox(height: 16.sh),
 
@@ -147,13 +173,16 @@ class _UserHelpSupportScreenState extends State<UserHelpSupportScreen> {
                         final faq = _faqs[index];
                         final isExpanded = _expandedIndex == index;
 
-                        return Container(
+                        return _FadeSlideEntry(
+                          delayMs: 300 + (index * 80),
+                          child: Container(
                           margin: EdgeInsets.only(bottom: 10.sh),
                           decoration: BoxDecoration(
-                            color: cardBg,
-                            borderRadius: BorderRadius.circular(16.sw),
+                            color: Colors.white.withValues(alpha: 0.5),
+                            borderRadius: BorderRadius.circular(18.sw),
+                            border: Border.all(color: Colors.white, width: 1.5),
                             boxShadow: [
-                              BoxShadow(color: purple.withValues(alpha: 0.04), blurRadius: 8.sw, offset: Offset(0, 2.sh)),
+                              BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 15, offset: const Offset(0, 6)),
                             ],
                           ),
                           child: Material(
@@ -226,15 +255,16 @@ class _UserHelpSupportScreenState extends State<UserHelpSupportScreen> {
                               ),
                             ),
                           ),
-                        );
+                        ));
                       }),
 
                       SizedBox(height: 20.sh),
 
                       // Quick Links Section
-                      Text(
-                        "Quick Links",
-                        style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+                      _FadeSlideEntry(
+                        delayMs: 300 + (_faqs.length * 80) + 100,
+                        child: Text("Quick Links",
+                          style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
                       ),
                       SizedBox(height: 14.sh),
                       _quickLinkTile(
@@ -277,8 +307,9 @@ class _UserHelpSupportScreenState extends State<UserHelpSupportScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: 10.sh),
       decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(16.sw),
+        color: Colors.white.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(18.sw),
+        border: Border.all(color: Colors.white, width: 1.5),
         boxShadow: [
           BoxShadow(color: purple.withValues(alpha: 0.04), blurRadius: 8.sw, offset: Offset(0, 2.sh)),
         ],
@@ -347,12 +378,14 @@ class _UserHelpSupportScreenState extends State<UserHelpSupportScreen> {
               icon: Icons.email_rounded,
               label: "Email",
               value: "support@hiddenpantry.app",
+              onTap: () { Navigator.pop(context); _launchUrl("mailto:support@hiddenpantry.app"); },
             ),
             SizedBox(height: 10.sh),
             _contactOption(
               icon: Icons.language_rounded,
               label: "Website",
               value: "hiddenpantry.app",
+              onTap: () { Navigator.pop(context); _launchUrl("https://hiddenpantry.app"); },
             ),
           ],
         ),
@@ -370,39 +403,80 @@ class _UserHelpSupportScreenState extends State<UserHelpSupportScreen> {
     required IconData icon,
     required String label,
     required String value,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 14.sh),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14.sw),
-        boxShadow: [
-          BoxShadow(color: purple.withValues(alpha: 0.04), blurRadius: 6.sw, offset: Offset(0, 2.sh)),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 38.sw,
-            height: 38.sw,
-            decoration: BoxDecoration(
-              color: orange.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(10.sw),
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 14.sh),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14.sw),
+          boxShadow: [
+            BoxShadow(color: purple.withValues(alpha: 0.04), blurRadius: 6.sw, offset: Offset(0, 2.sh)),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 38.sw, height: 38.sw,
+              decoration: BoxDecoration(
+                color: orange.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: orange, size: 18.sw),
             ),
-            child: Icon(icon, color: orange, size: 18.sw),
-          ),
-          SizedBox(width: 14.sw),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label, style: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 11.sp, fontWeight: FontWeight.bold)),
-                Text(value, style: TextStyle(color: purple, fontSize: 14.sp, fontWeight: FontWeight.w600)),
-              ],
+            SizedBox(width: 14.sw),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 11.sp, fontWeight: FontWeight.bold, fontFamily: 'Satoshi')),
+                  Text(value, style: TextStyle(color: onTap != null ? orange : purple, fontSize: 14.sp, fontWeight: FontWeight.w600, fontFamily: 'Satoshi',
+                    decoration: onTap != null ? TextDecoration.underline : null, decorationColor: orange)),
+                ],
+              ),
             ),
-          ),
-        ],
+            if (onTap != null)
+              Icon(Icons.open_in_new_rounded, size: 16.sw, color: orange.withValues(alpha: 0.6)),
+          ],
+        ),
       ),
     );
+  }
+}
+
+class _FadeSlideEntry extends StatefulWidget {
+  final Widget child;
+  final int delayMs;
+  const _FadeSlideEntry({required this.child, this.delayMs = 0});
+  @override
+  State<_FadeSlideEntry> createState() => _FadeSlideEntryState();
+}
+
+class _FadeSlideEntryState extends State<_FadeSlideEntry> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _fade = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _slide = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    Future.delayed(Duration(milliseconds: widget.delayMs), () {
+      if (mounted) _ctrl.forward();
+    });
+  }
+
+  @override
+  void dispose() { _ctrl.dispose(); super.dispose(); }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child));
   }
 }

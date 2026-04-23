@@ -242,7 +242,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                   SizedBox(height: 96.sh), // Absolute gap for fixed header
                   Expanded(
                     child: ListView(
-                      padding: EdgeInsets.only(bottom: 120.sh),
+                      padding: EdgeInsets.only(bottom: 20.sh),
                       children: [
                         // Profile block
                         _modernProfileHeader(),
@@ -349,7 +349,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         ),
                         SizedBox(height: 16.sh),
                         _deleteAccountButton(),
-                        SizedBox(height: 100.sh), // Prevent cutoff
                       ],
                     ),
                   ),
@@ -460,7 +459,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 ],
               ),
             ),
-            Icon(Icons.edit_rounded, color: orange, size: 20.sw),
           ],
         ),
       ),
@@ -546,16 +544,36 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
 
                 // Icon Container
                 Container(
-                  width: 40.sw,
-                  height: 40.sw,
+                  width: 44.sw,
+                  height: 44.sw,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(12.sw),
+                    shape: BoxShape.circle,
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.white.withValues(alpha: 0.9),
+                        Colors.white.withValues(alpha: 0.4)
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        blurRadius: 6,
+                        spreadRadius: 1,
+                        offset: const Offset(-2, -2),
+                      ),
+                      BoxShadow(
+                        color: purple.withValues(alpha: 0.08),
+                        blurRadius: 8,
+                        offset: const Offset(2, 4),
+                      ),
+                    ],
                   ),
                   child: Center(
                     child: icon != null
-                        ? Image.asset(icon, width: 18.sw, fit: BoxFit.contain)
-                        : Icon(iconData, color: purple, size: 20.sw),
+                        ? Image.asset(icon, width: 20.sw, fit: BoxFit.contain)
+                        : Icon(iconData, color: purple, size: 22.sw),
                   ),
                 ),
 

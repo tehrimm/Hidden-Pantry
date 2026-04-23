@@ -219,7 +219,6 @@ void _openPreferences() {
       },
       child: Scaffold(
         backgroundColor: bg,
-
         // Keyboard fix: do not resize whole UI up
         resizeToAvoidBottomInset: false,
         body: Builder(
@@ -234,302 +233,324 @@ void _openPreferences() {
                   Positioned.fill(child: Container(color: bg)),
                   const PatternBackground(),
 
-                  // SCROLLABLE CONTENT (Clipped below header)
+                  // Decorative corner shapes
+                  Positioned(
+                    top: -30.sh, right: -30.sw,
+                    child: Container(width: 120.sw, height: 120.sw,
+                      decoration: BoxDecoration(shape: BoxShape.circle, color: orange.withValues(alpha: 0.06))),
+                  ),
+                  Positioned(
+                    bottom: -40.sh, left: -40.sw,
+                    child: Container(width: 160.sw, height: 160.sw,
+                      decoration: BoxDecoration(shape: BoxShape.circle, color: text.withValues(alpha: 0.04))),
+                  ),
+                  Positioned(
+                    top: 200.sh, left: 16.sw,
+                    child: Container(width: 10.sw, height: 10.sw,
+                      decoration: BoxDecoration(shape: BoxShape.circle, color: orange.withValues(alpha: 0.15))),
+                  ),
+                  Positioned(
+                    top: 320.sh, right: 20.sw,
+                    child: Transform.rotate(angle: math.pi / 4,
+                      child: Container(width: 16.sw, height: 16.sw,
+                        decoration: BoxDecoration(color: text.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(3.sw)))),
+                  ),
+
+                  // SCROLLABLE CONTENT
                   SafeArea(
                     child: Column(
                       children: [
-                        SizedBox(height: 96.sh), // Absolute gap for fixed header
+                        SizedBox(height: 80.sh), // Gap for fixed header
                         Expanded(
-                          child: SingleChildScrollView(
-                            padding: EdgeInsets.only(bottom: bottomInset + 40.sh),
-                            child: Center(
-                              child: Container(
-                                width: double.infinity,
-                                height: 852.sh,
-                                child: Stack(
-                                  children: [
-                                    // Profile pic
-                                    Positioned(
-                                      left: 146.sw,
-                                      top: 20.sh,
-                                  child: Container(
-                                    width: 100.sw,
-                                    height: 100.sw,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFD9D9D9),
-                                      borderRadius: BorderRadius.circular(50.sw),
-                                    ),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: _buildProfileImage(),
-                                  ),
-                                ),
-
-                                // Camera
-                                Positioned(
-                                  left: 221.sw,
-                                  top: 88.sh,
-                                  child: GestureDetector(
-                                    onTap: _pickProfileImage,
-                                    child: Container(
-                                      width: 25.sw,
-                                      height: 25.sw,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF737373),
-                                        borderRadius: BorderRadius.circular(13.sw),
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: Image.asset(
-                                        'assets/icons/camera.png',
-                                        width: 14.sw,
-                                        height: 14.sw,
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-
-                                // Name
-                                Positioned(
-                                  left: 30.sw,
-                                  top: 128.sh,
-                                  child: _InputCard(
-                                    width: 332.sw,
-                                    height: 70.sh,
-                                    child: TextField(
-                                      controller: _nameCtrl,
-                                      style: TextStyle(
-                                        color: text,
-                                        fontSize: 12.sp,
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: 0.2,
-                                        fontFamily: 'Satoshi',
-                                      ),
-                                      decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: 'Full Name',
-                                        hintStyle: TextStyle(
-                                          color: hint,
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w500,
-                                          fontFamily: 'Satoshi',
+                          child: ListView(
+                            padding: EdgeInsets.fromLTRB(30.sw, 20.sh, 30.sw, bottomInset + 40.sh),
+                            children: [
+                              // Profile pic
+                              _FadeSlideEntry(
+                                delayMs: 100,
+                                child: Center(
+                                  child: Stack(
+                                    children: [
+                                      Container(
+                                        width: 100.sw,
+                                        height: 100.sw,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFD9D9D9),
+                                          shape: BoxShape.circle,
+                                          border: Border.all(color: Colors.white, width: 3),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(alpha: 0.1),
+                                              blurRadius: 15,
+                                              offset: const Offset(0, 5),
+                                            ),
+                                          ],
                                         ),
-                                        contentPadding: EdgeInsets.symmetric(
-                                          horizontal: 24.sw,
-                                          vertical: 22.sh,
+                                        child: ClipOval(
+                                          child: SizedBox(
+                                            width: 100.sw,
+                                            height: 100.sw,
+                                            child: _buildProfileImage(),
+                                          ),
                                         ),
                                       ),
-                                    ),
+                                      Positioned(
+                                        bottom: 0,
+                                        right: 0,
+                                        child: GestureDetector(
+                                          onTap: _pickProfileImage,
+                                          child: Container(
+                                            width: 32.sw,
+                                            height: 32.sw,
+                                            decoration: BoxDecoration(
+                                              color: orange,
+                                              shape: BoxShape.circle,
+                                              border: Border.all(color: Colors.white, width: 2),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: orange.withValues(alpha: 0.3),
+                                                  blurRadius: 8,
+                                                  offset: const Offset(0, 4),
+                                                ),
+                                              ],
+                                            ),
+                                            alignment: Alignment.center,
+                                            child: Icon(Icons.camera_alt_rounded, color: Colors.white, size: 16.sw),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
+                              ),
+                              SizedBox(height: 32.sh),
 
-                                // Bio
-                                Positioned(
-                                  left: 30.sw,
-                                  top: 214.sh,
-                                  child: _InputCard(
-                                    width: 332.sw,
-                                    height: 70.sh,
-                                    child: TextField(
-                                      controller: _bioCtrl,
-                                      style: TextStyle(
-                                        color: text,
-                                        fontSize: 12.sp,
+                              // Name
+                              _FadeSlideEntry(
+                                delayMs: 200,
+                                child: _InputCard(
+                                  child: TextField(
+                                    controller: _nameCtrl,
+                                    style: TextStyle(
+                                      color: text,
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: 'Satoshi',
+                                    ),
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText: 'Full Name',
+                                      hintStyle: TextStyle(
+                                        color: hint,
+                                        fontSize: 14.sp,
                                         fontWeight: FontWeight.w500,
                                         fontFamily: 'Satoshi',
                                       ),
-                                      decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: 'Bio',
-                                        hintStyle: TextStyle(
-                                          color: hint,
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w500,
-                                          fontFamily: 'Satoshi',
-                                        ),
-                                        contentPadding: EdgeInsets.symmetric(
-                                          horizontal: 24.sw,
-                                          vertical: 22.sh,
-                                        ),
-                                      ),
+                                      contentPadding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 18.sh),
                                     ),
                                   ),
                                 ),
+                              ),
+                              SizedBox(height: 16.sh),
 
-                                // Phone
-                                Positioned(
-                                  left: 30.sw,
-                                  top: 300.sh,
-                                  child: _InputCard(
-                                    width: 332.sw,
-                                    height: 70.sh,
-                                    child: TextField(
-                                      controller: _phoneCtrl,
-                                      keyboardType: TextInputType.phone,
-                                      style: TextStyle(
-                                        color: text,
-                                        fontSize: 12.sp,
+                              // Bio
+                              _FadeSlideEntry(
+                                delayMs: 300,
+                                child: _InputCard(
+                                  child: TextField(
+                                    controller: _bioCtrl,
+                                    style: TextStyle(
+                                      color: text,
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: 'Satoshi',
+                                    ),
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText: 'Bio',
+                                      hintStyle: TextStyle(
+                                        color: hint,
+                                        fontSize: 14.sp,
                                         fontWeight: FontWeight.w500,
-                                        letterSpacing: 0.2,
                                         fontFamily: 'Satoshi',
                                       ),
-                                      decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: 'Phone number',
-                                        hintStyle: TextStyle(
-                                          color: hint,
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w500,
-                                          fontFamily: 'Satoshi',
-                                        ),
-                                        contentPadding: EdgeInsets.symmetric(
-                                          horizontal: 24.sw,
-                                          vertical: 22.sh,
-                                        ),
-                                      ),
+                                      contentPadding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 18.sh),
                                     ),
                                   ),
                                 ),
+                              ),
+                              SizedBox(height: 16.sh),
 
-                                // Notification toggle
-                                Positioned(
-                                  left: 30.sw,
-                                  top: 386.sh,
-                                  child: _InputCard(
-                                    width: 332.sw,
-                                    height: 70.sh,
+                              // Phone
+                              _FadeSlideEntry(
+                                delayMs: 400,
+                                child: _InputCard(
+                                  child: TextField(
+                                    controller: _phoneCtrl,
+                                    keyboardType: TextInputType.phone,
+                                    style: TextStyle(
+                                      color: text,
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w600,
+                                      fontFamily: 'Satoshi',
+                                    ),
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText: 'Phone number',
+                                      hintStyle: TextStyle(
+                                        color: hint,
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w500,
+                                        fontFamily: 'Satoshi',
+                                      ),
+                                      contentPadding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 18.sh),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 16.sh),
+
+                              // Notification toggle
+                              _FadeSlideEntry(
+                                delayMs: 500,
+                                child: _InputCard(
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 18.sh),
                                     child: Row(
                                       children: [
-                                        SizedBox(width: 20.sw),
-                                        Image.asset(
-                                          'assets/icons/notification.png',
-                                          width: 18.sw,
-                                          height: 18.sw,
-                                        ),
-                                        SizedBox(width: 12.sw),
-                                        Text(
-                                          'Notification',
-                                          style: TextStyle(
-                                            color: text,
-                                            fontSize: 12.sp,
-                                            fontWeight: FontWeight.w500,
-                                            letterSpacing: 0.2,
-                                            fontFamily: 'Satoshi',
+                                        Container(
+                                          width: 36.sw,
+                                          height: 36.sw,
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(alpha: 0.6),
+                                            borderRadius: BorderRadius.circular(10.sw),
                                           ),
-                                        ),
-                                        const Spacer(),
-                                        _NotifSwitch(
-                                          value: _notifEnabled,
-                                          onChanged: (v) => setState(() => _notifEnabled = v),
-                                        ),
-                                        SizedBox(width: 16.sw),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-
-                                // Preferences card
-                                Positioned(
-                                  left: 30.sw,
-                                  top: 472.sh,
-                                  child: GestureDetector(
-                                    onTap: _openPreferences,
-                                    child: Container(
-                                      width: 332.sw,
-                                      height: 90.sh,
-                                      decoration: BoxDecoration(
-                                        color: card,
-                                        borderRadius: BorderRadius.circular(20.sw),
-                                      ),
-                                      child: Stack(
-                                        children: [
-                                          Positioned(
-                                            left: 25.sw,
-                                            top: 18.sh,
-                                            child: Text(
-                                              'Your Preferences',
-                                              style: TextStyle(
-                                                color: text,
-                                                fontSize: 20.sp,
-                                                fontWeight: FontWeight.w700,
-                                                fontFamily: 'Satoshi',
-                                              ),
-                                            ),
-                                          ),
-                                          Positioned(
-                                            left: 25.sw,
-                                            top: 48.sh,
-                                            child: Text(
-                                              'Change your allergies and diet preferences',
-                                              style: TextStyle(
-                                                color: text,
-                                                fontSize: 12.sp,
-                                                fontWeight: FontWeight.w500,
-                                                letterSpacing: 0.2,
-                                                fontFamily: 'Satoshi',
-                                              ),
-                                            ),
-                                          ),
-                                          Positioned(
-                                            right: 20.sw,
-                                            top: 40.sh,
+                                          child: Center(
                                             child: Image.asset(
-                                              'assets/icons/next_brown.png',
+                                              'assets/icons/notification.png',
                                               width: 18.sw,
                                               height: 18.sw,
                                             ),
                                           ),
+                                        ),
+                                        SizedBox(width: 16.sw),
+                                        Expanded(
+                                          child: Text(
+                                            'Notifications',
+                                            style: TextStyle(
+                                              color: text,
+                                              fontSize: 15.sp,
+                                              fontWeight: FontWeight.w600,
+                                              fontFamily: 'Satoshi',
+                                            ),
+                                          ),
+                                        ),
+                                        _NotifSwitch(
+                                          value: _notifEnabled,
+                                          onChanged: (v) => setState(() => _notifEnabled = v),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 16.sh),
+
+                              // Preferences card
+                              _FadeSlideEntry(
+                                delayMs: 600,
+                                child: GestureDetector(
+                                  onTap: _openPreferences,
+                                  child: _InputCard(
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 20.sh),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Your Preferences',
+                                                  style: TextStyle(
+                                                    color: text,
+                                                    fontSize: 18.sp,
+                                                    fontWeight: FontWeight.w700,
+                                                    fontFamily: 'Satoshi',
+                                                  ),
+                                                ),
+                                                SizedBox(height: 4.sh),
+                                                Text(
+                                                  'Change your allergies and diet preferences',
+                                                  style: TextStyle(
+                                                    color: hint,
+                                                    fontSize: 12.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                    fontFamily: 'Satoshi',
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Icon(Icons.arrow_forward_ios_rounded, color: text.withValues(alpha: 0.5), size: 16.sw),
                                         ],
                                       ),
                                     ),
                                   ),
                                 ),
+                              ),
+                              SizedBox(height: 32.sh),
 
-                                // Save button
-                                Positioned(
-                                  left: 30.sw,
-                                  top: 582.sh,
-                                  child: GestureDetector(
-                                    onTap: _loading ? null : _saveChanges,
-                                    child: Container(
-                                      width: 332.sw,
-                                      height: 62.sh,
-                                      decoration: BoxDecoration(
-                                        color: orange,
-                                        borderRadius: BorderRadius.circular(20.sw),
+                              // Save button
+                              _FadeSlideEntry(
+                                delayMs: 700,
+                                child: GestureDetector(
+                                  onTap: _loading ? null : _saveChanges,
+                                  child: Container(
+                                    height: 62.sh,
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [orange, Color(0xFFFFA06A)],
                                       ),
-                                      alignment: Alignment.center,
-                                      child: _loading
-                                          ? SizedBox(
-                                              width: 22.sw,
-                                              height: 22.sw,
-                                              child: const CircularProgressIndicator(
-                                                color: Colors.white,
-                                                strokeWidth: 2,
-                                              ),
-                                            )
-                                          : Text(
-                                              'Save Changes',
-                                              style: TextStyle(
-                                                color: whiteText,
-                                                fontSize: 15.sp,
-                                                fontWeight: FontWeight.w700,
-                                                fontFamily: 'Satoshi',
-                                              ),
-                                            ),
+                                      borderRadius: BorderRadius.circular(20.sw),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: orange.withValues(alpha: 0.3),
+                                          blurRadius: 12,
+                                          offset: const Offset(0, 6),
+                                        )
+                                      ],
                                     ),
+                                    alignment: Alignment.center,
+                                    child: _loading
+                                        ? SizedBox(
+                                            width: 22.sw,
+                                            height: 22.sw,
+                                            child: const CircularProgressIndicator(
+                                              color: Colors.white,
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : Text(
+                                            'Save Changes',
+                                            style: TextStyle(
+                                              color: whiteText,
+                                              fontSize: 16.sp,
+                                              fontWeight: FontWeight.w700,
+                                              fontFamily: 'Satoshi',
+                                            ),
+                                          ),
                                   ),
                                 ),
-
-                                  ],
-                                ),
                               ),
-                            ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
 
+                  // Fixed Header
                   Positioned(
                     left: 30.sw,
                     right: 0,
@@ -582,8 +603,8 @@ void _openPreferences() {
     return Center(
       child: Image.asset(
         'assets/logos/profile_placeholder.png',
-        width: 22.sw,
-        height: 22.sw,
+        width: 32.sw,
+        height: 32.sw,
         fit: BoxFit.contain,
       ),
     );
@@ -591,26 +612,24 @@ void _openPreferences() {
 }
 
 class _InputCard extends StatelessWidget {
-  final double width;
-  final double height;
   final Widget child;
 
-  const _InputCard({
-    required this.width,
-    required this.height,
-    required this.child,
-  });
-
-  static const Color card = Color(0xFFF9E3D5);
+  const _InputCard({required this.child});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: width,
-      height: height,
       decoration: BoxDecoration(
-        color: card,
-        borderRadius: BorderRadius.circular(20.sw),
+        color: Colors.white.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(22.sw),
+        border: Border.all(color: Colors.white, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 15,
+            offset: const Offset(0, 6),
+          )
+        ],
       ),
       child: child,
     );
@@ -628,48 +647,89 @@ class _NotifSwitch extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // exact sizes requested
-    final trackW = 25.sw;
-    final trackH = 10.sh;
-    final knobSize = 15.sw;
+    final trackW = 44.sw;
+    final trackH = 24.sh;
+    final knobSize = 20.sw;
 
     final trackColor = value ? const Color(0xFFDFBFE5) : const Color(0xFFE5CCBF);
     final knobColor = value ? const Color(0xFF462F4D) : const Color(0xFF74503C);
 
     return GestureDetector(
       onTap: () => onChanged(!value),
-      child: SizedBox(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         width: trackW,
-        height: math.max(trackH, knobSize),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            Center(
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                width: trackW,
-                height: trackH,
-                decoration: BoxDecoration(
-                  color: trackColor,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
-            ),
-            AnimatedAlign(
-              duration: const Duration(milliseconds: 180),
-              curve: Curves.easeOut,
-              alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-              child: Container(
-                width: knobSize,
-                height: knobSize,
-                decoration: BoxDecoration(
-                  color: knobColor,
-                  shape: BoxShape.circle,
-                ),
-              ),
-            ),
-          ],
+        height: trackH,
+        decoration: BoxDecoration(
+          color: trackColor,
+          borderRadius: BorderRadius.circular(999),
         ),
+        padding: EdgeInsets.all(2.sw),
+        child: AnimatedAlign(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutBack,
+          alignment: value ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            width: knobSize,
+            height: knobSize,
+            decoration: BoxDecoration(
+              color: knobColor,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                )
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FadeSlideEntry extends StatefulWidget {
+  final Widget child;
+  final int delayMs;
+  const _FadeSlideEntry({required this.child, this.delayMs = 0});
+
+  @override
+  State<_FadeSlideEntry> createState() => _FadeSlideEntryState();
+}
+
+class _FadeSlideEntryState extends State<_FadeSlideEntry> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _fade = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _slide = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+
+    Future.delayed(Duration(milliseconds: widget.delayMs), () {
+      if (mounted) _ctrl.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: widget.child,
       ),
     );
   }
