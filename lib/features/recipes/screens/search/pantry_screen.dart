@@ -555,20 +555,73 @@ class _PantryScreenState extends State<PantryScreen> {
         final selectedInCategory = filteredItems.where((item) => _selected.contains(item)).length;
         final totalInCategory = filteredItems.length;
 
-        return _CategoryCard(
-          meta: meta,
-          subtitle: "$selectedInCategory/$totalInCategory ingredients",
-          allItems: filteredItems,
-          isExpanded: isExpanded || _searchQuery.isNotEmpty, // Auto-expand when searching
-          isSelected: (s) => _selected.contains(s),
-          onToggleChip: _toggleIngredient,
-          onToggleExpansion: () => _toggleCategoryExpansion(meta.keyName),
-          primary: primary,
-          chipBg: chipBg,
-          chipText: chipText,
-          showExpandButton: _searchQuery.isEmpty, // Hide expand button when searching
+        return _StaggeredItem(
+          index: index,
+          child: _CategoryCard(
+            meta: meta,
+            subtitle: "$selectedInCategory/$totalInCategory ingredients",
+            allItems: filteredItems,
+            isExpanded: isExpanded || _searchQuery.isNotEmpty,
+            isSelected: (s) => _selected.contains(s),
+            onToggleChip: _toggleIngredient,
+            onToggleExpansion: () => _toggleCategoryExpansion(meta.keyName),
+            primary: primary,
+            chipBg: chipBg,
+            chipText: chipText,
+            showExpandButton: _searchQuery.isEmpty,
+          ),
         );
       },
+    );
+  }
+}
+
+class _StaggeredItem extends StatelessWidget {
+  final Widget child;
+  final int index;
+  const _StaggeredItem({required this.child, required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 400 + (index * 50).clamp(0, 400)),
+      curve: Curves.easeOutCubic,
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value.clamp(0.0, 1.0),
+          child: Transform.scale(
+            scale: 0.95 + (0.05 * value),
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+}
+
+class _StaggeredChip extends StatelessWidget {
+  final Widget child;
+  final int index;
+  const _StaggeredChip({required this.child, required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 400 + (index * 20).clamp(0, 300)),
+      curve: Curves.easeOutBack,
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value.clamp(0.0, 1.0),
+          child: Transform.scale(
+            scale: 0.7 + (0.3 * value),
+            child: child,
+          ),
+        );
+      },
+      child: child,
     );
   }
 }
@@ -623,10 +676,18 @@ class _CategoryCard extends StatelessWidget {
     final displayItems = allItems.take(displayLimit).toList();
 
     return Container(
-      padding: EdgeInsets.all(14.sw),
+      padding: EdgeInsets.all(16.sw),
       decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(22.sw),
+        color: Colors.white.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(24.sw),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: primary.withValues(alpha: 0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -707,19 +768,26 @@ class _CategoryCard extends StatelessWidget {
           SizedBox(height: 14.sh), // Spacing between header and chips
 
           // Chips Section
-          Wrap(
-            spacing: 10.sw,
-            runSpacing: 10.sh,
-            children: [
-              for (final chip in displayItems)
-                _PillChip(
-                  label: chip,
-                  selected: isSelected(chip),
-                  onTap: () => onToggleChip(chip),
-                  primary: primary,
-                  chipBg: chipBg,
-                  chipText: chipText,
-                ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            alignment: Alignment.topLeft,
+            child: Wrap(
+              spacing: 10.sw,
+              runSpacing: 10.sh,
+              children: [
+                for (int i = 0; i < displayItems.length; i++)
+                  _StaggeredChip(
+                    index: i,
+                    child: _PillChip(
+                      label: displayItems[i],
+                      selected: isSelected(displayItems[i]),
+                      onTap: () => onToggleChip(displayItems[i]),
+                      primary: primary,
+                      chipBg: chipBg,
+                      chipText: chipText,
+                    ),
+                  ),
               
               // Key change: "+more" chip
                 if (!isExpanded && hasMore)
@@ -734,6 +802,7 @@ class _CategoryCard extends StatelessWidget {
                 ),
             ],
           ),
+            ),
         ],
       ),
     );
@@ -765,23 +834,38 @@ class _PillChip extends StatelessWidget {
     final bgColor = selected ? primary : chipBg;
     final textColor = selected ? const Color(0xFFFFF2EA) : chipText;
 
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20.sw),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 9.sh),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(20.sw),
-          border: border,
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: textColor,
-            fontSize: 12.sp,
-            fontFamily: 'Satoshi',
-            fontWeight: FontWeight.normal,
+      child: AnimatedScale(
+        scale: selected ? 1.06 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutBack,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 9.sh),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(20.sw),
+            border: border ?? Border.all(color: selected ? Colors.white24 : Colors.transparent),
+            boxShadow: selected ? [
+              BoxShadow(
+                color: primary.withValues(alpha: 0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 4),
+              )
+            ] : null,
+          ),
+          child: AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOutCubic,
+            style: TextStyle(
+              color: textColor,
+              fontSize: 12.sp,
+              fontFamily: 'Satoshi',
+              fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+            ),
+            child: Text(label),
           ),
         ),
       ),

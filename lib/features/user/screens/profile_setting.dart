@@ -35,6 +35,7 @@ class _ProfileSettingScreenState extends State<ProfileSettingScreen> {
   final _phoneCtrl = TextEditingController();
 
   bool _notifEnabled = true;
+  bool _voiceEnabled = true;
   bool _loading = false;
 
   String? _photoUrl;
@@ -86,6 +87,7 @@ class _ProfileSettingScreenState extends State<ProfileSettingScreen> {
       _bioCtrl.text = (data['bio'] ?? '').toString();
       _phoneCtrl.text = (data['phone'] ?? '').toString();
       _notifEnabled = (data['notificationsEnabled'] ?? true) == true;
+      _voiceEnabled = (data['voiceEnabled'] ?? true) == true;
       _photoUrl = (data['photoUrl'] as String?)?.trim() ?? user.photoURL;
 
       if (mounted) setState(() {});
@@ -156,6 +158,7 @@ Future<String?> _uploadToStorage(File file) async {
         'bio': _bioCtrl.text.trim(),
         'phone': _phoneCtrl.text.trim(),
         'notificationsEnabled': _notifEnabled,
+        'voiceEnabled': _voiceEnabled,
         'photoUrl': photoUrl,
         'updatedAt': FieldValue.serverTimestamp(),
       };
@@ -448,6 +451,62 @@ void _openPreferences() {
                                         _NotifSwitch(
                                           value: _notifEnabled,
                                           onChanged: (v) => setState(() => _notifEnabled = v),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 16.sh),
+
+                              // Voice Mode toggle
+                              _FadeSlideEntry(
+                                delayMs: 550,
+                                child: _InputCard(
+                                  child: Padding(
+                                    padding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 18.sh),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 36.sw,
+                                          height: 36.sw,
+                                          decoration: BoxDecoration(
+                                            color: Colors.white.withValues(alpha: 0.6),
+                                            borderRadius: BorderRadius.circular(10.sw),
+                                          ),
+                                          child: Center(
+                                            child: Icon(Icons.mic_rounded, color: orange, size: 20.sw),
+                                          ),
+                                        ),
+                                        SizedBox(width: 16.sw),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Voice-Controlled Cooking',
+                                                style: TextStyle(
+                                                  color: text,
+                                                  fontSize: 15.sp,
+                                                  fontWeight: FontWeight.w600,
+                                                  fontFamily: 'Satoshi',
+                                                ),
+                                              ),
+                                              Text(
+                                                'Hands-free step navigation',
+                                                style: TextStyle(
+                                                  color: hint,
+                                                  fontSize: 11.sp,
+                                                  fontWeight: FontWeight.w500,
+                                                  fontFamily: 'Satoshi',
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        _NotifSwitch(
+                                          value: _voiceEnabled,
+                                          onChanged: (v) => setState(() => _voiceEnabled = v),
                                         ),
                                       ],
                                     ),

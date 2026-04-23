@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'dart:math' as math;
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -339,9 +340,65 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   List<Recipe> _rerankByPreferences(List<Recipe> list) {
-    if (_tagWeights.isEmpty || list.isEmpty) return list;
+    if (list.isEmpty) return list;
+
+    // 1. STRICT LOCAL FILTER: Ensure no allergens slip through
+    final filtered = list.where((r) {
+      if (userAllergies.isEmpty) return true;
+
+      final rName = r.name.toLowerCase();
+      final rTags = r.tags.map((e) => e.toLowerCase()).toSet();
+      final rAllergens = r.allergens.map((e) => e.toLowerCase()).toSet();
+      final rIngredients = r.ingredients.map((e) => e.name.toLowerCase()).toList();
+
+      // Mapping for complex allergens (sub-ingredients)
+      final Map<String, List<String>> synonyms = {
+        "dairy": ["milk", "cheese", "butter", "cream", "yogurt", "lactose", "whey", "casein", "ghee"],
+        "tree nuts": ["almond", "walnut", "cashew", "pecan", "pistachio", "hazelnut", "brazil nut", "macadamia"],
+        "shellfish": ["shrimp", "crab", "lobster", "mussel", "oyster", "scallop", "clam", "prawn"],
+        "spicy": ["chili", "pepper", "jalapeno", "habanero", "cayenne", "sriracha", "hot sauce", "wasabi"],
+        "gluten": ["wheat", "barley", "rye", "malt", "farro", "bulgur"],
+        "eggs": ["egg", "yolk", "egg white", "albumin"],
+      };
+
+      for (final allergy in userAllergies) {
+        final a = allergy.toLowerCase().trim();
+        final searchTerms = [a, ...(synonyms[a] ?? [])];
+        
+        // Special Case: Allow "Gluten-Free" even if user has Gluten allergy
+        if (a == "gluten") {
+          bool isGlutenFree = rName.contains("gluten-free") || 
+                             rName.contains("gluten free") ||
+                             rTags.contains("gluten-free") ||
+                             rTags.contains("gluten free");
+          if (isGlutenFree) continue;
+        }
+
+        for (final term in searchTerms) {
+          // Check explicit allergens list
+          if (rAllergens.contains(term)) return false;
+          
+          // Check tags
+          if (rTags.contains(term)) return false;
+          
+          // Check name
+          if (rName.contains(term)) return false;
+
+          // Check individual ingredients
+          for (final ing in rIngredients) {
+            if (ing.contains(term)) return false;
+          }
+        }
+      }
+      return true;
+    }).toList();
+
+    if (filtered.isEmpty) return [];
+    if (_tagWeights.isEmpty) return filtered;
+
+    // 2. Rerank remaining items by preference weights
     final scored = <MapEntry<Recipe, double>>[];
-    for (final r in list) {
+    for (final r in filtered) {
       double s = 0;
       for (final t in r.tags) {
         final w = _tagWeights[t.toLowerCase()] ?? 0;
@@ -678,9 +735,7 @@ void _openUserProfile() {
                             _horizontalCards(loading ? null : recommendations),
 
                             SizedBox(height: 24.sh),
-                            _weeklyHeader(),
-                            SizedBox(height: 12.sh),
-                            _weeklyFeatureCard(),
+                            _weeklySection(),
 
                             if (_followedAuthorIds.isNotEmpty) ...[
                               SizedBox(height: 24.sh),
@@ -1015,168 +1070,307 @@ void _openUserProfile() {
 
   // ──────────────────── HERO CARD (Stack with ClipPath) ────────────────────
   Widget _heroCard() {
-    if (recommendations.isEmpty) {
-      if (loading) {
-        return Padding(
-          padding: EdgeInsets.symmetric(horizontal: 22.sw),
-          child: SkeletonBox(
-            width: double.infinity,
-            height: 180.sh,
-            borderRadius: BorderRadius.circular(24.sw),
-          ),
-        );
-      }
-      return const SizedBox();
+  if (recommendations.isEmpty) {
+    if (loading) {
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 22.sw),
+        child: SkeletonBox(
+          width: double.infinity,
+          height: 200.sh,
+          borderRadius: BorderRadius.circular(28.sw),
+        ),
+      );
     }
+    return const SizedBox();
+  }
 
-    final r = recommendations.first;
-    final timeText = r.minutes > 0 ? "${r.minutes} min" : "";
-    final diffText = r.difficulty ?? "";
+  final r = recommendations.first;
+  final timeText = r.minutes > 0 ? "${r.minutes} min" : "";
+  final diffText = r.difficulty ?? "";
 
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 22.sw),
-      child: GestureDetector(
-        onTap: () => _openRecipe(r),
+  return Padding(
+    padding: EdgeInsets.symmetric(horizontal: 22.sw),
+    child: GestureDetector(
+      onTap: () => _openRecipe(r),
+      child: TweenAnimationBuilder<double>(
+        duration: const Duration(milliseconds: 700),
+        tween: Tween(begin: 0.92, end: 1),
+        curve: Curves.easeOutBack,
+        builder: (context, scale, child) {
+          return Transform.scale(scale: scale, child: child);
+        },
         child: Container(
-          height: 180.sh,
+          height: 210.sh,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24.sw),
+            borderRadius: BorderRadius.circular(28.sw),
             boxShadow: [
               BoxShadow(
-                color: purple.withValues(alpha: 0.18),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 35,
+                offset: const Offset(0, 18),
               ),
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(24.sw),
+            borderRadius: BorderRadius.circular(28.sw),
             child: Stack(
               children: [
-                // Background image (full)
+                // 🌄 IMAGE (cinematic zoom)
                 Positioned.fill(
-                  child: Image.network(
-                    r.imageUrl ?? "",
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(color: chipBg),
+                  child: Transform.scale(
+                    scale: 1.18,
+                    child: Image.network(
+                      r.imageUrl ?? "",
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) =>
+                          Container(color: Colors.grey.shade900),
+                    ),
                   ),
                 ),
-                // Dark gradient overlay
+
+                // 🌑 CINEMATIC GRADIENT
                 Positioned.fill(
-                  child: DecoratedBox(
+                  child: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        begin: Alignment.centerLeft,
-                        end: Alignment.centerRight,
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
                         colors: [
-                          purple,
-                          purple.withValues(alpha: 0.92),
-                          purple.withValues(alpha: 0.45),
+                          Colors.black.withValues(alpha: 0.88),
+                          Colors.black.withValues(alpha: 0.35),
                           Colors.transparent,
                         ],
-                        stops: const [0.0, 0.45, 0.7, 1.0],
+                        stops: const [0.0, 0.55, 1.0],
                       ),
                     ),
                   ),
                 ),
-                // Text content on left
+
+                // 🔥 BREATHING GLOW (animated feel - Orange)
                 Positioned(
-                  left: 18.sw,
-                  top: 18.sh,
-                  bottom: 18.sh,
-                  right: 120.sw,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 4.sh),
+                  bottom: -40,
+                  left: -40,
+                  child: TweenAnimationBuilder<double>(
+                    duration: const Duration(seconds: 2),
+                    tween: Tween(begin: 0.2, end: 0.35),
+                    curve: Curves.easeInOut,
+                    builder: (context, value, child) {
+                      return Container(
+                        width: 160.sw,
+                        height: 160.sw,
                         decoration: BoxDecoration(
-                          color: orange.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(8.sw),
-                        ),
-                        child: Text(
-                          "🔥 TODAY'S PICK",
-                          style: TextStyle(
-                            color: orange,
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.w800,
-                            fontFamily: "Satoshi",
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 8.sh),
-                      Text(
-                        r.name,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.w800,
-                          fontFamily: "Satoshi",
-                          height: 1.2,
-                        ),
-                      ),
-                      if (timeText.isNotEmpty || diffText.isNotEmpty) ...[
-                        SizedBox(height: 6.sh),
-                        Row(
-                          children: [
-                            if (timeText.isNotEmpty) ...[
-                              Icon(Icons.access_time_rounded, color: Colors.white70, size: 14.sw),
-                              SizedBox(width: 4.sw),
-                              Text(
-                                timeText,
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 11.sp,
-                                  fontFamily: "Satoshi",
-                                ),
-                              ),
-                            ],
-                            if (timeText.isNotEmpty && diffText.isNotEmpty)
-                              SizedBox(width: 10.sw),
-                            if (diffText.isNotEmpty) ...[
-                              Icon(Icons.signal_cellular_alt_rounded, color: Colors.white70, size: 14.sw),
-                              SizedBox(width: 4.sw),
-                              Text(
-                                diffText,
-                                style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 11.sp,
-                                  fontFamily: "Satoshi",
-                                ),
-                              ),
-                            ],
+                          shape: BoxShape.circle,
+                          color: orange.withValues(alpha: value),
+                          boxShadow: [
+                            BoxShadow(
+                              color: orange.withValues(alpha: value),
+                              blurRadius: 80,
+                              spreadRadius: 10,
+                            ),
                           ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                // 💜 PURPLE SPLASH (Top Right Glow)
+                Positioned(
+                  top: -60,
+                  right: -60,
+                  child: TweenAnimationBuilder<double>(
+                    duration: const Duration(seconds: 3),
+                    tween: Tween(begin: 0.1, end: 0.25),
+                    curve: Curves.easeInOut,
+                    builder: (context, value, child) {
+                      return Container(
+                        width: 180.sw,
+                        height: 180.sw,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: purple.withValues(alpha: value),
+                          boxShadow: [
+                            BoxShadow(
+                              color: purple.withValues(alpha: value),
+                              blurRadius: 90,
+                              spreadRadius: 15,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+
+                // 🏷️ BADGE
+                Positioned(
+                  top: 14.sh,
+                  left: 14.sw,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 10.sw, vertical: 5.sh),
+                    decoration: BoxDecoration(
+                      color: orange,
+                      borderRadius: BorderRadius.circular(12.sw),
+                      boxShadow: [
+                        BoxShadow(
+                          color: orange.withValues(alpha: 0.4),
+                          blurRadius: 12,
                         ),
                       ],
-                      SizedBox(height: 10.sh),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 14.sw, vertical: 8.sh),
+                    ),
+                    child: Text(
+                      "TODAY'S PICK",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 9.sp,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+
+                // 🧊 GLASS CONTENT
+                Positioned(
+                  left: 16.sw,
+                  right: 16.sw,
+                  bottom: 16.sh,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18.sw),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                      child: Container(
+                        padding: EdgeInsets.all(14.sw),
                         decoration: BoxDecoration(
-                          color: orange,
-                          borderRadius: BorderRadius.circular(20.sw),
+                          color: Colors.white.withValues(alpha: 0.04),
+                          borderRadius: BorderRadius.circular(18.sw),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.15),
+                          ),
                         ),
-                        child: Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            // TITLE
                             Text(
-                              "View Recipe",
+                              r.name,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w700,
-                                fontFamily: "Satoshi",
+                                fontSize: 18.sp,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.5,
                               ),
                             ),
-                            SizedBox(width: 4.sw),
-                            Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 14.sw),
+
+                            SizedBox(height: 4.sh),
+
+                            // RATING
+                            Row(
+                              children: [
+                                Icon(Icons.star_rounded, color: orange, size: 14.sw),
+                                SizedBox(width: 4.sw),
+                                Text(
+                                  r.avgRating.toStringAsFixed(1),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11.sp,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                SizedBox(width: 4.sw),
+                                Text(
+                                  "(${r.reviewCount})",
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 10.sp,
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            SizedBox(height: 6.sh),
+
+                            // META INFO
+                            Row(
+                              children: [
+                                if (timeText.isNotEmpty) ...[
+                                  Icon(Icons.access_time,
+                                      color: Colors.white70, size: 14.sw),
+                                  SizedBox(width: 4.sw),
+                                  Text(
+                                    timeText,
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 10.sp,
+                                    ),
+                                  ),
+                                ],
+                                if (diffText.isNotEmpty) ...[
+                                  SizedBox(width: 10.sw),
+                                  Icon(Icons.signal_cellular_alt,
+                                      color: Colors.white70, size: 14.sw),
+                                  SizedBox(width: 4.sw),
+                                  Text(
+                                    diffText,
+                                    style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 10.sp,
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+
+                            SizedBox(height: 12.sh),
+
+                            // CTA BUTTON (premium feel)
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 14.sw, vertical: 9.sh),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    orange,
+                                    orange.withValues(alpha: 0.75),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(22.sw),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: orange.withValues(alpha: 0.35),
+                                    blurRadius: 18,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    "View Recipe",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                  SizedBox(width: 6.sw),
+                                  Icon(
+                                    Icons.arrow_forward_rounded,
+                                    color: Colors.white,
+                                    size: 14.sw,
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -1184,9 +1378,21 @@ void _openUserProfile() {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
+  // ──────────────────── WEEKLY FEATURE CARD ────────────────────
+Widget _weeklySection() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      _weeklyHeader(),
+      SizedBox(height: 12.sh),
+      _weeklyFeatureCard(),
+    ],
+  );
+}
   // ──────────────────── SECTION HEADER ────────────────────
   Widget _sectionHeader(String title, {required VoidCallback onSeeAll}) {
     return Padding(
@@ -1225,68 +1431,50 @@ void _openUserProfile() {
 
   // ──────────────────── WEEKLY HEADER (RichText underline) ────────────────────
   Widget _weeklyHeader() {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 22.sw),
-      child: Row(
-        children: [
-          Expanded(
-            child: RichText(
-              text: TextSpan(
+     return Padding(
+    padding: EdgeInsets.symmetric(horizontal: 22.sw),
+    child: Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Recipes of the Week",
                 style: TextStyle(
                   color: purple,
                   fontSize: 22.sp,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w800,
                   fontFamily: "Satoshi",
                 ),
-                children: [
-                  const TextSpan(text: "Recipes of the "),
-                  WidgetSpan(
-                    alignment: PlaceholderAlignment.baseline,
-                    baseline: TextBaseline.alphabetic,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          "Week",
-                          style: TextStyle(
-                            color: purple,
-                            fontSize: 22.sp,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: "Satoshi",
-                          ),
-                        ),
-                        Container(
-                          height: 3.sh,
-                          width: 50.sw,
-                          decoration: BoxDecoration(
-                            color: orange,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
               ),
+              SizedBox(height: 4.sh),
+              Container(
+                height: 3.sh,
+                width: 60.sw,
+                decoration: BoxDecoration(
+                  color: orange,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ],
+          ),
+        ),
+        GestureDetector(
+          onTap: _openWeeklyRecipes,
+          child: Text(
+            "See all",
+            style: TextStyle(
+              color: purple,
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w600,
+              fontFamily: "Satoshi",
             ),
           ),
-          SizedBox(width: 8.sw),
-          GestureDetector(
-            onTap: _openWeeklyRecipes,
-            child: Text(
-              "See all",
-              style: TextStyle(
-                color: purple,
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.2,
-                fontFamily: "Satoshi",
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+        ),
+      ],
+    ),
+  );
   }
 
   // ──────────────────── WEEKLY FEATURE CARD (single big card) ────────────────────
@@ -1296,13 +1484,25 @@ void _openUserProfile() {
         padding: EdgeInsets.symmetric(horizontal: 22.sw),
         child: SkeletonBox(
           width: double.infinity,
-          height: 160.sh,
-          borderRadius: BorderRadius.all(Radius.circular(24.sw)),
+          height: 220.sh,
+          borderRadius: BorderRadius.circular(28.sw),
         ),
       );
     }
 
-    if (weekly.isEmpty) return const SizedBox();
+    if (weekly.isEmpty) {
+      return Padding(
+        padding: EdgeInsets.symmetric(horizontal: 22.sw),
+        child: Text(
+          "No trending recipes this week.",
+          style: TextStyle(
+            color: purple.withValues(alpha: 0.7),
+            fontSize: 14.sp,
+            fontFamily: "Satoshi",
+          ),
+        ),
+      );
+    }
 
     final r = weekly.first;
     final timeText = r.minutes > 0 ? "${r.minutes} min" : "";
@@ -1312,119 +1512,279 @@ void _openUserProfile() {
       padding: EdgeInsets.symmetric(horizontal: 22.sw),
       child: GestureDetector(
         onTap: () => _openRecipe(r),
-        child: Container(
-          height: 160.sh,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24.sw),
-            boxShadow: [
-              BoxShadow(
-                color: purple.withValues(alpha: 0.15),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(24.sw),
-            child: Stack(
-              children: [
-                // Background Image (full)
-                Positioned.fill(
-                  child: Image.network(
-                    r.imageUrl ?? "",
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(color: chipBg),
-                  ),
-                ),
-                // Gradient Overlay
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.transparent,
-                          purple.withValues(alpha: 0.2),
-                          purple.withValues(alpha: 0.85),
-                        ],
-                        stops: const [0.0, 0.4, 1.0],
-                      ),
-                    ),
-                  ),
-                ),
-                // Badge
-                Positioned(
-                  top: 14.sh,
-                  left: 14.sw,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 4.sh),
-                    decoration: BoxDecoration(
-                      color: orange,
-                      borderRadius: BorderRadius.circular(8.sw),
-                    ),
-                    child: Text(
-                      "🔥 TRENDING",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 9.sp,
-                        fontWeight: FontWeight.w900,
-                        fontFamily: "Satoshi",
-                      ),
-                    ),
-                  ),
-                ),
-                // Content
-                Positioned(
-                  left: 16.sw,
-                  bottom: 16.sh,
-                  right: 60.sw,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        r.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18.sp,
-                          fontWeight: FontWeight.w800,
-                          fontFamily: "Satoshi",
-                        ),
-                      ),
-                      SizedBox(height: 4.sh),
-                      Row(
-                        children: [
-                          if (timeText.isNotEmpty) ...[
-                            Icon(Icons.access_time_rounded, color: Colors.white70, size: 12.sw),
-                            SizedBox(width: 4.sw),
-                            Text(timeText, style: TextStyle(color: Colors.white70, fontSize: 11.sp)),
-                          ],
-                          if (timeText.isNotEmpty && diffText.isNotEmpty) SizedBox(width: 10.sw),
-                          if (diffText.isNotEmpty) ...[
-                            Icon(Icons.signal_cellular_alt_rounded, color: Colors.white70, size: 12.sw),
-                            SizedBox(width: 4.sw),
-                            Text(diffText, style: TextStyle(color: Colors.white70, fontSize: 11.sp)),
-                          ],
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-                // Arrow
-                Positioned(
-                  right: 16.sw,
-                  bottom: 16.sh,
-                  child: Container(
-                    width: 36.sw,
-                    height: 36.sw,
-                    decoration: BoxDecoration(color: orange, shape: BoxShape.circle),
-                    child: Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 18.sw),
-                  ),
+        child: TweenAnimationBuilder<double>(
+          duration: const Duration(milliseconds: 700),
+          tween: Tween(begin: 0.95, end: 1.0),
+          curve: Curves.easeOutCubic,
+          builder: (context, scale, child) {
+            return Transform.scale(scale: scale, child: child);
+          },
+          child: Container(
+            height: 220.sh,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(28.sw),
+              boxShadow: [
+                BoxShadow(
+                  color: orange.withValues(alpha: 0.25),
+                  blurRadius: 35,
+                  offset: const Offset(0, 18),
                 ),
               ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(28.sw),
+              child: Stack(
+                children: [
+                  /// 🌄 Cinematic Background Image
+                  Positioned.fill(
+                    child: Transform.scale(
+                      scale: 1.15,
+                      child: Image.network(
+                        r.imageUrl ?? "",
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) =>
+                            Container(color: Colors.grey.shade900),
+                      ),
+                    ),
+                  ),
+
+                  /// 🌑 Cinematic Gradient
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [
+                            Colors.black.withValues(alpha: 0.9),
+                            Colors.black.withValues(alpha: 0.4),
+                            Colors.transparent,
+                          ],
+                          stops: const [0.0, 0.6, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  /// 🔥 Breathing Glow
+                  Positioned(
+                    bottom: -30,
+                    right: -30,
+                    child: TweenAnimationBuilder<double>(
+                      duration: const Duration(seconds: 2),
+                      tween: Tween(begin: 0.15, end: 0.3),
+                      curve: Curves.easeInOut,
+                      builder: (context, value, child) {
+                        return Container(
+                          width: 150.sw,
+                          height: 150.sw,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: orange.withValues(alpha: value),
+                            boxShadow: [
+                              BoxShadow(
+                                color: orange.withValues(alpha: value),
+                                blurRadius: 60,
+                                spreadRadius: 20,
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  /// 💜 Subtle Mesh/Purple Gradient Overlay (More design)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: const Alignment(0.8, -0.6),
+                          radius: 1.2,
+                          colors: [
+                            purple.withValues(alpha: 0.15),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  /// 🔥 Premium Badge (Left)
+                  Positioned(
+                    top: 16.sh,
+                    left: 16.sw,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12.sw),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 12.sw, vertical: 6.sh),
+                          decoration: BoxDecoration(
+                            color: orange.withValues(alpha: 0.85),
+                            borderRadius: BorderRadius.circular(12.sw),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.3),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 14.sw),
+                              SizedBox(width: 4.sw),
+                              Text(
+                                "TRENDING WEEKLY",
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10.sp,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  /// 🏷️ Category Badge (Right - More design)
+                  if (r.category != null)
+                    Positioned(
+                      top: 16.sh,
+                      right: 16.sw,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 6.sh),
+                        decoration: BoxDecoration(
+                          color: purple.withValues(alpha: 0.8),
+                          borderRadius: BorderRadius.circular(10.sw),
+                          border: Border.all(color: Colors.white24),
+                        ),
+                        child: Text(
+                          r.category!.toUpperCase(),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9.sp,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  /// 🧊 Floating Content (No glass panel, just dark gradient)
+                  Positioned(
+                    left: 20.sw,
+                    right: 20.sw,
+                    bottom: 20.sh,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // TITLE
+                        Text(
+                          r.name,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 22.sp,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.5,
+                            height: 1.2,
+                          ),
+                        ),
+
+                        SizedBox(height: 12.sh),
+
+                        // META INFO & CTA
+                        Row(
+                          children: [
+                            // RATING PILL
+                            Container(
+                              padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 6.sh),
+                              decoration: BoxDecoration(
+                                color: purple.withValues(alpha: 0.4),
+                                borderRadius: BorderRadius.circular(10.sw),
+                                border: Border.all(color: Colors.white24, width: 0.5),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(Icons.star_rounded, color: orange, size: 12.sw),
+                                  SizedBox(width: 4.sw),
+                                  Text(
+                                    r.avgRating.toStringAsFixed(1),
+                                    style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SizedBox(width: 8.sw),
+                            if (timeText.isNotEmpty) ...[
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 6.sh),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(10.sw),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.schedule_rounded, color: Colors.white, size: 12.sw),
+                                    SizedBox(width: 4.sw),
+                                    Text(
+                                      timeText,
+                                      style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            if (timeText.isNotEmpty && diffText.isNotEmpty) SizedBox(width: 8.sw),
+                            if (diffText.isNotEmpty) ...[
+                              Container(
+                                padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 6.sh),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(10.sw),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.bolt_rounded, color: Colors.white, size: 12.sw),
+                                    SizedBox(width: 4.sw),
+                                    Text(
+                                      diffText,
+                                      style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            const Spacer(),
+                            // CTA Button (Circular Arrow)
+                            Container(
+                              width: 44.sw,
+                              height: 44.sw,
+                              decoration: BoxDecoration(
+                                color: orange,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: orange.withValues(alpha: 0.4),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20.sw),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -1,9 +1,11 @@
 import 'dart:io';
-import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
+import 'dart:ui' as ui;
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hidden_pantry_app/features/recipes/services/ingredient_recognition_service.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/search/pantry_screen.dart';
+import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 class IngredientCameraScreen extends StatefulWidget {
   const IngredientCameraScreen({super.key});
@@ -12,7 +14,7 @@ class IngredientCameraScreen extends StatefulWidget {
   State<IngredientCameraScreen> createState() => _IngredientCameraScreenState();
 }
 
-class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
+class _IngredientCameraScreenState extends State<IngredientCameraScreen> with SingleTickerProviderStateMixin {
   CameraController? _controller;
   List<CameraDescription>? _cameras;
   bool _isCameraInitialized = false;
@@ -22,6 +24,11 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
   
   // List to accumulate recognized ingredients
   final List<String> _recognizedIngredients = [];
+  
+  // Animation controllers
+  late AnimationController _scanAnimationController;
+  late Animation<double> _scanAnimation;
+  bool _isProcessingAnimate = false;
 
   // CSV Loading & Validation
   final Set<String> _validIngredients = {};
@@ -34,6 +41,16 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
     _initCamera();
     _loadCsv();
     _recognitionService.init(); 
+    
+    // Scan animation setup
+    _scanAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+    
+    _scanAnimation = Tween<double>(begin: 0.1, end: 0.9).animate(
+      CurvedAnimation(parent: _scanAnimationController, curve: Curves.easeInOut),
+    );
   }
 
   Future<void> _loadCsv() async {
@@ -54,34 +71,22 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
   }
 
   String _cleanAndValidate(String rawLabel) {
-    // 1. Canonicalize label: underscores/hyphens to spaces, remove trailing numbers
     String clean = rawLabel
         .replaceAll('_', ' ')
         .replaceAll('-', ' ')
         .replaceAll(RegExp(r'\s+\d+$'), '')
         .trim();
     
-    // 2. Check if simple clean exists
     if (_validIngredients.contains(clean.toLowerCase())) {
       return clean.toLowerCase(); 
     }
 
-    // 3. Fallback: try removing specific descriptors if not found?
-    // E.g. "Apple Red" -> "Apple".
-    // Or just return the clean version if not strictly enforcing CSV.
-    // User said "search if they are in csv". 
-    // If "Apple Red" is in CSV, great. If not, maybe "Apple"?
-    
-    // Let's try splitting by space and finding simpler match if complex fails
     final parts = clean.split(' ');
     if (parts.length > 1) {
-       // try first word
        if (_validIngredients.contains(parts.first.toLowerCase())) {
          return parts.first.toLowerCase(); 
        }
     }
-
-    // If still not found, return clean version anyway (best effort)
     return clean.toLowerCase();
   }
 
@@ -89,7 +94,6 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
     try {
       _cameras = await availableCameras();
       if (_cameras != null && _cameras!.isNotEmpty) {
-        // Use back camera
         final backCamera = _cameras!.firstWhere(
           (camera) => camera.lensDirection == CameraLensDirection.back,
           orElse: () => _cameras!.first,
@@ -97,12 +101,11 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
         
         _controller = CameraController(
           backCamera,
-          ResolutionPreset.medium, // Medium resolution is enough for 224x224 and faster
+          ResolutionPreset.medium,
           enableAudio: false,
         );
 
         await _controller!.initialize();
-        // Force flash OFF by default to avoid auto-firing
         await _controller!.setFlashMode(FlashMode.off);
         
         if (mounted) {
@@ -118,78 +121,48 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
 
   @override
   void dispose() {
+    _scanAnimationController.dispose();
     _controller?.dispose();
-    _recognitionService.close(); // Close interpreter
+    _recognitionService.close(); 
     super.dispose();
   }
 
   Future<void> _takePicture() async {
     if (!_isCameraInitialized || _isProcessing) return;
 
-    setState(() => _isProcessing = true);
+    setState(() {
+      _isProcessing = true;
+      _isProcessingAnimate = true;
+    });
 
     try {
+      HapticFeedback.mediumImpact();
+      
       final image = await _controller!.takePicture();
       final file = File(image.path);
 
-      // Run inference
       final results = await _recognitionService.predict(file);
       _lastResults = results;
       
       if (!mounted) return;
+      
+      setState(() => _isProcessingAnimate = false);
 
       if (results.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text("Ingredient not recognized."),
-            action: SnackBarAction(
-              label: "Manual Add",
-              onPressed: () => _openManualPantry(),
-            ),
-          ),
+          const SnackBar(content: Text("Ingredient not recognized.")),
         );
         setState(() => _isProcessing = false);
         return;
       }
 
-      final top1 = results.first.confidence;
-      final top2 = results.length > 1 ? results[1].confidence : 0.0;
-      final margin = top1 - top2;
-
       final top1LabelClean = _cleanAndValidate(results.first.label);
-      final inCsv = _validIngredients.contains(top1LabelClean.toLowerCase());
-
-      // Extra guardrail for miscalibrated models that over-predict "peach"
-      final isPeach = top1LabelClean == 'peach';
-      final strictPeach = isPeach && (top1 < 0.92 || margin < 0.35);
-
-      final isUnknown = strictPeach || (top1 < 0.6) || (margin < 0.2) || (!inCsv && top1 < 0.75);
-
-      if (isUnknown) {
-        // If we have multiple options, let user pick, otherwise fallback to manual
-        if (results.length > 1) {
-          _showSelectionDialog(results, file);
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text("Ingredient not recognized."),
-              action: SnackBarAction(
-                label: "Manual Add",
-                onPressed: () => _openManualPantry(),
-              ),
-            ),
-          );
-          setState(() => _isProcessing = false);
-        }
-        return;
-      }
-
+      
       if (results.length == 1 || results.first.confidence > 0.8) {
         _showResultDialog(top1LabelClean, results.first.confidence, file);
       } else {
         _showSelectionDialog(results, file);
       }
-
     } catch (e) {
       print("Error capturing picture: $e");
       setState(() => _isProcessing = false);
@@ -204,157 +177,156 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
       await _controller!.setFlashMode(
         _isFlashOn ? FlashMode.torch : FlashMode.off,
       );
+      HapticFeedback.lightImpact();
       setState(() {});
     } catch (e) {
       print("Error toggling flash: $e");
     }
   }
 
-  Future<void> _openManualPantry() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => PantryScreen(
-          initialSelectedIngredients: _recognizedIngredients,
-          showSelectedSection: true,
-        ),
-      ),
-    );
-  }
-
   void _showSelectionDialog(List<({String label, double confidence})> results, File imageFile) {
-    GlassDialog.show(
+    _isProcessing = false;
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text("Select Ingredient"),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-               ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.file(
-                  imageFile,
-                  height: 100,
-                  fit: BoxFit.cover,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => _ModernResultSheet(
+        imageFile: imageFile,
+        title: "Multiple matches",
+        child: Column(
+          children: [
+            const Text(
+              "Select the correct one:",
+              style: TextStyle(color: Color(0xFFBFA89A), fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            ...results.map((item) {
+              final pretty = _cleanAndValidate(item.label);
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white, width: 1),
                 ),
-              ),
-              const SizedBox(height: 10),
-              const Text("Multiple matches found:", style: TextStyle(color: Colors.grey)),
-              const SizedBox(height: 10),
-              Flexible(
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: results.length,
-                  itemBuilder: (context, index) {
-                    final item = results[index];
-                    final pretty = _cleanAndValidate(item.label);
-                    return ListTile(
-                      title: Text(pretty, style: const TextStyle(fontWeight: FontWeight.bold)),
-                      subtitle: Text("${(item.confidence * 100).toStringAsFixed(0)}% confidence"),
-                      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                      onTap: () {
-                         Navigator.pop(dialogContext);
-                         // Proceed with selected item
-                         _showResultDialog(pretty, item.confidence, imageFile); 
-                      },
-                    );
+                child: ListTile(
+                  title: Text(pretty, style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF462F4D))),
+                  subtitle: Text("${(item.confidence * 100).toStringAsFixed(0)}% confidence", style: const TextStyle(fontSize: 12)),
+                  trailing: const Icon(Icons.add_circle_outline, color: Color(0xFFEF8A54)),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _onIngredientAdded(pretty);
                   },
                 ),
-              ),
-            ],
-          ),
+              );
+            }),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              setState(() => _isProcessing = false);
-            },
-            child: const Text("Retake"),
-          ),
-        ]
       ),
     );
   }
 
   void _showResultDialog(String label, double confidence, File imageFile) {
-    GlassDialog.show(
+    _isProcessing = false;
+    final validated = _cleanAndValidate(label);
+    
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text("Ingredient Found!"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => _ModernResultSheet(
+        imageFile: imageFile,
+        title: "Ingredient Found!",
+        child: Column(
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.file(
-                imageFile,
-                height: 150,
-                fit: BoxFit.cover,
-              ),
-            ),
-            const SizedBox(height: 16),
             Text(
-              "Found: ${_cleanAndValidate(label)}",
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF462F4D)),
+              validated.toUpperCase(),
+              style: const TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.w900,
+                color: Color(0xFF462F4D),
+                letterSpacing: 1.5,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
-              "Confidence: ${(confidence * 100).toStringAsFixed(1)}%",
-              style: TextStyle(color: Colors.grey[600]),
+              "CONFIDENCE: ${(confidence * 100).toStringAsFixed(1)}%",
+              style: const TextStyle(color: Color(0xFFEF8A54), fontWeight: FontWeight.bold, letterSpacing: 1.2, fontSize: 12),
+            ),
+            const SizedBox(height: 32),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: const BorderSide(color: Color(0xFF462F4D)),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    child: const Text("RETAKE", style: TextStyle(color: Color(0xFF462F4D), fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _onIngredientAdded(validated);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFEF8A54),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                      elevation: 8,
+                      shadowColor: const Color(0xFFEF8A54).withValues(alpha: 0.3),
+                    ),
+                    child: const Text("ADD ITEM", style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            TextButton(
+              onPressed: () {
+                _recognizedIngredients.add(validated);
+                Navigator.pop(context);
+                Navigator.pop(context, _recognizedIngredients);
+              },
+              child: const Text("ADD & FINISH", style: TextStyle(color: Color(0xFF462F4D), fontWeight: FontWeight.bold)),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              setState(() => _isProcessing = false);
-            },
-            child: const Text("Retake"),
-          ),
-          TextButton(
-            onPressed: () {
-              final validated = _cleanAndValidate(label);
-              _recognizedIngredients.add(validated);
-              
-              Navigator.pop(dialogContext);
-              setState(() => _isProcessing = false);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text("$validated added to selections")),
-              );
-            },
-            child: const Text("Add & Take Another"),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFEF8A54),
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () {
-              final validated = _cleanAndValidate(label);
-              _recognizedIngredients.add(validated);
-              
-              Navigator.pop(dialogContext); // Close dialog
-              Navigator.of(context).pop(_recognizedIngredients); // Close screen
-            },
-            child: const Text("Add & Done"),
-          ),
-        ],
+      ),
+    );
+  }
+
+  void _onIngredientAdded(String item) {
+    HapticFeedback.mediumImpact();
+    setState(() {
+      _recognizedIngredients.add(item);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("✓ $item added"),
+        backgroundColor: const Color(0xFF462F4D),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(20),
+        duration: const Duration(seconds: 1),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    ResponsiveUtils.init(context);
+    
     if (!_isCameraInitialized) {
       return const Scaffold(
         backgroundColor: Colors.black,
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFFEF8A54))),
       );
     }
 
@@ -362,132 +334,372 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
-          // Full screen camera preview
-          SizedBox.expand(
-            child: CameraPreview(_controller!),
+          Transform.scale(
+            scale: 1.1,
+            child: Center(
+              child: AspectRatio(
+                aspectRatio: _controller!.value.aspectRatio,
+                child: CameraPreview(_controller!),
+              ),
+            ),
           ),
           
-          // Controls
-          SafeArea(
-            child: Column(
-              children: [
-                // Top bar
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white, size: 30),
-                        onPressed: () {
-                          Navigator.pop(context, _recognizedIngredients.isNotEmpty ? _recognizedIngredients : null);
-                        },
-                      ),
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: Icon(
-                              _debug ? Icons.bug_report : Icons.bug_report_outlined,
-                              color: Colors.white,
-                              size: 26,
-                            ),
-                            onPressed: () {
-                              setState(() => _debug = !_debug);
-                            },
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              _isFlashOn ? Icons.flash_on : Icons.flash_off,
-                              color: Colors.white,
-                              size: 30,
-                            ),
-                            onPressed: _toggleFlash,
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+          _buildScanningOverlay(),
+          
+          Positioned(
+            top: 0, left: 0, right: 0,
+            child: Container(
+              padding: EdgeInsets.only(top: MediaQuery.of(context).padding.top + 10, bottom: 20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  colors: [Colors.black.withValues(alpha: 0.6), Colors.transparent],
                 ),
-                
-                const Spacer(),
-                
-                // Bottom capture bar
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 30),
-                  child: Center(
-                    child: GestureDetector(
-                      onTap: _takePicture,
-                      child: Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(color: Colors.white, width: 4),
-                          color: _isProcessing ? Colors.grey : Colors.transparent,
-                        ),
-                        child: _isProcessing 
-                          ? const Center(child: CircularProgressIndicator(color: Colors.white))
-                          : Container(
-                              margin: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white,
-                              ),
-                            ),
-                      ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _buildGlassCircleButton(
+                      icon: Icons.close_rounded,
+                      onTap: () => Navigator.pop(context, _recognizedIngredients),
                     ),
-                  ),
+                    Row(
+                      children: [
+                         _buildGlassCircleButton(
+                          icon: _debug ? Icons.bug_report : Icons.bug_report_outlined,
+                          onTap: () => setState(() => _debug = !_debug),
+                        ),
+                        const SizedBox(width: 12),
+                        _buildGlassCircleButton(
+                          icon: _isFlashOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
+                          onTap: _toggleFlash,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
 
-          // Captured items counter overlay
-          if (_recognizedIngredients.isNotEmpty)
-            Positioned(
-              top: 20,
-              right: 20,
-              child: SafeArea(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha:0.6),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    "${_recognizedIngredients.length} Items",
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                  ),
+          Positioned(
+            bottom: 0, left: 0, right: 0,
+            child: Container(
+              padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 30, top: 40),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.bottomCenter, end: Alignment.topCenter,
+                  colors: [Colors.black.withValues(alpha: 0.8), Colors.transparent],
                 ),
               ),
-            ),
-          if (_debug && _lastResults.isNotEmpty)
-            Positioned(
-              bottom: 20,
-              left: 20,
-              child: SafeArea(
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.6),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: _lastResults
-                        .take(3)
-                        .map((e) => Text(
-                              "${e.label} ${(e.confidence * 100).toStringAsFixed(1)}%",
-                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
-                            ))
-                        .toList(),
-                  ),
-                ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_recognizedIngredients.isNotEmpty) _buildIngredientTray(),
+                  const SizedBox(height: 20),
+                  _buildCaptureButton(),
+                ],
               ),
             ),
+          ),
+
+          if (_isProcessingAnimate) _buildProcessingOverlay(),
         ],
       ),
     );
   }
+
+  Widget _buildScanningOverlay() {
+    return Stack(
+      children: [
+        ColorFiltered(
+          colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.4), BlendMode.srcOut),
+          child: Stack(
+            children: [
+              Container(decoration: const BoxDecoration(color: Colors.black, backgroundBlendMode: BlendMode.dstOut)),
+              Center(
+                child: Container(
+                  width: 250.sw,
+                  height: 250.sw,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Center(
+          child: SizedBox(
+            width: 260.sw,
+            height: 260.sw,
+            child: CustomPaint(painter: _ScannerCornerPainter()),
+          ),
+        ),
+        Center(
+          child: AnimatedBuilder(
+            animation: _scanAnimation,
+            builder: (context, child) {
+              return Transform.translate(
+                offset: Offset(0, (250.sw * (_scanAnimation.value - 0.5))),
+                child: Container(
+                  width: 230.sw,
+                  height: 2,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        const Color(0xFFEF8A54).withValues(alpha: 0),
+                        const Color(0xFFEF8A54),
+                        const Color(0xFFEF8A54).withValues(alpha: 0),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGlassCircleButton({required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipOval(
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+            ),
+            child: Center(child: Icon(icon, color: Colors.white, size: 22)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCaptureButton() {
+    return GestureDetector(
+      onTap: _takePicture,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 3),
+        ),
+        child: Container(
+          width: 70,
+          height: 70,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+          ),
+          child: _isProcessing 
+            ? const Center(child: CircularProgressIndicator(color: Color(0xFFEF8A54), strokeWidth: 3))
+            : Center(
+                child: Container(
+                  width: 30, height: 30,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF8A54).withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildIngredientTray() {
+    return Container(
+      height: 40,
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: _recognizedIngredients.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 10),
+        itemBuilder: (context, index) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEF8A54).withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4)],
+            ),
+            child: Row(
+              children: [
+                Text(
+                  _recognizedIngredients[index],
+                  style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                ),
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () => setState(() => _recognizedIngredients.removeAt(index)),
+                  child: const Icon(Icons.close, color: Colors.white, size: 14),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildProcessingOverlay() {
+    return Positioned.fill(
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Container(
+            color: Colors.black.withValues(alpha: 0.3),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const CircularProgressIndicator(color: Color(0xFFEF8A54)),
+                  const SizedBox(height: 20),
+                  Text(
+                    "ANALYZING...",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 2,
+                      fontSize: 16.sp,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ModernResultSheet extends StatelessWidget {
+  final File imageFile;
+  final String title;
+  final Widget child;
+
+  const _ModernResultSheet({
+    required this.imageFile,
+    required this.title,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.fromLTRB(24, 12, 24, MediaQuery.of(context).padding.bottom + 20),
+      decoration: const BoxDecoration(
+        color: Color(0xFFFFF3EB),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40, height: 4,
+            decoration: BoxDecoration(color: const Color(0xFF462F4D).withValues(alpha: 0.1), borderRadius: BorderRadius.circular(2)),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.file(imageFile, width: 80, height: 80, fit: BoxFit.cover),
+              ),
+              const SizedBox(width: 20),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title.toUpperCase(),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
+                        color: Color(0xFFEF8A54),
+                      ),
+                    ),
+                    const Text(
+                      "Scanning Result",
+                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Color(0xFF462F4D)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _ScannerCornerPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFEF8A54)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round;
+
+    const cornerLen = 30.0;
+    const radius = 20.0;
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, cornerLen)
+        ..lineTo(0, radius)
+        ..quadraticBezierTo(0, 0, radius, 0)
+        ..lineTo(cornerLen, 0),
+      paint,
+    );
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width - cornerLen, 0)
+        ..lineTo(size.width - radius, 0)
+        ..quadraticBezierTo(size.width, 0, size.width, radius)
+        ..lineTo(size.width, cornerLen),
+      paint,
+    );
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, size.height - cornerLen)
+        ..lineTo(0, size.height - radius)
+        ..quadraticBezierTo(0, size.height, radius, size.height)
+        ..lineTo(cornerLen, size.height),
+      paint,
+    );
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width - cornerLen, size.height)
+        ..lineTo(size.width - radius, size.height)
+        ..quadraticBezierTo(size.width, size.height, size.width, size.height - radius)
+        ..lineTo(size.width, size.height - cornerLen),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

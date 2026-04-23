@@ -242,6 +242,49 @@ class _SearchScreenState extends State<SearchScreen> {
     return bestMatch;
   }
 
+  List<Recipe> _applyAllergyFilter(List<Recipe> list) {
+    if (list.isEmpty || _userAllergies.isEmpty) return list;
+
+    final Map<String, List<String>> synonyms = {
+      "dairy": ["milk", "cheese", "butter", "cream", "yogurt", "lactose", "whey", "casein", "ghee"],
+      "tree nuts": ["almond", "walnut", "cashew", "pecan", "pistachio", "hazelnut", "brazil nut", "macadamia"],
+      "shellfish": ["shrimp", "crab", "lobster", "mussel", "oyster", "scallop", "clam", "prawn"],
+      "spicy": ["chili", "pepper", "jalapeno", "habanero", "cayenne", "sriracha", "hot sauce", "wasabi"],
+      "gluten": ["wheat", "barley", "rye", "malt", "farro", "bulgur"],
+      "eggs": ["egg", "yolk", "egg white", "albumin"],
+    };
+
+    return list.where((r) {
+      final rName = r.name.toLowerCase();
+      final rTags = r.tags.map((e) => e.toLowerCase()).toSet();
+      final rAllergens = r.allergens.map((e) => e.toLowerCase()).toSet();
+      final rIngredients = r.ingredients.map((e) => e.name.toLowerCase()).toList();
+
+      for (final allergy in _userAllergies) {
+        final a = allergy.toLowerCase().trim();
+        final searchTerms = [a, ...(synonyms[a] ?? [])];
+
+        if (a == "gluten") {
+          bool isGlutenFree = rName.contains("gluten-free") || 
+                             rName.contains("gluten free") ||
+                             rTags.contains("gluten-free") ||
+                             rTags.contains("gluten free");
+          if (isGlutenFree) continue;
+        }
+
+        for (final term in searchTerms) {
+          if (rAllergens.contains(term)) return false;
+          if (rTags.contains(term)) return false;
+          if (rName.contains(term)) return false;
+          for (final ing in rIngredients) {
+            if (ing.contains(term)) return false;
+          }
+        }
+      }
+      return true;
+    }).toList();
+  }
+
   Future<void> _performSearch(String query, {bool isLoadMore = false}) async {
     if (!isLoadMore) {
       setState(() {
@@ -296,7 +339,7 @@ class _SearchScreenState extends State<SearchScreen> {
       }
 
       setState(() {
-        _results = combined;
+        _results = _applyAllergyFilter(combined);
         if (isLoadMore) _loadingMore = false;
         else _isSearching = false;
 
@@ -929,6 +972,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
     for (var w in words) {
       int dist = _levenshtein(q, w);
+      if (dist == 0) return null;
       if (dist < bestDist) {
         bestDist = dist;
         bestMatch = w;

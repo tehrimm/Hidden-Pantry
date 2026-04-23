@@ -31,11 +31,11 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
   // Figma base
  
 
-  // Tile sizes
-  static const double smallSize = 70;
-  static const double largeSize = 90;
+  // Tile sizes (reduced slightly for more breathing room)
+  static const double smallSize = 64;
+  static const double largeSize = 82;
 
-  static const double tileRadius = 20;
+  static const double tileRadius = 18;
 
   // Colors
   static const Color bg = Color(0xFFFFF3EB);
@@ -196,16 +196,20 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
           Positioned(
             left: 30.sw,
             top: 117.sh,
-            child: SizedBox(
-              width: 330.sw,
-              child: Text(
-                'What should we\navoid for you?',
-                style: TextStyle(
-                  color: titleColor,
-                  fontSize: 40.sp,
-                  fontFamily: 'Satoshi',
-                  fontWeight: FontWeight.w900,
-                  height: 1.10,
+            child: _StaggeredItem(
+              index: 0,
+              delay: 100,
+              child: SizedBox(
+                width: 330.sw,
+                child: Text(
+                  'What should we\navoid for you?',
+                  style: TextStyle(
+                    color: titleColor,
+                    fontSize: 40.sp,
+                    fontFamily: 'Satoshi',
+                    fontWeight: FontWeight.w900,
+                    height: 1.10,
+                  ),
                 ),
               ),
             ),
@@ -214,49 +218,60 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
           Positioned(
             left: 30.sw,
             top: 222.sh,
-            child: SizedBox(
-              width: 325.sw,
-              child: Text(
-                'Pick the ingredients you want to avoid due to\nallergies, intolerances, or personal health\nneeds.',
-                style: TextStyle(
-                  color: titleColor,
-                  fontSize: 15.sp,
-                  fontFamily: 'Satoshi',
-                  fontWeight: FontWeight.w400,
-                  height: 1.35,
+            child: _StaggeredItem(
+              index: 1,
+              delay: 100,
+              child: SizedBox(
+                width: 325.sw,
+                child: Text(
+                  'Pick the ingredients you want to avoid due to\nallergies, intolerances, or personal health\nneeds.',
+                  style: TextStyle(
+                    color: titleColor,
+                    fontSize: 15.sp,
+                    fontFamily: 'Satoshi',
+                    fontWeight: FontWeight.w400,
+                    height: 1.35,
+                  ),
                 ),
               ),
             ),
           ),
 
           // Tiles
-          for (final t in _tiles)
+          for (int i = 0; i < _tiles.length; i++)
             Positioned(
-              left: t.left.sw,
-              top: t.top.sh,
-              child: _DiamondTile(
-                size: (t.isLarge ? largeSize : smallSize).sw,
-                radius: tileRadius.sw,
-                asset: t.asset,
-                label: t.label,
-                selected: _selected.contains(t.label),
-                onTap: () => _toggle(t.label),
-                iconW: t.iconW,
-                iconH: t.iconH,
+              left: _tiles[i].left.sw,
+              top: _tiles[i].top.sh,
+              child: _StaggeredItem(
+                index: i + 3,
+                delay: 40,
+                child: _DiamondTile(
+                  size: (_tiles[i].isLarge ? largeSize : smallSize).sw,
+                  radius: tileRadius.sw,
+                  asset: _tiles[i].asset,
+                  label: _tiles[i].label,
+                  selected: _selected.contains(_tiles[i].label),
+                  onTap: () => _toggle(_tiles[i].label),
+                  iconW: _tiles[i].iconW,
+                  iconH: _tiles[i].iconH,
+                ),
               ),
             ),
 
           // Counter
           Positioned(
             left: 30.sw,
-            top: 704.sh,
-            child: Text(
-              '${_selected.length}/12 Selected',
-              style: TextStyle(
-                color: titleColor,
-                fontSize: 15.sp,
-                fontFamily: 'Satoshi',
-                fontWeight: FontWeight.w400,
+            top: 710.sh,
+            child: _StaggeredItem(
+              index: 15,
+              child: Text(
+                '${_selected.length}/12 Selected',
+                style: TextStyle(
+                  color: titleColor,
+                  fontSize: 14.sp,
+                  fontFamily: 'Satoshi',
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -265,52 +280,88 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
           Positioned(
             left: 32.sw,
             top: 748.sh,
-            child: GestureDetector(
-              onTap: (_loading || _fetching) ? null : _saveOrContinue,
-              child: Container(
-                width: 332.sw,
-                height: 62.sh,
-                decoration: BoxDecoration(
-                  color: buttonOrange,
-                  borderRadius: BorderRadius.circular(20.sw),
-                ),
-                child: Center(
-                  child: (_loading || _fetching)
-                      ? SizedBox(
-                          width: 20.sw,
-                          height: 20.sh,
-                          child: const CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(
-                              widget.fromProfile ? 'Save' : 'Continue',
-                              style: TextStyle(
-                                color: buttonText,
-                                fontSize: 15.sp,
-                                fontFamily: 'Satoshi',
-                                fontWeight: FontWeight.w500,
+            child: _StaggeredItem(
+              index: 16,
+              child: GestureDetector(
+                onTap: (_loading || _fetching) ? null : _saveOrContinue,
+                child: Container(
+                  width: 332.sw,
+                  height: 62.sh,
+                  decoration: BoxDecoration(
+                    color: buttonOrange,
+                    borderRadius: BorderRadius.circular(20.sw),
+                    boxShadow: [
+                      BoxShadow(
+                        color: buttonOrange.withValues(alpha: 0.35),
+                        blurRadius: 15,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: (_loading || _fetching)
+                        ? SizedBox(
+                            width: 20.sw,
+                            height: 20.sh,
+                            child: const CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                widget.fromProfile ? 'Save Settings' : 'Continue',
+                                style: TextStyle(
+                                  color: buttonText,
+                                  fontSize: 16.sp,
+                                  fontFamily: 'Satoshi',
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
-                            ),
-                            SizedBox(width: 10.sw),
-                            Image.asset(
-                              'assets/icons/next_button.png',
-                              width: 18.sw,
-                              height: 18.sh,
-                              fit: BoxFit.contain,
-                            ),
-                          ],
-                        ),
+                              SizedBox(width: 10.sw),
+                              Image.asset(
+                                'assets/icons/next_button.png',
+                                width: 18.sw,
+                                height: 18.sh,
+                                fit: BoxFit.contain,
+                              ),
+                            ],
+                          ),
+                  ),
                 ),
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _StaggeredItem extends StatelessWidget {
+  final Widget child;
+  final int index;
+  final double delay;
+  const _StaggeredItem({required this.child, required this.index, this.delay = 50});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      duration: Duration(milliseconds: 500 + (index * delay).toInt().clamp(0, 600)),
+      curve: Curves.easeOutBack,
+      tween: Tween(begin: 0.0, end: 1.0),
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value.clamp(0.0, 1.0),
+          child: Transform.scale(
+            scale: 0.8 + (0.2 * value),
+            child: child,
+          ),
+        );
+      },
+      child: child,
     );
   }
 }
@@ -343,7 +394,7 @@ class _DiamondTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bgColor = selected ? tileDark : tileLight;
+    final bgColor = selected ? tileDark : tileLight.withValues(alpha: 0.6);
     final textColor = selected ? Colors.white : labelBrown;
 
     final double defaultIcon = size * 0.42;
@@ -352,18 +403,64 @@ class _DiamondTile extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: Transform.rotate(
-        angle: math.pi / 4,
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            color: bgColor,
-            borderRadius: BorderRadius.circular(radius),
-          ),
-          child: Transform.rotate(
-            angle: -math.pi / 4,
-            child: Column(
+      child: AnimatedScale(
+        scale: selected ? 1.08 : 1.0,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutBack,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Selection Glow (Subdued)
+            if (selected)
+              TweenAnimationBuilder<double>(
+                duration: const Duration(seconds: 2),
+                tween: Tween(begin: 0.15, end: 0.3),
+                curve: Curves.easeInOut,
+                builder: (context, value, child) {
+                  return Container(
+                    width: size * 1.15,
+                    height: size * 1.15,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: tileDark.withValues(alpha: value),
+                          blurRadius: 15,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            
+            // Diamond Shape
+            Transform.rotate(
+              angle: math.pi / 4,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(radius),
+                  border: Border.all(
+                    color: selected ? Colors.white.withValues(alpha: 0.5) : Colors.white.withValues(alpha: 0.2),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: selected ? 0.25 : 0.08),
+                      blurRadius: 12,
+                      offset: const Offset(4, 4),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Content
+            Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Image.asset(
@@ -380,13 +477,13 @@ class _DiamondTile extends StatelessWidget {
                     color: textColor,
                     fontSize: 12.sp,
                     fontFamily: 'Satoshi',
-                    fontWeight: FontWeight.w500,
+                    fontWeight: selected ? FontWeight.w900 : FontWeight.w500,
                     height: 1.1,
                   ),
                 ),
               ],
             ),
-          ),
+          ],
         ),
       ),
     );

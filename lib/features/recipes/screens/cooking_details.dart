@@ -10,6 +10,11 @@ import 'package:hidden_pantry_app/features/recipes/screens/reviews/post_review.d
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/core/utils/ingredient_icon_mapper.dart';
+import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:speech_to_text/speech_to_text.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 
 class CookingDetailsScreen extends StatefulWidget {
@@ -26,7 +31,7 @@ class CookingDetailsScreen extends StatefulWidget {
   State<CookingDetailsScreen> createState() => _CookingDetailsScreenState();
 }
 
-class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
+class _CookingDetailsScreenState extends State<CookingDetailsScreen> with WidgetsBindingObserver {
   final PageController _pageController = PageController();
   final FlutterTts _tts = FlutterTts();
   final AudioPlayer _audioPlayer = AudioPlayer();
@@ -42,34 +47,74 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
   int _remainingSeconds = 0;
   bool _timerRunning = false;
 
+  // Voice Control State
+  final SpeechToText _speech = SpeechToText();
+  bool _isVoiceEnabled = false;
+  bool _speechEnabled = false;
+  String _lastStatus = '';
+  DateTime? _lastCommandTime;
+  DateTime? _lastRestart;
+  bool _shouldListen = false;
+  bool _isManuallyStopped = false;
+  Timer? _listenWatchdog;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _currentServings = widget.initialServings;
     _initTts();
-    // Auto-speak first step and handle fallback
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      if (mounted) {
-        _speak(widget.recipe.directions[_currentIndex]);
-        // Fallback: If TTS doesn't finish or fire for some reason, show it anyway after 10s
-        Future.delayed(const Duration(seconds: 10), () {
-          if (mounted && !_ttsFinished) {
-            setState(() => _ttsFinished = true);
-          }
-        });
+    
+    // Check global voice preference before auto-starting
+    _checkVoicePreference();
+  }
+
+  Future<void> _checkVoicePreference() async {
+    // 1. Read the first step aloud safely
+    await Future.delayed(const Duration(milliseconds: 1500));
+    if (!mounted) return;
+    _safeSpeak(widget.recipe.directions[_currentIndex]);
+
+    // 2. Check if voice mode should be auto-enabled
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      bool voiceOn = true; // Default
+      
+      if (user != null) {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+        voiceOn = doc.data()?['voiceEnabled'] ?? true;
       }
-    });
+
+      if (voiceOn && mounted) {
+        _toggleVoiceMode();
+      }
+    } catch (e) {
+      debugPrint("Error fetching voice preference: $e");
+      // Fallback: auto-enable if we can't check
+      if (mounted) _toggleVoiceMode();
+    }
   }
 
   void _initTts() {
     _tts.setStartHandler(() {
       setState(() => _isPlaying = true);
     });
-    _tts.setCompletionHandler(() {
+    _tts.setCompletionHandler(() async {
+      if (!mounted) return;
       setState(() {
         _isPlaying = false;
         _ttsFinished = true;
       });
+      
+      // Control central restart - only if NOT manually stopped
+      if (_isVoiceEnabled && !_isManuallyStopped) {
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (mounted) _safeRestartListening();
+        });
+      }
     });
     _tts.setErrorHandler((msg) {
       setState(() => _isPlaying = false);
@@ -78,25 +123,253 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _stopListenLoop();
     _pageController.dispose();
     _tts.stop();
     _timer?.cancel();
     _audioPlayer.dispose();
+    _stopListening();
     super.dispose();
+  }
+
+  // --- Voice Control Logic ---
+
+  Future<bool> _initVoiceControl() async {
+    try {
+      // Ensure clean state before re-init
+      await _speech.cancel();
+      
+      _speechEnabled = await _speech.initialize(
+        onStatus: (status) {
+          debugPrint('🎙️ Status: $status');
+          if (status == 'notListening') {
+            _safeRestartListening();
+          }
+          if (mounted) setState(() => _lastStatus = status);
+        },
+        onError: (err) {
+          debugPrint('❌ Error: $err');
+          _safeRestartListening();
+        },
+      );
+      return _speechEnabled;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  void _startListenLoop() {
+    _listenWatchdog?.cancel();
+    _listenWatchdog = Timer.periodic(const Duration(seconds: 2), (timer) {
+      if (!_isVoiceEnabled || _isPlaying || _isManuallyStopped) return;
+      
+      if (!_speech.isListening && !(_lastStatus == 'initializing')) {
+        debugPrint("🔁 Watchdog: Restarting speech engine...");
+        _startListening();
+      }
+    });
+  }
+
+  void _stopListenLoop() {
+    _listenWatchdog?.cancel();
+    _listenWatchdog = null;
+  }
+
+  void _safeRestartListening() async {
+    if (!_isVoiceEnabled || _isManuallyStopped || _isPlaying) return;
+
+    // Restart Cooldown (Prevent rapid-fire loops)
+    if (_lastRestart != null &&
+        DateTime.now().difference(_lastRestart!) < const Duration(seconds: 2)) {
+      return;
+    }
+    _lastRestart = DateTime.now();
+
+    try {
+      // 🔥 Force clean reset before listening again
+      await _speech.cancel();
+      await Future.delayed(const Duration(milliseconds: 400));
+
+      if (!mounted || !_isVoiceEnabled || _isManuallyStopped || _isPlaying) return;
+
+      _startListening();
+    } catch (e) {
+      debugPrint("🎙️ Restart failed: $e");
+    }
+  }
+
+  Future<void> _toggleVoiceMode() async {
+    if (_isVoiceEnabled) {
+      _shouldListen = false;
+      _isManuallyStopped = true;
+      _stopListenLoop();
+      await _speech.cancel();
+      if (mounted) setState(() => _isVoiceEnabled = false);
+      return;
+    }
+
+    var status = await Permission.microphone.status;
+    if (!status.isGranted) status = await Permission.microphone.request();
+    
+    if (status.isGranted) {
+      final ok = await _initVoiceControl();
+      if (ok) {
+        _shouldListen = true;
+        _isManuallyStopped = false; // 🔥 Reset manual stop when enabling
+        if (mounted) setState(() => _isVoiceEnabled = true);
+        _startListenLoop();
+        _startListening();
+      }
+    }
+  }
+
+  Future<void> _startListening() async {
+    if (!_speechEnabled || !_isVoiceEnabled || _isManuallyStopped || _isPlaying) return;
+
+    // 🔥 Safety guard: reset if already active
+    if (_speech.isListening) {
+      await _speech.cancel();
+      await Future.delayed(const Duration(milliseconds: 300));
+    }
+
+    try {
+      await _speech.listen(
+        onResult: (result) {
+          if (result.finalResult) {
+            _handleVoiceCommand(result.recognizedWords);
+          }
+        },
+        listenFor: const Duration(seconds: 30),
+        pauseFor: const Duration(seconds: 5),
+        partialResults: false, // 🔥 Fixed: More reliable on Android
+        cancelOnError: true,
+        listenMode: ListenMode.confirmation,
+      );
+    } catch (e) {
+      debugPrint("🎙️ Listen error: $e");
+    }
+  }
+
+  Future<void> _stopListening() async {
+    await _speech.cancel();
+  }
+
+  Future<void> _handleVoiceCommand(String text) async {
+    if (text.trim().isEmpty) return;
+    
+    final command = text.toLowerCase().trim();
+    final words = command.split(" ");
+    
+    // Time-based Debounce
+    if (_lastCommandTime != null && 
+        DateTime.now().difference(_lastCommandTime!) < const Duration(milliseconds: 1200)) {
+      return; 
+    }
+    _lastCommandTime = DateTime.now();
+
+    bool processed = false;
+    debugPrint("🧠 Processing: $command");
+
+    // STRICT WORD-LEVEL MAPPING
+    final isNext = words.contains("next") || words.contains("forward") || 
+                   words.contains("skip") || words.contains("done");
+
+    final isBack = words.contains("back") || words.contains("previous") || 
+                   words.contains("last");
+
+    final isRepeat = words.contains("repeat") || words.contains("again") || 
+                     words.contains("read");
+
+    if (isNext) {
+      await _speakConfirmation("Next step");
+      _nextStep();
+      processed = true;
+    }
+    else if (isBack) {
+      await _speakConfirmation("Going back");
+      _prevStep();
+      processed = true;
+    }
+    else if (isRepeat) {
+      _speak(widget.recipe.directions[_currentIndex], force: true);
+      processed = true;
+    }
+    else if (words.contains("stop") || words.contains("shh") || words.contains("silence")) {
+      _isManuallyStopped = true;
+      _tts.stop();
+      _shouldListen = false;
+      await _speech.cancel();
+      if (mounted) {
+        setState(() {
+          _isPlaying = false;
+          _isVoiceEnabled = false;
+        });
+      }
+      processed = true;
+    }
+    else if (words.contains("exit") || words.contains("quit") || words.contains("cancel") || words.contains("close")) {
+      _toggleVoiceMode();
+      processed = true;
+    }
+
+    if (processed) {
+       await _speech.cancel(); // 🔥 Use cancel for instant reset
+       Future.delayed(const Duration(milliseconds: 600), () {
+         if (_isVoiceEnabled && !_isManuallyStopped) {
+           _safeRestartListening();
+         }
+       });
+    }
+  }
+
+  // Quick voice confirmation feedback
+  Future<void> _speakConfirmation(String phrase) async {
+    await _tts.speak(phrase);
+    // Let confirmation finish before reading step
+    await Future.delayed(const Duration(milliseconds: 800));
+  }
+
+  void _nextStep() {
+    if (_currentIndex < widget.recipe.directions.length - 1) {
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _prevStep() {
+    if (_currentIndex > 0) {
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  Future<void> _safeSpeak(String text) async {
+    await _tts.stop();
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (!mounted) return;
+    _speak(text, force: true);
   }
 
   Future<void> _speak(String text, {bool force = false}) async {
     if (_isPlaying) {
       await _tts.stop();
-      setState(() => _isPlaying = false);
-      if (!force) return; // Toggle stop
+      if (mounted) setState(() => _isPlaying = false);
+      if (!force) return;
     }
-    // Small delay to ensure stop state is processed
+
+    // Use cancel for cleaner transition
+    if (_isVoiceEnabled) await _speech.cancel();
+
     if (force) await Future.delayed(const Duration(milliseconds: 100));
-    setState(() {
-      _ttsFinished = false;
-    });
-    await _tts.speak(text);
+    if (mounted) setState(() => _ttsFinished = false);
+    
+    final spokenText = "Step ${_currentIndex + 1}. $text";
+    await _tts.speak(spokenText);
   }
 
   void _startTimer(int seconds) {
@@ -183,116 +456,117 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
   }
 
   void _showTimerPicker(int initialMinutes) {
+    int selectedMinutes = initialMinutes;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
-        child: Container(
-          height: 380.sh,
-          decoration: BoxDecoration(
-            color: const Color(0xFFFFF3EB).withValues(alpha: 0.85),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(30.sw)),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
-          ),
-          child: Column(
-            children: [
-              // Drag Handle
-              SizedBox(height: 12.sh),
-              Container(
-                width: 40.sw,
-                height: 4.sh,
-                decoration: BoxDecoration(
-                  color: const Color(0xFF462F4D).withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(2.sw),
-                ),
-              ),
-              
-              // Header
-              Padding(
-                padding: EdgeInsets.all(24.sw),
-                child: Row(
-                  children: [
-                    Icon(Icons.timer_outlined, color: const Color(0xFF462F4D), size: 24.sw),
-                    SizedBox(width: 12.sw),
-                    Text(
-                      "Set Timer",
-                      style: TextStyle(
-                        fontSize: 18.sp,
-                        fontWeight: FontWeight.w900,
-                        color: const Color(0xFF462F4D),
-                        fontFamily: 'Satoshi',
-                      ),
-                    ),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () => Navigator.pop(context),
-                      child: Icon(Icons.close_rounded, color: const Color(0xFF462F4D), size: 24.sw),
-                    ),
-                  ],
-                ),
-              ),
-
-              // The Picker
-              Expanded(
-                child: CupertinoTheme(
-                  data: const CupertinoThemeData(
-                    textTheme: CupertinoTextThemeData(
-                      pickerTextStyle: TextStyle(
-                        color: Color(0xFF462F4D),
-                        fontSize: 22,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  child: CupertinoTimerPicker(
-                    mode: CupertinoTimerPickerMode.hms,
-                    initialTimerDuration: Duration(minutes: initialMinutes),
-                    onTimerDurationChanged: (d) => initialMinutes = d.inMinutes,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            height: 380.sh,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF3EB).withValues(alpha: 0.85),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(30.sw)),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+            ),
+            child: Column(
+              children: [
+                // Drag Handle
+                SizedBox(height: 12.sh),
+                Container(
+                  width: 40.sw,
+                  height: 4.sh,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF462F4D).withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(2.sw),
                   ),
                 ),
-              ),
-
-              // Action Button
-              Padding(
-                padding: EdgeInsets.all(24.sw),
-                child: GestureDetector(
-                  onTap: () {
-                    Navigator.pop(context);
-                    _startTimer(initialMinutes * 60);
-                  },
-                  child: Container(
-                    width: double.infinity,
-                    height: 55.sh,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEF8A54),
-                      borderRadius: BorderRadius.circular(16.sw),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFEF8A54).withValues(alpha: 0.3),
-                          blurRadius: 15,
-                          offset: const Offset(0, 8),
+                
+                // Header
+                Padding(
+                  padding: EdgeInsets.all(24.sw),
+                  child: Row(
+                    children: [
+                      Icon(Icons.timer_outlined, color: const Color(0xFF462F4D), size: 24.sw),
+                      SizedBox(width: 12.sw),
+                      Text(
+                        "Set Timer",
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w900,
+                          color: const Color(0xFF462F4D),
+                          fontFamily: 'Satoshi',
                         ),
-                      ],
+                      ),
+                      const Spacer(),
+                      GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Icon(Icons.close_rounded, color: const Color(0xFF462F4D), size: 24.sw),
+                      ),
+                    ],
+                  ),
+                ),
+  
+                // The Picker
+                Expanded(
+                  child: CupertinoTheme(
+                    data: const CupertinoThemeData(
+                      textTheme: CupertinoTextThemeData(
+                        pickerTextStyle: TextStyle(
+                          color: Color(0xFF462F4D),
+                          fontSize: 22,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                    child: Center(
+                    child: CupertinoTimerPicker(
+                      mode: CupertinoTimerPickerMode.hms,
+                      initialTimerDuration: Duration(minutes: selectedMinutes),
+                      onTimerDurationChanged: (d) => selectedMinutes = d.inMinutes,
+                    ),
+                  ),
+                ),
+  
+                // Action Button
+                Padding(
+                  padding: EdgeInsets.all(24.sw),
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                      _startTimer(selectedMinutes * 60);
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      height: 55.sh,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEF8A54),
+                        borderRadius: BorderRadius.circular(16.sw),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFEF8A54).withValues(alpha: 0.3),
+                            blurRadius: 15,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      alignment: Alignment.center,
                       child: Text(
                         "Start Timer",
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16.sp,
-                          fontWeight: FontWeight.w900,
+                          fontWeight: FontWeight.w800,
                           fontFamily: 'Satoshi',
-                          letterSpacing: 1,
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              SizedBox(height: MediaQuery.of(context).padding.bottom),
-            ],
+                SizedBox(height: MediaQuery.of(context).padding.bottom + 10.sh),
+              ],
+            ),
           ),
         ),
       ),
@@ -435,7 +709,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                   left: 0,
                   right: 0,
                   top: 140.sh,
-                  child: _stepImage(screenWidth, _currentIndex),
+                  child: RepaintBoundary(child: _stepImage(screenWidth, _currentIndex)),
                 ),
                 
                 // Header: Close Button, Step Counter, Ingredient Label
@@ -445,45 +719,53 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                   top: 40.sh,
                   child: SafeArea(
                     child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        GestureDetector(
-                          onTap: () async {
-                            if (await _onWillPop()) {
-                              Navigator.pop(context);
-                            }
-                          },
-                          child: Container(
-                            width: 50.sw,
-                            height: 50.sw,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF9E3D5),
-                              borderRadius: BorderRadius.circular(25.sw),
-                            ),
-                            child: Center(
-                              child: Icon(Icons.close, size: 24.sw, color: const Color(0xFF462F4D)),
+                        // Left placeholder to balance the right side
+                        SizedBox(
+                          width: 80.sw,
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: GestureDetector(
+                              onTap: () async {
+                                if (await _onWillPop()) {
+                                  Navigator.pop(context);
+                                }
+                              },
+                              child: Container(
+                                width: 44.sw,
+                                height: 44.sw,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF9E3D5),
+                                  borderRadius: BorderRadius.circular(22.sw),
+                                ),
+                                child: Center(
+                                  child: Icon(Icons.close, size: 20.sw, color: const Color(0xFF462F4D)),
+                                ),
+                              ),
                             ),
                           ),
                         ),
+
+                        // Center Progress
                         Expanded(
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
                                 'Step ${_currentIndex + 1} of ${widget.recipe.directions.length}',
-                                textAlign: TextAlign.center,
                                 style: TextStyle(
                                   color: const Color(0xFF462F4D),
                                   fontSize: 15.sp,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w900,
                                   fontFamily: 'Satoshi',
                                 ),
                               ),
-                              SizedBox(height: 8.sh),
+                              SizedBox(height: 10.sh),
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(10.sw),
                                 child: SizedBox(
-                                  width: 100.sw,
+                                  width: 140.sw,
                                   height: 6.sh,
                                   child: LinearProgressIndicator(
                                     value: (_currentIndex + 1) / widget.recipe.directions.length,
@@ -495,16 +777,24 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                             ],
                           ),
                         ),
-                        GestureDetector(
-                          onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
-                          child: Text(
-                            'Ingredient',
-                            style: TextStyle(
-                              color: const Color(0xFF462F4D),
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Satoshi',
-                              decoration: TextDecoration.underline,
+
+                        // Right placeholder
+                        SizedBox(
+                          width: 80.sw,
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: GestureDetector(
+                              onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
+                              child: Text(
+                                'Ingredients',
+                                style: TextStyle(
+                                  color: const Color(0xFF462F4D),
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w900,
+                                  fontFamily: 'Satoshi',
+                                  decoration: TextDecoration.underline,
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -524,8 +814,9 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> {
                     physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
                     itemCount: widget.recipe.directions.length,
                     onPageChanged: (idx) {
+                      if (!mounted) return;
                       setState(() => _currentIndex = idx);
-                      _speak(widget.recipe.directions[idx], force: true);
+                      _safeSpeak(widget.recipe.directions[idx]);
                     },
                     itemBuilder: (context, index) {
                       final direction = widget.recipe.directions[index];
