@@ -1,4 +1,5 @@
 
+import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -14,6 +15,7 @@ import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
 import 'login_nutritionist.dart';
+import 'signup_user.dart';
 import 'forget_password.dart';
 import 'nutritionist_signup_wrapper.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
@@ -30,7 +32,7 @@ class UserLoginScreen extends StatefulWidget {
   State<UserLoginScreen> createState() => _UserLoginScreenState();
 }
 
-class _UserLoginScreenState extends State<UserLoginScreen> {
+class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderStateMixin {
   late final AuthService _authService;
 
   // Controllers
@@ -58,17 +60,41 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
 
   static const Color errText = Color(0xFFFD3250);
 
+  // Animations
+  late AnimationController _mainController;
+  late List<Animation<double>> _staggeredAnimations;
+
   @override
   void initState() {
     super.initState();
     _authService = widget.authService ?? AuthService();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+
+    _mainController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+
+    _staggeredAnimations = List.generate(
+      8,
+      (index) => CurvedAnimation(
+        parent: _mainController,
+        curve: Interval(
+          0.1 + (index * 0.1),
+          0.6 + (index * 0.05),
+          curve: Curves.easeOutQuart,
+        ),
+      ),
+    );
+
+    _mainController.forward();
   }
 
   @override
   void dispose() {
     _gmailCtrl.dispose();
     _passwordCtrl.dispose();
+    _mainController.dispose();
     super.dispose();
   }
 
@@ -97,15 +123,6 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
     return _gmailErr == null && _passErr == null;
   }
 
-
-  Future<void> _goHome() async {
-    if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => MainNavigationShell()),
-    );
-  }
-
   void _goLoadingFive() {
     if (!mounted) return;
     Navigator.pushReplacement(
@@ -128,7 +145,6 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
       final user = cred?.user;
 
       if (user != null) {
-        // Fetch nutritionist status and proceed
         final nutDoc = await FirebaseFirestore.instance
             .collection('nutritionists')
             .doc(user.uid)
@@ -192,12 +208,10 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
       final user = cred.user;
 
       if (user != null) {
-        // Start background user doc ensuring
         UserService().ensureUserDoc(user).catchError((e) {
           if (kDebugMode) debugPrint("Background user sync failed: $e");
         });
 
-        // Check if nutritionist
         final nutDoc = await FirebaseFirestore.instance
             .collection('nutritionists')
             .doc(user.uid)
@@ -245,12 +259,10 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
       final user = cred.user;
 
       if (user != null) {
-        // Start background user doc ensuring
         UserService().ensureUserDoc(user).catchError((e) {
           if (kDebugMode) debugPrint("Background user sync failed: $e");
         });
 
-        // Check if nutritionist
         final nutDoc = await FirebaseFirestore.instance
             .collection('nutritionists')
             .doc(user.uid)
@@ -299,22 +311,19 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
       },
       child: Scaffold(
         backgroundColor: bg,
-        // Prevent buttons from moving when keyboard appears
         resizeToAvoidBottomInset: false,
         body: GestureDetector(
           onTap: () => FocusScope.of(context).unfocus(),
           child: SafeArea(
-            top: false, // we handle top with padding for consistent look
+            top: false,
             child: Container(
               color: bg,
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(radius),
                 child: Stack(
                   children: [
-                    // Background fill
                     const PatternBackground(),
 
-                    // Main scroll content
                     SingleChildScrollView(
                       padding: EdgeInsets.only(
                         left: horizontal,
@@ -325,7 +334,9 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                            Row(
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[0],
+                            child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 BackButtonWidget(onPressed: _goLoadingFive),
@@ -350,35 +361,43 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                                 ),
                               ],
                             ),
+                          ),
 
-                              SizedBox(height: 45.sh),
+                          SizedBox(height: 45.sh),
 
-                              Text(
-                                "Login",
-                                style: TextStyle(
-                                  color: purple,
-                                  fontSize: 40.sp,
-                                  fontWeight: FontWeight.w900,
-                                  height: 1.1,
-                                  fontFamily: "Satoshi",
-                                ),
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[1],
+                            child: Text(
+                              "Login",
+                              style: TextStyle(
+                                color: purple,
+                                fontSize: 40.sp,
+                                fontWeight: FontWeight.w900,
+                                height: 1.1,
+                                fontFamily: "Satoshi",
                               ),
+                            ),
+                          ),
 
-                              SizedBox(height: 10.sh),
+                          SizedBox(height: 10.sh),
 
-                              Text(
-                                "Login to get Started",
-                                style: TextStyle(
-                                  color: purple,
-                                  fontSize: 15.sp,
-                                  fontFamily: "Satoshi",
-                                ),
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[2],
+                            child: Text(
+                              "Login to get Started",
+                              style: TextStyle(
+                                color: purple,
+                                fontSize: 15.sp,
+                                fontFamily: "Satoshi",
                               ),
+                            ),
+                          ),
 
-                              SizedBox(height: 30.sh),
+                          SizedBox(height: 30.sh),
 
-                            // Email field
-                            _LabeledField(
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[3],
+                            child: _LabeledField(
                               height: fieldHeight,
                               errorText: _gmailErr,
                               child: TextField(
@@ -409,11 +428,13 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                                 ),
                               ),
                             ),
+                          ),
 
-                            SizedBox(height: 16.sh),
+                          SizedBox(height: 16.sh),
 
-                            // Password field
-                            _LabeledField(
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[4],
+                            child: _LabeledField(
                               height: fieldHeight,
                               errorText: _passErr,
                               child: Row(
@@ -467,10 +488,13 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                                 ],
                               ),
                             ),
+                          ),
 
-                            SizedBox(height: 10.sh),
+                          SizedBox(height: 10.sh),
 
-                            Align(
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[4],
+                            child: Align(
                               alignment: Alignment.centerRight,
                               child: GestureDetector(
                                 onTap: () {
@@ -493,11 +517,13 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                                 ),
                               ),
                             ),
+                          ),
 
-                            SizedBox(height: 60.sh),
+                          SizedBox(height: 60.sh),
 
-                            // Login button
-                            GestureDetector(
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[5],
+                            child: GestureDetector(
                               onTap: _loading ? null : _onLogin,
                               child: Container(
                                 width: double.infinity,
@@ -505,6 +531,13 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                                 decoration: BoxDecoration(
                                   color: btnOrange,
                                   borderRadius: BorderRadius.circular(20.sw),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: btnOrange.withValues(alpha: 0.3),
+                                      blurRadius: 15,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
                                 ),
                                 alignment: Alignment.center,
                                 child: _loading
@@ -514,7 +547,10 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                                           SizedBox(
                                             width: 18.sw,
                                             height: 18.sw,
-                                            child: const CircularProgressIndicator(strokeWidth: 2),
+                                            child: const CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: btnText,
+                                            ),
                                           ),
                                           SizedBox(width: 10.sw),
                                           Text(
@@ -539,11 +575,13 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                                       ),
                               ),
                             ),
+                          ),
 
-                            SizedBox(height: 16.sh),
+                          SizedBox(height: 16.sh),
 
-                            // Google + Apple buttons
-                            Row(
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[6],
+                            child: Row(
                               children: [
                                 Expanded(
                                   child: GestureDetector(
@@ -551,8 +589,12 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                                     child: Container(
                                       height: 59.sh,
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFF9E3D5),
+                                        color: const Color(0xFFF9E3D5).withValues(alpha: 0.6),
                                         borderRadius: BorderRadius.circular(15.sw),
+                                        border: Border.all(
+                                          color: Colors.white.withValues(alpha: 0.4),
+                                          width: 1,
+                                        ),
                                       ),
                                       alignment: Alignment.center,
                                       child: Image.asset(
@@ -571,8 +613,12 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                                     child: Container(
                                       height: 59.sh,
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFF9E3D5),
+                                        color: const Color(0xFFF9E3D5).withValues(alpha: 0.6),
                                         borderRadius: BorderRadius.circular(15.sw),
+                                        border: Border.all(
+                                          color: Colors.white.withValues(alpha: 0.4),
+                                          width: 1,
+                                        ),
                                       ),
                                       alignment: Alignment.center,
                                       child: Image.asset(
@@ -586,18 +632,75 @@ class _UserLoginScreenState extends State<UserLoginScreen> {
                                 ),
                               ],
                             ),
+                          ),
 
-                            SizedBox(height: 32.sh),
-                          ],
-                        ),
+                          SizedBox(height: 32.sh),
+
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[7],
+                            child: Center(
+                              child: GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const SignupUserScreen(),
+                                    ),
+                                  );
+                                },
+                                child: RichText(
+                                  text: TextSpan(
+                                    style: TextStyle(
+                                      color: purple,
+                                      fontSize: 14.sp,
+                                      fontFamily: "Satoshi",
+                                    ),
+                                    children: const [
+                                      TextSpan(text: "Don't have an account? "),
+                                      TextSpan(
+                                        text: "Register",
+                                        style: TextStyle(fontWeight: FontWeight.w900),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AnimatedWrapper extends StatelessWidget {
+  final Animation<double> animation;
+  final Widget child;
+
+  const _AnimatedWrapper({required this.animation, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: animation.value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - animation.value)),
+            child: child,
+          ),
+        );
+      },
+      child: child,
     );
   }
 }
@@ -613,9 +716,6 @@ class _LabeledField extends StatelessWidget {
     required this.errorText,
   });
 
-  static const Color fieldBg = Color(0xFFFDECE4);
-  static const Color errFieldBg = Color(0xFFFFE0DD);
-
   @override
   Widget build(BuildContext context) {
     final isError = errorText != null;
@@ -623,25 +723,41 @@ class _LabeledField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          height: height,
-          decoration: BoxDecoration(
-            color: isError ? errFieldBg : fieldBg,
-            borderRadius: BorderRadius.circular(20.sw),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(20.sw),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: Container(
+              height: height,
+              decoration: BoxDecoration(
+                color: isError 
+                    ? const Color(0xFFFFE0DD).withValues(alpha: 0.8)
+                    : const Color(0xFFFDECE4).withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(20.sw),
+                border: Border.all(
+                  color: isError 
+                      ? const Color(0xFFFD3250).withValues(alpha: 0.3)
+                      : Colors.white.withValues(alpha: 0.5),
+                  width: 1.5,
+                ),
+              ),
+              child: child,
+            ),
           ),
-          clipBehavior: Clip.hardEdge,
-          child: child,
         ),
         if (isError) ...[
           SizedBox(height: 6.sh),
-          Text(
-            errorText!,
-            style: TextStyle(
-              color: const Color(0xFFFD3250),
-              fontSize: 10.sp,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.2,
-              fontFamily: "Satoshi",
+          Padding(
+            padding: EdgeInsets.only(left: 12.sw),
+            child: Text(
+              errorText!,
+              style: TextStyle(
+                color: const Color(0xFFFD3250),
+                fontSize: 10.sp,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.2,
+                fontFamily: "Satoshi",
+              ),
             ),
           ),
         ],

@@ -1,5 +1,5 @@
 
-
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
@@ -15,6 +15,7 @@ import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:hidden_pantry_app/features/onboarding/screens/loading_five.dart';
 import 'nutritionist_signup_wrapper.dart';
 import 'signup_nutritionist_step2.dart';
+import 'signup_nutritionist.dart';
 import 'forget_password.dart';
 import 'login_user.dart';
 import 'package:hidden_pantry_app/core/utils/auth_validator.dart';
@@ -27,7 +28,7 @@ class LoginNutritionistScreen extends StatefulWidget {
   State<LoginNutritionistScreen> createState() => _LoginNutritionistScreenState();
 }
 
-class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
+class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with TickerProviderStateMixin {
   // Controllers
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
@@ -50,16 +51,40 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
 
   static const Color errText = Color(0xFFFD3250);
 
+  // Animations
+  late AnimationController _mainController;
+  late List<Animation<double>> _staggeredAnimations;
+
   @override
   void initState() {
     super.initState();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+    _mainController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+
+    _staggeredAnimations = List.generate(
+      8,
+      (index) => CurvedAnimation(
+        parent: _mainController,
+        curve: Interval(
+          0.1 + (index * 0.1),
+          0.6 + (index * 0.05),
+          curve: Curves.easeOutQuart,
+        ),
+      ),
+    );
+
+    _mainController.forward();
   }
 
   @override
   void dispose() {
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
+    _mainController.dispose();
     super.dispose();
   }
 
@@ -118,7 +143,6 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
 
     _setLoading(true);
     try {
-      // 1. Authenticate with Firebase Auth
       final userCred = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: pass,
@@ -127,14 +151,12 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
       final user = userCred.user;
       if (user == null) throw Exception("Login failed");
 
-      // 2. Check if user exists in 'nutritionists' collection
       final doc = await FirebaseFirestore.instance
           .collection('nutritionists')
           .doc(user.uid)
           .get();
 
       if (!doc.exists) {
-        // Not a nutritionist
         await FirebaseAuth.instance.signOut();
         if (mounted) {
              _snack("No nutritionist account found for this email.");
@@ -144,7 +166,6 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
 
       if (!mounted) return;
 
-      // 3. Navigate to Wrapper using safe pattern
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         Navigator.pushReplacement(
@@ -227,7 +248,6 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
   }
 
   Future<void> _handleSocialLoginResult(User user) async {
-    // Check if user exists in 'nutritionists' collection
     final doc = await FirebaseFirestore.instance
         .collection('nutritionists')
         .doc(user.uid)
@@ -238,13 +258,11 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       if (doc.exists) {
-        // Existing nutritionist
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const NutritionistSignupWrapper()),
         );
       } else {
-        // NEW nutritionist - must upload certificate
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -289,10 +307,8 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                 borderRadius: BorderRadius.circular(radius),
                 child: Stack(
                   children: [
-                    // Background fill
                     const PatternBackground(),
 
-                    // Main scroll content
                     SingleChildScrollView(
                       padding: EdgeInsets.only(
                         left: horizontal,
@@ -303,143 +319,28 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                            // Top row (Back + User)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                BackButtonWidget(onPressed: _goLoadingFive),
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const UserLoginScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: Text(
-                                    "User",
-                                    style: TextStyle(
-                                      color: purple,
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w700,
-                                      fontFamily: "Satoshi",
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-
-                            SizedBox(height: 45.sh),
-
-                            Text(
-                              "Login",
-                              style: TextStyle(
-                                color: purple,
-                                fontSize: 40.sp,
-                                fontWeight: FontWeight.w900,
-                                height: 1.1,
-                                fontFamily: "Satoshi",
-                              ),
-                            ),
-
-                            SizedBox(height: 10.sh),
-
-                            Text(
-                              "Login to your professional account",
-                              style: TextStyle(
-                                color: purple,
-                                fontSize: 15.sp,
-                                fontFamily: "Satoshi",
-                              ),
-                            ),
-
-                            SizedBox(height: 30.sh),
-
-                            // Email field
-                            _LabeledField(
-                              height: fieldHeight,
-                              errorText: _emailErr,
-                              child: TextField(
-                                controller: _emailCtrl,
-                                cursorColor: purple,
-                                textAlignVertical: TextAlignVertical.center,
-                                style: TextStyle(
-                                  color: (_emailErr != null) ? errText : enabledText,
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.2,
-                                  fontFamily: "Satoshi",
-                                ),
-                                decoration: InputDecoration(
-                                  border: InputBorder.none,
-                                  hintText: "Email",
-                                  hintStyle: TextStyle(
-                                    color: hint,
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w500,
-                                    letterSpacing: 0.2,
-                                    fontFamily: "Satoshi",
-                                  ),
-                                  contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 30.sw,
-                                    vertical: 22.sh,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            SizedBox(height: 16.sh),
-
-                            // Password field
-                            _LabeledField(
-                              height: fieldHeight,
-                              errorText: _passErr,
+                            _AnimatedWrapper(
+                              animation: _staggeredAnimations[0],
                               child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _passwordCtrl,
-                                      obscureText: _obscurePassword,
-                                      cursorColor: purple,
-                                      textAlignVertical: TextAlignVertical.center,
-                                      style: TextStyle(
-                                        color: (_passErr != null) ? errText : enabledText,
-                                        fontSize: 12.sp,
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: 0.2,
-                                        fontFamily: "Satoshi",
-                                      ),
-                                      decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: "Password",
-                                        hintStyle: TextStyle(
-                                          color: hint,
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w500,
-                                          letterSpacing: 0.2,
-                                          fontFamily: "Satoshi",
-                                        ),
-                                        contentPadding: EdgeInsets.symmetric(
-                                          horizontal: 30.sw,
-                                          vertical: 22.sh,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
+                                  BackButtonWidget(onPressed: _goLoadingFive),
                                   GestureDetector(
-                                    onTap: () => setState(
-                                      () => _obscurePassword = !_obscurePassword,
-                                    ),
-                                    child: Padding(
-                                      padding: EdgeInsets.only(right: 16.sw),
-                                      child: Image.asset(
-                                        _obscurePassword
-                                            ? "assets/icons/eye_disable.png"
-                                            : "assets/icons/eye.png",
-                                        width: 19.sw,
-                                        height: 20.sw,
-                                        fit: BoxFit.contain,
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const UserLoginScreen(),
+                                        ),
+                                      );
+                                    },
+                                    child: Text(
+                                      "User",
+                                      style: TextStyle(
+                                        color: purple,
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w700,
+                                        fontFamily: "Satoshi",
                                       ),
                                     ),
                                   ),
@@ -447,27 +348,157 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
                               ),
                             ),
 
+                            SizedBox(height: 45.sh),
+
+                            _AnimatedWrapper(
+                              animation: _staggeredAnimations[1],
+                              child: Text(
+                                "Login",
+                                style: TextStyle(
+                                  color: purple,
+                                  fontSize: 40.sp,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.1,
+                                  fontFamily: "Satoshi",
+                                ),
+                              ),
+                            ),
+
                             SizedBox(height: 10.sh),
 
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const ForgetPasswordScreen(),
-                                    ),
-                                  );
-                                },
-                                child: Text(
-                                  "Forget Password?",
+                            _AnimatedWrapper(
+                              animation: _staggeredAnimations[2],
+                              child: Text(
+                                "Login to your professional account",
+                                style: TextStyle(
+                                  color: purple,
+                                  fontSize: 15.sp,
+                                  fontFamily: "Satoshi",
+                                ),
+                              ),
+                            ),
+
+                            SizedBox(height: 30.sh),
+
+                            _AnimatedWrapper(
+                              animation: _staggeredAnimations[3],
+                              child: _LabeledField(
+                                height: fieldHeight,
+                                errorText: _emailErr,
+                                child: TextField(
+                                  controller: _emailCtrl,
+                                  cursorColor: purple,
+                                  textAlignVertical: TextAlignVertical.center,
                                   style: TextStyle(
-                                    color: purple,
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w500,
-                                    letterSpacing: 0.3,
+                                    color: (_emailErr != null) ? errText : enabledText,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.2,
                                     fontFamily: "Satoshi",
+                                  ),
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: "Email",
+                                    hintStyle: TextStyle(
+                                      color: hint,
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w500,
+                                      letterSpacing: 0.2,
+                                      fontFamily: "Satoshi",
+                                    ),
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: 30.sw,
+                                      vertical: 22.sh,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            SizedBox(height: 16.sh),
+
+                            _AnimatedWrapper(
+                              animation: _staggeredAnimations[4],
+                              child: _LabeledField(
+                                height: fieldHeight,
+                                errorText: _passErr,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: TextField(
+                                        controller: _passwordCtrl,
+                                        obscureText: _obscurePassword,
+                                        cursorColor: purple,
+                                        textAlignVertical: TextAlignVertical.center,
+                                        style: TextStyle(
+                                          color: (_passErr != null) ? errText : enabledText,
+                                          fontSize: 12.sp,
+                                          fontWeight: FontWeight.w600,
+                                          letterSpacing: 0.2,
+                                          fontFamily: "Satoshi",
+                                        ),
+                                        decoration: InputDecoration(
+                                          border: InputBorder.none,
+                                          hintText: "Password",
+                                          hintStyle: TextStyle(
+                                            color: hint,
+                                            fontSize: 12.sp,
+                                            fontWeight: FontWeight.w500,
+                                            letterSpacing: 0.2,
+                                            fontFamily: "Satoshi",
+                                          ),
+                                          contentPadding: EdgeInsets.symmetric(
+                                            horizontal: 30.sw,
+                                            vertical: 22.sh,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    GestureDetector(
+                                      onTap: () => setState(
+                                        () => _obscurePassword = !_obscurePassword,
+                                      ),
+                                      child: Padding(
+                                        padding: EdgeInsets.only(right: 16.sw),
+                                        child: Image.asset(
+                                          _obscurePassword
+                                              ? "assets/icons/eye_disable.png"
+                                              : "assets/icons/eye.png",
+                                          width: 19.sw,
+                                          height: 20.sw,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                            SizedBox(height: 10.sh),
+
+                            _AnimatedWrapper(
+                              animation: _staggeredAnimations[4],
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const ForgetPasswordScreen(),
+                                      ),
+                                    );
+                                  },
+                                  child: Text(
+                                    "Forget Password?",
+                                    style: TextStyle(
+                                      color: purple,
+                                      fontSize: 14.sp,
+                                      fontWeight: FontWeight.w500,
+                                      letterSpacing: 0.3,
+                                      fontFamily: "Satoshi",
+                                    ),
                                   ),
                                 ),
                               ),
@@ -475,108 +506,186 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> {
 
                             SizedBox(height: 60.sh),
 
-                            // Login button
-                            GestureDetector(
-                              onTap: _loading ? null : _onLogin,
-                              child: Container(
-                                width: double.infinity,
-                                height: 62.sh,
-                                decoration: BoxDecoration(
-                                  color: btnOrange,
-                                  borderRadius: BorderRadius.circular(20.sw),
-                                ),
-                                alignment: Alignment.center,
-                                child: _loading
-                                    ? Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          SizedBox(
-                                            width: 18.sw,
-                                            height: 18.sw,
-                                            child: const CircularProgressIndicator(strokeWidth: 2),
-                                          ),
-                                          SizedBox(width: 10.sw),
-                                          Text(
-                                            "Signing in...",
-                                            style: TextStyle(
-                                              color: btnText,
-                                              fontSize: 12.sp,
-                                              fontWeight: FontWeight.bold,
-                                              fontFamily: "Satoshi",
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    : Text(
-                                        "Login",
-                                        style: TextStyle(
-                                          color: btnText,
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: "Satoshi",
-                                        ),
+                            _AnimatedWrapper(
+                              animation: _staggeredAnimations[5],
+                              child: GestureDetector(
+                                onTap: _loading ? null : _onLogin,
+                                child: Container(
+                                  width: double.infinity,
+                                  height: 62.sh,
+                                  decoration: BoxDecoration(
+                                    color: btnOrange,
+                                    borderRadius: BorderRadius.circular(20.sw),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: btnOrange.withValues(alpha: 0.3),
+                                        blurRadius: 15,
+                                        offset: const Offset(0, 8),
                                       ),
+                                    ],
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: _loading
+                                      ? Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            SizedBox(
+                                              width: 18.sw,
+                                              height: 18.sw,
+                                              child: const CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: btnText,
+                                              ),
+                                            ),
+                                            SizedBox(width: 10.sw),
+                                            Text(
+                                              "Signing in...",
+                                              style: TextStyle(
+                                                color: btnText,
+                                                fontSize: 12.sp,
+                                                fontWeight: FontWeight.bold,
+                                                fontFamily: "Satoshi",
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      : Text(
+                                          "Login",
+                                          style: TextStyle(
+                                            color: btnText,
+                                            fontSize: 12.sp,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: "Satoshi",
+                                          ),
+                                        ),
+                                ),
                               ),
                             ),
 
                             SizedBox(height: 16.sh),
 
-                            // Google + Apple buttons
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: _loading ? null : _onGoogleLogin,
-                                    child: Container(
-                                      height: 59.sh,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF9E3D5),
-                                        borderRadius: BorderRadius.circular(15.sw),
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: Image.asset(
-                                        "assets/logos/google.png",
-                                        width: 48.sw,
-                                        height: 27.sh,
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(width: 12.sw),
-                                Expanded(
-                                  child: GestureDetector(
-                                    onTap: _loading ? null : _onAppleLogin,
-                                    child: Container(
-                                      height: 59.sh,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF9E3D5),
-                                        borderRadius: BorderRadius.circular(15.sw),
-                                      ),
-                                      alignment: Alignment.center,
-                                      child: Image.asset(
-                                        "assets/logos/apple.png",
-                                        width: 70.sw,
-                                        height: 44.sh,
-                                        fit: BoxFit.contain,
+                            _AnimatedWrapper(
+                              animation: _staggeredAnimations[6],
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: _loading ? null : _onGoogleLogin,
+                                      child: Container(
+                                        height: 59.sh,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF9E3D5).withValues(alpha: 0.6),
+                                          borderRadius: BorderRadius.circular(15.sw),
+                                          border: Border.all(
+                                            color: Colors.white.withValues(alpha: 0.4),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: Image.asset(
+                                          "assets/logos/google.png",
+                                          width: 48.sw,
+                                          height: 27.sh,
+                                          fit: BoxFit.contain,
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                  SizedBox(width: 12.sw),
+                                  Expanded(
+                                    child: GestureDetector(
+                                      onTap: _loading ? null : _onAppleLogin,
+                                      child: Container(
+                                        height: 59.sh,
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFF9E3D5).withValues(alpha: 0.6),
+                                          borderRadius: BorderRadius.circular(15.sw),
+                                          border: Border.all(
+                                            color: Colors.white.withValues(alpha: 0.4),
+                                            width: 1,
+                                          ),
+                                        ),
+                                        alignment: Alignment.center,
+                                        child: Image.asset(
+                                          "assets/logos/apple.png",
+                                          width: 70.sw,
+                                          height: 44.sh,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
 
                             SizedBox(height: 32.sh),
-                          ],
-                        ),
+
+                            _AnimatedWrapper(
+                              animation: _staggeredAnimations[7],
+                              child: Center(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => const SignupNutritionistScreen(),
+                                      ),
+                                    );
+                                  },
+                                  child: RichText(
+                                    text: TextSpan(
+                                      style: TextStyle(
+                                        color: purple,
+                                        fontSize: 14.sp,
+                                        fontFamily: "Satoshi",
+                                      ),
+                                      children: const [
+                                        TextSpan(text: "Don't have an account? "),
+                                        TextSpan(
+                                          text: "Register",
+                                          style: TextStyle(fontWeight: FontWeight.w900),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                    ],
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AnimatedWrapper extends StatelessWidget {
+  final Animation<double> animation;
+  final Widget child;
+
+  const _AnimatedWrapper({required this.animation, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: animation.value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - animation.value)),
+            child: child,
+          ),
+        );
+      },
+      child: child,
     );
   }
 }
@@ -592,9 +701,6 @@ class _LabeledField extends StatelessWidget {
     required this.errorText,
   });
 
-  static const Color fieldBg = Color(0xFFFDECE4);
-  static const Color errFieldBg = Color(0xFFFFE0DD);
-
   @override
   Widget build(BuildContext context) {
     final isError = errorText != null;
@@ -602,25 +708,41 @@ class _LabeledField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          height: height,
-          decoration: BoxDecoration(
-            color: isError ? errFieldBg : fieldBg,
-            borderRadius: BorderRadius.circular(20.sw),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(20.sw),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: Container(
+              height: height,
+              decoration: BoxDecoration(
+                color: isError 
+                    ? const Color(0xFFFFE0DD).withValues(alpha: 0.8)
+                    : const Color(0xFFFDECE4).withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(20.sw),
+                border: Border.all(
+                  color: isError 
+                      ? const Color(0xFFFD3250).withValues(alpha: 0.3)
+                      : Colors.white.withValues(alpha: 0.5),
+                  width: 1.5,
+                ),
+              ),
+              child: child,
+            ),
           ),
-          clipBehavior: Clip.hardEdge,
-          child: child,
         ),
         if (isError) ...[
           SizedBox(height: 6.sh),
-          Text(
-            errorText!,
-            style: TextStyle(
-              color: const Color(0xFFFD3250),
-              fontSize: 10.sp,
-              fontWeight: FontWeight.w500,
-              letterSpacing: 0.2,
-              fontFamily: "Satoshi",
+          Padding(
+            padding: EdgeInsets.only(left: 12.sw),
+            child: Text(
+              errorText!,
+              style: TextStyle(
+                color: const Color(0xFFFD3250),
+                fontSize: 10.sp,
+                fontWeight: FontWeight.w500,
+                letterSpacing: 0.2,
+                fontFamily: "Satoshi",
+              ),
             ),
           ),
         ],

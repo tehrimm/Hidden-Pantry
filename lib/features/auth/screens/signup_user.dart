@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -28,20 +29,43 @@ class SignupUserScreen extends StatefulWidget {
   State<SignupUserScreen> createState() => _SignupUserScreenState();
 }
 
-class _SignupUserScreenState extends State<SignupUserScreen> {
+class _SignupUserScreenState extends State<SignupUserScreen> with TickerProviderStateMixin {
   late final AuthService _authService;
   late final UserService _userService;
+
+  // Animations
+  late AnimationController _mainController;
+  late List<Animation<double>> _staggeredAnimations;
 
   @override
   void initState() {
     super.initState();
     _authService = widget.authService ?? AuthService();
     _userService = widget.userService ?? UserService();
+
+    _mainController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+
+    _staggeredAnimations = List.generate(
+      10,
+      (index) => CurvedAnimation(
+        parent: _mainController,
+        curve: Interval(
+          0.1 + (index * 0.08),
+          0.6 + (index * 0.04),
+          curve: Curves.easeOutQuart,
+        ),
+      ),
+    );
+
+    _mainController.forward();
   }
 
   // Controllers
   final _fullNameCtrl = TextEditingController();
-  final _gmailCtrl = TextEditingController(); // username only
+  final _gmailCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
 
@@ -61,17 +85,12 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
   // Colors
   static const Color bg = Color(0xFFFFF3EB);
   static const Color purple = Color(0xFF462F4D);
-
   static const Color hint = Color(0xFFBFA89A);
   static const Color enabledText = Color(0xFF462F4D);
-
   static const Color stroke = Color(0xFFF5DDCE);
-
   static const Color btnOrange = Color(0xFFF2894F);
   static const Color btnText = Color(0xFFFFF2EA);
-
   static const Color errText = Color(0xFFFD3250);
-
 
   @override
   void dispose() {
@@ -79,6 +98,7 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
     _gmailCtrl.dispose();
     _phoneCtrl.dispose();
     _passwordCtrl.dispose();
+    _mainController.dispose();
     super.dispose();
   }
 
@@ -91,7 +111,6 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
 
     setState(() {
       _nameErr = AuthValidator.validateFullName(name);
-      // Accept bare Gmail username (without @gmail.com) for this screen
       if (gmailUser.contains('@')) {
         _gmailErr = AuthValidator.validateEmail(gmailUser);
       } else {
@@ -107,19 +126,7 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
       _gmailErr = "*field is required";
     }
 
-    if (_nameErr != null || _gmailErr != null || _phoneErr != null || _passErr != null) {
-      if (_gmailErr != null) {
-        _snack("Gmail Error: $_gmailErr");
-      } else if (_nameErr != null) {
-        _snack("Name Error: $_nameErr");
-      } else if (_phoneErr != null) {
-        _snack("Phone Error: $_phoneErr");
-      } else if (_passErr != null) {
-        _snack("Password Error: $_passErr");
-      }
-      return false;
-    }
-    return true;
+    return _nameErr == null && _gmailErr == null && _phoneErr == null && _passErr == null;
   }
 
   // ---------------- HELPERS ----------------
@@ -143,23 +150,13 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
 
   // ---------------- EMAIL/PASS SIGNUP ----------------
   Future<void> _onRegister() async {
-    debugPrint("_onRegister called");
-
-    if (_loading) {
-      debugPrint("Already loading, ignoring tap");
-      return;
-    }
-
-    if (!_validate()) {
-      debugPrint("Validation returned false");
-      return;
-    }
+    if (_loading) return;
+    if (!_validate()) return;
 
     final email = _gmailCtrl.text.trim().contains('@')
         ? _gmailCtrl.text.trim()
         : "${_gmailCtrl.text.trim()}@gmail.com";
     
-    // Normalizing phone (exactly like login)
     var rawPhone = _phoneCtrl.text.trim().replaceAll(RegExp(r'[^0-9]'), '');
     if (rawPhone.startsWith('0')) {
       rawPhone = rawPhone.replaceFirst(RegExp(r'^0+'), '');
@@ -169,23 +166,15 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
     final fullName = _fullNameCtrl.text.trim();
     final pass = _passwordCtrl.text.trim();
 
-    debugPrint("Attempting Register: $email");
-
     _setLoading(true);
 
     try {
-      // 1) Auth create - this is the only thing we MUST wait for
-      debugPrint("Creating user in Firebase Auth...");
       final cred = await _authService.registerWithEmail(email, pass);
       
       if (cred?.user == null) {
         throw FirebaseAuthException(code: "unknown", message: "Failed to create user.");
       }
       
-      debugPrint("Auth success: ${cred?.user?.uid}");
-
-      // 2) Firestore save - FIRE AND FORGET (Run in background)
-      // We don't await this to unlock the UI immediately.
       _userService
           .upsertCurrentUserProfile(
             fullName: fullName,
@@ -197,16 +186,11 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
 
       if (!mounted) return;
 
-      // 3) Navigate IMMEDIATELY using the safe pattern
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => AllergiesScreen(userService: _userService)),
-        );
-      });
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => AllergiesScreen(userService: _userService)),
+      );
     } on FirebaseAuthException catch (e) {
-      debugPrint("FirebaseAuthException: ${e.code} / ${e.message}");
       if (!mounted) return;
       setState(() {
         if (e.code == "email-already-in-use") {
@@ -223,7 +207,6 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
         _snack("${e.message ?? "Signup failed"}", isError: true);
       }
     } catch (e) {
-      debugPrint("Generic Error: $e");
       if (mounted) _snack("Signup error: $e", isError: true);
     } finally {
       if (mounted) _setLoading(false);
@@ -231,128 +214,21 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
   }
 
   Future<void> _onGoogleRegister() async {
-    _setLoading(true);
-    try {
-      final googleUser = await GoogleSignIn().signIn();
-      if (googleUser == null) {
-        _setLoading(false);
-        return;
-      }
-
-      final googleAuth = await googleUser.authentication;
-      final googleCredential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-
-      final cred = await FirebaseAuth.instance.signInWithCredential(googleCredential);
-      final user = cred.user!;
-      
-      var rawPhone = _phoneCtrl.text.trim().replaceAll(RegExp(r'[^0-9]'), '');
-      if (rawPhone.startsWith('0')) {
-        rawPhone = rawPhone.replaceFirst(RegExp(r'^0+'), '');
-      }
-      final phone = "$_countryCode$rawPhone";
-      final fullName = (user.displayName ?? _fullNameCtrl.text.trim()).trim();
-
-      // OPTIMISTIC SYNC: Don't await
-      _userService.upsertCurrentUserProfile(
-        fullName: fullName.isEmpty ? "User" : fullName,
-        phoneNumber: phone,
-        allergies: const [],
-      ).catchError((e) => debugPrint("Background Google sync failed: $e"));
-
-      if (!mounted) return;
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => AllergiesScreen()),
-        );
-      });
-    } catch (e) {
-      debugPrint("Google signup failed: $e");
-      if (mounted) _snack("Google signup failed", isError: true);
-    } finally {
-      if (mounted) _setLoading(false);
-    }
+    _snack("Google registration coming soon");
   }
 
   Future<void> _onAppleRegister() async {
-    _setLoading(true);
-    try {
-      final apple = await SignInWithApple.getAppleIDCredential(
-        scopes: [
-          AppleIDAuthorizationScopes.email,
-          AppleIDAuthorizationScopes.fullName,
-        ],
-      );
-
-      final appleCredential = OAuthProvider("apple.com").credential(
-        idToken: apple.identityToken,
-        accessToken: apple.authorizationCode,
-      );
-
-      final cred = await FirebaseAuth.instance.signInWithCredential(appleCredential);
-      final user = cred.user!;
-
-      var rawPhone = _phoneCtrl.text.trim().replaceAll(RegExp(r'[^0-9]'), '');
-      if (rawPhone.startsWith('0')) {
-        rawPhone = rawPhone.replaceFirst(RegExp(r'^0+'), '');
-      }
-      final phone = "$_countryCode$rawPhone";
-      final appleName = [
-        apple.givenName ?? "",
-        apple.familyName ?? "",
-      ].where((e) => e.trim().isNotEmpty).join(" ").trim();
-
-      final fullName = (appleName.isNotEmpty
-              ? appleName
-              : (user.displayName ?? _fullNameCtrl.text.trim()))
-          .trim();
-
-      // OPTIMISTIC SYNC: Don't await
-      _userService.upsertCurrentUserProfile(
-        fullName: fullName.isEmpty ? "User" : fullName,
-        phoneNumber: phone,
-        allergies: const [],
-      ).catchError((e) => debugPrint("Background Apple sync failed: $e"));
-
-      if (!mounted) return;
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => AllergiesScreen()),
-        );
-      });
-    } catch (e) {
-      debugPrint("Apple signup failed: $e");
-      if (mounted) _snack("Apple signup failed", isError: true);
-    } finally {
-      if (mounted) _setLoading(false);
-    }
+    _snack("Apple registration coming soon");
   }
 
   @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
     final mq = MediaQuery.of(context);
-    final bool isUnderTest = WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding');
 
-    // ---- spacing rules you asked for ----
     final fieldH = 70.sh;
-
-    final baseGap = 16.sh; // normal gap between boxes
-
-    final errOffset = 4.sh; // error text starts 4px under box
-
-    // text padding to keep vertical centering like Figma
-    EdgeInsets padMain() =>
-        EdgeInsets.symmetric(horizontal: 30.sw, vertical: 22.sh);
-
+    final baseGap = 16.sh;
+    final errOffset = 4.sh;
     final topPad = mq.padding.top;
 
     return PopScope<Object?>(
@@ -364,63 +240,54 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
       child: Scaffold(
         backgroundColor: bg,
         resizeToAvoidBottomInset: false,
-        body: Center(
-          child: SizedBox(
-            width: 393.sw,
-            height: 852.sh,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(30.sw),
-              child: Stack(
-                clipBehavior: Clip.hardEdge,
-                children: [
-                  const PatternBackground(),
-
-                  Column(
-                    children: [
-                      // Fixed Top row (Back + Login)
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(30.sw, topPad + (isUnderTest ? 10.sh : 36.sh), 30.sw, 20.sh),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            BackButtonWidget(onPressed: _goLoadingFive),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => const UserLoginScreen()),
-                                );
-                              },
-                              child: Text(
-                                "Login",
-                                style: TextStyle(
-                                  color: purple,
-                                  fontSize: 14.sw,
-                                  fontWeight: FontWeight.w700,
-                                  fontFamily: "Satoshi",
-                                ),
-                              ),
+        body: Stack(
+          children: [
+            const PatternBackground(),
+            Column(
+              children: [
+                _AnimatedWrapper(
+                  animation: _staggeredAnimations[0],
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(30.sw, topPad + 36.sh, 30.sw, 20.sh),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        BackButtonWidget(onPressed: _goLoadingFive),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const UserLoginScreen()),
+                            );
+                          },
+                          child: Text(
+                            "Login",
+                            style: TextStyle(
+                              color: purple,
+                              fontSize: 14.sp,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: "Satoshi",
                             ),
-                          ],
-                        ),
-                      ),
-
-                      // Main scroll content
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: EdgeInsets.only(
-                            left: 30.sw,
-                            right: 30.sw,
-                            bottom: (WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding'))
-                                ? 0
-                                : 30.sh + mq.padding.bottom + mq.viewInsets.bottom,
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
-                          // Title
-                          SizedBox(
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.only(
+                      left: 30.sw,
+                      right: 30.sw,
+                      bottom: 30.sh + mq.padding.bottom + mq.viewInsets.bottom,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[1],
+                          child: SizedBox(
                             width: 337.sw,
                             child: Text(
                               "Register",
@@ -433,40 +300,130 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
                               ),
                             ),
                           ),
+                        ),
 
-                          SizedBox(height: isUnderTest ? 24.sh : 46.sh),
+                        SizedBox(height: 46.sh),
 
-                          // ================= FULL NAME =================
-                          SizedBox(
-                            width: 332.sw,
-                            // No need for absolute height here, let it flow
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[2],
+                          child: _GlassField(
+                            height: fieldH,
+                            isError: _nameErr != null,
+                            child: TextField(
+                              controller: _fullNameCtrl,
+                              onChanged: (_) => setState(() {}),
+                              cursorColor: purple,
+                              style: TextStyle(
+                                color: enabledText,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.2,
+                                fontFamily: "Satoshi",
+                              ),
+                              decoration: InputDecoration(
+                                border: InputBorder.none,
+                                hintText: "Full Name",
+                                hintStyle: TextStyle(
+                                  color: hint,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 0.2,
+                                  fontFamily: "Satoshi",
+                                ),
+                                contentPadding: EdgeInsets.symmetric(horizontal: 30.sw, vertical: 22.sh),
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (_nameErr != null) ...[
+                          SizedBox(height: errOffset),
+                          _ErrorText(text: _nameErr!),
+                        ],
+
+                        SizedBox(height: baseGap),
+
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[3],
+                          child: _GlassField(
+                            height: fieldH,
+                            isError: _gmailErr != null,
+                            child: TextField(
+                              controller: _gmailCtrl,
+                              onChanged: (_) => setState(() {}),
+                              cursorColor: purple,
+                              style: TextStyle(
+                                color: enabledText,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.2,
+                                fontFamily: "Satoshi",
+                              ),
+                              decoration: InputDecoration(
+                                border: InputBorder.none,
+                                hintText: "Email",
+                                hintStyle: TextStyle(
+                                  color: hint,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w500,
+                                  letterSpacing: 0.2,
+                                  fontFamily: "Satoshi",
+                                ),
+                                contentPadding: EdgeInsets.symmetric(horizontal: 30.sw, vertical: 22.sh),
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (_gmailErr != null) ...[
+                          SizedBox(height: errOffset),
+                          _ErrorText(text: _gmailErr!),
+                        ],
+
+                        SizedBox(height: baseGap),
+
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[4],
+                          child: _GlassField(
+                            height: fieldH,
+                            isError: _phoneErr != null,
+                            child: Row(
                               children: [
-                                _FieldBox(
-                                  width: 332.sw,
-                                  height: fieldH,
-                                  isError: _nameErr != null,
-                                  child: TextField(
-                                    key: const Key('signup_full_name'),
-                                    controller: _fullNameCtrl,
-                                    onChanged: (_) => setState(() {}),
-                                    cursorColor: purple,
-                                    textAlignVertical: TextAlignVertical.center,
-                                    style: TextStyle(
-                                      color: (_nameErr != null)
-                                          ? errText
-                                          : (_fullNameCtrl.text.trim().isEmpty
-                                              ? hint
-                                              : enabledText),
+                                SizedBox(width: 10.sw),
+                                SizedBox(
+                                  width: 135.sw,
+                                  child: CountryCodePicker(
+                                    onChanged: (c) => setState(() => _countryCode = c.dialCode ?? "+92"),
+                                    initialSelection: _countryCode,
+                                    favorite: const ["+92", "+1"],
+                                    alignLeft: true,
+                                    padding: EdgeInsets.zero,
+                                    showDropDownButton: false,
+                                    textStyle: TextStyle(
+                                      color: purple,
                                       fontSize: 12.sp,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.2,
-                                    fontFamily: "Satoshi",
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.2,
+                                      fontFamily: "Satoshi",
+                                    ),
                                   ),
+                                ),
+                                Container(width: 1, height: 36.sh, color: stroke.withValues(alpha: 0.5)),
+                                SizedBox(width: 14.sw),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _phoneCtrl,
+                                    onChanged: (_) => setState(() {}),
+                                    keyboardType: TextInputType.phone,
+                                    cursorColor: purple,
+                                    style: TextStyle(
+                                      color: enabledText,
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.2,
+                                      fontFamily: "Satoshi",
+                                    ),
                                     decoration: InputDecoration(
                                       border: InputBorder.none,
-                                      hintText: "Full Name",
+                                      hintText: "Phone Number",
                                       hintStyle: TextStyle(
                                         color: hint,
                                         fontSize: 12.sp,
@@ -474,63 +431,45 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
                                         letterSpacing: 0.2,
                                         fontFamily: "Satoshi",
                                       ),
-                                      isDense: false,
-                                      contentPadding: padMain(),
+                                      contentPadding: EdgeInsets.symmetric(vertical: 22.sh),
                                     ),
                                   ),
                                 ),
-                                if (_nameErr != null) ...[
-                                  SizedBox(height: errOffset),
-                                  Padding(
-                                    padding: EdgeInsets.only(left: 12.sw),
-                                    child: Text(
-                                      _nameErr!,
-                                      style: TextStyle(
-                                        color: errText,
-                                        fontSize: 10.sp,
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: 0.2,
-                                        fontFamily: "Satoshi",
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                                SizedBox(width: 12.sw),
                               ],
                             ),
                           ),
+                        ),
+                        if (_phoneErr != null) ...[
+                          SizedBox(height: errOffset),
+                          _ErrorText(text: _phoneErr!),
+                        ],
 
-                          SizedBox(height: baseGap),
+                        SizedBox(height: baseGap),
 
-                          // ================= GMAIL ROW =================
-                          SizedBox(
-                            width: 332.sw,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[5],
+                          child: _GlassField(
+                            height: fieldH,
+                            isError: _passErr != null,
+                            child: Row(
                               children: [
-                                _FieldBox(
-                                  width: 332.sw,
-                                  height: fieldH,
-                                  isError: _gmailErr != null,
+                                Expanded(
                                   child: TextField(
-                                    key: const Key('signup_gmail'),
-                                    controller: _gmailCtrl,
+                                    controller: _passwordCtrl,
                                     onChanged: (_) => setState(() {}),
+                                    obscureText: _obscurePassword,
                                     cursorColor: purple,
-                                    textAlignVertical: TextAlignVertical.center,
                                     style: TextStyle(
-                                      color: (_gmailErr != null)
-                                          ? errText
-                                          : (_gmailCtrl.text.trim().isEmpty
-                                              ? hint
-                                              : enabledText),
+                                      color: enabledText,
                                       fontSize: 12.sp,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.2,
-                                    fontFamily: "Satoshi",
-                                  ),
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.2,
+                                      fontFamily: "Satoshi",
+                                    ),
                                     decoration: InputDecoration(
                                       border: InputBorder.none,
-                                      hintText: "Email",
+                                      hintText: "Password",
                                       hintStyle: TextStyle(
                                         color: hint,
                                         fontSize: 12.sp,
@@ -538,244 +477,42 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
                                         letterSpacing: 0.2,
                                         fontFamily: "Satoshi",
                                       ),
-                                      isDense: false,
-                                      contentPadding: padMain(),
+                                      contentPadding: EdgeInsets.symmetric(horizontal: 30.sw, vertical: 22.sh),
                                     ),
                                   ),
                                 ),
-                                if (_gmailErr != null) ...[
-                                  SizedBox(height: errOffset),
-                                  Padding(
-                                    padding: EdgeInsets.only(left: 11.sw),
-                                    child: Text(
-                                      _gmailErr!,
-                                      style: TextStyle(
-                                        color: errText,
-                                        fontSize: 10.sp,
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: 0.2,
-                                        fontFamily: "Satoshi",
-                                      ),
+                                GestureDetector(
+                                  onTap: () => setState(() => _obscurePassword = !_obscurePassword),
+                                  child: Padding(
+                                    padding: EdgeInsets.only(right: 16.sw),
+                                    child: Icon(
+                                      _obscurePassword ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                                      color: purple.withValues(alpha: 0.6),
+                                      size: 20.sw,
                                     ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-
-                          SizedBox(height: baseGap),
-
-                          // ================= PHONE =================
-                          SizedBox(
-                            width: 332.sw,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _FieldBox(
-                                  width: 332.sw,
-                                  height: fieldH,
-                                  isError: _phoneErr != null,
-                                  child: Row(
-                                    children: [
-                                      SizedBox(width: 10.sw),
-                                      SizedBox(
-                                        width: 135.sw,
-                                        child: CountryCodePicker(
-                                          onChanged: (c) => setState(
-                                            () => _countryCode = c.dialCode ?? "+92",
-                                          ),
-                                          initialSelection: _countryCode,
-                                          favorite: const [
-                                            "+92",
-                                            "+91",
-                                            "+971",
-                                            "+44",
-                                            "+1"
-                                          ],
-                                          alignLeft: true,
-                                          padding: EdgeInsets.zero,
-                                          showDropDownButton: false, // no arrow
-                                          textStyle: TextStyle(
-                                            color: _phoneErr != null
-                                                ? errText
-                                                : purple,
-                                             fontSize: 12.sw,
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: 0.2,
-                                            fontFamily: "Satoshi",
-                                          ),
-                                        ),
-                                      ),
-                                      Container(
-                                        width: 1.sw,
-                                        height: 36.sh,
-                                        color: stroke,
-                                      ),
-                                      SizedBox(width: 14.sw),
-                                      Expanded(
-                                        child: TextField(
-                                          key: const Key('signup_phone'),
-                                          controller: _phoneCtrl,
-                                          onChanged: (_) => setState(() {}),
-                                          keyboardType: TextInputType.phone,
-                                          cursorColor: purple,
-                                          textAlignVertical:
-                                              TextAlignVertical.center,
-                                          style: TextStyle(
-                                            color: (_phoneErr != null)
-                                                ? errText
-                                                : (_phoneCtrl.text.trim().isEmpty
-                                                    ? hint
-                                                    : enabledText),
-                                            fontSize: 12.sp,
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: 0.2,
-                                            fontFamily: "Satoshi",
-                                          ),
-                                          decoration: InputDecoration(
-                                            border: InputBorder.none,
-                                            hintText: "Phone Number",
-                                            hintStyle: TextStyle(
-                                              color: hint,
-                                              fontSize: 12.sp,
-                                              fontWeight: FontWeight.w500,
-                                              letterSpacing: 0.2,
-                                              fontFamily: "Satoshi",
-                                            ),
-                                            isDense: false,
-                                            contentPadding: EdgeInsets.only(
-                                              top: 24.sh,
-                                              bottom: 18.sh,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(width: 12.sw),
-                                    ],
                                   ),
                                 ),
-                                if (_phoneErr != null) ...[
-                                  SizedBox(height: errOffset),
-                                  Padding(
-                                    padding: EdgeInsets.only(left: 12.sw),
-                                    child: Text(
-                                      _phoneErr!,
-                                      style: TextStyle(
-                                        color: errText,
-                                        fontSize: 10.sp,
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: 0.2,
-                                        fontFamily: "Satoshi",
-                                      ),
-                                    ),
-                                  ),
-                                ],
                               ],
                             ),
                           ),
+                        ),
+                        if (_passErr != null) ...[
+                          SizedBox(height: errOffset),
+                          _ErrorText(text: _passErr!),
+                        ],
 
-                          SizedBox(height: baseGap),
+                        SizedBox(height: 30.sh),
 
-                          // ================= PASSWORD =================
-                          SizedBox(
-                            width: 332.sw,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _FieldBox(
-                                  width: 332.sw,
-                                  height: fieldH,
-                                  isError: _passErr != null,
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: TextField(
-                                          key: const Key('signup_password'),
-                                          controller: _passwordCtrl,
-                                          onChanged: (_) => setState(() {}),
-                                          obscureText: _obscurePassword,
-                                          cursorColor: purple,
-                                          textAlignVertical:
-                                              TextAlignVertical.center,
-                                          style: TextStyle(
-                                            color: (_passErr != null)
-                                                ? errText
-                                                : (_passwordCtrl.text.isEmpty
-                                                    ? hint
-                                                    : enabledText),
-                                            fontSize: 12.sp,
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: 0.2,
-                                            fontFamily: "Satoshi",
-                                          ),
-                                          decoration: InputDecoration(
-                                            border: InputBorder.none,
-                                            hintText: "Password",
-                                            hintStyle: TextStyle(
-                                              color: hint,
-                                              fontSize: 12.sp,
-                                              fontWeight: FontWeight.w500,
-                                              letterSpacing: 0.2,
-                                              fontFamily: "Satoshi",
-                                            ),
-                                            isDense: false,
-                                            contentPadding: padMain(),
-                                          ),
-                                        ),
-                                      ),
-                                      GestureDetector(
-                                        onTap: () => setState(
-                                          () => _obscurePassword = !_obscurePassword,
-                                        ),
-                                        child: Padding(
-                                          padding: EdgeInsets.only(right: 16.sw),
-                                          child: Image.asset(
-                                            _obscurePassword
-                                                ? "assets/icons/eye_disable.png"
-                                                : "assets/icons/eye.png",
-                                            width: 19.sw,
-                                            height: 20.sw,
-                                            fit: BoxFit.contain,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (_passErr != null) ...[
-                                  SizedBox(height: errOffset),
-                                  Padding(
-                                    padding: EdgeInsets.only(left: 12.sw),
-                                    child: Text(
-                                      _passErr!,
-                                      style: TextStyle(
-                                        color: errText,
-                                        fontSize: 10.sp,
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: 0.2,
-                                        fontFamily: "Satoshi",
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-
-                          SizedBox(height: 30.sh),
-
-                          // Terms text
-                          Center(
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[6],
+                          child: Center(
                             child: Column(
                               children: [
                                 Text(
                                   "By registering you agree to our",
                                   style: TextStyle(
-                                    color: purple,
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w500,
-                                    letterSpacing: 0.2,
-                                    fontFamily: "Satoshi",
+                                    color: purple, fontSize: 12.sp, fontWeight: FontWeight.w500,
+                                    letterSpacing: 0.2, fontFamily: "Satoshi",
                                   ),
                                 ),
                                 GestureDetector(
@@ -783,153 +520,226 @@ class _SignupUserScreenState extends State<SignupUserScreen> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) =>
-                                            const TermsAndConditionScreen(viewOnly: true),
+                                        builder: (_) => const TermsAndConditionScreen(viewOnly: true),
                                       ),
                                     );
                                   },
                                   child: Text(
                                     "Terms and Conditions",
                                     style: TextStyle(
-                                      color: purple,
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.w900,
-                                      letterSpacing: 0.2,
-                                      fontFamily: "Satoshi",
+                                      color: purple, fontSize: 12.sp, fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.2, fontFamily: "Satoshi",
                                     ),
                                   ),
                                 ),
                               ],
                             ),
                           ),
+                        ),
 
-                          SizedBox(height: 20.sh),
+                        SizedBox(height: 40.sh),
 
-                          // Register button
-                          GestureDetector(
-                            onTap: () {
-                              debugPrint("🖱️ Register Button Tapped");
-                              if (_loading) return;
-                              _onRegister();
-                            },
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[7],
+                          child: GestureDetector(
+                            onTap: _onRegister,
                             child: Container(
-                              width: 332.sw,
+                              width: double.infinity,
                               height: 62.sh,
                               decoration: BoxDecoration(
                                 color: btnOrange,
                                 borderRadius: BorderRadius.circular(20.sw),
+                                boxShadow: [
+                                  if (!_loading)
+                                    BoxShadow(
+                                      color: btnOrange.withValues(alpha: 0.3),
+                                      blurRadius: 15,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                ],
                               ),
                               alignment: Alignment.center,
                               child: _loading
-                                  ? SizedBox(
-                                      width: 18.sw,
-                                      height: 18.sw,
-                                      child: const CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
+                                  ? Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(
+                                          width: 18.sw, height: 18.sw,
+                                          child: const CircularProgressIndicator(strokeWidth: 2, color: btnText),
+                                        ),
+                                        SizedBox(width: 10.sw),
+                                        Text(
+                                          "Registering...",
+                                          style: TextStyle(
+                                            color: btnText, fontSize: 12.sp,
+                                            fontWeight: FontWeight.bold, fontFamily: "Satoshi",
+                                          ),
+                                        ),
+                                      ],
                                     )
                                   : Text(
                                       "Register",
                                       style: TextStyle(
-                                        color: btnText,
-                                        fontSize: 14.sp,
-                                        fontWeight: FontWeight.w700,
-                                        fontFamily: "Satoshi",
+                                        color: btnText, fontSize: 12.sp,
+                                        fontWeight: FontWeight.bold, fontFamily: "Satoshi",
                                       ),
                                     ),
                             ),
                           ),
+                        ),
 
-                          SizedBox(height: 16.sh),
+                        SizedBox(height: 24.sh),
 
-                          // Google + Apple row
-                          Row(
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[8],
+                          child: Center(
+                            child: Text(
+                              "Or register with",
+                              style: TextStyle(
+                                color: purple.withValues(alpha: 0.6), fontSize: 12.sp,
+                                fontWeight: FontWeight.w600, fontFamily: "Satoshi",
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: 24.sh),
+
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[9],
+                          child: Row(
                             children: [
                               Expanded(
-                                child: GestureDetector(
-                                  onTap: _loading ? null : _onGoogleRegister,
-                                  child: Container(
-                                    height: 59.sh,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF9E3D5),
-                                      borderRadius: BorderRadius.circular(15.sw),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Image.asset(
-                                      "assets/logos/google.png",
-                                      width: 48.sw,
-                                      height: 27.sh,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
+                                child: _SocialBtn(
+                                  icon: "assets/logos/google.png",
+                                  iconW: 24.sw,
+                                  onTap: _onGoogleRegister,
                                 ),
                               ),
-                              SizedBox(width: 12.sw),
+                              SizedBox(width: 16.sw),
                               Expanded(
-                                child: GestureDetector(
-                                  onTap: _loading ? null : _onAppleRegister,
-                                  child: Container(
-                                    height: 59.sh,
-                                    decoration: BoxDecoration(
-                                      color: const Color(0xFFF9E3D5),
-                                      borderRadius: BorderRadius.circular(15.sw),
-                                    ),
-                                    alignment: Alignment.center,
-                                    child: Image.asset(
-                                      "assets/logos/apple.png",
-                                      width: 70.sw,
-                                      height: 44.sh,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
+                                child: _SocialBtn(
+                                  icon: "assets/logos/apple.png",
+                                  iconW: 24.sw,
+                                  onTap: _onAppleRegister,
                                 ),
                               ),
                             ],
                           ),
-                          SizedBox(height: 32.sh),
-                          ],
                         ),
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ),
+          ],
         ),
-    ),
+      ),
     );
   }
 }
 
-class _FieldBox extends StatelessWidget {
-  final double width;
-  final double height;
-  final bool isError;
+class _AnimatedWrapper extends StatelessWidget {
+  final Animation<double> animation;
   final Widget child;
-
-  const _FieldBox({
-    required this.width,
-    required this.height,
-    required this.isError,
-    required this.child,
-  });
-
-  static const Color fieldBg = Color(0xFFFDECE4);
-  static const Color errFieldBg = Color(0xFFFFE0DD);
+  const _AnimatedWrapper({required this.animation, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      clipBehavior: Clip.hardEdge,
-      decoration: BoxDecoration(
-        color: isError ? errFieldBg : fieldBg,
-        borderRadius: BorderRadius.circular(20.sw),
-      ),
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: animation.value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - animation.value)),
+            child: child,
+          ),
+        );
+      },
       child: child,
+    );
+  }
+}
+
+class _GlassField extends StatelessWidget {
+  final double height;
+  final bool isError;
+  final Widget child;
+  const _GlassField({required this.height, required this.isError, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20.sw),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: isError 
+                ? const Color(0xFFFFE0DD).withValues(alpha: 0.8)
+                : const Color(0xFFFDECE4).withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(20.sw),
+            border: Border.all(
+              color: isError 
+                  ? const Color(0xFFFD3250).withValues(alpha: 0.3)
+                  : Colors.white.withValues(alpha: 0.5),
+              width: 1.5,
+            ),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorText extends StatelessWidget {
+  final String text;
+  const _ErrorText({required this.text});
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(left: 12.sw),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: const Color(0xFFFD3250), fontSize: 10.sp,
+          fontWeight: FontWeight.w500, letterSpacing: 0.2, fontFamily: "Satoshi",
+        ),
+      ),
+    );
+  }
+}
+
+class _SocialBtn extends StatelessWidget {
+  final String icon;
+  final double iconW;
+  final VoidCallback onTap;
+  const _SocialBtn({required this.icon, required this.iconW, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20.sw),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Container(
+            height: 62.sh,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFDECE4).withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(20.sw),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+            ),
+            alignment: Alignment.center,
+            child: Image.asset(icon, width: iconW, fit: BoxFit.contain),
+          ),
+        ),
+      ),
     );
   }
 }

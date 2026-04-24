@@ -9,6 +9,7 @@ import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/features/user/services/stripe_service.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+import 'package:hidden_pantry_app/features/user/screens/premium_paywall_screen.dart';
 
 
 class MySubscriptionsScreen extends StatefulWidget {
@@ -107,19 +108,31 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                               );
                             }
 
-                            // Group by nutritionist to show only the highest active tier or latest expired per expert
-                            final active = <QueryDocumentSnapshot>[];
-                            final expired = <QueryDocumentSnapshot>[];
-                            
+                            // Categorize subscriptions
+                            QueryDocumentSnapshot? appSub;
                             final Map<String, List<QueryDocumentSnapshot>> groupedByNut = {};
+
                             for (final doc in docs) {
                               final data = doc.data() as Map<String, dynamic>;
-                              final nutId = data['nutritionistId'] as String?;
-                              if (nutId != null) {
-                                groupedByNut.putIfAbsent(nutId, () => []).add(doc);
+                              final planId = (data['planId'] ?? '').toString();
+                              
+                              if (planId == 'platform_premium') {
+                                // Keep only the most recent platform sub if multiple exist
+                                if (appSub == null) {
+                                  appSub = doc;
+                                }
+                              } else {
+                                final nutId = data['nutritionistId'] as String?;
+                                if (nutId != null) {
+                                  groupedByNut.putIfAbsent(nutId, () => []).add(doc);
+                                }
                               }
                             }
 
+                            // Process nutritionist groups
+                            final activeNuts = <QueryDocumentSnapshot>[];
+                            final expiredNuts = <QueryDocumentSnapshot>[];
+                            
                             for (final entry in groupedByNut.entries) {
                               final nutDocs = entry.value;
                               QueryDocumentSnapshot? bestActiveDoc;
@@ -137,52 +150,51 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                                 else if (expiryTs is String) exp = DateTime.tryParse(expiryTs);
                                 
                                 final stillValid = exp != null && exp.isAfter(DateTime.now());
-
-                                bool isActive = status == 'active' || status == 'pending' || status == 'downgrading' || status == 'trialing' || (isCancelled && stillValid);
+                                bool isActive = status == 'active' || status == 'trialing' || (isCancelled && stillValid);
 
                                 if (isActive) {
-                                  int currentDocTier = 0;
+                                  int currentDocTier = 1;
                                   dynamic rawTier = data['tierLevel'];
                                   if (rawTier is num) currentDocTier = rawTier.toInt();
-                                  else if (rawTier is String) currentDocTier = int.tryParse(rawTier) ?? 0;
-                                  
-                                  if (currentDocTier == 0) {
-                                      final planTitle = (data['planId'] ?? '').toString().toLowerCase();
-                                      if (planTitle.contains('platinum')) currentDocTier = 3;
-                                      else if (planTitle.contains('gold')) currentDocTier = 2;
-                                      else currentDocTier = 1;
-                                  }
-
                                   if (currentDocTier > highestTier) {
                                     highestTier = currentDocTier;
                                     bestActiveDoc = doc;
                                   }
-                                } else {
-                                  if (latestExp == null || (exp != null && exp.isAfter(latestExp))) {
-                                    latestExp = exp;
-                                    latestExpiredDoc = doc;
-                                  }
+                                } else if (latestExp == null || (exp != null && exp.isAfter(latestExp))) {
+                                  latestExp = exp;
+                                  latestExpiredDoc = doc;
                                 }
                               }
-
-                              if (bestActiveDoc != null) {
-                                active.add(bestActiveDoc);
-                              } else if (latestExpiredDoc != null) {
-                                expired.add(latestExpiredDoc);
-                              }
+                              if (bestActiveDoc != null) activeNuts.add(bestActiveDoc);
+                              else if (latestExpiredDoc != null) expiredNuts.add(latestExpiredDoc);
                             }
 
                             int animIndex = 0;
                             return ListView(
                               padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 16.sh),
                               children: [
-                                if (active.isNotEmpty) ...[
+                                // 1. App Subscription Section
+                                if (appSub != null) ...[
                                   _FadeSlideEntry(
                                     delayMs: 100,
-                                    child: _sectionHeader('Active'),
+                                    child: _sectionHeader('App Premium'),
                                   ),
                                   SizedBox(height: 10.sh),
-                                  ...active.map((doc) {
+                                  _FadeSlideEntry(
+                                    delayMs: 220,
+                                    child: _appSubscriptionCard(appSub),
+                                  ),
+                                  SizedBox(height: 32.sh),
+                                ],
+
+                                // 2. Nutritionists Section
+                                if (activeNuts.isNotEmpty) ...[
+                                  _FadeSlideEntry(
+                                    delayMs: 100 + (animIndex * 120),
+                                    child: _sectionHeader('Nutritionist Plans'),
+                                  ),
+                                  SizedBox(height: 10.sh),
+                                  ...activeNuts.map((doc) {
                                     animIndex++;
                                     return _FadeSlideEntry(
                                       delayMs: 100 + (animIndex * 120),
@@ -191,13 +203,14 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                                   }),
                                   SizedBox(height: 24.sh),
                                 ],
-                                if (expired.isNotEmpty) ...[
+                                
+                                if (expiredNuts.isNotEmpty) ...[
                                   _FadeSlideEntry(
                                     delayMs: 100 + (animIndex * 120) + 100,
-                                    child: _sectionHeader('Past'),
+                                    child: _sectionHeader('Past Nutritionist Plans'),
                                   ),
                                   SizedBox(height: 10.sh),
-                                  ...expired.map((doc) {
+                                  ...expiredNuts.map((doc) {
                                     animIndex++;
                                     return _FadeSlideEntry(
                                       delayMs: 100 + (animIndex * 120),
@@ -308,6 +321,126 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     return _buildSubscriptionCard(
       doc: doc, name: storedName, plan: plan, price: price,
       interval: interval, expiry: expiry, isActive: isActive, isCancelled: isCancelled,
+    );
+  }
+
+  Widget _appSubscriptionCard(QueryDocumentSnapshot doc) {
+    final data = doc.data() as Map<String, dynamic>;
+    final status = data['status'] as String?;
+    final expiryTs = data['expiryDate'];
+    DateTime? expiry;
+    if (expiryTs is Timestamp) expiry = expiryTs.toDate();
+    
+    // 🛡️ FALLBACK: If trial and expiry missing, calculate from trial logic
+    if (expiry == null && status == 'trialing') {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        // This is a simplified fallback; ideally we'd pass the userDoc down
+        // For now, we'll try to find 'trialExpiry' or similar in data
+        final trialExp = data['trialExpiry'];
+        if (trialExp is Timestamp) expiry = trialExp.toDate();
+      }
+    }
+    
+    final isActive = status == 'active' || status == 'trialing';
+    final isCancelled = data['isCancelled'] == true;
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 14.sh),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [const Color(0xFFEF8A54), const Color(0xFFE48E5B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(22.sw),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFEF8A54).withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(22.sw),
+          onTap: () {
+             HapticFeedback.mediumImpact();
+             _showSubscriptionDetails(doc);
+          },
+          child: Padding(
+            padding: EdgeInsets.all(22.sw),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(10.sw),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.star_rounded, color: Colors.white, size: 28.sw),
+                    ),
+                    _statusBadge(isActive ? (isCancelled ? 'Cancelling' : 'Active') : 'Expired', isActive),
+                  ],
+                ),
+                SizedBox(height: 20.sh),
+                Text(
+                  "Hidden Pantry Premium",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: 'Satoshi',
+                  ),
+                ),
+                SizedBox(height: 4.sh),
+                Text(
+                  "Full access to Voice Mode, Smart Scanning, and more.",
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.8),
+                    fontSize: 13.sp,
+                    fontFamily: 'Satoshi',
+                  ),
+                ),
+                SizedBox(height: 20.sh),
+                if (expiry != null)
+                  Text(
+                    status == 'trialing' 
+                      ? "Trial Ends ${_formatDate(expiry)}"
+                      : (isActive ? "Renews ${_formatDate(expiry)}" : "Expired ${_formatDate(expiry)}"),
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.6),
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _statusBadge(String text, bool active) {
+    final color = active ? Colors.white : Colors.white60;
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 6.sh),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20.sw),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(color: color, fontSize: 11.sp, fontWeight: FontWeight.w800, fontFamily: 'Satoshi'),
+      ),
     );
   }
 
@@ -614,6 +747,13 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     }
   }
 
+  void _showSubscriptionDetails(QueryDocumentSnapshot doc) {
+    GlassDialog.show(
+      context: context,
+      builder: (context) => _SubscriptionDetailsDialog(doc: doc),
+    );
+  }
+
   Widget _emptyState(String message) {
     return Center(
       child: _FadeSlideEntry(
@@ -664,10 +804,144 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
       ),
     );
   }
-
-  String _formatDate(DateTime date) {
+  String _formatDate(dynamic date) {
+    if (date == null) return "N/A";
+    DateTime? dt;
+    if (date is Timestamp) dt = date.toDate();
+    else if (date is String) dt = DateTime.tryParse(date);
+    if (dt == null) return "N/A";
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+  }
+}
+
+class _SubscriptionDetailsDialog extends StatelessWidget {
+  final QueryDocumentSnapshot doc;
+  const _SubscriptionDetailsDialog({required this.doc});
+
+  @override
+  Widget build(BuildContext context) {
+    final data = doc.data() as Map<String, dynamic>;
+    final planTitle = data['planTitle'] ?? (data['planId'] == 'platform_premium' ? 'Hidden Pantry Premium' : 'Nutritionist Plan');
+    final status = data['status'] as String? ?? 'active';
+    final isActive = status == 'active' || status == 'trialing';
+    
+    return AlertDialog(
+      backgroundColor: const Color(0xFFFFF3EB).withValues(alpha: 0.9),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(24.sw),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.8), width: 1.5),
+      ),
+      title: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(planTitle, style: TextStyle(color: const Color(0xFF462F4D), fontWeight: FontWeight.bold, fontSize: 18.sp)),
+          SizedBox(height: 4.sh),
+          Text(
+            isActive ? "Subscription Details" : "Subscription History",
+            style: TextStyle(color: const Color(0xFF462F4D).withValues(alpha: 0.5), fontSize: 12.sp),
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: double.maxFinite,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _infoRow("Status", status.toUpperCase(), isActive ? Colors.green : Colors.grey),
+              _infoRow("Billing Interval", data['interval'] ?? 'month', const Color(0xFF462F4D)),
+              _infoRow("Started On", _formatDate(data['startDate']), const Color(0xFF462F4D)),
+              if (data['expiryDate'] != null)
+                _infoRow(isActive ? "Renews On" : "Ended On", _formatDate(data['expiryDate']), const Color(0xFF462F4D)),
+              
+              SizedBox(height: 24.sh),
+              Text("Payment History", style: TextStyle(color: const Color(0xFF462F4D), fontWeight: FontWeight.bold, fontSize: 14.sp)),
+              SizedBox(height: 12.sh),
+              _historyList('payments'),
+              
+              SizedBox(height: 24.sh),
+              Text("Plan Changes", style: TextStyle(color: const Color(0xFF462F4D), fontWeight: FontWeight.bold, fontSize: 14.sp)),
+              SizedBox(height: 12.sh),
+              _historyList('plan_changes'),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text("Close", style: TextStyle(color: Color(0xFF462F4D))),
+        ),
+      ],
+    );
+  }
+
+  Widget _infoRow(String label, String value, Color valueColor) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8.sh),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(color: const Color(0xFF462F4D).withValues(alpha: 0.6), fontSize: 13.sp)),
+          Text(value, style: TextStyle(color: valueColor, fontSize: 13.sp, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _historyList(String collection) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection(collection)
+          .where('subscriptionId', isEqualTo: doc.id)
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return Text("No records found.", style: TextStyle(color: const Color(0xFF462F4D).withValues(alpha: 0.4), fontSize: 12.sp));
+        }
+        return Column(
+          children: snapshot.data!.docs.map((h) {
+            final hData = h.data() as Map<String, dynamic>;
+            final date = _formatDate(hData['createdAt']);
+            
+            if (collection == 'payments') {
+              return Padding(
+                padding: EdgeInsets.only(bottom: 6.sh),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(date, style: TextStyle(fontSize: 12.sp, color: const Color(0xFF462F4D))),
+                    Text("Rs. ${hData['amount']} (${hData['status']})", 
+                      style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.w600, color: const Color(0xFF4CAF50))),
+                  ],
+                ),
+              );
+            } else {
+              return Padding(
+                padding: EdgeInsets.only(bottom: 6.sh),
+                child: Text(
+                  "$date: Changed from ${hData['fromPlan']} to ${hData['toPlan']}",
+                  style: TextStyle(fontSize: 12.sp, color: const Color(0xFF462F4D).withValues(alpha: 0.7)),
+                ),
+              );
+            }
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  String _formatDate(dynamic date) {
+    if (date == null) return "N/A";
+    DateTime? dt;
+    if (date is Timestamp) dt = date.toDate();
+    else if (date is String) dt = DateTime.tryParse(date);
+    if (dt == null) return "N/A";
+    final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
   }
 }
 

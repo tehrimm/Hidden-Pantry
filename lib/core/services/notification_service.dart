@@ -9,6 +9,7 @@ import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_details.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/chat_interface_part.dart';
+import 'package:hidden_pantry_app/features/user/screens/my_subscriptions.dart';
 class NotificationService {
   final FirebaseFirestore _firestore;
   final AudioPlayer _player;
@@ -322,6 +323,9 @@ class NotificationService {
             nutritionistData: nutDoc.data() ?? {},
           )));
         }
+        break;
+      case NotificationType.subscription_alert:
+        Navigator.push(context, MaterialPageRoute(builder: (context) => MySubscriptionsScreen()));
         break;
     }
   }

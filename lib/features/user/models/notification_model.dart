@@ -7,6 +7,7 @@ enum NotificationType {
   follow,
   chat_message,
   nutritionist_post,
+  subscription_alert,
 }
 
 class AppNotification {
@@ -76,6 +77,7 @@ class AppNotification {
       case 'follow': return NotificationType.follow;
       case 'chat_message': return NotificationType.chat_message;
       case 'nutritionist_post': return NotificationType.nutritionist_post;
+      case 'subscription_alert': return NotificationType.subscription_alert;
       default: return NotificationType.like;
     }
   }

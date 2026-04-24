@@ -1,9 +1,11 @@
+
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'login_user.dart';
-import 'forget_password.dart'; // go back
+import 'forget_password.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/core/utils/auth_validator.dart';
 
@@ -18,7 +20,7 @@ class ForgetPasswordEmailScreen extends StatefulWidget {
       _ForgetPasswordEmailScreenState();
 }
 
-class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> {
+class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> with TickerProviderStateMixin {
   late final AuthService _authService;
   final _emailCtrl = TextEditingController();
 
@@ -27,19 +29,38 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> {
 
   static const Color bg = Color(0xFFFFF3EB);
   static const Color purple = Color(0xFF462F4D);
-  static const Color fieldBg = Color(0xFFFDECE4);
   static const Color orange = Color(0xFFF2894F);
   static const Color btnText = Color(0xFFFFF2EA);
   static const Color hint = Color(0xFFBFA89A);
   static const Color errText = Color(0xFFFD3250);
 
+  // Animations
+  late AnimationController _mainController;
+  late List<Animation<double>> _staggeredAnimations;
+
   @override
   void initState() {
     super.initState();
     _authService = widget.authService ?? AuthService();
-  }
+    _mainController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
 
-  // Removed manual scale function
+    _staggeredAnimations = List.generate(
+      6,
+      (index) => CurvedAnimation(
+        parent: _mainController,
+        curve: Interval(
+          0.1 + (index * 0.1),
+          0.6 + (index * 0.05),
+          curve: Curves.easeOutQuart,
+        ),
+      ),
+    );
+
+    _mainController.forward();
+  }
 
   void _snack(String msg) {
     if (!mounted) return;
@@ -54,52 +75,41 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> {
     return _emailErr == null;
   }
 
- Future<void> _sendEmailReset() async {
-  if (!_validate()) return;
+  Future<void> _sendEmailReset() async {
+    if (!_validate()) return;
 
-  setState(() => _loading = true);
-  try {
-    final email = _emailCtrl.text.trim();
-
-    // Send reset email
-    await _authService.sendPasswordResetEmail(email: email);
-
-    // Inform user
-    _snack("Reset link sent to $email");
-
-    // Small delay so user can read message
-    await Future.delayed(const Duration(seconds: 2));
-
-    if (!mounted) return;
-
-    // Navigate back to login screen
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const UserLoginScreen(),
-      ),
-    );
-  } on FirebaseAuthException catch (e) {
-    if (e.code == "invalid-email") {
-      setState(() => _emailErr = "*incorrect email");
-    } else if (e.code == "user-not-found") {
-      _snack("No account found for this email.");
-    } else if (e.code == "too-many-requests") {
-      _snack("Too many attempts. Try again later.");
-    } else {
-      _snack(e.message ?? "Failed to send reset email.");
+    setState(() => _loading = true);
+    try {
+      final email = _emailCtrl.text.trim();
+      await _authService.sendPasswordResetEmail(email: email);
+      _snack("Reset link sent to $email");
+      await Future.delayed(const Duration(seconds: 2));
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const UserLoginScreen()),
+      );
+    } on FirebaseAuthException catch (e) {
+      if (e.code == "invalid-email") {
+        setState(() => _emailErr = "*incorrect email");
+      } else if (e.code == "user-not-found") {
+        _snack("No account found for this email.");
+      } else if (e.code == "too-many-requests") {
+        _snack("Too many attempts. Try again later.");
+      } else {
+        _snack(e.message ?? "Failed to send reset email.");
+      }
+    } catch (_) {
+      _snack("Something went wrong. Try again.");
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
-  } catch (_) {
-    _snack("Something went wrong. Try again.");
-  } finally {
-    if (mounted) setState(() => _loading = false);
   }
-}
-
 
   @override
   void dispose() {
     _emailCtrl.dispose();
+    _mainController.dispose();
     super.dispose();
   }
 
@@ -119,9 +129,6 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> {
             children: [
               const PatternBackground(),
 
-              // Tap-catcher behind content
-
-              // Content
               SingleChildScrollView(
                 padding: EdgeInsets.only(
                   left: 30.sw,
@@ -132,161 +139,169 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Back
-                    BackButtonWidget(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ForgetPasswordScreen(),
-                          ),
-                        );
-                      },
+                    _AnimatedWrapper(
+                      animation: _staggeredAnimations[0],
+                      child: BackButtonWidget(
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => const ForgetPasswordScreen()),
+                          );
+                        },
+                      ),
                     ),
 
                     SizedBox(height: 38.sh),
 
-                    Text(
-                      "Verify Email",
-                      style: TextStyle(
-                        color: purple,
-                        fontSize: 40.sp,
-                        fontWeight: FontWeight.w900,
-                        height: 1.1,
-                        fontFamily: "Satoshi",
+                    _AnimatedWrapper(
+                      animation: _staggeredAnimations[1],
+                      child: Text(
+                        "Verify Email",
+                        style: TextStyle(
+                          color: purple,
+                          fontSize: 40.sp,
+                          fontWeight: FontWeight.w900,
+                          height: 1.1,
+                          fontFamily: "Satoshi",
+                        ),
                       ),
                     ),
 
                     SizedBox(height: 12.sh),
 
-                    SizedBox(
-                      width: 290.sw,
-                      child: Text(
-                        "Enter your email and we will send you a password reset link.",
-                        style: TextStyle(
-                          color: purple,
-                          fontSize: 15.sp,
-                          fontFamily: "Satoshi",
+                    _AnimatedWrapper(
+                      animation: _staggeredAnimations[2],
+                      child: SizedBox(
+                        width: 290.sw,
+                        child: Text(
+                          "Enter your email and we will send you a password reset link.",
+                          style: TextStyle(
+                            color: purple,
+                            fontSize: 15.sp,
+                            fontFamily: "Satoshi",
+                          ),
                         ),
                       ),
                     ),
 
                     SizedBox(height: 26.sh),
 
-                    // Email field
-                    Container(
-                      height: 62.sh,
-                      decoration: BoxDecoration(
-                        color: fieldBg,
-                        borderRadius: BorderRadius.circular(20.sw),
-                      ),
-                      child: Row(
-                        children: [
-                          SizedBox(width: 16.sw),
-                          Container(
-                            width: 46.sw,
-                            height: 47.sh,
-                            decoration: BoxDecoration(
-                              color: orange,
-                              borderRadius: BorderRadius.circular(10.sw),
-                            ),
-                            alignment: Alignment.center,
-                            child: Image.asset(
-                              "assets/icons/gmail.png",
-                              width: 18.sw,
-                              height: 18.sw,
-                              fit: BoxFit.contain,
-                            ),
-                          ),
-                          SizedBox(width: 12.sw),
-                          Expanded(
-                            child: TextField(
-                              controller: _emailCtrl,
-                              keyboardType: TextInputType.emailAddress,
-                              textInputAction: TextInputAction.done,
-                              onSubmitted: (_) => _sendEmailReset(),
-                              cursorColor: purple,
-                              style: TextStyle(
-                                color: (_emailErr != null) ? errText : purple,
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: "Satoshi",
+                    _AnimatedWrapper(
+                      animation: _staggeredAnimations[3],
+                      child: _GlassField(
+                        height: 62.sh,
+                        isError: _emailErr != null,
+                        child: Row(
+                          children: [
+                            SizedBox(width: 16.sw),
+                            Container(
+                              width: 46.sw,
+                              height: 47.sh,
+                              decoration: BoxDecoration(
+                                color: orange,
+                                borderRadius: BorderRadius.circular(10.sw),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: orange.withValues(alpha: 0.3),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
-                              decoration: InputDecoration(
-                                border: InputBorder.none,
-                                hintText: "Gmail",
-                                hintStyle: TextStyle(
-                                  color: hint,
+                              alignment: Alignment.center,
+                              child: Image.asset(
+                                "assets/icons/gmail.png",
+                                width: 18.sw,
+                                height: 18.sw,
+                                fit: BoxFit.contain,
+                              ),
+                            ),
+                            SizedBox(width: 12.sw),
+                            Expanded(
+                              child: TextField(
+                                controller: _emailCtrl,
+                                keyboardType: TextInputType.emailAddress,
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: (_) => _sendEmailReset(),
+                                cursorColor: purple,
+                                style: TextStyle(
+                                  color: (_emailErr != null) ? errText : purple,
                                   fontSize: 12.sp,
-                                  fontWeight: FontWeight.w500,
+                                  fontWeight: FontWeight.w600,
                                   fontFamily: "Satoshi",
+                                ),
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  hintText: "Gmail",
+                                  hintStyle: TextStyle(
+                                    color: hint,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w500,
+                                    fontFamily: "Satoshi",
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                          SizedBox(width: 12.sw),
-                        ],
+                            SizedBox(width: 12.sw),
+                          ],
+                        ),
                       ),
                     ),
 
                     if (_emailErr != null) ...[
                       SizedBox(height: 6.sh),
-                      Text(
-                        _emailErr!,
-                        style: TextStyle(
-                          color: errText,
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.w500,
-                          fontFamily: "Satoshi",
-                        ),
-                      ),
+                      _ErrorText(text: _emailErr!),
                     ],
 
                     SizedBox(height: 28.sh),
 
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: _loading ? null : _sendEmailReset,
-                        child: Container(
-                          width: 221.sw,
-                          height: 62.sh,
-                          decoration: BoxDecoration(
-                            color: orange,
-                            borderRadius: BorderRadius.circular(20.sw),
-                          ),
-                          alignment: Alignment.center,
-                          child: _loading
-                              ? Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    SizedBox(
-                                      width: 18.sw,
-                                      height: 18.sw,
-                                      child: const CircularProgressIndicator(
-                                          strokeWidth: 2),
-                                    ),
-                                    SizedBox(width: 10.sw),
-                                    Text(
-                                      "Sending...",
-                                      style: TextStyle(
-                                        color: btnText,
-                                        fontSize: 12.sp,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: "Satoshi",
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : Text(
-                                  "Send Link",
-                                  style: TextStyle(
-                                    color: btnText,
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: "Satoshi",
-                                  ),
+                    _AnimatedWrapper(
+                      animation: _staggeredAnimations[4],
+                      child: Align(
+                        alignment: Alignment.centerRight,
+                        child: GestureDetector(
+                          onTap: _loading ? null : _sendEmailReset,
+                          child: Container(
+                            width: 221.sw,
+                            height: 62.sh,
+                            decoration: BoxDecoration(
+                              color: orange,
+                              borderRadius: BorderRadius.circular(20.sw),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: orange.withValues(alpha: 0.3),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 8),
                                 ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: _loading
+                                ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 18.sw, height: 18.sw,
+                                        child: const CircularProgressIndicator(strokeWidth: 2, color: btnText),
+                                      ),
+                                      SizedBox(width: 10.sw),
+                                      Text(
+                                        "Sending...",
+                                        style: TextStyle(
+                                          color: btnText, fontSize: 12.sp,
+                                          fontWeight: FontWeight.bold, fontFamily: "Satoshi",
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Text(
+                                    "Send Link",
+                                    style: TextStyle(
+                                      color: btnText, fontSize: 12.sp,
+                                      fontWeight: FontWeight.bold, fontFamily: "Satoshi",
+                                    ),
+                                  ),
+                          ),
                         ),
                       ),
                     ),
@@ -295,6 +310,80 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AnimatedWrapper extends StatelessWidget {
+  final Animation<double> animation;
+  final Widget child;
+  const _AnimatedWrapper({required this.animation, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: animation.value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - animation.value)),
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+}
+
+class _GlassField extends StatelessWidget {
+  final double height;
+  final bool isError;
+  final Widget child;
+  const _GlassField({required this.height, required this.isError, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20.sw),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: isError 
+                ? const Color(0xFFFFE0DD).withValues(alpha: 0.8)
+                : const Color(0xFFFDECE4).withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(20.sw),
+            border: Border.all(
+              color: isError 
+                  ? const Color(0xFFFD3250).withValues(alpha: 0.3)
+                  : Colors.white.withValues(alpha: 0.5),
+              width: 1.5,
+            ),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorText extends StatelessWidget {
+  final String text;
+  const _ErrorText({required this.text});
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(left: 12.sw),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: const Color(0xFFFD3250), fontSize: 10.sp,
+          fontWeight: FontWeight.w500, letterSpacing: 0.2, fontFamily: "Satoshi",
         ),
       ),
     );

@@ -11,6 +11,7 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:hidden_pantry_app/core/services/fcm_service.dart';
 import 'package:hidden_pantry_app/core/services/navigation_service.dart';
 import 'package:hidden_pantry_app/core/services/notification_service.dart';
+import 'package:hidden_pantry_app/features/user/services/iap_service.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -73,6 +74,8 @@ class _HiddenPantryAppState extends State<HiddenPantryApp> with WidgetsBindingOb
     WidgetsBinding.instance.addObserver(this);
     // Start global notification listener for foreground sounds/vibration
     NotificationService().startGlobalListener();
+    // Initialize In-App Purchases
+    IAPService().initialize();
     _hideSystemUI();
   }
 

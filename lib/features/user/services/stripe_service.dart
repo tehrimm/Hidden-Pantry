@@ -95,9 +95,9 @@ class StripeService {
 
   /// Create a Checkout session for the platform SaaS fee.
   /// Returns the checkout URL.
-  Future<String> subscribeToPlatform() async {
+  Future<String> subscribeToPlatform({String planType = 'monthly'}) async {
     final callable = FirebaseFunctions.instance.httpsCallable('subscribeToPlatform');
-    final result = await callable.call();
+    final result = await callable.call({'planType': planType});
     return result.data['url'] as String;
   }
 

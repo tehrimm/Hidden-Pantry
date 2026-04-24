@@ -1,5 +1,7 @@
 
+
 import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
@@ -32,7 +34,7 @@ class SignupNutritionistStep2 extends StatefulWidget {
   State<SignupNutritionistStep2> createState() => _SignupNutritionistStep2State();
 }
 
-class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
+class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> with TickerProviderStateMixin {
   final NutritionistService _nutritionistService = NutritionistService();
 
   // Controllers
@@ -62,15 +64,39 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
   static const Color btnText = Color(0xFFFFF2EA);
   static const Color errText = Color(0xFFFD3250);
 
-  // Base size
-  // Removed legacy base constants
+  // Animations
+  late AnimationController _mainController;
+  late List<Animation<double>> _staggeredAnimations;
 
+  @override
+  void initState() {
+    super.initState();
+    _mainController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+
+    _staggeredAnimations = List.generate(
+      8,
+      (index) => CurvedAnimation(
+        parent: _mainController,
+        curve: Interval(
+          0.1 + (index * 0.1),
+          0.6 + (index * 0.05),
+          curve: Curves.easeOutQuart,
+        ),
+      ),
+    );
+
+    _mainController.forward();
+  }
 
   @override
   void dispose() {
     _licenseCtrl.dispose();
     _organizationCtrl.dispose();
     _expiryDateCtrl.dispose();
+    _mainController.dispose();
     super.dispose();
   }
 
@@ -98,7 +124,6 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
       _expiryErr = "*expiry date required";
       ok = false;
     } else {
-      // Basic date validation (MM/DD/YYYY or DD/MM/YYYY)
       final datePattern = RegExp(r'^\d{1,2}/\d{1,2}/\d{4}$');
       if (!datePattern.hasMatch(expiry)) {
         _expiryErr = "*invalid date format (MM/DD/YYYY)";
@@ -112,18 +137,6 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
     }
 
     setState(() {});
-
-    if (!ok) {
-      if (_certErr != null) {
-        _snack("Please upload your certificate");
-      } else if (_licenseErr != null) {
-        _snack("License Error: $_licenseErr");
-      } else if (_organizationErr != null) {
-        _snack("Organization Error: $_organizationErr");
-      } else if (_expiryErr != null) {
-        _snack("Expiry Date Error: $_expiryErr");
-      }
-    }
     return ok;
   }
 
@@ -160,17 +173,8 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
 
   // ---------------- REGISTRATION ----------------
   Future<void> _onRegister() async {
-    debugPrint("_onRegister called");
-
-    if (_loading) {
-      debugPrint("Already loading, ignoring tap");
-      return;
-    }
-
-    if (!_validate()) {
-      debugPrint("Validation failed");
-      return;
-    }
+    if (_loading) return;
+    if (!_validate()) return;
 
     final license = _licenseCtrl.text.trim();
     final organization = _organizationCtrl.text.trim();
@@ -181,10 +185,8 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
     try {
       User? user = FirebaseAuth.instance.currentUser;
 
-      // 1) Auth creation (if not social login)
       if (user == null) {
         if (widget.password == null) throw Exception("Missing authentication context");
-        debugPrint("Creating user in Firebase Auth...");
         final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: widget.email,
           password: widget.password!,
@@ -193,16 +195,12 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
       }
 
       if (user == null) throw Exception("Authentication failed");
-      debugPrint("Auth success: ${user.uid}");
 
-      // 2) Sequential but optimized: Upload -> Create Profile
-      debugPrint("Uploading certificate...");
       final certificateUrl = await _nutritionistService.uploadCertificate(
         _certificateFile!,
         user.uid,
       );
       
-      debugPrint("Saving nutritionist profile...");
       await _nutritionistService.createNutritionistProfile(
         fullName: widget.fullName,
         email: widget.email,
@@ -215,7 +213,6 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
 
       if (!mounted) return;
 
-      // 3) Success UI - Ensure no build phase conflict
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
         
@@ -238,7 +235,6 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
 
         if (!mounted) return;
 
-        // 4) Final Navigation
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const NutritionistPendingScreen()),
@@ -246,7 +242,6 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
       });
 
     } on FirebaseAuthException catch (e) {
-      debugPrint("FirebaseAuthException: ${e.code} / ${e.message}");
       if (!mounted) return;
       String errorMsg = "Signup failed";
       if (e.code == "email-already-in-use") errorMsg = "Email already in use";
@@ -254,7 +249,6 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
       else if (e.code == "invalid-email") errorMsg = "Invalid email";
       _snack(errorMsg);
     } catch (e) {
-      debugPrint("Generic Error: $e");
       if (mounted) _snack("Signup error: $e");
     } finally {
       if (mounted) _setLoading(false);
@@ -271,7 +265,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
+            colorScheme: const ColorScheme.light(
               primary: btnOrange,
               onPrimary: Colors.white,
               onSurface: purple,
@@ -290,15 +284,10 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
     }
   }
 
-  // ======================= UI =======================
   @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
-
     final mq = MediaQuery.of(context);
-
-
-
 
     final fieldH = 70.sh;
     final baseGap = 16.sh;
@@ -327,35 +316,36 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
 
                   Column(
                     children: [
-                      // Fixed Top row (Back + Login)
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(30.sw, topPad + 36.sh, 30.sw, 20.sh),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const BackButtonWidget(),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (_) => const LoginNutritionistScreen()),
-                                );
-                              },
-                              child: Text(
-                                "Login",
-                                style: TextStyle(
-                                  color: purple,
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w700,
-                                  fontFamily: "Satoshi",
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[0],
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(30.sw, topPad + 36.sh, 30.sw, 20.sh),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const BackButtonWidget(),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const LoginNutritionistScreen()),
+                                  );
+                                },
+                                child: Text(
+                                  "Login",
+                                  style: TextStyle(
+                                    color: purple,
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w700,
+                                    fontFamily: "Satoshi",
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
 
-                      // Main scroll content
                       Expanded(
                         child: SingleChildScrollView(
                           padding: EdgeInsets.only(
@@ -367,316 +357,237 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
 
-                          // Title
-                          SizedBox(
-                            width: 337.sw,
-                            child: Text(
-                              "Register",
-                              style: TextStyle(
-                                color: purple,
-                                fontSize: 40.sp,
-                                fontWeight: FontWeight.w900,
-                                height: 1.1,
-                                fontFamily: "Satoshi",
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[1],
+                            child: SizedBox(
+                              width: 337.sw,
+                              child: Text(
+                                "Register",
+                                style: TextStyle(
+                                  color: purple,
+                                  fontSize: 40.sp,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.1,
+                                  fontFamily: "Satoshi",
+                                ),
                               ),
                             ),
                           ),
 
                           SizedBox(height: 46.sh),
 
-                          // ================= UPLOAD CERTIFICATE =================
-                          SizedBox(
-                            width: 332.sw,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                GestureDetector(
-                                  onTap: _pickCertificate,
-                                  child: Container(
-                                    width: 332.sw,
-                                    height: 70.sh,
-                                    decoration: BoxDecoration(
-                                      color: bg,
-                                      border: Border.all(
-                                        color: _certErr != null ? errText : btnOrange,
-                                        width: 2,
-                                      ),
-                                      borderRadius: BorderRadius.circular(20.sw),
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[2],
+                            child: GestureDetector(
+                              onTap: _pickCertificate,
+                              child: _GlassField(
+                                height: 70.sh,
+                                isError: _certErr != null,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.upload_file_rounded,
+                                      color: _certErr != null ? errText : btnOrange,
+                                      size: 24.sw,
                                     ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.upload_file,
+                                    SizedBox(width: 12.sw),
+                                    Flexible(
+                                      child: Text(
+                                        _certificateFileName ?? "Upload Certificate",
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
                                           color: _certErr != null ? errText : btnOrange,
-                                          size: 24.sw,
+                                          fontSize: 12.sp,
+                                          fontWeight: FontWeight.w600,
+                                          fontFamily: "Satoshi",
                                         ),
-                                        SizedBox(width: 12.sw),
-                                        Flexible(
-                                          child: Text(
-                                            _certificateFileName ?? "Upload Certificate",
-                                            overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (_certErr != null) ...[
+                            SizedBox(height: 4.sh),
+                            _ErrorText(text: _certErr!),
+                          ],
+
+                          SizedBox(height: baseGap),
+
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[3],
+                            child: _GlassField(
+                              height: fieldH,
+                              isError: _licenseErr != null,
+                              child: TextField(
+                                controller: _licenseCtrl,
+                                onChanged: (_) => setState(() {}),
+                                cursorColor: purple,
+                                textAlignVertical: TextAlignVertical.center,
+                                style: TextStyle(
+                                  color: (_licenseErr != null) ? errText : enabledText,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.2,
+                                  fontFamily: "Satoshi",
+                                ),
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  hintText: "License Number",
+                                  hintStyle: TextStyle(
+                                    color: hint,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: 0.2,
+                                    fontFamily: "Satoshi",
+                                  ),
+                                  contentPadding: padMain(),
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (_licenseErr != null) ...[
+                            SizedBox(height: errOffset),
+                            _ErrorText(text: _licenseErr!),
+                          ],
+
+                          SizedBox(height: baseGap),
+
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[4],
+                            child: _GlassField(
+                              height: fieldH,
+                              isError: _organizationErr != null,
+                              child: TextField(
+                                controller: _organizationCtrl,
+                                onChanged: (_) => setState(() {}),
+                                cursorColor: purple,
+                                textAlignVertical: TextAlignVertical.center,
+                                style: TextStyle(
+                                  color: (_organizationErr != null) ? errText : enabledText,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.2,
+                                  fontFamily: "Satoshi",
+                                ),
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  hintText: "Organization Name",
+                                  hintStyle: TextStyle(
+                                    color: hint,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: 0.2,
+                                    fontFamily: "Satoshi",
+                                  ),
+                                  contentPadding: padMain(),
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (_organizationErr != null) ...[
+                            SizedBox(height: errOffset),
+                            _ErrorText(text: _organizationErr!),
+                          ],
+
+                          SizedBox(height: baseGap),
+
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[5],
+                            child: _GlassField(
+                              height: fieldH,
+                              isError: _expiryErr != null,
+                              child: GestureDetector(
+                                onTap: _selectExpiryDate,
+                                child: AbsorbPointer(
+                                  child: TextField(
+                                    controller: _expiryDateCtrl,
+                                    cursorColor: purple,
+                                    textAlignVertical: TextAlignVertical.center,
+                                    style: TextStyle(
+                                      color: (_expiryErr != null) ? errText : enabledText,
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.2,
+                                      fontFamily: "Satoshi",
+                                    ),
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText: "Expiry Date (MM/DD/YYYY)",
+                                      hintStyle: TextStyle(
+                                        color: hint,
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w500,
+                                        letterSpacing: 0.2,
+                                        fontFamily: "Satoshi",
+                                      ),
+                                      contentPadding: padMain(),
+                                      suffixIcon: Icon(
+                                        Icons.calendar_today_rounded,
+                                        color: _expiryErr != null ? errText : purple,
+                                        size: 18.sw,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (_expiryErr != null) ...[
+                            SizedBox(height: errOffset),
+                            _ErrorText(text: _expiryErr!),
+                          ],
+
+                          SizedBox(height: 40.sh),
+
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[6],
+                            child: GestureDetector(
+                              onTap: _loading ? null : _onRegister,
+                              child: Container(
+                                width: double.infinity,
+                                height: 62.sh,
+                                decoration: BoxDecoration(
+                                  color: _loading ? hint : btnOrange,
+                                  borderRadius: BorderRadius.circular(20.sw),
+                                  boxShadow: [
+                                    if (!_loading)
+                                      BoxShadow(
+                                        color: btnOrange.withValues(alpha: 0.3),
+                                        blurRadius: 15,
+                                        offset: const Offset(0, 8),
+                                      ),
+                                  ],
+                                ),
+                                alignment: Alignment.center,
+                                child: _loading
+                                    ? Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(
+                                            width: 18.sw, height: 18.sw,
+                                            child: const CircularProgressIndicator(color: btnText, strokeWidth: 2),
+                                          ),
+                                          SizedBox(width: 10.sw),
+                                          Text(
+                                            "Registering...",
                                             style: TextStyle(
-                                              color: _certErr != null ? errText : btnOrange,
-                                              fontSize: 12.sp,
-                                              fontWeight: FontWeight.w600,
-                                              fontFamily: "Satoshi",
+                                              color: btnText, fontSize: 12.sp,
+                                              fontWeight: FontWeight.bold, fontFamily: "Satoshi",
                                             ),
                                           ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                if (_certErr != null) ...[
-                                  SizedBox(height: 4.sh),
-                                  Padding(
-                                    padding: EdgeInsets.only(left: 12.sw),
-                                    child: Text(
-                                      _certErr!,
-                                      style: TextStyle(
-                                        color: errText,
-                                        fontSize: 10.sp,
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: 0.2,
-                                        fontFamily: "Satoshi",
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-
-                          SizedBox(height: baseGap),
-
-                          // ================= LICENSE NUMBER =================
-                          SizedBox(
-                            width: 332.sw,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _FieldBox(
-                                  width: 332.sw,
-                                  height: fieldH,
-                                  isError: _licenseErr != null,
-                                  child: TextField(
-                                    controller: _licenseCtrl,
-                                    onChanged: (_) => setState(() {}),
-                                    cursorColor: purple,
-                                    textAlignVertical: TextAlignVertical.center,
-                                    style: TextStyle(
-                                      color: (_licenseErr != null)
-                                          ? errText
-                                          : (_licenseCtrl.text.trim().isEmpty
-                                              ? hint
-                                              : enabledText),
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.2,
-                                      fontFamily: "Satoshi",
-                                    ),
-                                    decoration: InputDecoration(
-                                      border: InputBorder.none,
-                                      hintText: "License Number",
-                                      hintStyle: TextStyle(
-                                        color: hint,
-                                        fontSize: 12.sp,
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: 0.2,
-                                        fontFamily: "Satoshi",
-                                      ),
-                                      isDense: false,
-                                      contentPadding: padMain(),
-                                    ),
-                                  ),
-                                ),
-                                if (_licenseErr != null) ...[
-                                  SizedBox(height: errOffset),
-                                  Padding(
-                                    padding: EdgeInsets.only(left: 12.sw),
-                                    child: Text(
-                                      _licenseErr!,
-                                      style: TextStyle(
-                                        color: errText,
-                                        fontSize: 10.sp,
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: 0.2,
-                                        fontFamily: "Satoshi",
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-
-                          SizedBox(height: baseGap),
-
-                          // ================= ORGANIZATION NAME =================
-                          SizedBox(
-                            width: 332.sw,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _FieldBox(
-                                  width: 332.sw,
-                                  height: fieldH,
-                                  isError: _organizationErr != null,
-                                  child: TextField(
-                                    controller: _organizationCtrl,
-                                    onChanged: (_) => setState(() {}),
-                                    cursorColor: purple,
-                                    textAlignVertical: TextAlignVertical.center,
-                                    style: TextStyle(
-                                      color: (_organizationErr != null)
-                                          ? errText
-                                          : (_organizationCtrl.text.trim().isEmpty
-                                              ? hint
-                                              : enabledText),
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.2,
-                                      fontFamily: "Satoshi",
-                                    ),
-                                    decoration: InputDecoration(
-                                      border: InputBorder.none,
-                                      hintText: "Organization Name",
-                                      hintStyle: TextStyle(
-                                        color: hint,
-                                        fontSize: 12.sp,
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: 0.2,
-                                        fontFamily: "Satoshi",
-                                      ),
-                                      isDense: false,
-                                      contentPadding: padMain(),
-                                    ),
-                                  ),
-                                ),
-                                if (_organizationErr != null) ...[
-                                  SizedBox(height: errOffset),
-                                  Padding(
-                                    padding: EdgeInsets.only(left: 12.sw),
-                                    child: Text(
-                                      _organizationErr!,
-                                      style: TextStyle(
-                                        color: errText,
-                                        fontSize: 10.sp,
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: 0.2,
-                                        fontFamily: "Satoshi",
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-
-                          SizedBox(height: baseGap),
-
-                          // ================= EXPIRY DATE =================
-                          SizedBox(
-                            width: 332.sw,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                _FieldBox(
-                                  width: 332.sw,
-                                  height: fieldH,
-                                  isError: _expiryErr != null,
-                                  child: GestureDetector(
-                                    onTap: _selectExpiryDate,
-                                    child: AbsorbPointer(
-                                      child: TextField(
-                                        controller: _expiryDateCtrl,
-                                        cursorColor: purple,
-                                        textAlignVertical: TextAlignVertical.center,
-                                          style: TextStyle(
-                                            color: (_expiryErr != null)
-                                                ? errText
-                                            : (_expiryDateCtrl.text.trim().isEmpty
-                                                    ? hint
-                                                    : enabledText),
-                                            fontSize: 12.sp,
-                                            fontWeight: FontWeight.w600,
-                                            letterSpacing: 0.2,
-                                            fontFamily: "Satoshi",
-                                          ),
-                                        decoration: InputDecoration(
-                                          border: InputBorder.none,
-                                          hintText: "Expiry Date (MM/DD/YYYY)",
-                                          hintStyle: TextStyle(
-                                            color: hint,
-                                            fontSize: 12.sp,
-                                            fontWeight: FontWeight.w500,
-                                            letterSpacing: 0.2,
-                                            fontFamily: "Satoshi",
-                                          ),
-                                          isDense: false,
-                                          contentPadding: padMain(),
-                                          suffixIcon: Icon(
-                                            Icons.calendar_today,
-                                            color: _expiryErr != null ? errText : purple,
-                                            size: 18.sw,
-                                          ),
+                                        ],
+                                      )
+                                    : Text(
+                                        "Register",
+                                        style: TextStyle(
+                                          color: btnText, fontSize: 12.sp,
+                                          fontWeight: FontWeight.bold, fontFamily: "Satoshi",
                                         ),
                                       ),
-                                    ),
-                                  ),
-                                ),
-                                if (_expiryErr != null) ...[
-                                  SizedBox(height: errOffset),
-                                  Padding(
-                                    padding: EdgeInsets.only(left: 12.sw),
-                                    child: Text(
-                                      _expiryErr!,
-                                      style: TextStyle(
-                                        color: errText,
-                                        fontSize: 10.sp,
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: 0.2,
-                                        fontFamily: "Satoshi",
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-
-                          SizedBox(height: 30.sh),
-
-                          // Register button
-                          GestureDetector(
-                            onTap: _loading ? null : _onRegister,
-                            child: Container(
-                              width: 332.sw,
-                              height: 62.sh,
-                              decoration: BoxDecoration(
-                                color: _loading ? hint : btnOrange,
-                                borderRadius: BorderRadius.circular(20.sw),
                               ),
-                              alignment: Alignment.center,
-                              child: _loading
-                                  ? SizedBox(
-                                      width: 24.sw,
-                                      height: 24.sw,
-                                      child: CircularProgressIndicator(
-                                        color: btnText,
-                                        strokeWidth: 2,
-                                      ),
-                                    )
-                                  : Text(
-                                      "Register",
-                                      style: TextStyle(
-                                        color: btnText,
-                                        fontSize: 14.sp,
-                                        fontWeight: FontWeight.w700,
-                                        fontFamily: "Satoshi",
-                                      ),
-                                    ),
                             ),
                           ),
 
@@ -697,33 +608,76 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> {
   }
 }
 
-class _FieldBox extends StatelessWidget {
-  final double width;
-  final double height;
-  final bool isError;
+class _AnimatedWrapper extends StatelessWidget {
+  final Animation<double> animation;
   final Widget child;
-
-  const _FieldBox({
-    required this.width,
-    required this.height,
-    required this.isError,
-    required this.child,
-  });
-
-  static const Color fieldBg = Color(0xFFFDECE4);
-  static const Color errFieldBg = Color(0xFFFFE0DD);
+  const _AnimatedWrapper({required this.animation, required this.child});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: width,
-      height: height,
-      clipBehavior: Clip.hardEdge,
-      decoration: BoxDecoration(
-        color: isError ? errFieldBg : fieldBg,
-        borderRadius: BorderRadius.circular(20),
-      ),
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: animation.value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - animation.value)),
+            child: child,
+          ),
+        );
+      },
       child: child,
+    );
+  }
+}
+
+class _GlassField extends StatelessWidget {
+  final double height;
+  final bool isError;
+  final Widget child;
+  const _GlassField({required this.height, required this.isError, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20.sw),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: isError 
+                ? const Color(0xFFFFE0DD).withValues(alpha: 0.8)
+                : const Color(0xFFFDECE4).withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(20.sw),
+            border: Border.all(
+              color: isError 
+                  ? const Color(0xFFFD3250).withValues(alpha: 0.3)
+                  : Colors.white.withValues(alpha: 0.5),
+              width: 1.5,
+            ),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorText extends StatelessWidget {
+  final String text;
+  const _ErrorText({required this.text});
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(left: 12.sw),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: const Color(0xFFFD3250), fontSize: 10.sp,
+          fontWeight: FontWeight.w500, letterSpacing: 0.2, fontFamily: "Satoshi",
+        ),
+      ),
     );
   }
 }

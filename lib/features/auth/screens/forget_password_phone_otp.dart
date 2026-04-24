@@ -1,4 +1,5 @@
-// lib/screens/Authorization/forget_password_phone_otp.dart
+
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
@@ -10,10 +11,9 @@ import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
 import 'forget_password_phone.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
- // back goes to phone screen (change if needed)
 
 class ForgetPasswordPhoneOtpScreen extends StatefulWidget {
-  final String phone; // e.g. +923133131313
+  final String phone;
   final String verificationId;
   const ForgetPasswordPhoneOtpScreen({
     super.key,
@@ -27,12 +27,11 @@ class ForgetPasswordPhoneOtpScreen extends StatefulWidget {
 }
 
 class _ForgetPasswordPhoneOtpScreenState
-    extends State<ForgetPasswordPhoneOtpScreen> {
-  // Colors (from your UI)
+    extends State<ForgetPasswordPhoneOtpScreen> with TickerProviderStateMixin {
+  // Colors
   static const Color bg = Color(0xFFFFF3EB);
   static const Color purple = Color(0xFF462F4D);
   static const Color brown = Color(0xFF74503C);
-
   static const Color orange = Color(0xFFF2894F);
   static const Color btnText = Color(0xFFFFF2EA);
   static const Color resendRed = Color(0xFFFD3250);
@@ -43,22 +42,42 @@ class _ForgetPasswordPhoneOtpScreenState
 
   bool _loading = false;
 
+  // Animations
+  late AnimationController _mainController;
+  late List<Animation<double>> _staggeredAnimations;
+
+  @override
+  void initState() {
+    super.initState();
+    _mainController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+
+    _staggeredAnimations = List.generate(
+      7,
+      (index) => CurvedAnimation(
+        parent: _mainController,
+        curve: Interval(
+          0.1 + (index * 0.1),
+          0.6 + (index * 0.05),
+          curve: Curves.easeOutQuart,
+        ),
+      ),
+    );
+
+    _mainController.forward();
+  }
+
   @override
   void dispose() {
-    for (final c in _ctrl) {
-      c.dispose();
-    }
-    for (final f in _focus) {
-      f.dispose();
-    }
+    for (final c in _ctrl) c.dispose();
+    for (final f in _focus) f.dispose();
+    _mainController.dispose();
     super.dispose();
   }
 
-  // Removed manual scale function
-
-  String get _otp =>
-      _ctrl.map((e) => e.text.trim()).join(); // "123456"
-
+  String get _otp => _ctrl.map((e) => e.text.trim()).join();
   bool get _otpComplete => _otp.length == 6 && !_otp.contains(RegExp(r'\D'));
 
   void _setLoading(bool v) {
@@ -73,12 +92,9 @@ class _ForgetPasswordPhoneOtpScreenState
 
   void _onChanged(int i, String v) {
     final value = v.trim();
-
-    // If user pasted multiple digits, spread them
     if (value.length > 1) {
       final digits = value.replaceAll(RegExp(r'\D'), '').split('');
       if (digits.isEmpty) return;
-
       int idx = i;
       for (final d in digits) {
         if (idx >= 6) break;
@@ -93,9 +109,7 @@ class _ForgetPasswordPhoneOtpScreenState
       setState(() {});
       return;
     }
-
     if (value.isNotEmpty) {
-      // Move next
       if (i < 5) _focus[i + 1].requestFocus();
       setState(() {});
     }
@@ -127,29 +141,21 @@ class _ForgetPasswordPhoneOtpScreenState
         smsCode: _otp,
       );
 
-      // We sign in (this links/proves identity)
       final userCred = await FirebaseAuth.instance.signInWithCredential(credential);
       final user = userCred.user;
 
       if (user != null) {
         try {
-          // 1. Find if ANY document in 'users' has this phone number
-          debugPrint("Searching Firestore for phone: ${widget.phone}");
-          
-          // Try exact match first
           var query = await FirebaseFirestore.instance
               .collection("users")
               .where("phone", isEqualTo: widget.phone)
               .get();
 
-          // If not found, try common variant (adding/removing leading 0 after code)
           if (query.docs.isEmpty) {
             String altPhone;
             if (widget.phone.contains(RegExp(r'\+\d+0'))) {
-              // try removing the extra 0: +9203 -> +923
               altPhone = widget.phone.replaceFirst("0", "", widget.phone.indexOf(RegExp(r'\d')) + 1);
             } else {
-              // try adding the extra 0: +923 -> +9203
               final match = RegExp(r'\+\d+').firstMatch(widget.phone);
               if (match != null) {
                 altPhone = widget.phone.replaceFirst(match.group(0)!, "${match.group(0)}0");
@@ -158,7 +164,6 @@ class _ForgetPasswordPhoneOtpScreenState
               }
             }
             if (altPhone != widget.phone) {
-              debugPrint("Trying alternative phone: $altPhone");
               query = await FirebaseFirestore.instance
                   .collection("users")
                   .where("phone", isEqualTo: altPhone)
@@ -167,74 +172,50 @@ class _ForgetPasswordPhoneOtpScreenState
           }
 
           if (query.docs.isEmpty) {
-            debugPrint("CRITICAL: No user document found for ${widget.phone}. Sign-out triggered.");
             await FirebaseAuth.instance.signOut();
             _snack("Account does not exist. Please sign up first.");
             return;
           }
 
-          // 2. Check the UID of the matching document
           final existingDoc = query.docs.first;
           final String dbUid = existingDoc.id;
           final String authUid = user.uid;
 
-          debugPrint("Auth UID: $authUid");
-          debugPrint("DB Doc ID: $dbUid");
-
           if (dbUid != authUid) {
-            debugPrint("IDENTITY MISMATCH DETECTED");
-            
-            // OPTION B: Identity Verified! Now help them reset their Email Password.
             final String? email = existingDoc.data()['email'];
-            
             if (email != null && email.isNotEmpty) {
               _snack("Identity Verified! Sending password reset link to $email...");
-              
               try {
                 await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-                
                 if (mounted) {
                    Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => UserLoginScreen(),
-                    ),
+                    MaterialPageRoute(builder: (_) => const UserLoginScreen()),
                     (route) => false,
                   );
                   _snack("Reset link sent! Please reset your password and login.");
                 }
               } catch (e) {
-                debugPrint("Failed to send reset email: $e");
                 _snack("Verified, but could not send reset link. Try Email Reset instead.");
               }
             } else {
               _snack("Verified, but no email found for this account. Contact support.");
             }
-
             await FirebaseAuth.instance.signOut();
             return;
           }
 
-          debugPrint("IDENTITY MATCH CONFIRMED");
-
-
-          // 3. Success! Phone UID matches DB UID
           _snack("Login Successful!");
           if (mounted) {
             Navigator.pushAndRemoveUntil(
               context,
-              MaterialPageRoute(builder: (_) => MainNavigationShell()),
+              MaterialPageRoute(builder: (_) => const MainNavigationShell()),
               (route) => false,
             );
           }
         } catch (e) {
-          debugPrint("Firestore Error: $e");
           await FirebaseAuth.instance.signOut();
-          if (e.toString().contains("permission-denied")) {
-            _snack("Database Error: Missing permissions to search users.");
-          } else {
-            _snack("Login failed: $e");
-          }
+          _snack("Login failed: $e");
         }
       }
     } on FirebaseAuthException catch (e) {
@@ -249,7 +230,6 @@ class _ForgetPasswordPhoneOtpScreenState
   Future<void> _resend() async {
     if (_loading) return;
     _snack("Resend OTP tapped");
-    // Later: trigger resend OTP logic
   }
 
   @override
@@ -273,7 +253,6 @@ class _ForgetPasswordPhoneOtpScreenState
               children: [
                 const PatternBackground(),
 
-                // Content (scroll-safe)
                 SingleChildScrollView(
                   padding: EdgeInsets.only(
                     left: 30.sw,
@@ -283,155 +262,169 @@ class _ForgetPasswordPhoneOtpScreenState
                   ),
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
-                      minHeight:
-                          mq.size.height - mq.padding.top - mq.padding.bottom,
+                      minHeight: mq.size.height - mq.padding.top - mq.padding.bottom,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        BackButtonWidget(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const ForgetPasswordPhoneScreen(),
-                              ),
-                            );
-                          },
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[0],
+                          child: BackButtonWidget(
+                            onPressed: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (_) => const ForgetPasswordPhoneScreen()),
+                              );
+                            },
+                          ),
                         ),
                         SizedBox(height: 38.sh),
 
-                        // Title
-                        SizedBox(
-                          width: 235.sw,
-                          child: Text(
-                            "Enter OTP",
-                            style: TextStyle(
-                              color: purple,
-                              fontSize: 40.sp,
-                              fontWeight: FontWeight.w900,
-                              height: 1.1,
-                              fontFamily: "Satoshi",
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[1],
+                          child: SizedBox(
+                            width: 235.sw,
+                            child: Text(
+                              "Enter OTP",
+                              style: TextStyle(
+                                color: purple,
+                                fontSize: 40.sp,
+                                fontWeight: FontWeight.w900,
+                                height: 1.1,
+                                fontFamily: "Satoshi",
+                              ),
                             ),
                           ),
                         ),
 
                         SizedBox(height: 12.sh),
 
-                        // Subtitle
-                        SizedBox(
-                          width: 300.sw,
-                          child: Text(
-                            "Please enter the OTP sent to ${widget.phone}",
-                            style: TextStyle(
-                              color: purple,
-                              fontSize: 15.sp,
-                              fontFamily: "Satoshi",
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[2],
+                          child: SizedBox(
+                            width: 300.sw,
+                            child: Text(
+                              "Please enter the OTP sent to ${widget.phone}",
+                              style: TextStyle(
+                                color: purple,
+                                fontSize: 15.sp,
+                                fontFamily: "Satoshi",
+                              ),
                             ),
                           ),
                         ),
 
                         SizedBox(height: 26.sh),
 
-                        // OTP Boxes (responsive, no overflow)
-                        LayoutBuilder(
-                          builder: (context, c) {
-                            final totalW = boxW * 6 + 10.sw * 5;
-                            final shouldWrap = totalW > c.maxWidth;
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[3],
+                          child: LayoutBuilder(
+                            builder: (context, c) {
+                              final boxes = List.generate(6, (i) {
+                                return _OtpBox(
+                                  width: boxW,
+                                  height: boxH,
+                                  brown: brown,
+                                  purple: purple,
+                                  controller: _ctrl[i],
+                                  focusNode: _focus[i],
+                                  onChanged: (v) => _onChanged(i, v),
+                                  onBackspace: () => _onBackspace(i),
+                                );
+                              });
 
-                            final boxes = List.generate(6, (i) {
-                              return _OtpBox(
-                                width: boxW,
-                                height: boxH,
-                                brown: brown,
-                                purple: purple,
-                                controller: _ctrl[i],
-                                focusNode: _focus[i],
-                                onChanged: (v) => _onChanged(i, v),
-                                onBackspace: () => _onBackspace(i),
-                              );
-                            });
-
-                            if (shouldWrap) {
-                              return Wrap(
-                                spacing: 10.sw,
-                                runSpacing: 10.sw,
-                                children: boxes,
-                              );
-                            }
-
-                            return Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                for (int i = 0; i < boxes.length; i++) ...[
-                                  if (i != 0) SizedBox(width: 10.sw),
-                                  boxes[i],
+                              return Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  for (int i = 0; i < boxes.length; i++) ...[
+                                    if (i != 0) SizedBox(width: 10.sw),
+                                    boxes[i],
+                                  ],
                                 ],
-                              ],
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
 
                         SizedBox(height: 26.sh),
 
-                        // Verify button (full width like UI)
-                        GestureDetector(
-                          onTap: _loading ? null : _verify,
-                          child: Container(
-                            width: double.infinity,
-                            height: 62.sh,
-                            decoration: BoxDecoration(
-                              color: orange,
-                              borderRadius: BorderRadius.circular(20.sw),
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[4],
+                          child: GestureDetector(
+                            onTap: _loading ? null : _verify,
+                            child: Container(
+                              width: double.infinity,
+                              height: 62.sh,
+                              decoration: BoxDecoration(
+                                color: orange,
+                                borderRadius: BorderRadius.circular(20.sw),
+                                boxShadow: [
+                                  if (!_loading)
+                                    BoxShadow(
+                                      color: orange.withValues(alpha: 0.3),
+                                      blurRadius: 15,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                ],
+                              ),
+                              alignment: Alignment.center,
+                              child: _loading
+                                  ? Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(
+                                          width: 18.sw, height: 18.sw,
+                                          child: const CircularProgressIndicator(color: btnText, strokeWidth: 2),
+                                        ),
+                                        SizedBox(width: 10.sw),
+                                        Text(
+                                          "Verifying...",
+                                          style: TextStyle(
+                                            color: btnText, fontSize: 12.sp,
+                                            fontWeight: FontWeight.bold, fontFamily: "Satoshi",
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Text(
+                                      "Verify Code",
+                                      style: TextStyle(
+                                        color: btnText, fontSize: 12.sp,
+                                        fontWeight: FontWeight.bold, fontFamily: "Satoshi",
+                                      ),
+                                    ),
                             ),
-                            alignment: Alignment.center,
-                            child: _loading
-                                ? SizedBox(
-                                    width: 18.sw,
-                                    height: 18.sw,
-                                    child: const CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                    ),
-                                  )
-                                : Text(
-                                    "Verify Code",
-                                    style: TextStyle(
-                                      color: btnText,
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.bold,
-                                      fontFamily: "Satoshi",
-                                    ),
-                                  ),
                           ),
                         ),
 
                         SizedBox(height: 18.sh),
 
-                        // Resend text
-                        Center(
-                          child: GestureDetector(
-                            onTap: _resend,
-                            child: RichText(
-                              text: TextSpan(
-                                style: TextStyle(
-                                  color: purple,
-                                  fontSize: 15.sp,
-                                  fontFamily: "Satoshi",
-                                ),
-                                children: const [
-                                  TextSpan(text: "Haven’t got the OTP yet? "),
-                                  TextSpan(
-                                    text: "Resend OTP",
-                                    style: TextStyle(color: resendRed),
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[5],
+                          child: Center(
+                            child: GestureDetector(
+                              onTap: _resend,
+                              child: RichText(
+                                text: TextSpan(
+                                  style: TextStyle(
+                                    color: purple,
+                                    fontSize: 15.sp,
+                                    fontFamily: "Satoshi",
                                   ),
-                                ],
+                                  children: const [
+                                    TextSpan(text: "Haven’t got the OTP yet? "),
+                                    TextSpan(
+                                      text: "Resend OTP",
+                                      style: TextStyle(color: resendRed, fontWeight: FontWeight.bold),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ),
 
                         SizedBox(height: 40.sh),
-                        SizedBox(height: 8.sh),
                       ],
                     ),
                   ),
@@ -441,6 +434,29 @@ class _ForgetPasswordPhoneOtpScreenState
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AnimatedWrapper extends StatelessWidget {
+  final Animation<double> animation;
+  final Widget child;
+  const _AnimatedWrapper({required this.animation, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: animation.value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - animation.value)),
+            child: child,
+          ),
+        );
+      },
+      child: child,
     );
   }
 }
@@ -469,52 +485,54 @@ class _OtpBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      height: height,
-      child: KeyboardListener(
-        focusNode: FocusNode(skipTraversal: true),
-        onKeyEvent: (event) {
-          if (event is KeyDownEvent &&
-              event.logicalKey == LogicalKeyboardKey.backspace) {
-            onBackspace();
-          }
-        },
-        child: TextField(
-          controller: controller,
-          focusNode: focusNode,
-          keyboardType: TextInputType.number,
-          textAlign: TextAlign.center,
-          maxLength: 1,
-          cursorColor: purple,
-          style: TextStyle(
-            color: purple,
-            fontSize: 24.sp,
-            fontWeight: FontWeight.bold,
-            fontFamily: "Satoshi",
-          ),
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(1),
-          ],
-          decoration: InputDecoration(
-            counterText: "",
-            filled: false,
-            contentPadding: EdgeInsets.zero,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(width: 0.5, color: brown),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(width: 0.5, color: brown),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(width: 1.0, color: brown),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12.sw),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            color: const Color(0xFFFDECE4).withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(12.sw),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.5),
+              width: 1.5,
             ),
           ),
-          onChanged: onChanged,
+          child: KeyboardListener(
+            focusNode: FocusNode(skipTraversal: true),
+            onKeyEvent: (event) {
+              if (event is KeyDownEvent &&
+                  event.logicalKey == LogicalKeyboardKey.backspace) {
+                onBackspace();
+              }
+            },
+            child: TextField(
+              controller: controller,
+              focusNode: focusNode,
+              keyboardType: TextInputType.number,
+              textAlign: TextAlign.center,
+              maxLength: 1,
+              cursorColor: purple,
+              style: TextStyle(
+                color: purple,
+                fontSize: 24.sp,
+                fontWeight: FontWeight.bold,
+                fontFamily: "Satoshi",
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                LengthLimitingTextInputFormatter(1),
+              ],
+              decoration: const InputDecoration(
+                counterText: "",
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+              onChanged: onChanged,
+            ),
+          ),
         ),
       ),
     );

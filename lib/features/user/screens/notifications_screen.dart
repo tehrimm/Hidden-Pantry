@@ -406,6 +406,9 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
       case NotificationType.nutritionist_post:
         icon = Icons.article_rounded;
         break;
+      case NotificationType.subscription_alert:
+        icon = Icons.stars_rounded;
+        break;
     }
 
     return Container(

@@ -1,5 +1,6 @@
-// lib/screens/Authorization/forget_password_phone.dart
+
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:country_code_picker/country_code_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
@@ -23,23 +24,16 @@ class ForgetPasswordPhoneScreen extends StatefulWidget {
       _ForgetPasswordPhoneScreenState();
 }
 
-class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
+class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> with TickerProviderStateMixin {
   late final AuthService _authService;
 
-  @override
-  void initState() {
-    super.initState();
-    _authService = widget.authService ?? AuthService();
-  }
-  // ===== Colors (same palette) =====
+  // Colors
   static const Color bg = Color(0xFFFFF3EB);
   static const Color purple = Color(0xFF462F4D);
   static const Color hint = Color(0xFFBFA89A);
-
-  static const Color fieldBg = Color(0xFFFDECE4);
-
   static const Color orange = Color(0xFFF2894F);
   static const Color btnText = Color(0xFFFFF2EA);
+  static const Color errText = Color(0xFFFD3250);
 
   final TextEditingController _phoneCtrl = TextEditingController();
 
@@ -48,23 +42,49 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
   // Default Pakistan
   String _dialCode = "+92";
 
-  // Field error (red text below)
+  // Field error
   String? _err;
 
-  // Anti-spam cooldown (prevents too-many-requests / unusual activity)
+  // Anti-spam cooldown
   DateTime? _nextAllowedAt;
   Timer? _cooldownTimer;
   int _cooldownLeft = 0;
+
+  // Animations
+  late AnimationController _mainController;
+  late List<Animation<double>> _staggeredAnimations;
+
+  @override
+  void initState() {
+    super.initState();
+    _authService = widget.authService ?? AuthService();
+    _mainController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+
+    _staggeredAnimations = List.generate(
+      6,
+      (index) => CurvedAnimation(
+        parent: _mainController,
+        curve: Interval(
+          0.1 + (index * 0.1),
+          0.6 + (index * 0.05),
+          curve: Curves.easeOutQuart,
+        ),
+      ),
+    );
+
+    _mainController.forward();
+  }
 
   @override
   void dispose() {
     _cooldownTimer?.cancel();
     _phoneCtrl.dispose();
+    _mainController.dispose();
     super.dispose();
   }
-
-  // ===== Responsive scaling =====
-  // Removed manual scale function
 
   void _snack(String msg) {
     if (!mounted) return;
@@ -97,18 +117,13 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
     if (mounted) setState(() {});
   }
 
-  /// Builds correct E.164 number
-  /// Example: dial +92, input "03001234567" -> "+923001234567"
   String _buildE164() {
     var raw = _phoneCtrl.text.trim();
     raw = raw.replaceAll(RegExp(r'\s+'), '');
     raw = raw.replaceAll(RegExp(r'[^0-9]'), '');
-
-    // Remove leading 0(s) (very common in PK: 03xxxxxxxxx)
     if (raw.startsWith('0')) {
       raw = raw.replaceFirst(RegExp(r'^0+'), '');
     }
-
     return '$_dialCode$raw';
   }
 
@@ -138,41 +153,26 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
   }
 
   Future<void> _verifyPhoneNumber() async {
-    debugPrint("verify pressed");
-
     if (_loading) return;
-
-    // Anti-spam
     if (_inCooldown()) {
       _snack("Please wait $_cooldownLeft seconds before trying again.");
       return;
     }
-
     if (!_validate()) return;
 
     final phone = _buildE164();
-    debugPrint("verifyPhoneNumber -> $phone");
-
     setState(() {
       _loading = true;
       _err = null;
     });
-
-    // Start cooldown immediately (prevents repeat taps & unusual activity blocks)
     _startCooldown(60);
 
     try {
       await _authService.verifyPhoneNumber(
         phoneNumber: phone,
         timeout: const Duration(seconds: 60),
-
-        verificationCompleted: (PhoneAuthCredential credential) {
-          debugPrint("verificationCompleted (auto)");
-          // Don't auto sign in for reset password.
-        },
-
+        verificationCompleted: (PhoneAuthCredential credential) {},
         verificationFailed: (FirebaseAuthException e) {
-          debugPrint("verificationFailed: ${e.code} | ${e.message}");
           if (!mounted) return;
           setState(() {
             _loading = false;
@@ -180,14 +180,10 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
           });
           _snack(_err!);
         },
-
         codeSent: (String verificationId, int? resendToken) {
-          debugPrint("codeSent");
           if (!mounted) return;
-
           setState(() => _loading = false);
           _snack("OTP sent to $phone");
-
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -198,13 +194,9 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
             ),
           );
         },
-
-        codeAutoRetrievalTimeout: (String verificationId) {
-          debugPrint("codeAutoRetrievalTimeout");
-        },
+        codeAutoRetrievalTimeout: (String verificationId) {},
       );
     } catch (e) {
-      debugPrint("exception: $e");
       if (!mounted) return;
       setState(() {
         _loading = false;
@@ -232,7 +224,6 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
               children: [
                 const PatternBackground(),
 
-                // Main scroll content
                 SingleChildScrollView(
                   padding: EdgeInsets.only(
                     left: 30.sw,
@@ -243,206 +234,206 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Back
-                    BackButtonWidget(
-                      onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ForgetPasswordScreen(),
-                          ),
-                        );
-                      },
-                    ),
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[0],
+                        child: BackButtonWidget(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (_) => const ForgetPasswordScreen()),
+                            );
+                          },
+                        ),
+                      ),
 
                       SizedBox(height: 38.sh),
 
-                      SizedBox(
-                        width: 235.sw,
-                        child: Text(
-                          "Reset\nPassword",
-                          style: TextStyle(
-                            color: purple,
-                            fontSize: 40.sp,
-                            fontWeight: FontWeight.w900,
-                            height: 1.1,
-                            fontFamily: "Satoshi",
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[1],
+                        child: SizedBox(
+                          width: 235.sw,
+                          child: Text(
+                            "Reset\nPassword",
+                            style: TextStyle(
+                              color: purple,
+                              fontSize: 40.sp,
+                              fontWeight: FontWeight.w900,
+                              height: 1.1,
+                              fontFamily: "Satoshi",
+                            ),
                           ),
                         ),
                       ),
 
                       SizedBox(height: 18.sh),
 
-                      SizedBox(
-                        width: 260.sw,
-                        child: Text(
-                          "Please enter your phone number to reset the password",
-                          style: TextStyle(
-                            color: purple,
-                            fontSize: 15.sp,
-                            fontFamily: "Satoshi",
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[2],
+                        child: SizedBox(
+                          width: 260.sw,
+                          child: Text(
+                            "Please enter your phone number to reset the password",
+                            style: TextStyle(
+                              color: purple,
+                              fontSize: 15.sp,
+                              fontFamily: "Satoshi",
+                            ),
                           ),
                         ),
                       ),
 
                       SizedBox(height: 26.sh),
 
-                      // Phone field
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            height: 70.sh,
-                            decoration: BoxDecoration(
-                              color: _err == null
-                                  ? fieldBg
-                                  : const Color(0xFFFFE0DD),
-                              borderRadius: BorderRadius.circular(20.sw),
-                            ),
-                            child: Row(
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.only(left: 12.sw),
-                                  child: CountryCodePicker(
-                                    onChanged: (code) {
-                                      setState(() {
-                                        _dialCode =
-                                            code.dialCode ?? _dialCode;
-                                      });
-                                    },
-                                    initialSelection: 'PK',
-                                    favorite: const ['+92', 'PK', '+1', 'US'],
-                                    showCountryOnly: false,
-                                    showOnlyCountryWhenClosed: false,
-                                    alignLeft: false,
-                                    padding: EdgeInsets.zero,
-                                    textStyle: TextStyle(
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[3],
+                        child: _GlassField(
+                          height: 70.sh,
+                          isError: _err != null,
+                          child: Row(
+                            children: [
+                              Padding(
+                                padding: EdgeInsets.only(left: 12.sw),
+                                child: CountryCodePicker(
+                                  onChanged: (code) {
+                                    setState(() {
+                                      _dialCode = code.dialCode ?? _dialCode;
+                                    });
+                                  },
+                                  initialSelection: 'PK',
+                                  favorite: const ['+92', 'PK', '+1', 'US'],
+                                  showCountryOnly: false,
+                                  showOnlyCountryWhenClosed: false,
+                                  alignLeft: false,
+                                  padding: EdgeInsets.zero,
+                                  textStyle: TextStyle(
+                                    color: hint,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.2,
+                                    fontFamily: "Satoshi",
+                                  ),
+                                  barrierColor: Colors.black54,
+                                  showDropDownButton: true,
+                                ),
+                              ),
+
+                              Container(
+                                width: 1,
+                                height: 36.sh,
+                                color: const Color(0xFFEAD2C6).withValues(alpha: 0.5),
+                              ),
+
+                              SizedBox(width: 12.sw),
+
+                              Expanded(
+                                child: TextField(
+                                  controller: _phoneCtrl,
+                                  keyboardType: TextInputType.phone,
+                                  cursorColor: purple,
+                                  style: TextStyle(
+                                    color: purple,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.2,
+                                    fontFamily: "Satoshi",
+                                  ),
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: "Phone Number",
+                                    hintStyle: TextStyle(
                                       color: hint,
                                       fontSize: 12.sp,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w500,
                                       letterSpacing: 0.2,
                                       fontFamily: "Satoshi",
                                     ),
-                                    barrierColor: Colors.black54,
-                                    showDropDownButton: true,
+                                    contentPadding: EdgeInsets.symmetric(vertical: 20.sh),
                                   ),
                                 ),
+                              ),
 
-                                Container(
-                                  width: 1,
-                                  height: 36.sh,
-                                  color: const Color(0xFFEAD2C6),
-                                ),
+                              SizedBox(width: 12.sw),
+                            ],
+                          ),
+                        ),
+                      ),
 
-                                SizedBox(width: 12.sw),
+                      if (_err != null) ...[
+                        SizedBox(height: 6.sh),
+                        _ErrorText(text: _err!),
+                      ],
 
-                                Expanded(
-                                  child: TextField(
-                                    controller: _phoneCtrl,
-                                    keyboardType: TextInputType.phone,
-                                    cursorColor: purple,
-                                    style: TextStyle(
-                                      color: purple,
-                                      fontSize: 12.sp,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.2,
-                                      fontFamily: "Satoshi",
-                                    ),
-                                    decoration: InputDecoration(
-                                      border: InputBorder.none,
-                                      hintText: "Phone Number",
-                                      hintStyle: TextStyle(
-                                        color: hint,
-                                        fontSize: 12.sp,
-                                        fontWeight: FontWeight.w500,
-                                        letterSpacing: 0.2,
-                                        fontFamily: "Satoshi",
-                                      ),
-                                      contentPadding: EdgeInsets.symmetric(
-                                        vertical: 20.sh,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-
-                                SizedBox(width: 12.sw),
-                              ],
+                      if (_inCooldown()) ...[
+                        SizedBox(height: 8.sh),
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[4],
+                          child: Text(
+                            "Try again in $_cooldownLeft seconds",
+                            style: TextStyle(
+                              color: hint,
+                              fontSize: 11.sp,
+                              fontWeight: FontWeight.w600,
+                              fontFamily: "Satoshi",
                             ),
                           ),
-
-                          if (_err != null) ...[
-                            SizedBox(height: 6.sh),
-                            Text(
-                              _err!,
-                              style: TextStyle(
-                                color: const Color(0xFFFD3250),
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 0.2,
-                                fontFamily: "Satoshi",
-                              ),
-                            ),
-                          ],
-
-                          if (_inCooldown()) ...[
-                            SizedBox(height: 8.sh),
-                            Text(
-                              "Try again in $_cooldownLeft seconds",
-                              style: TextStyle(
-                                color: hint,
-                                fontSize: 11.sp,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: "Satoshi",
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
+                        ),
+                      ],
 
                       SizedBox(height: 40.sh),
 
-                      // Next button
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: GestureDetector(
-                          onTap: (_loading || _inCooldown())
-                              ? null
-                              : _verifyPhoneNumber,
-                          child: Opacity(
-                            opacity: (_loading || _inCooldown()) ? 0.7 : 1,
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[5],
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: GestureDetector(
+                            onTap: (_loading || _inCooldown()) ? null : _verifyPhoneNumber,
                             child: Container(
                               width: 221.sw,
                               height: 62.sh,
                               decoration: BoxDecoration(
-                                color: orange,
+                                color: (_loading || _inCooldown()) ? hint : orange,
                                 borderRadius: BorderRadius.circular(20.sw),
+                                boxShadow: [
+                                  if (!_loading && !_inCooldown())
+                                    BoxShadow(
+                                      color: orange.withValues(alpha: 0.3),
+                                      blurRadius: 15,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                ],
                               ),
                               alignment: Alignment.center,
                               child: _loading
-                                  ? SizedBox(
-                                      width: 18.sw,
-                                      height: 18.sw,
-                                      child: const CircularProgressIndicator(
-                                        color: Colors.white,
-                                        strokeWidth: 2,
-                                      ),
+                                  ? Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        SizedBox(
+                                          width: 18.sw, height: 18.sw,
+                                          child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                        ),
+                                        SizedBox(width: 10.sw),
+                                        Text(
+                                          "Sending...",
+                                          style: TextStyle(
+                                            color: btnText, fontSize: 12.sp,
+                                            fontWeight: FontWeight.bold, fontFamily: "Satoshi",
+                                          ),
+                                        ),
+                                      ],
                                     )
                                   : Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
+                                      mainAxisAlignment: MainAxisAlignment.center,
                                       children: [
                                         Text(
                                           _inCooldown() ? "Wait..." : "Next",
                                           style: TextStyle(
-                                            color: btnText,
-                                            fontSize: 12.sp,
-                                            fontWeight: FontWeight.bold,
-                                            fontFamily: "Satoshi",
+                                            color: btnText, fontSize: 12.sp,
+                                            fontWeight: FontWeight.bold, fontFamily: "Satoshi",
                                           ),
                                         ),
                                         SizedBox(width: 8.sw),
                                         Icon(
-                                          Icons.arrow_forward_ios,
+                                          Icons.arrow_forward_ios_rounded,
                                           size: 12.sw,
                                           color: btnText,
                                         ),
@@ -460,6 +451,80 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AnimatedWrapper extends StatelessWidget {
+  final Animation<double> animation;
+  final Widget child;
+  const _AnimatedWrapper({required this.animation, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        return Opacity(
+          opacity: animation.value,
+          child: Transform.translate(
+            offset: Offset(0, 20 * (1 - animation.value)),
+            child: child,
+          ),
+        );
+      },
+      child: child,
+    );
+  }
+}
+
+class _GlassField extends StatelessWidget {
+  final double height;
+  final bool isError;
+  final Widget child;
+  const _GlassField({required this.height, required this.isError, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20.sw),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+        child: Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: isError 
+                ? const Color(0xFFFFE0DD).withValues(alpha: 0.8)
+                : const Color(0xFFFDECE4).withValues(alpha: 0.4),
+            borderRadius: BorderRadius.circular(20.sw),
+            border: Border.all(
+              color: isError 
+                  ? const Color(0xFFFD3250).withValues(alpha: 0.3)
+                  : Colors.white.withValues(alpha: 0.5),
+              width: 1.5,
+            ),
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class _ErrorText extends StatelessWidget {
+  final String text;
+  const _ErrorText({required this.text});
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(left: 12.sw),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: const Color(0xFFFD3250), fontSize: 10.sp,
+          fontWeight: FontWeight.w500, letterSpacing: 0.2, fontFamily: "Satoshi",
         ),
       ),
     );

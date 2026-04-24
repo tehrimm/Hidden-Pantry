@@ -21,6 +21,8 @@ import 'ingredient_camera_screen.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
+import 'package:hidden_pantry_app/features/user/services/subscription_service.dart';
+import 'package:hidden_pantry_app/features/user/screens/premium_paywall_screen.dart';
 
 import 'package:hidden_pantry_app/core/widgets/food_loader.dart';
 
@@ -404,6 +406,20 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Future<void> _openCamera() async {
+    // 🛡️ GATE: Check subscription before opening camera
+    final subService = SubscriptionService();
+    final hasAccess = await subService.canUseFeature('image_recognition');
+
+    if (!hasAccess) {
+      if (mounted) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
+        );
+      }
+      return;
+    }
+
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const IngredientCameraScreen()),

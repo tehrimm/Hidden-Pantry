@@ -21,6 +21,8 @@ import 'package:flutter/rendering.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_details_animations.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_details_fab.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_details_states.dart';
+import 'package:hidden_pantry_app/features/user/services/subscription_service.dart';
+import 'package:hidden_pantry_app/features/user/screens/premium_paywall_screen.dart';
 
 class RecipeDetailsScreen extends StatefulWidget {
   final Recipe recipe;
@@ -55,6 +57,8 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   bool _liked = false;
   bool _bookmarked = false;
   bool _isDownloaded = false;
+  int _remainingDownloads = 0;
+  bool _isPremium = false;
 
   int _servings = 1;
   bool _nutritionExpanded = false;
@@ -87,6 +91,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
     _checkBookmarkStatus();
     _checkLikeStatus();
     _checkDownloadStatus();
+    _loadSubscriptionInfo();
 
     // Track popularity
     print("[RecipeDetails] Tracking view for: ${_recipe.id}");
@@ -101,6 +106,18 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
         tags: _recipe.tags,
       );
     } catch (_) {}
+  }
+
+  Future<void> _loadSubscriptionInfo() async {
+    final sub = SubscriptionService();
+    final remaining = await sub.getRemainingDownloads();
+    final premium = await sub.canUsePremiumFeature();
+    if (mounted) {
+      setState(() {
+        _remainingDownloads = remaining;
+        _isPremium = premium;
+      });
+    }
   }
 
   void _scrollListener() {
@@ -394,6 +411,20 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
           }
         }
       } else {
+        // 🛡️ GATE: Check if download is allowed (Premium/Trial or remaining free slots)
+        final subService = SubscriptionService();
+        final allowed = await subService.trackDownload(_recipe.id);
+
+        if (!allowed) {
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
+            );
+          }
+          return;
+        }
+
         await _localService.saveRecipeOffline(_recipe, user.uid);
         if (mounted) {
           setState(() => _isDownloaded = true);
@@ -497,8 +528,21 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
         isExpandedManually: _fabExpanded,
         onTap: () {
           // SAFE NAVIGATION: Ensure we are not in a build phase
-          WidgetsBinding.instance.addPostFrameCallback((_) {
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
             if (!mounted) return;
+
+            // 🛡️ GATE: Check subscription before opening cooking mode
+            final subService = SubscriptionService();
+            final hasAccess = await subService.canUseFeature('voice_cooking');
+
+            if (!hasAccess && mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
+              );
+              return;
+            }
+
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -578,17 +622,37 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                 ),
               ),
               SizedBox(width: 10.sw),
-              _iconTile(
-                onTap: _toggleDownload,
-                child: DownloadAnimatedIcon(
-                  isDownloaded: _isDownloaded,
-                  child: Icon(
-                    _isDownloaded
-                        ? Icons.download_done_rounded
-                        : Icons.file_download_outlined,
-                    color: _isDownloaded ? orange : textColor,
-                    size: 22.sw,
-                  ),
+               _iconTile(
+                onTap: () async {
+                  await _toggleDownload();
+                  _loadSubscriptionInfo(); // Refresh quota
+                },
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DownloadAnimatedIcon(
+                      isDownloaded: _isDownloaded,
+                      child: Icon(
+                        _isDownloaded
+                            ? Icons.download_done_rounded
+                            : Icons.file_download_outlined,
+                        color: _isDownloaded ? orange : textColor,
+                        size: 22.sw,
+                      ),
+                    ),
+                    if (!_isPremium && !_isDownloaded && _remainingDownloads > 0)
+                      Padding(
+                        padding: EdgeInsets.only(top: 2.sh),
+                        child: Text(
+                          "$_remainingDownloads/5",
+                          style: TextStyle(
+                            fontSize: 8.sp,
+                            color: textColor.withValues(alpha: 0.6),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
               SizedBox(width: 10.sw),

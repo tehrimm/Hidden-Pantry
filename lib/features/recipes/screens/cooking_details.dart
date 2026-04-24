@@ -14,6 +14,8 @@ import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hidden_pantry_app/features/user/services/subscription_service.dart';
+import 'package:hidden_pantry_app/features/user/screens/premium_paywall_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 
@@ -73,6 +75,16 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
   }
 
   Future<void> _checkVoicePreference() async {
+    // 🛡️ GATE: Check if user has premium access for voice mode
+    final subService = SubscriptionService();
+    final hasAccess = await subService.canUseFeature('voice_cooking');
+
+    if (!hasAccess) {
+      debugPrint("🚫 Voice Cooking restricted: User is not premium");
+      if (mounted) setState(() => _isVoiceEnabled = false);
+      return;
+    }
+
     // 1. Check preference and enable voice mode immediately
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -220,11 +232,19 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
   }
 
   Future<void> _toggleVoiceMode() async {
+    // 🛡️ GATE: Double check premium access
+    final subService = SubscriptionService();
+    if (!await subService.canUseFeature('voice_cooking')) {
+      if (mounted) {
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const PremiumPaywallScreen()));
+      }
+      return;
+    }
+
     if (_isVoiceEnabled) {
+      await _stopListening();
       _shouldListen = false;
-      _isManuallyStopped = true;
-      _stopListenLoop();
-      await _speech.cancel();
+      _isManuallyStopped = true; // 🔥 Mark as manually stopped
       if (mounted) setState(() => _isVoiceEnabled = false);
       return;
     }
@@ -776,7 +796,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
                       children: [
                         // Left placeholder to balance the right side
                         SizedBox(
-                          width: 80.sw,
+                          width: 110.sw,
                           child: Align(
                             alignment: Alignment.centerLeft,
                             child: GestureDetector(
@@ -831,24 +851,26 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
                           ),
                         ),
 
-                        // Right placeholder
+                         // Right placeholder - Ingredients & Privacy Info
                         SizedBox(
-                          width: 80.sw,
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: GestureDetector(
-                              onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
-                              child: Text(
-                                'Ingredients',
-                                style: TextStyle(
-                                  color: const Color(0xFF462F4D),
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w900,
-                                  fontFamily: 'Satoshi',
-                                  decoration: TextDecoration.underline,
+                          width: 110.sw,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              GestureDetector(
+                                onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
+                                child: Text(
+                                  'Ingredients',
+                                  style: TextStyle(
+                                    color: const Color(0xFF462F4D),
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w900,
+                                    fontFamily: 'Satoshi',
+                                    decoration: TextDecoration.underline,
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
                         ),
                       ],
@@ -1362,7 +1384,8 @@ class _SwipeReminderState extends State<_SwipeReminder> with SingleTickerProvide
       },
     );
   }
-}
+
+  }
 
 class _PeelClipper extends CustomClipper<Path> {
   final double amount;
