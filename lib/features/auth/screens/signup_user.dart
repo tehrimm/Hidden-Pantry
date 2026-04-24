@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -72,6 +73,7 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
   // UI
   bool _obscurePassword = true;
   bool _loading = false;
+  bool _agreed = false;
 
   // Errors
   String? _nameErr;
@@ -124,6 +126,11 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
 
     if (_gmailErr == "*email field is required") {
       _gmailErr = "*field is required";
+    }
+
+    if (!_agreed) {
+      _snack("Please agree to the Terms and Conditions", isError: true);
+      return false;
     }
 
     return _nameErr == null && _gmailErr == null && _phoneErr == null && _passErr == null;
@@ -505,31 +512,62 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
 
                         _AnimatedWrapper(
                           animation: _staggeredAnimations[6],
-                          child: Center(
-                            child: Column(
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(horizontal: 10.sw),
+                            child: Row(
                               children: [
-                                Text(
-                                  "By registering you agree to our",
-                                  style: TextStyle(
-                                    color: purple, fontSize: 12.sp, fontWeight: FontWeight.w500,
-                                    letterSpacing: 0.2, fontFamily: "Satoshi",
+                                GestureDetector(
+                                  onTap: () => setState(() => _agreed = !_agreed),
+                                  child: Container(
+                                    width: 20.sw,
+                                    height: 20.sw,
+                                    decoration: BoxDecoration(
+                                      color: _agreed ? btnOrange : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(6.sw),
+                                      border: Border.all(
+                                        color: _agreed ? btnOrange : purple.withValues(alpha: 0.3),
+                                        width: 1.5,
+                                      ),
+                                    ),
+                                    child: _agreed
+                                        ? Icon(Icons.check, size: 14.sw, color: Colors.white)
+                                        : null,
                                   ),
                                 ),
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const TermsAndConditionScreen(viewOnly: true),
+                                SizedBox(width: 12.sw),
+                                Expanded(
+                                  child: Wrap(
+                                    children: [
+                                      Text(
+                                        "I agree to the ",
+                                        style: TextStyle(
+                                          color: purple.withValues(alpha: 0.7),
+                                          fontSize: 12.sp,
+                                          fontWeight: FontWeight.w500,
+                                          fontFamily: "Satoshi",
+                                        ),
                                       ),
-                                    );
-                                  },
-                                  child: Text(
-                                    "Terms and Conditions",
-                                    style: TextStyle(
-                                      color: purple, fontSize: 12.sp, fontWeight: FontWeight.w900,
-                                      letterSpacing: 0.2, fontFamily: "Satoshi",
-                                    ),
+                                      GestureDetector(
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => const TermsAndConditionScreen(viewOnly: true),
+                                            ),
+                                          );
+                                        },
+                                        child: Text(
+                                          "Terms and Conditions",
+                                          style: TextStyle(
+                                            color: purple,
+                                            fontSize: 12.sp,
+                                            fontWeight: FontWeight.w900,
+                                            fontFamily: "Satoshi",
+                                            decoration: TextDecoration.underline,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ],
@@ -588,7 +626,7 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
                           ),
                         ),
 
-                        SizedBox(height: 24.sh),
+                        SizedBox(height: 12.sh),
 
                         _AnimatedWrapper(
                           animation: _staggeredAnimations[8],
@@ -603,7 +641,7 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
                           ),
                         ),
 
-                        SizedBox(height: 24.sh),
+                        SizedBox(height: 12.sh),
 
                         _AnimatedWrapper(
                           animation: _staggeredAnimations[9],
@@ -612,7 +650,7 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
                               Expanded(
                                 child: _SocialBtn(
                                   icon: "assets/logos/google.png",
-                                  iconW: 24.sw,
+                                  iconW: 48.sw, iconH: 27.sh,
                                   onTap: _onGoogleRegister,
                                 ),
                               ),
@@ -620,7 +658,7 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
                               Expanded(
                                 child: _SocialBtn(
                                   icon: "assets/logos/apple.png",
-                                  iconW: 24.sw,
+                                  iconW: 70.sw, iconH: 44.sh,
                                   onTap: _onAppleRegister,
                                 ),
                               ),
@@ -716,9 +754,9 @@ class _ErrorText extends StatelessWidget {
 
 class _SocialBtn extends StatelessWidget {
   final String icon;
-  final double iconW;
+  final double iconW, iconH;
   final VoidCallback onTap;
-  const _SocialBtn({required this.icon, required this.iconW, required this.onTap});
+  const _SocialBtn({required this.icon, required this.iconW, required this.iconH, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -731,12 +769,12 @@ class _SocialBtn extends StatelessWidget {
           child: Container(
             height: 62.sh,
             decoration: BoxDecoration(
-              color: const Color(0xFFFDECE4).withValues(alpha: 0.4),
+              color: const Color(0xFFF9E3D5),
               borderRadius: BorderRadius.circular(20.sw),
               border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
             ),
             alignment: Alignment.center,
-            child: Image.asset(icon, width: iconW, fit: BoxFit.contain),
+            child: Image.asset(icon, width: iconW, height: iconH, fit: BoxFit.contain),
           ),
         ),
       ),

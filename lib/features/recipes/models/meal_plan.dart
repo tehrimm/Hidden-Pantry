@@ -3,6 +3,7 @@ class MealPlan {
   final String title;
   final String? notes;
   final int duration;
+  final int targetCalories;
   final List<DailyMeal> days;
 
   MealPlan({
@@ -10,6 +11,7 @@ class MealPlan {
     required this.title,
     this.notes,
     required this.duration,
+    required this.targetCalories,
     required this.days,
   });
 
@@ -19,6 +21,7 @@ class MealPlan {
       title: json['title'] ?? 'Untitled Plan',
       notes: json['notes'],
       duration: json['duration'] ?? 0,
+      targetCalories: json['targetCalories'] ?? 0,
       days: (json['days'] as List<dynamic>?)
               ?.map((d) => DailyMeal.fromJson(d as Map<String, dynamic>))
               .toList() ??
@@ -52,6 +55,9 @@ class MealItem {
   final String? protein;
   final String? carbs;
   final String? fats;
+  final String? imageUrl;
+  final bool isNote;
+  final String? note;
 
   MealItem({
     required this.title,
@@ -61,6 +67,9 @@ class MealItem {
     this.protein,
     this.carbs,
     this.fats,
+    this.imageUrl,
+    this.isNote = false,
+    this.note,
   });
 
   factory MealItem.fromJson(Map<String, dynamic> json) {
@@ -72,6 +81,9 @@ class MealItem {
       protein: json['protein']?.toString(),
       carbs: json['carbs']?.toString(),
       fats: json['fats']?.toString(),
+      imageUrl: json['imageUrl'],
+      isNote: json['isNote'] ?? false,
+      note: json['note'],
     );
   }
 }

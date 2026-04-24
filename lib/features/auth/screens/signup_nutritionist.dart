@@ -1,6 +1,7 @@
 
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -35,6 +36,7 @@ class _SignupNutritionistScreenState extends State<SignupNutritionistScreen> wit
   // UI
   bool _obscurePassword = true;
   bool _loading = false;
+  bool _agreed = false;
 
   // Errors
   String? _nameErr;
@@ -126,6 +128,11 @@ class _SignupNutritionistScreenState extends State<SignupNutritionistScreen> wit
     if (pass.length < 6) {
       _passErr = "*password is too weak";
       ok = false;
+    }
+
+    if (!_agreed) {
+      _snack("Please agree to the Terms and Conditions");
+      return false;
     }
 
     setState(() {});
@@ -536,31 +543,63 @@ class _SignupNutritionistScreenState extends State<SignupNutritionistScreen> wit
 
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[6],
-                            child: Center(
-                              child: Column(
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 10.sw),
+                              child: Row(
                                 children: [
-                                  Text(
-                                    "By registering you agree to our",
-                                    style: TextStyle(
-                                      color: purple, fontSize: 12.sp, fontWeight: FontWeight.w500,
-                                      letterSpacing: 0.2, fontFamily: "Satoshi",
+                                  GestureDetector(
+                                    onTap: () => setState(() => _agreed = !_agreed),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      width: 20.sw,
+                                      height: 20.sw,
+                                      decoration: BoxDecoration(
+                                        color: _agreed ? btnOrange : Colors.transparent,
+                                        borderRadius: BorderRadius.circular(6.sw),
+                                        border: Border.all(
+                                          color: _agreed ? btnOrange : purple.withValues(alpha: 0.3),
+                                          width: 1.5,
+                                        ),
+                                      ),
+                                      child: _agreed
+                                          ? Icon(Icons.check, size: 14.sw, color: Colors.white)
+                                          : null,
                                     ),
                                   ),
-                                  GestureDetector(
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => const TermsAndConditionScreen(viewOnly: true),
+                                  SizedBox(width: 12.sw),
+                                  Expanded(
+                                    child: Wrap(
+                                      children: [
+                                        Text(
+                                          "I agree to the ",
+                                          style: TextStyle(
+                                            color: purple.withValues(alpha: 0.7),
+                                            fontSize: 12.sp,
+                                            fontWeight: FontWeight.w500,
+                                            fontFamily: "Satoshi",
+                                          ),
                                         ),
-                                      );
-                                    },
-                                    child: Text(
-                                      "Terms and Conditions",
-                                      style: TextStyle(
-                                        color: purple, fontSize: 12.sp, fontWeight: FontWeight.w900,
-                                        letterSpacing: 0.2, fontFamily: "Satoshi",
-                                      ),
+                                        GestureDetector(
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (_) => const TermsAndConditionScreen(viewOnly: true),
+                                              ),
+                                            );
+                                          },
+                                          child: Text(
+                                            "Terms and Conditions",
+                                            style: TextStyle(
+                                              color: purple,
+                                              fontSize: 12.sp,
+                                              fontWeight: FontWeight.w900,
+                                              fontFamily: "Satoshi",
+                                              decoration: TextDecoration.underline,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
@@ -618,7 +657,7 @@ class _SignupNutritionistScreenState extends State<SignupNutritionistScreen> wit
                             ),
                           ),
 
-                          SizedBox(height: 20.sh),
+                          SizedBox(height: 12.sh),
 
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[8],
@@ -633,7 +672,7 @@ class _SignupNutritionistScreenState extends State<SignupNutritionistScreen> wit
                             ),
                           ),
 
-                          SizedBox(height: 20.sh),
+                          SizedBox(height: 12.sh),
 
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[9],
@@ -760,7 +799,7 @@ class _SocialBtn extends StatelessWidget {
       child: Container(
         height: 59.sh,
         decoration: BoxDecoration(
-          color: const Color(0xFFF9E3D5).withValues(alpha: 0.6),
+          color: const Color(0xFFF9E3D5),
           borderRadius: BorderRadius.circular(15.sw),
           border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1),
         ),

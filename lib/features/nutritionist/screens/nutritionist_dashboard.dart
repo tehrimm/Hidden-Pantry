@@ -31,10 +31,11 @@ class NutritionistDashboard extends StatefulWidget {
 }
 
 class _NutritionistDashboardState extends State<NutritionistDashboard> {
-  final Color bg = const Color(0xFFFFF3EB);
-  final Color purple = const Color(0xFF462F4D);
-  final Color orange = const Color(0xFFEF8A54);
-  final Color brown = const Color(0xFF433020);
+  final Color bg = const Color(0xFFFFF7F2);
+  final Color purple = const Color(0xFF321B3A);
+  final Color orange = const Color(0xFFFF8C5A);
+  final Color brown = const Color(0xFF5D4037);
+  final Color accent = const Color(0xFF7B61FF);
 
   int bottomIndex = 0; // 0 dashboard, 1 client, 2 plus, 3 plans, 4 message
   String? fullName;
@@ -740,32 +741,65 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
 
   Widget _dashboardHome() {
     final bool isSaaSInactive = saasStatus != "active";
+    final hour = DateTime.now().hour;
+    String greeting = "Good morning";
+    if (hour >= 12 && hour < 17) greeting = "Good afternoon";
+    else if (hour >= 17) greeting = "Good evening";
 
     return ListView(
       padding: EdgeInsets.symmetric(horizontal: 22.sw),
+      physics: const BouncingScrollPhysics(),
       children: [
         if (isSaaSInactive && !loadingProfile) ...[
           SizedBox(height: 12.sh),
-          _saasWarningBanner(),
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0),
+            duration: const Duration(milliseconds: 600),
+            builder: (context, value, child) => Opacity(
+              opacity: value,
+              child: Transform.translate(
+                offset: Offset(0, 20 * (1 - value)),
+                child: child,
+              ),
+            ),
+            child: _saasWarningBanner(),
+          ),
         ],
         SizedBox(height: 20.sh),
-        Text(
-          "Welcome,",
-          style: TextStyle(
-            color: purple,
-            fontSize: 24.sp,
-            fontWeight: FontWeight.w500,
-            fontFamily: "Satoshi",
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: 1.0),
+          duration: const Duration(milliseconds: 800),
+          curve: Curves.easeOutCubic,
+          builder: (context, value, child) => Opacity(
+            opacity: value,
+            child: Transform.translate(
+              offset: Offset(-20 * (1 - value), 0),
+              child: child,
+            ),
           ),
-        ),
-        Text(
-          loadingProfile ? "..." : (fullName ?? "Nutritionist"),
-          style: TextStyle(
-            color: purple,
-            fontSize: 40.sp,
-            fontWeight: FontWeight.w900,
-            height: 1.1,
-            fontFamily: "Satoshi",
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "$greeting,",
+                style: TextStyle(
+                  color: purple.withValues(alpha: 0.6),
+                  fontSize: 20.sp,
+                  fontWeight: FontWeight.w500,
+                  fontFamily: "Satoshi",
+                ),
+              ),
+              Text(
+                loadingProfile ? "..." : (fullName ?? "Nutritionist"),
+                style: TextStyle(
+                  color: purple,
+                  fontSize: 36.sp,
+                  fontWeight: FontWeight.w900,
+                  height: 1.1,
+                  fontFamily: "Satoshi",
+                ),
+              ),
+            ],
           ),
         ),
         SizedBox(height: 32.sh),
@@ -797,16 +831,26 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                     .where("status", whereIn: ["active", "trialing"])
                     .snapshots(),
                 builder: (context, snap) {
-                  // Count unique original users to avoid duplicates if they changed plans
                   final Set<String> uniqueUsers = {};
+                  final now = DateTime.now();
                   if (snap.hasData) {
                     for (var d in snap.data!.docs) {
                       final data = d.data() as Map<String, dynamic>;
-                      final uid = data["userId"];
-                      if (uid != null) uniqueUsers.add(uid);
+                      final userId = data["userId"];
+                      final Timestamp? expiryDate = data["expiryDate"] as Timestamp?;
+                      
+                      // Active check: must have valid status and not be expired
+                      if (userId != null && (expiryDate != null && expiryDate.toDate().isAfter(now))) {
+                        uniqueUsers.add(userId);
+                      }
                     }
                   }
-                  return _statCard("Active Clients", uniqueUsers.length.toString(), Icons.people_rounded);
+                  return _animatedStatCard(
+                    label: "Active Clients", 
+                    value: uniqueUsers.length.toString(), 
+                    icon: Icons.people_rounded,
+                    delay: 100,
+                  );
                 }
               ),
             ),
@@ -820,7 +864,12 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                     .snapshots(),
                 builder: (context, snap) {
                   final count = snap.data?.docs.length ?? 0;
-                  return _statCard("Total Plans", count.toString(), Icons.restaurant_menu_rounded);
+                  return _animatedStatCard(
+                    label: "Total Plans", 
+                    value: count.toString(), 
+                    icon: Icons.restaurant_menu_rounded,
+                    delay: 200,
+                  );
                 }
               ),
             ),
@@ -842,14 +891,17 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                   .snapshots(),
               builder: (context, subSnap) {
                 double projectedMonthly = 0;
+                final now = DateTime.now();
                 if (subSnap.hasData && subSnap.data != null) {
-                  // Track highest price per user to handle transitions accurately
                   final Map<String, double> userPayments = {};
                   for (var doc in subSnap.data!.docs) {
                     final d = doc.data() as Map<String, dynamic>;
                     final userId = d["userId"];
                     final price = (d["price"] ?? 0).toDouble();
-                    if (userId != null) {
+                    final Timestamp? expiryDate = d["expiryDate"] as Timestamp?;
+
+                    // Fix: Only count projected revenue for non-expired subscriptions
+                    if (userId != null && (expiryDate == null || expiryDate.toDate().isAfter(now))) {
                       if (!userPayments.containsKey(userId) || userPayments[userId]! < price) {
                         userPayments[userId] = price;
                       }
@@ -872,21 +924,22 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                                 MaterialPageRoute(builder: (_) => const PayoutManagementScreen()),
                               );
                             },
-                            child: _statCard(
-                              "Total Earnings", 
-                              loading ? "..." : "Rs. ${total.toInt()}", 
-                              Icons.monetization_on_rounded,
-                              // subtitle: "View History",
+                            child: _animatedStatCard(
+                              label: "Total Earnings", 
+                              value: loading ? "..." : "Rs. ${total.toInt()}", 
+                              icon: Icons.monetization_on_rounded,
+                              delay: 300,
                             ),
                           ),
                         ),
                         SizedBox(width: 16.sw),
                          Expanded(
-                          child: _statCard(
-                            "Projected/Mo", 
-                            "Rs. ${projectedMonthly.toInt()}", 
-                            Icons.trending_up_rounded,
-                            subtitle: "Based on active subs",
+                          child: _animatedStatCard(
+                            label: "Projected/Mo", 
+                            value: "Rs. ${projectedMonthly.toInt()}", 
+                            icon: Icons.trending_up_rounded,
+                            subtitle: "Active subs only",
+                            delay: 400,
                           ),
                         ),
                       ],
@@ -928,6 +981,100 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
           },
         ),
       ],
+    );
+  }
+
+  Widget _animatedStatCard({
+    required String label,
+    required String value,
+    required IconData icon,
+    String? subtitle,
+    required int delay,
+  }) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: Duration(milliseconds: 600 + delay),
+      curve: Curves.easeOutQuint,
+      builder: (context, animValue, child) {
+        return Opacity(
+          opacity: animValue,
+          child: Transform.translate(
+            offset: Offset(0, 30 * (1 - animValue)),
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        padding: EdgeInsets.all(20.sw),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.6),
+          borderRadius: BorderRadius.circular(28.sw),
+          border: Border.all(color: Colors.white, width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: purple.withValues(alpha: 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              padding: EdgeInsets.all(8.sw),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF2EA),
+                borderRadius: BorderRadius.circular(10.sw),
+              ),
+              child: Icon(icon, color: orange, size: 20.sw),
+            ),
+            SizedBox(height: 12.sh),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 400),
+                  child: Text(
+                    value,
+                    key: ValueKey(value),
+                    style: TextStyle(
+                      color: purple,
+                      fontSize: 20.sp,
+                      fontWeight: FontWeight.w900,
+                      fontFamily: "Satoshi",
+                    ),
+                  ),
+                ),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: purple.withValues(alpha: 0.6),
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Satoshi",
+                  ),
+                ),
+                if (subtitle != null) ...[
+                  SizedBox(height: 2.sh),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: orange,
+                      fontSize: 9.sp,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: "Satoshi",
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -1054,7 +1201,23 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                 final display = meetings.take(3).toList();
 
                 return Column(
-                  children: display.map((m) => _sessionCard(m)).toList(),
+                  children: display.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final m = entry.value;
+                    return TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.0, end: 1.0),
+                      duration: Duration(milliseconds: 600 + (index * 100)),
+                      curve: Curves.easeOutCubic,
+                      builder: (context, value, child) => Opacity(
+                        opacity: value,
+                        child: Transform.translate(
+                          offset: Offset(0, 20 * (1 - value)),
+                          child: child,
+                        ),
+                      ),
+                      child: _sessionCard(m),
+                    );
+                  }).toList(),
                 );
               },
             );
@@ -1315,122 +1478,166 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
 
   Widget _clientInsights() {
     final user = FirebaseAuth.instance.currentUser;
-    return Container(
-      padding: EdgeInsets.all(24.sw),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [purple, const Color(0xFF63456D)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0.0, end: 1.0),
+      duration: const Duration(milliseconds: 1000),
+      curve: Curves.easeOutQuint,
+      builder: (context, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: child,
         ),
-        borderRadius: BorderRadius.circular(30.sw),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.insights_rounded, color: Colors.white, size: 24.sw),
-              SizedBox(width: 12.sw),
-              Text(
-                "Subscriber Analytics",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18.sp,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: "Satoshi",
+      child: Container(
+        margin: EdgeInsets.symmetric(vertical: 10.sh),
+        padding: EdgeInsets.all(26.sw),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [purple, const Color(0xFF4A2B55)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(32.sw),
+          boxShadow: [
+            BoxShadow(
+              color: purple.withValues(alpha: 0.3),
+              blurRadius: 25,
+              offset: const Offset(0, 15),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(8.sw),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12.sw),
+                  ),
+                  child: Icon(Icons.auto_graph_rounded, color: orange, size: 22.sw),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 20.sh),
-          StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance
-                .collection("subscriptions")
-                .where("nutritionistId", isEqualTo: user?.uid)
-                .where("status", whereIn: ["active", "trialing"])
-                .snapshots(),
-            builder: (context, snapshot) {
-              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                return Text(
-                  "Analytics will appear here once you have active subscribers.",
-                  style: TextStyle(color: Colors.white.withValues(alpha:0.6), fontSize: 13.sp, height: 1.4),
+                SizedBox(width: 14.sw),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Subscriber Analytics",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w900,
+                          fontFamily: "Satoshi",
+                        ),
+                      ),
+                      Text(
+                        "Monthly performance breakdown",
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontSize: 12.sp,
+                          fontFamily: "Satoshi",
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 32.sh),
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection("subscriptions")
+                  .where("nutritionistId", isEqualTo: user?.uid)
+                  .where("status", whereIn: ["active", "trialing"])
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Container(
+                    height: 150.sh,
+                    alignment: Alignment.center,
+                    child: Text(
+                      "Analytics will appear here once you have active subscribers.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 13.sp, height: 1.4),
+                    ),
+                  );
+                }
+
+                final Map<String, int> userTier = {};
+                final Map<String, double> userPrice = {};
+                final now = DateTime.now();
+
+                for (var doc in snapshot.data!.docs) {
+                  final d = doc.data() as Map<String, dynamic>;
+                  final uid = d["userId"];
+                  final Timestamp? expiryDate = d["expiryDate"] as Timestamp?;
+                  if (uid == null) continue;
+                  if (expiryDate != null && expiryDate.toDate().isBefore(now)) continue;
+
+                  int tier = 0;
+                  final rawTier = d["tierLevel"];
+                  if (rawTier is num) tier = rawTier.toInt();
+                  else if (rawTier is String) tier = int.tryParse(rawTier) ?? 0;
+
+                  final double price = (d["price"] ?? 0).toDouble();
+
+                  if (!userTier.containsKey(uid) || tier > userTier[uid]!) {
+                    userTier[uid] = tier;
+                    userPrice[uid] = price;
+                  }
+                }
+
+                final Map<int, double> tierRevenue = {1: 0, 2: 0, 3: 0};
+                final Map<int, int> tierCounts = {1: 0, 2: 0, 3: 0};
+
+                for (var entry in userTier.entries) {
+                  final tier = entry.value;
+                  if (tier >= 1 && tier <= 3) {
+                    tierCounts[tier] = (tierCounts[tier] ?? 0) + 1;
+                    tierRevenue[tier] = (tierRevenue[tier] ?? 0) + (userPrice[entry.key] ?? 0);
+                  }
+                }
+
+                final int totalClients = userTier.length;
+                double maxRev = tierRevenue.values.fold(1.0, (a, b) => a > b ? a : b);
+
+                return Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        _tierBar("Silver", tierRevenue[1]!, tierCounts[1]!, const Color(0xFFC0C0C0), maxRev),
+                        _tierBar("Gold", tierRevenue[2]!, tierCounts[2]!, const Color(0xFFFFD700), maxRev),
+                        _tierBar("Platinum", tierRevenue[3]!, tierCounts[3]!, const Color(0xFFB388FF), maxRev),
+                      ],
+                    ),
+                    SizedBox(height: 32.sh),
+                    Container(
+                      padding: EdgeInsets.all(20.sw),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(24.sw),
+                        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _summaryItem("Active Clients", totalClients.toString(), Icons.group_outlined),
+                          _summaryItem("Avg/Client", "Rs. ${(totalClients == 0 ? 0 : tierRevenue.values.fold(0.0, (a,b)=>a+b) / totalClients).toInt()}", Icons.account_balance_wallet_outlined),
+                        ],
+                      ),
+                    )
+                  ],
                 );
-              }
-
-              // Calculate distributions — keep only the HIGHEST tier per user
-              final Map<String, int> userTier = {};
-              final Map<String, double> userPrice = {};
-
-              for (var doc in snapshot.data!.docs) {
-                final d = doc.data() as Map<String, dynamic>;
-                final uid = d["userId"];
-                if (uid == null) continue;
-
-                int tier = 0;
-                final rawTier = d["tierLevel"];
-                if (rawTier is num) tier = rawTier.toInt();
-                else if (rawTier is String) tier = int.tryParse(rawTier) ?? 0;
-
-                final double price = (d["price"] ?? 0).toDouble();
-
-                // Only keep the highest tier per user
-                if (!userTier.containsKey(uid) || tier > userTier[uid]!) {
-                  userTier[uid] = tier;
-                  userPrice[uid] = price;
-                }
-              }
-
-              // Aggregate by tier
-              final Map<int, double> tierRevenue = {1: 0, 2: 0, 3: 0};
-              final Map<int, int> tierCounts = {1: 0, 2: 0, 3: 0};
-
-              for (var entry in userTier.entries) {
-                final tier = entry.value;
-                if (tier >= 1 && tier <= 3) {
-                  tierCounts[tier] = (tierCounts[tier] ?? 0) + 1;
-                  tierRevenue[tier] = (tierRevenue[tier] ?? 0) + (userPrice[entry.key] ?? 0);
-                }
-              }
-
-              final int totalClients = userTier.length;
-
-              double maxRev = tierRevenue.values.fold(1, (a, b) => a > b ? a : b);
-
-              return Column(
-                children: [
-                   const SizedBox(height: 10),
-                   // Bar Chart
-                   Row(
-                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                     crossAxisAlignment: CrossAxisAlignment.end,
-                     children: [
-                       _tierBar("Silver", tierRevenue[1]!, tierCounts[1]!, const Color(0xFF708090), maxRev),
-                       _tierBar("Gold", tierRevenue[2]!, tierCounts[2]!, const Color(0xFFDAA520), maxRev),
-                       _tierBar("Platinum", tierRevenue[3]!, tierCounts[3]!, const Color(0xFF4B0082), maxRev),
-                     ],
-                   ),
-                   SizedBox(height: 24.sh),
-                   Container(
-                     padding: EdgeInsets.all(16.sw),
-                     decoration: BoxDecoration(
-                       color: Colors.white.withValues(alpha:0.08),
-                       borderRadius: BorderRadius.circular(20.sw),
-                     ),
-                     child: Row(
-                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                       children: [
-                         _summaryItem("Clients", totalClients.toString()),
-                         _summaryItem("Avg/Sub", "Rs. ${(totalClients == 0 ? 0 : tierRevenue.values.fold(0.0, (a,b)=>a+b) / totalClients).toInt()}"),
-                         _summaryItem("Stability", "98%"),
-                       ],
-                     ),
-                   )
-                ],
-              );
-            },
-          ),
-        ],
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -1441,30 +1648,50 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
     
     return Column(
       children: [
-        Text("Rs. ${revenue.toInt()}", style: TextStyle(color: Colors.white.withValues(alpha:0.6), fontSize: 10.sp, fontWeight: FontWeight.bold)),
-        SizedBox(height: 8.sh),
+        Text(
+          "Rs. ${revenue.toInt()}", 
+          style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.w900)
+        ),
+        SizedBox(height: 12.sh),
         Container(
-          width: 45.sw,
-          height: 100.sh * heightFactor,
+          width: 50.sw,
+          height: 120.sh * heightFactor,
           decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(10.sw),
-            boxShadow: [BoxShadow(color: color.withValues(alpha:0.3), blurRadius: 8.sw, offset: Offset(0, 4.sh))],
+            gradient: LinearGradient(
+              colors: [color, color.withValues(alpha: 0.6)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16.sw), bottom: Radius.circular(8.sw)),
+            boxShadow: [
+              BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 5))
+            ],
           ),
         ),
-        SizedBox(height: 8.sh),
-        Text(label, style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.bold)),
-        Text("$count subs", style: TextStyle(color: Colors.white.withValues(alpha:0.4), fontSize: 9.sp)),
+        SizedBox(height: 12.sh),
+        Text(label, style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w700)),
+        Text("$count subs", style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 10.sp, fontWeight: FontWeight.w600)),
       ],
     );
   }
 
-  Widget _summaryItem(String label, String value) {
-    return Column(
-      children: [
-        Text(value, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16.sp)),
-        Text(label, style: TextStyle(color: Colors.white.withValues(alpha:0.5), fontSize: 10.sp, fontWeight: FontWeight.bold)),
-      ],
+  Widget _summaryItem(String label, String value, IconData icon) {
+    return Expanded(
+      child: Column(
+        children: [
+          Container(
+            padding: EdgeInsets.all(8.sw),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: orange.withValues(alpha: 0.7), size: 16.sw),
+          ),
+          SizedBox(height: 10.sh),
+          Text(value, style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16.sp)),
+          Text(label, style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 10.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+        ],
+      ),
     );
   }
 
@@ -1534,38 +1761,85 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
   Widget _planPreviewCard(String title, String price) {
     return Container(
       margin: EdgeInsets.only(bottom: 12.sh),
-      padding: EdgeInsets.all(20.sw),
+      padding: EdgeInsets.all(22.sw),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9E3D5),
-        borderRadius: BorderRadius.circular(20.sw),
+        color: Colors.white.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(28.sw),
+        border: Border.all(color: Colors.white, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: purple.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
             padding: EdgeInsets.all(12.sw),
             decoration: BoxDecoration(
-              color: const Color(0xFFFFF2EA),
-              borderRadius: BorderRadius.circular(15.sw),
+              gradient: LinearGradient(
+                colors: [orange, orange.withValues(alpha: 0.7)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16.sw),
+              boxShadow: [
+                BoxShadow(color: orange.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 4)),
+              ],
             ),
-            child: Icon(Icons.star_rounded, color: orange, size: 24.sw),
+            child: const Icon(Icons.stars_rounded, color: Colors.white, size: 24),
           ),
-          SizedBox(width: 16.sw),
+          SizedBox(width: 18.sw),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp),
+                  style: TextStyle(
+                    color: purple,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16.sp,
+                    fontFamily: "Satoshi",
+                  ),
                 ),
+                SizedBox(height: 2.sh),
                 Text(
-                  "Rs. $price",
-                  style: TextStyle(color: orange, fontWeight: FontWeight.w900, fontSize: 13.sp),
+                  "Monthly Plan",
+                  style: TextStyle(
+                    color: purple.withValues(alpha: 0.4),
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.w600,
+                    fontFamily: "Satoshi",
+                  ),
                 ),
               ],
             ),
           ),
-          Icon(Icons.arrow_forward_ios_rounded, size: 14.sw, color: const Color(0xFF462F4D)),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                "Rs. $price",
+                style: TextStyle(
+                  color: orange,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 17.sp,
+                  fontFamily: "Satoshi",
+                ),
+              ),
+              Text(
+                "/month",
+                style: TextStyle(
+                  color: orange.withValues(alpha: 0.6),
+                  fontSize: 10.sp,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
@@ -1935,47 +2209,88 @@ class _DashboardBackgroundPattern extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stroke = const Color(0xFFF5DDCE);
-
     return IgnorePointer(
       child: Stack(
         children: [
           Positioned(
-            left: (-154).sw,
-            top: (-14).sh,
-            child: Transform.rotate(
-              angle: 21 * math.pi / 180,
-              child: Container(
-                width: 271.sw,
-                height: 159.sh,
-                decoration: BoxDecoration(
-                  border: Border.all(color: stroke),
-                  borderRadius: BorderRadius.all(
-                    Radius.elliptical(136.sw, 80.sh),
-                  ),
-                ),
-              ),
+            top: -100.sh,
+            right: -100.sw,
+            child: DashFloatingOrb(
+              color: const Color(0xFFFFE0D3).withValues(alpha: 0.5),
+              size: 400,
+              duration: const Duration(seconds: 15),
             ),
           ),
           Positioned(
-            left: (-149).sw,
-            top: (-100).sh,
-            child: Transform.rotate(
-              angle: 4 * math.pi / 180,
-              child: Container(
-                width: 303.sw,
-                height: 329.sh,
-                decoration: BoxDecoration(
-                  border: Border.all(color: stroke),
-                  borderRadius: BorderRadius.all(
-                    Radius.elliptical(152.sw, 165.sh),
-                  ),
-                ),
-              ),
+            bottom: 100.sh,
+            left: -150.sw,
+            child: DashFloatingOrb(
+              color: const Color(0xFFEF8A54).withValues(alpha: 0.1),
+              size: 500,
+              duration: const Duration(seconds: 20),
+            ),
+          ),
+          Positioned(
+            top: 300.sh,
+            right: -50.sw,
+            child: DashFloatingOrb(
+              color: const Color(0xFF7B61FF).withValues(alpha: 0.05),
+              size: 300,
+              duration: const Duration(seconds: 18),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class DashFloatingOrb extends StatefulWidget {
+  final Color color;
+  final double size;
+  final Duration duration;
+
+  const DashFloatingOrb({required this.color, required this.size, required this.duration});
+
+  @override
+  State<DashFloatingOrb> createState() => _DashFloatingOrbState();
+}
+
+class _DashFloatingOrbState extends State<DashFloatingOrb> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration)..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final double angle = _controller.value * 2 * math.pi;
+        return Transform.translate(
+          offset: Offset(math.cos(angle) * 30, math.sin(angle) * 50),
+          child: Container(
+            width: widget.size.sw,
+            height: widget.size.sw,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [widget.color, widget.color.withValues(alpha: 0)],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

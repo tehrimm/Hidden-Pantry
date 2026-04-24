@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
@@ -40,27 +41,21 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
         children: [
           const PatternBackground(),
 
-          // Decorative corner shapes
+          // Glossy Overlays
           Positioned(
-            top: -30.sh, right: -30.sw,
-            child: Container(width: 120.sw, height: 120.sw,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: _orange.withValues(alpha: 0.06))),
+            top: -50.sh,
+            right: -50.sw,
+            child: _GlowCircle(color: _orange.withValues(alpha: 0.1), size: 350.sw),
           ),
           Positioned(
-            bottom: -40.sh, left: -40.sw,
-            child: Container(width: 160.sw, height: 160.sw,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: _purple.withValues(alpha: 0.04))),
+            bottom: -80.sh,
+            left: -80.sw,
+            child: _GlowCircle(color: _purple.withValues(alpha: 0.08), size: 450.sw),
           ),
           Positioned(
-            top: 200.sh, left: 16.sw,
-            child: Container(width: 10.sw, height: 10.sw,
-              decoration: BoxDecoration(shape: BoxShape.circle, color: _orange.withValues(alpha: 0.15))),
-          ),
-          Positioned(
-            top: 320.sh, right: 20.sw,
-            child: Transform.rotate(angle: math.pi / 4,
-              child: Container(width: 16.sw, height: 16.sw,
-                decoration: BoxDecoration(color: _purple.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(3.sw)))),
+            top: 250.sh,
+            left: -20.sw,
+            child: _GlowCircle(color: _orange.withValues(alpha: 0.05), size: 200.sw),
           ),
           
           // Main Content
@@ -171,53 +166,55 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
 
                             int animIndex = 0;
                             return ListView(
+                              physics: const BouncingScrollPhysics(),
                               padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 16.sh),
                               children: [
                                 // 1. App Subscription Section
                                 if (appSub != null) ...[
                                   _FadeSlideEntry(
-                                    delayMs: 100,
-                                    child: _sectionHeader('App Premium'),
+                                    delayMs: 150,
+                                    child: _sectionHeader('Platform Plan'),
                                   ),
-                                  SizedBox(height: 10.sh),
+                                  SizedBox(height: 12.sh),
                                   _FadeSlideEntry(
-                                    delayMs: 220,
+                                    delayMs: 300,
                                     child: _appSubscriptionCard(appSub),
                                   ),
-                                  SizedBox(height: 32.sh),
+                                  SizedBox(height: 36.sh),
                                 ],
 
                                 // 2. Nutritionists Section
                                 if (activeNuts.isNotEmpty) ...[
                                   _FadeSlideEntry(
-                                    delayMs: 100 + (animIndex * 120),
-                                    child: _sectionHeader('Nutritionist Plans'),
+                                    delayMs: 400,
+                                    child: _sectionHeader('Active Nutritionist Plans'),
                                   ),
-                                  SizedBox(height: 10.sh),
+                                  SizedBox(height: 12.sh),
                                   ...activeNuts.map((doc) {
                                     animIndex++;
                                     return _FadeSlideEntry(
-                                      delayMs: 100 + (animIndex * 120),
+                                      delayMs: 400 + (animIndex * 100),
                                       child: _subscriptionCard(doc),
                                     );
                                   }),
-                                  SizedBox(height: 24.sh),
+                                  SizedBox(height: 28.sh),
                                 ],
                                 
                                 if (expiredNuts.isNotEmpty) ...[
                                   _FadeSlideEntry(
-                                    delayMs: 100 + (animIndex * 120) + 100,
-                                    child: _sectionHeader('Past Nutritionist Plans'),
+                                    delayMs: 500 + (animIndex * 100),
+                                    child: _sectionHeader('Past Subscriptions'),
                                   ),
-                                  SizedBox(height: 10.sh),
+                                  SizedBox(height: 12.sh),
                                   ...expiredNuts.map((doc) {
                                     animIndex++;
                                     return _FadeSlideEntry(
-                                      delayMs: 100 + (animIndex * 120),
+                                      delayMs: 500 + (animIndex * 100),
                                       child: _subscriptionCard(doc),
                                     );
                                   }),
                                 ],
+                                SizedBox(height: 40.sh),
                               ],
                             );
                           },
@@ -256,28 +253,46 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   }
 
   Widget _sectionHeader(String label) {
-    return Row(
-      children: [
-        Container(
-          width: 4.sw,
-          height: 18.sh,
-          decoration: BoxDecoration(
-            color: label == 'Active' ? _green : Colors.grey,
-            borderRadius: BorderRadius.circular(2.sw),
+    return Padding(
+      padding: EdgeInsets.only(left: 4.sw),
+      child: Row(
+        children: [
+          Container(
+            width: 3.sw,
+            height: 14.sh,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [_orange, _orange.withValues(alpha: 0.3)],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              borderRadius: BorderRadius.circular(4.sw),
+            ),
           ),
-        ),
-        SizedBox(width: 10.sw),
-        Text(
-          label.toUpperCase(),
-          style: TextStyle(
-            color: _purple.withValues(alpha: 0.5),
-            fontSize: 13.sp,
-            fontWeight: FontWeight.w700,
-            fontFamily: 'Satoshi',
-            letterSpacing: 1.5,
+          SizedBox(width: 12.sw),
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              color: _purple.withValues(alpha: 0.4),
+              fontSize: 12.sp,
+              fontWeight: FontWeight.w900,
+              fontFamily: 'Satoshi',
+              letterSpacing: 1.2,
+            ),
           ),
-        ),
-      ],
+          SizedBox(width: 12.sw),
+          Expanded(
+            child: Container(
+              height: 1,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [_purple.withValues(alpha: 0.1), _purple.withValues(alpha: 0.0)],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -346,80 +361,185 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     final isCancelled = data['isCancelled'] == true;
 
     return Container(
-      margin: EdgeInsets.only(bottom: 14.sh),
+      margin: EdgeInsets.only(bottom: 24.sh),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [const Color(0xFFEF8A54), const Color(0xFFE48E5B)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(22.sw),
+        borderRadius: BorderRadius.circular(32.sw),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFEF8A54).withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            color: _purple.withValues(alpha: 0.05),
+            blurRadius: 30,
+            offset: const Offset(0, 15),
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(22.sw),
-          onTap: () {
-             HapticFeedback.mediumImpact();
-             _showSubscriptionDetails(doc);
-          },
-          child: Padding(
-            padding: EdgeInsets.all(22.sw),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(32.sw),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(32.sw),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 1.5),
+            ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: EdgeInsets.all(10.sw),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        shape: BoxShape.circle,
+                Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(32.sw),
+                    onTap: () {
+                       HapticFeedback.mediumImpact();
+                       _showSubscriptionDetails(doc);
+                    },
+                    child: Padding(
+                      padding: EdgeInsets.all(26.sw),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(12.sw),
+                                decoration: BoxDecoration(
+                                  color: _orange.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(18.sw),
+                                ),
+                                child: Icon(Icons.auto_awesome_rounded, color: _orange, size: 28.sw),
+                              ),
+                              _miniStatusBadge(
+                                isActive ? (isCancelled ? 'Cancelling' : 'Premium') : 'Expired',
+                                isActive ? (isCancelled ? Colors.amber.shade700 : _orange) : Colors.grey
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: 24.sh),
+                          Text(
+                            "Hidden Pantry Premium",
+                            style: TextStyle(
+                              color: _purple,
+                              fontSize: 22.sp,
+                              fontWeight: FontWeight.w900,
+                              fontFamily: 'Satoshi',
+                            ),
+                          ),
+                          SizedBox(height: 6.sh),
+                          Text(
+                            "Voice Mode, Smart Scanning, and offline access.",
+                            style: TextStyle(
+                              color: _purple.withValues(alpha: 0.5),
+                              fontSize: 14.sp,
+                              fontFamily: 'Satoshi',
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          SizedBox(height: 24.sh),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 12.sh),
+                            decoration: BoxDecoration(
+                              color: _orange.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(16.sw),
+                              border: Border.all(color: _orange.withValues(alpha: 0.1)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.calendar_today_rounded, color: _orange, size: 14.sw),
+                                SizedBox(width: 8.sw),
+                                Text(
+                                  expiry != null 
+                                    ? (status == 'trialing' 
+                                        ? "Trial ends ${_formatDate(expiry)}" 
+                                        : (isCancelled ? "Access till ${_formatDate(expiry)}" : "Renews ${_formatDate(expiry)}"))
+                                    : "Premium Active",
+                                  style: TextStyle(
+                                    color: _purple,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w700,
+                                    fontFamily: 'Satoshi',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                      child: Icon(Icons.star_rounded, color: Colors.white, size: 28.sw),
-                    ),
-                    _statusBadge(isActive ? (isCancelled ? 'Cancelling' : 'Active') : 'Expired', isActive),
-                  ],
-                ),
-                SizedBox(height: 20.sh),
-                Text(
-                  "Hidden Pantry Premium",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.w900,
-                    fontFamily: 'Satoshi',
-                  ),
-                ),
-                SizedBox(height: 4.sh),
-                Text(
-                  "Full access to Voice Mode, Smart Scanning, and more.",
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.8),
-                    fontSize: 13.sp,
-                    fontFamily: 'Satoshi',
-                  ),
-                ),
-                SizedBox(height: 20.sh),
-                if (expiry != null)
-                  Text(
-                    status == 'trialing' 
-                      ? "Trial Ends ${_formatDate(expiry)}"
-                      : (isActive ? "Renews ${_formatDate(expiry)}" : "Expired ${_formatDate(expiry)}"),
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.6),
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
+                ),
+                
+                // Cancel Button
+                if (isActive && !isCancelled) ...[
+                  Container(
+                    margin: EdgeInsets.fromLTRB(26.sw, 0, 26.sw, 26.sh),
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.heavyImpact();
+                        _confirmCancel(doc.id, expiry);
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        height: 52.sh,
+                        decoration: BoxDecoration(
+                          color: _red.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(18.sw),
+                          border: Border.all(color: _red.withValues(alpha: 0.1)),
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Cancel Subscription',
+                          style: TextStyle(
+                            color: _red,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w800,
+                            fontFamily: 'Satoshi',
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+
+                // Renew Button (Platform)
+                if (isActive && isCancelled) ...[
+                  Container(
+                    margin: EdgeInsets.fromLTRB(26.sw, 0, 26.sw, 26.sh),
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        _confirmRenew(doc.id);
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        height: 52.sh,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: [_orange, _orange.withValues(alpha: 0.8)]),
+                          borderRadius: BorderRadius.circular(18.sw),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _orange.withValues(alpha: 0.2),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
+                            )
+                          ],
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Renew Subscription',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w800,
+                            fontFamily: 'Satoshi',
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -429,17 +549,22 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   }
 
   Widget _statusBadge(String text, bool active) {
-    final color = active ? Colors.white : Colors.white60;
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 6.sh),
+      padding: EdgeInsets.symmetric(horizontal: 14.sw, vertical: 8.sh),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(20.sw),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
       ),
       child: Text(
         text,
-        style: TextStyle(color: color, fontSize: 11.sp, fontWeight: FontWeight.w800, fontFamily: 'Satoshi'),
+        style: TextStyle(
+          color: Colors.white,
+          fontSize: 10.sp,
+          fontWeight: FontWeight.w900,
+          fontFamily: 'Satoshi',
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
@@ -474,232 +599,257 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     }
 
     return Container(
-      margin: EdgeInsets.only(bottom: 14.sh),
+      margin: EdgeInsets.only(bottom: 16.sh),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(22.sw),
-        border: Border.all(color: Colors.white, width: 1.5),
+        borderRadius: BorderRadius.circular(24.sw),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 15,
-            offset: const Offset(0, 6),
+            offset: const Offset(0, 8),
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(22.sw),
-          onTap: () => HapticFeedback.lightImpact(),
-          child: Padding(
-            padding: EdgeInsets.all(20.sw),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Header row
-                Row(
-                  children: [
-                    // Avatar circle with gradient
-                    Container(
-                      width: 48.sw,
-                      height: 48.sw,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                          colors: [
-                            tierColor.withValues(alpha: 0.2),
-                            tierColor.withValues(alpha: 0.05),
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: tierColor.withValues(alpha: 0.15),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Icon(tierIcon, color: tierColor, size: 24.sw),
-                    ),
-                    SizedBox(width: 14.sw),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24.sw),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.7),
+              borderRadius: BorderRadius.circular(24.sw),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.9), width: 1.5),
+            ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(24.sw),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  _showSubscriptionDetails(doc);
+                },
+                child: Padding(
+                  padding: EdgeInsets.all(20.sw),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Header row
+                      Row(
                         children: [
-                          Text(
-                            name,
-                            style: TextStyle(
-                              color: _purple,
-                              fontSize: 16.sp,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Satoshi',
-                            ),
-                          ),
-                          SizedBox(height: 3.sh),
-                          Text(
-                            plan,
-                            style: TextStyle(
-                              color: _purple.withValues(alpha: 0.45),
-                              fontSize: 13.sp,
-                              fontFamily: 'Satoshi',
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    // Status badge with dot
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 6.sh),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(20.sw),
-                        border: Border.all(color: statusColor.withValues(alpha: 0.2)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
+                          // Avatar circle with gradient
                           Container(
-                            width: 6.sw,
-                            height: 6.sw,
+                            width: 52.sw,
+                            height: 52.sw,
                             decoration: BoxDecoration(
-                              color: statusColor,
                               shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: [
+                                  tierColor.withValues(alpha: 0.2),
+                                  tierColor.withValues(alpha: 0.05),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                            ),
+                            child: Icon(tierIcon, color: tierColor, size: 26.sw),
+                          ),
+                          SizedBox(width: 16.sw),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  name,
+                                  style: TextStyle(
+                                    color: _purple,
+                                    fontSize: 17.sp,
+                                    fontWeight: FontWeight.w900,
+                                    fontFamily: 'Satoshi',
+                                  ),
+                                ),
+                                SizedBox(height: 2.sh),
+                                Text(
+                                  plan,
+                                  style: TextStyle(
+                                    color: _purple.withValues(alpha: 0.4),
+                                    fontSize: 13.sp,
+                                    fontFamily: 'Satoshi',
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          SizedBox(width: 6.sw),
-                          Text(
-                            statusText,
-                            style: TextStyle(
-                              color: statusColor,
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'Satoshi',
-                            ),
-                          ),
+                          _miniStatusBadge(statusText, statusColor),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 16.sh),
-                Container(
-                  height: 1,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        _purple.withValues(alpha: 0.0),
-                        _purple.withValues(alpha: 0.08),
-                        _purple.withValues(alpha: 0.0),
-                      ],
-                    ),
-                  ),
-                ),
-                SizedBox(height: 16.sh),
+                      SizedBox(height: 20.sh),
+                      Container(height: 1, color: _purple.withValues(alpha: 0.05)),
+                      SizedBox(height: 16.sh),
 
-                // Price & expiry
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (price != null)
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Rs. ${double.tryParse(price.toString())?.toStringAsFixed(0) ?? "0"}',
+                      // Price & expiry
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          if (price != null)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Billing Amount",
+                                  style: TextStyle(color: _purple.withValues(alpha: 0.3), fontSize: 10.sp, fontWeight: FontWeight.bold),
+                                ),
+                                SizedBox(height: 2.sh),
+                                RichText(
+                                  text: TextSpan(
+                                    children: [
+                                      TextSpan(
+                                        text: 'Rs. ${double.tryParse(price.toString())?.toStringAsFixed(0) ?? "0"}',
+                                        style: TextStyle(
+                                          color: _purple,
+                                          fontSize: 18.sp,
+                                          fontWeight: FontWeight.w900,
+                                          fontFamily: 'Satoshi',
+                                        ),
+                                      ),
+                                      TextSpan(
+                                        text: ' / $interval',
+                                        style: TextStyle(
+                                          color: _purple.withValues(alpha: 0.4),
+                                          fontSize: 12.sp,
+                                          fontWeight: FontWeight.w600,
+                                          fontFamily: 'Satoshi',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          if (expiry != null)
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  isActive ? (isCancelled ? "Access till" : "Next Payment") : "Ended On",
+                                  style: TextStyle(color: _purple.withValues(alpha: 0.3), fontSize: 10.sp, fontWeight: FontWeight.bold),
+                                ),
+                                SizedBox(height: 2.sh),
+                                Text(
+                                  _formatDate(expiry),
+                                  style: TextStyle(
+                                    color: _purple,
+                                    fontSize: 14.sp,
+                                    fontFamily: 'Satoshi',
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+
+                      // Show remaining days for cancelled subscriptions
+                      if (isCancelled && expiry != null && expiry.isAfter(DateTime.now())) ...[        
+                        SizedBox(height: 16.sh),
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 14.sh),
+                          decoration: BoxDecoration(
+                            color: _orange.withValues(alpha: 0.05),
+                            borderRadius: BorderRadius.circular(18.sw),
+                            border: Border.all(color: _orange.withValues(alpha: 0.1)),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(Icons.access_time_rounded, color: _orange, size: 18.sw),
+                              SizedBox(width: 12.sw),
+                              Expanded(
+                                child: Text(
+                                  'Access ends in ${expiry.difference(DateTime.now()).inDays} days. No further charges.',
+                                  style: TextStyle(
+                                    color: _orange,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w800,
+                                    fontFamily: 'Satoshi',
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+
+                      // Cancel button for active, non-cancelled
+                      if (isActive && !isCancelled) ...[
+                        SizedBox(height: 20.sh),
+                        GestureDetector(
+                          onTap: () {
+                            HapticFeedback.heavyImpact();
+                            _confirmCancel(doc.id, expiry);
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            height: 52.sh,
+                            decoration: BoxDecoration(
+                              color: _red.withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(18.sw),
+                              border: Border.all(color: _red.withValues(alpha: 0.1)),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Cancel Subscription',
                               style: TextStyle(
-                                color: _purple,
-                                fontSize: 18.sp,
+                                color: _red,
+                                fontSize: 14.sp,
                                 fontWeight: FontWeight.w800,
                                 fontFamily: 'Satoshi',
+                                letterSpacing: 0.5,
                               ),
-                            ),
-                            TextSpan(
-                              text: ' / $interval',
-                              style: TextStyle(
-                                color: _purple.withValues(alpha: 0.4),
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.w500,
-                                fontFamily: 'Satoshi',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    if (expiry != null)
-                      Text(
-                        isActive
-                            ? (isCancelled
-                                ? (data['status'] == 'downgrading' ? 'Active until ${_formatDate(expiry)} (Downgrading)' : 'Ends ${_formatDate(expiry)}')
-                                : 'Renews ${_formatDate(expiry)}')
-                            : 'Ended ${_formatDate(expiry)}',
-                        style: TextStyle(
-                          color: _purple.withValues(alpha: 0.45),
-                          fontSize: 12.sp,
-                          fontFamily: 'Satoshi',
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                  ],
-                ),
-
-                // Show remaining days for cancelled subscriptions
-                if (isCancelled && expiry != null && expiry.isAfter(DateTime.now())) ...[        
-                  SizedBox(height: 14.sh),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 14.sw, vertical: 12.sh),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.shade50.withValues(alpha: 0.7),
-                      borderRadius: BorderRadius.circular(14.sw),
-                      border: Border.all(color: Colors.amber.shade200.withValues(alpha: 0.5)),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.timer_outlined, color: Colors.amber.shade700, size: 18.sw),
-                        SizedBox(width: 10.sw),
-                        Expanded(
-                          child: Text(
-                            '${expiry.difference(DateTime.now()).inDays} days remaining — access until ${_formatDate(expiry)}',
-                            style: TextStyle(
-                              color: Colors.amber.shade800,
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: 'Satoshi',
                             ),
                           ),
                         ),
                       ],
-                    ),
-                  ),
-                ],
 
-                // Cancel button for active, non-cancelled
-                if (isActive && !isCancelled) ...[
-                  SizedBox(height: 16.sh),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 46.sh,
-                    child: OutlinedButton(
-                      onPressed: () {
-                        HapticFeedback.lightImpact();
-                        _confirmCancel(doc.id, expiry);
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: _red,
-                        side: BorderSide(color: _red.withValues(alpha: 0.25)),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.sw)),
-                      ),
-                      child: Text(
-                        'Cancel Subscription',
-                        style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w700, fontFamily: 'Satoshi'),
-                      ),
-                    ),
+                      // Renew Button (Nutritionist)
+                      if (isActive && isCancelled) ...[
+                        SizedBox(height: 20.sh),
+                        GestureDetector(
+                          onTap: () {
+                            HapticFeedback.mediumImpact();
+                            _confirmRenew(doc.id);
+                          },
+                          child: Container(
+                            width: double.infinity,
+                            height: 52.sh,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(colors: [_orange, _orange.withValues(alpha: 0.8)]),
+                              borderRadius: BorderRadius.circular(18.sw),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _orange.withValues(alpha: 0.2),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 6),
+                                )
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              'Renew Subscription',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w800,
+                                fontFamily: 'Satoshi',
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                ],
-              ],
+                ),
+              ),
             ),
           ),
         ),
@@ -747,6 +897,44 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     }
   }
 
+  Future<void> _confirmRenew(String docId) async {
+    final confirm = await GlassDialog.show<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: _bg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.sw)),
+        title: Text('Renew Subscription?', style: TextStyle(color: _purple, fontWeight: FontWeight.bold, fontSize: 18.sp)),
+        content: Text(
+          'This will resume your recurring billing and ensure uninterrupted access.',
+          style: TextStyle(color: _purple.withValues(alpha: 0.7)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Not Now', style: TextStyle(color: _purple, fontSize: 14.sp)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('Renew Now', style: TextStyle(color: _orange, fontWeight: FontWeight.bold, fontSize: 14.sp)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      await _stripeService.reactivateSubscription(subscriptionDocId: docId);
+      if (mounted) {
+        Toaster.show(context, 'Subscription renewed successfully! Recurring billing resumed.');
+      }
+    } catch (e) {
+      if (mounted) {
+        Toaster.show(context, StripeService.friendlyError(e), isError: true);
+      }
+    }
+  }
+
   void _showSubscriptionDetails(QueryDocumentSnapshot doc) {
     GlassDialog.show(
       context: context,
@@ -754,48 +942,81 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     );
   }
 
+  Widget _miniStatusBadge(String text, Color color) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 4.sh),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12.sw),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 10.sp,
+          fontWeight: FontWeight.w900,
+          fontFamily: 'Satoshi',
+          letterSpacing: 0.5,
+        ),
+      ),
+    );
+  }
+
   Widget _emptyState(String message) {
     return Center(
       child: _FadeSlideEntry(
-        delayMs: 200,
+        delayMs: 300,
         child: Padding(
           padding: EdgeInsets.all(40.sw),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 90.sw,
-                height: 90.sw,
+                width: 100.sw,
+                height: 100.sw,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: LinearGradient(
-                    colors: [
-                      _orange.withValues(alpha: 0.15),
-                      _orange.withValues(alpha: 0.05),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _orange.withValues(alpha: 0.1),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
+                  color: _purple.withValues(alpha: 0.05),
                 ),
-                child: Icon(Icons.subscriptions_outlined, color: _orange, size: 38.sw),
+                child: Center(
+                  child: Container(
+                    width: 70.sw,
+                    height: 70.sw,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        colors: [
+                          _orange.withValues(alpha: 0.2),
+                          _orange.withValues(alpha: 0.05),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: Icon(Icons.subscriptions_rounded, color: _orange, size: 32.sw),
+                  ),
+                ),
               ),
-              SizedBox(height: 28.sh),
+              SizedBox(height: 32.sh),
+              Text(
+                "Subscription Hub",
+                style: TextStyle(
+                  color: _purple,
+                  fontSize: 22.sp,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'Satoshi',
+                ),
+              ),
+              SizedBox(height: 12.sh),
               Text(
                 message,
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: _purple.withValues(alpha: 0.55),
+                  color: _purple.withValues(alpha: 0.4),
                   fontSize: 15.sp,
                   fontFamily: 'Satoshi',
                   fontWeight: FontWeight.w500,
-                  height: 1.6,
+                  height: 1.5,
                 ),
               ),
             ],
@@ -807,7 +1028,8 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   String _formatDate(dynamic date) {
     if (date == null) return "N/A";
     DateTime? dt;
-    if (date is Timestamp) dt = date.toDate();
+    if (date is DateTime) dt = date;
+    else if (date is Timestamp) dt = date.toDate();
     else if (date is String) dt = DateTime.tryParse(date);
     if (dt == null) return "N/A";
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -942,6 +1164,26 @@ class _SubscriptionDetailsDialog extends StatelessWidget {
     if (dt == null) return "N/A";
     final months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     return '${months[dt.month - 1]} ${dt.day}, ${dt.year}';
+  }
+}
+
+class _GlowCircle extends StatelessWidget {
+  final Color color;
+  final double size;
+  const _GlowCircle({required this.color, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [color, color.withValues(alpha: 0)],
+        ),
+      ),
+    );
   }
 }
 

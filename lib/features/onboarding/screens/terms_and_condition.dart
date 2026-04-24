@@ -23,10 +23,13 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
   bool agreed = false;
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
-
-    // Bottom panel height ONLY when not viewOnly
     final panelHeight = widget.viewOnly ? 0.0 : 160.sh;
 
     return Scaffold(
@@ -36,10 +39,9 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
           borderRadius: BorderRadius.circular(30.sw),
           child: Stack(
             children: [
-              // Background
               Container(color: const Color(0xFFFFF3EB)),
-
-              // Decorative rings
+              
+              // Decorative rings (Keep original)
               Positioned(
                 left: -154.sw,
                 top: -14.sh,
@@ -50,9 +52,7 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
                     height: 159.sh,
                     decoration: BoxDecoration(
                       border: Border.all(color: const Color(0xFFF5DDCE)),
-                      borderRadius: BorderRadius.all(
-                        Radius.elliptical(136.sw, 80.sh),
-                      ),
+                      borderRadius: BorderRadius.all(Radius.elliptical(136.sw, 80.sh)),
                     ),
                   ),
                 ),
@@ -67,181 +67,146 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
                     height: 329.sh,
                     decoration: BoxDecoration(
                       border: Border.all(color: const Color(0xFFF5DDCE)),
-                      borderRadius: BorderRadius.all(
-                        Radius.elliptical(152.sw, 165.sh),
+                      borderRadius: BorderRadius.all(Radius.elliptical(152.sw, 165.sh)),
+                    ),
+                  ),
+                ),
+              ),
+
+              // Animated Title & Back
+              _FadeSlideEntry(
+                delayMs: 100,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: 30.sw,
+                      top: MediaQuery.paddingOf(context).top + 30.sh,
+                      child: GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          width: 50.sw,
+                          height: 50.sw,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF9E3D5),
+                            borderRadius: BorderRadius.circular(25.sw),
+                          ),
+                          child: Icon(Icons.arrow_back_ios_new, size: 18.sp, color: const Color(0xFF462F4D)),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              ),
-
-              // Back button
-              Positioned(
-                left: 30.sw,
-                top: MediaQuery.paddingOf(context).top + 30.sh,
-                child: GestureDetector(
-                onTap: () {
-                  if (widget.viewOnly) {
-                    // Return to the previous screen (LoadingFour)
-                    Navigator.pop(context);
-                  } else {
-                    // Onboarding flow back
-                    Navigator.pushReplacement(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (_, __, ___) => const LoadingFour(),
-                        transitionDuration: const Duration(milliseconds: 400),
-                        transitionsBuilder: (_, anim, __, child) =>
-                          FadeTransition(opacity: anim, child: child),
+                    Positioned(
+                      left: 120.sw,
+                      top: MediaQuery.paddingOf(context).top + 20.sh,
+                      child: SizedBox(
+                        width: 220.sw,
+                        child: Text(
+                          'Terms and\nCondition',
+                          style: TextStyle(
+                            color: const Color(0xFF462F4D),
+                            fontSize: 32.sp,
+                            fontWeight: FontWeight.w800,
+                            fontFamily: 'Satoshi',
+                            height: 1.05,
+                          ),
+                        ),
                       ),
-                    );
-                  }
-                },
-
-                  child: Container(
-                    width: 50.sw,
-                    height: 50.sw,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF9E3D5),
-                      borderRadius: BorderRadius.circular(25.sw),
                     ),
-                    child: Icon(
-                      Icons.arrow_back_ios_new,
-                      size: 18.sp,
-                      color: const Color(0xFF462F4D),
-                    ),
-                  ),
+                  ],
                 ),
               ),
 
-              // Title
-              Positioned(
-                left: 120.sw,
-                top: MediaQuery.paddingOf(context).top + 20.sh,
-                child: SizedBox(
-                  width: 220.sw,
-                  child: Text(
-                    'Terms and\nCondition',
-                    style: TextStyle(
-                      color: const Color(0xFF462F4D),
-                      fontSize: 32.sp,
-                      fontWeight: FontWeight.w800,
-                      fontFamily: 'Satoshi',
-                      height: 1.05,
-                    ),
-                  ),
-                ),
-              ),
-
-              // Terms (scrollable) bottom changes based on viewOnly
+              // Animated Scrollable Terms
               Positioned(
                 left: 29.sw,
                 right: 29.sw,
                 top: MediaQuery.paddingOf(context).top + 120.sh,
                 bottom: widget.viewOnly ? MediaQuery.paddingOf(context).bottom + 16.sh : panelHeight,
-                child: SingleChildScrollView(
+                child: ListView(
                   physics: const BouncingScrollPhysics(),
-                  child: _termsRichText(fontSize: 14.sp),
+                  padding: EdgeInsets.zero,
+                  children: _getTermsWidgets(fontSize: 14.sp),
                 ),
               ),
 
-              // Bottom panel ONLY if NOT viewOnly
+              // Bottom Panel (Animated)
               if (!widget.viewOnly)
                 Positioned(
                   left: 0,
                   right: 0,
                   bottom: 0,
-                  child: Container(
-                    color: const Color(0xFFF9E3D5),
-                    padding: EdgeInsets.fromLTRB(
-                      26.sw,
-                      12.sh,
-                      26.sw,
-                      MediaQuery.paddingOf(context).bottom + 14.sh,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Checkbox row
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            GestureDetector(
-                              onTap: () => setState(() => agreed = !agreed),
-                              child: Container(
-                                width: 18.sw,
-                                height: 18.sw,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(4.sw),
-                                  border: Border.all(
+                  child: _FadeSlideEntry(
+                    delayMs: 800,
+                    child: Container(
+                      color: const Color(0xFFF9E3D5),
+                      padding: EdgeInsets.fromLTRB(
+                        26.sw,
+                        12.sh,
+                        26.sw,
+                        MediaQuery.paddingOf(context).bottom + 14.sh,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              GestureDetector(
+                                onTap: () => setState(() => agreed = !agreed),
+                                child: Container(
+                                  width: 18.sw,
+                                  height: 18.sw,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(4.sw),
+                                    border: Border.all(color: const Color(0xFF462F4D), width: 1.5.sw),
+                                  ),
+                                  child: agreed
+                                      ? Icon(Icons.check, size: 14.sp, color: const Color(0xFF462F4D))
+                                      : null,
+                                ),
+                              ),
+                              SizedBox(width: 10.sw),
+                              Expanded(
+                                child: Text(
+                                  'I have read and agree to the Terms and Conditions',
+                                  style: TextStyle(
                                     color: const Color(0xFF462F4D),
-                                    width: 1.5.sw,
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: 0.3,
+                                    fontFamily: 'Satoshi',
+                                    height: 1.25,
                                   ),
                                 ),
-                                child: agreed
-                                    ? Icon(Icons.check,
-                                        size: 14.sp,
-                                        color: const Color(0xFF462F4D))
-                                    : null,
                               ),
-                            ),
-                            SizedBox(width: 10.sw),
-                            Expanded(
-                              child: Text(
-                                'I have read and agree to the Terms and Conditions',
-                                style: TextStyle(
-                                  color: const Color(0xFF462F4D),
-                                  fontSize: 14.sp,
-                                  fontWeight: FontWeight.w500,
-                                  letterSpacing: 0.3,
-                                  fontFamily: 'Satoshi',
-                                  height: 1.25,
+                            ],
+                          ),
+                          SizedBox(height: 14.sh),
+                          GestureDetector(
+                            onTap: agreed ? () => Navigator.pop(context, true) : null,
+                            child: Opacity(
+                              opacity: agreed ? 1.0 : 0.55,
+                              child: Container(
+                                width: double.infinity,
+                                height: 62.sh,
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF2894F),
+                                  borderRadius: BorderRadius.circular(20.sw),
                                 ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        SizedBox(height: 14.sh),
-
-                        // Button
-                        GestureDetector(
-                          onTap: agreed
-                              ? () {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    PageRouteBuilder(
-                                      pageBuilder: (_, __, ___) => const LoadingFive(),
-                                      transitionDuration: const Duration(milliseconds: 400),
-                                      transitionsBuilder: (_, anim, __, child) =>
-                                        FadeTransition(opacity: anim, child: child),
-                                    ),
-                                  );
-                                }
-                              : null,
-                          child: Opacity(
-                            opacity: agreed ? 1.0 : 0.55,
-                            child: Container(
-                              width: double.infinity,
-                              height: 62.sh,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF2894F),
-                                borderRadius: BorderRadius.circular(20.sw),
-                              ),
-                              alignment: Alignment.center,
-                              child: Text(
-                                'Agree and Continue',
-                                style: TextStyle(
-                                  color: const Color(0xFFFFF2EA),
-                                  fontSize: 15.sp,
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: 'Satoshi',
+                                alignment: Alignment.center,
+                                child: Text(
+                                  'Agree and Continue',
+                                  style: TextStyle(
+                                    color: const Color(0xFFFFF2EA),
+                                    fontSize: 15.sp,
+                                    fontWeight: FontWeight.w600,
+                                    fontFamily: 'Satoshi',
+                                  ),
                                 ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -252,8 +217,7 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
     );
   }
 
-  /// Bolded parts: Flutter doesn't understand *asterisks* by default.
-  Widget _termsRichText({required double fontSize}) {
+  List<Widget> _getTermsWidgets({required double fontSize}) {
     final base = TextStyle(
       color: const Color(0xFF462F4D),
       fontSize: fontSize,
@@ -262,143 +226,144 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
       fontFamily: 'Satoshi',
       height: 1.5,
     );
-
     final h = base.copyWith(fontWeight: FontWeight.w800);
 
-    return RichText(
-      text: TextSpan(
-        style: base,
-        children: [
-          const TextSpan(text: 'By downloading, accessing, or using '),
-          TextSpan(text: 'Hidden Pantry', style: h),
-          const TextSpan(
-            text:
-                ', you agree to comply with and be bound by the following Terms & Conditions. If you do not agree, please discontinue use of the application.\n\n',
+    final sections = [
+  {
+    't': 'Overview',
+    'c': 'By downloading, accessing, or using Hidden Pantry, you agree to comply with and be bound by the following Terms & Conditions. Hidden Pantry is a platform designed to support smart cooking, nutrition, and professional dietary guidance.'
+  },
+  {
+    't': '1. Acceptance of Terms',
+    'c': 'By creating an account, you confirm that you have read, understood, and agreed to these Terms & Conditions. This includes acceptance of our hybrid RSA-AES encryption protocols used for secure communication.'
+  },
+  {
+    't': '2. Messaging & Encryption (E2EE)',
+    'c': 'Hidden Pantry prioritizes user privacy. All messages between nutritionists and clients are protected by End-to-End Encryption (E2EE). Private keys are stored locally on your device and are never shared with our servers. While we provide the infrastructure, we cannot read or decrypt your private conversations.'
+  },
+  {
+    't': '3. Nutritionist Services & Fees',
+    'c': 'Hidden Pantry facilitates connections with verified nutritionists. For all paid services and subscriptions processed through the platform, a 10% platform commission is applied to support platform maintenance, development, and security. Users are responsible for reviewing individual nutritionist plans before purchase.'
+  },
+  {
+    't': '4. Voice Mode & Smart Scanning',
+    'c': 'Our Smart Scanning and Voice-Controlled cooking features process data in real-time. To maintain privacy, audio inputs and pantry images are not stored on our servers unless explicitly enabled by the user for synchronization or personalization purposes.'
+  },
+  {
+    't': '5. Subscriptions & Billing',
+    'c': 'Subscriptions are managed through our secure billing system. Plans may be offered on a monthly, quarterly, or yearly basis. Subscriptions automatically renew unless canceled at least 24 hours before the end of the current billing period. Pricing and features may vary depending on the selected plan.'
+  },
+  {
+    't': '6. Payments, Refunds & Disputes',
+    'c': 'All payments are securely processed through third-party payment providers. Hidden Pantry does not store or have access to your payment details. Refund policies are defined by individual nutritionists unless otherwise stated. In case of disputes, users may contact our support team for assistance.'
+  },
+  {
+    't': '7. User Responsibilities',
+    'c': 'Users agree to provide accurate and up-to-date health, dietary, and personal information. Hidden Pantry is not responsible for any health issues, allergic reactions, or consequences resulting from inaccurate information or misuse of the platform’s recommendations.'
+  },
+  {
+    't': '8. Account Termination',
+    'c': 'Hidden Pantry reserves the right to suspend or terminate accounts that violate community guidelines, engage in fraudulent behavior, or compromise the safety and integrity of the platform or its users.'
+  },
+  {
+    't': '9. Limitation of Liability',
+    'c': 'Hidden Pantry provides nutritional guidance and recommendations for informational purposes only. We do not guarantee medical outcomes. Users are encouraged to consult licensed healthcare professionals for serious medical conditions. Hidden Pantry shall not be held liable for any damages arising from the use of the platform.'
+  },
+  {
+    't': '10. Privacy Policy',
+    'c': 'User data is handled in accordance with our Privacy Policy. By using Hidden Pantry, you consent to the collection, processing, and use of information as described in our privacy practices.'
+  },
+  {
+    't': '11. Changes to Terms',
+    'c': 'Hidden Pantry reserves the right to update or modify these Terms & Conditions at any time. Continued use of the platform after any changes constitutes acceptance of the revised terms.'
+  },
+  {
+    't': '12. AI Recommendations',
+    'c': 'Recipe suggestions, ingredient analysis, and nutritional recommendations generated by Hidden Pantry are based on algorithmic processing and should not be considered professional medical advice.'
+  },
+  {
+    't': '13. Contact & Support',
+    'c': 'For questions regarding these Terms & Conditions, billing, or data-related concerns, please contact our support team at hiddenpantry.support@gmail.com.'
+  },
+];
+
+    return sections.asMap().entries.map((entry) {
+      final index = entry.key;
+      final section = entry.value;
+      return _FadeSlideEntry(
+        delayMs: 200 + (index * 100),
+        child: Padding(
+          padding: EdgeInsets.only(bottom: 24.sh),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(section['t']!, style: h),
+              SizedBox(height: 8.sh),
+              Text(section['c']!, style: base),
+            ],
           ),
-          TextSpan(text: '1. Acceptance of Terms\n', style: h),
-          const TextSpan(
-            text:
-                'By creating an account or using Hidden Pantry, you confirm that you have read, understood, and agreed to these Terms & Conditions and the Privacy Policy.\n\n',
+        ),
+      );
+    }).toList();
+  }
+}
+
+class _FadeSlideEntry extends StatefulWidget {
+  final Widget child;
+  final int delayMs;
+
+  const _FadeSlideEntry({required this.child, required this.delayMs});
+
+  @override
+  State<_FadeSlideEntry> createState() => _FadeSlideEntryState();
+}
+
+class _FadeSlideEntryState extends State<_FadeSlideEntry> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _opacity;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _opacity = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.6, curve: Curves.easeOut)),
+    );
+
+    _slide = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutQuart),
+    );
+
+    Future.delayed(Duration(milliseconds: widget.delayMs), () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _opacity.value,
+          child: Transform.translate(
+            offset: Offset(0, 40 * (1 - _opacity.value)),
+            child: child,
           ),
-          TextSpan(text: '2. Purpose of the Application\n', style: h),
-          const TextSpan(
-            text:
-                'Hidden Pantry is designed to:\n'
-                'Allow users to manually enter or scan ingredients using the device camera. Suggest recipes based on available ingredients and user preferences. '
-                'Provide cooking guidance and food-related educational content. Enable users to save recipes and access selected features offline. '
-                'Support community interaction through ratings, reviews, and recipe sharing. Offer optional subscription-based nutritionist services.\n\n'
-                'Hidden Pantry is not intended to replace professional medical treatment or emergency care.\n\n',
-          ),
-          TextSpan(text: '3. User Eligibility\n', style: h),
-          const TextSpan(
-            text:
-                'Users must be at least 15 years of age to use the application. Users are responsible for providing accurate and truthful account information. Any activity performed through a user account is the responsibility of the account holder.\n'
-                'Hidden Pantry is not responsible for misuse of the application caused by incorrect or false user information.\n\n',
-          ),
-          TextSpan(text: '4. User Responsibilities\n', style: h),
-          const TextSpan(
-            text:
-                'Users agree to:\n'
-                'Provide accurate ingredient, allergy, and dietary preference information. Use the application only for lawful and personal purposes. '
-                'Avoid uploading harmful, misleading, offensive, or copyrighted content. Maintain respectful conduct within community features. '
-                'Users are solely responsible for their actions and content shared within the application.\n\n',
-          ),
-          TextSpan(text: '5. Recipes & Nutritional Disclaimer\n', style: h),
-          const TextSpan(
-            text:
-                'Recipes and food-related information are provided for informational purposes only. Nutritional values may be estimates and can vary based on ingredients used. Users must verify ingredients to avoid allergies or dietary conflicts.\n'
-                'Hidden Pantry is not responsible for cooking results or food preparation outcomes.\n\n',
-          ),
-          TextSpan(text: '6. Ingredient Recognition & Detection Model\n', style: h),
-          const TextSpan(
-            text:
-                'Ingredient detection is performed using a custom-built model developed by the Hidden Pantry team. The model is designed to assist users in identifying ingredients from images. Detection accuracy may vary depending on image quality, lighting conditions, and ingredient presentation. In case of incorrect or unclear detection due to these factors, users are advised to switch to manual ingredient entry.\n\n',
-          ),
-          TextSpan(text: 'Allergy Responsibility Disclaimer\n', style: h),
-          const TextSpan(
-            text:
-                'The ingredient detection model does not cover all possible allergens. Users must personally verify ingredients and allergen information before cooking.\n'
-                'Hidden Pantry shall not be held responsible for allergic reactions, health issues, or mishaps resulting from the use of detected or manually entered ingredients.\n\n',
-          ),
-          TextSpan(text: '8. Subscription to Nutritionist Services\n', style: h),
-          const TextSpan(
-            text:
-                'Hidden Pantry may offer paid subscription plans that provide access to:\n'
-                'Personalized dietary guidance. Meal planning support. Nutrition-related premium features. Access to verified professional nutritionists.\n\n',
-          ),
-          TextSpan(text: 'Subscription Terms\n', style: h),
-          const TextSpan(
-            text:
-                'Subscriptions may be billed on a monthly or yearly basis, depending on the selected plan. Payments are processed through the official app store platform. Subscription fees are non-refundable, except where required by law. Subscriptions automatically renew unless canceled before the renewal date.\n\n',
-          ),
-          TextSpan(text: 'Accidental Subscriptions & Payments\n', style: h),
-          const TextSpan(
-            text:
-                'Hidden Pantry shall not be held accountable for any accidental, unintended, or mistaken subscription purchases. Users are responsible for reviewing all subscription details before confirming payment.\n\n',
-          ),
-          TextSpan(text: 'Payment Responsibility\n', style: h),
-          const TextSpan(
-            text:
-                'If a user adds payment or card information with or without parental knowledge, it is assumed that proper consent has been obtained. Hidden Pantry is not liable for charges, subscription fees, or financial transactions made through the user’s account. All subscription management, cancellation, and refund requests (if applicable) must be handled through the respective app store.\n\n',
-          ),
-          TextSpan(text: '9. Nutritionist Services & Professional Assurance\n', style: h),
-          const TextSpan(
-            text:
-                'All nutritionists available through Hidden Pantry are verified professionals. Nutritionists are qualified and provide guidance based on accepted health and nutrition standards. Recommendations are tailored using user-provided information and preferences. While guidance is provided by professionals, users remain responsible for following recommendations appropriately and sharing accurate health and dietary information.\n\n',
-          ),
-          TextSpan(text: '10. User-Generated Content\n', style: h),
-          const TextSpan(
-            text:
-                'Users may submit recipes, reviews, ratings, comments, and tips. By submitting content, users grant Hidden Pantry a non-exclusive, royalty-free right to display and use such content within the application. Hidden Pantry reserves the right to remove content that violates community standards.\n\n',
-          ),
-          TextSpan(text: '11. Offline Access & Data Storage\n', style: h),
-          const TextSpan(
-            text:
-                'Certain features may be available offline after initial download. Locally stored data may be lost if the application is uninstalled or device storage is cleared. Hidden Pantry is not responsible for data loss caused by device or system issues.\n\n',
-          ),
-          TextSpan(text: '12. Privacy & Data Protection\n', style: h),
-          const TextSpan(
-            text:
-                'Personal data is handled according to the Privacy Policy. Camera and microphone permissions are used solely for application features. Hidden Pantry does not sell or misuse personal data.\n\n',
-          ),
-          TextSpan(text: '13. Account Suspension & Termination\n', style: h),
-          const TextSpan(
-            text:
-                'Hidden Pantry reserves the right to suspend or terminate accounts that:\n'
-                'Violate these Terms & Conditions\n'
-                'Misuse subscription features\n'
-                'Engage in abusive, fraudulent, or harmful behavior\n'
-                'Users may delete their account at any time.\n\n',
-          ),
-          TextSpan(text: '14. Intellectual Property\n', style: h),
-          const TextSpan(
-            text:
-                'All content, branding, designs, models, and materials within the application are the property of Hidden Pantry. Unauthorized copying, modification, or redistribution is prohibited.\n\n',
-          ),
-          TextSpan(text: '15. Limitation of Liability\n', style: h),
-          const TextSpan(
-            text:
-                'Hidden Pantry shall not be held liable for:\n'
-                'Ingredient detection inaccuracies\n'
-                'Recipe or nutrition outcomes\n'
-                'Allergic reactions or food-related mishaps\n'
-                'Accidental or unintended subscription purchases\n'
-                'Data loss, service interruptions, or technical issues\n'
-                'Use of the application is entirely at the user’s own discretion and risk.\n\n',
-          ),
-          TextSpan(text: '16. Changes to Terms\n', style: h),
-          const TextSpan(
-            text:
-                'Hidden Pantry may update these Terms & Conditions at any time. Continued use of the application after changes indicates acceptance of the updated terms.\n\n',
-          ),
-          TextSpan(text: '17. Contact Information\n', style: h),
-          const TextSpan(
-            text:
-                'For questions or support, contact us at:\n'
-                'hiddenpantry.support@email.com',
-          ),
-        ],
-      ),
+        );
+      },
+      child: widget.child,
     );
   }
 }

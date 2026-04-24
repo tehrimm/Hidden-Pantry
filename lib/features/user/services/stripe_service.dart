@@ -93,13 +93,7 @@ class StripeService {
     return result.data['url'] as String;
   }
 
-  /// Create a Checkout session for the platform SaaS fee.
-  /// Returns the checkout URL.
-  Future<String> subscribeToPlatform({String planType = 'monthly'}) async {
-    final callable = FirebaseFunctions.instance.httpsCallable('subscribeToPlatform');
-    final result = await callable.call({'planType': planType});
-    return result.data['url'] as String;
-  }
+
 
   /// Helper to open Stripe URLs.
   Future<void> launchStripeUrl(String url) async {
@@ -112,6 +106,12 @@ class StripeService {
   /// Calls Cloud Function to cancel a subscription at period end.
   Future<void> cancelSubscription({required String subscriptionDocId}) async {
     final callable = FirebaseFunctions.instance.httpsCallable('cancelSubscription');
+    await callable.call({'subscriptionDocId': subscriptionDocId});
+  }
+
+  /// Calls Cloud Function to resume a cancelled subscription before it expires.
+  Future<void> reactivateSubscription({required String subscriptionDocId}) async {
+    final callable = FirebaseFunctions.instance.httpsCallable('reactivateSubscription');
     await callable.call({'subscriptionDocId': subscriptionDocId});
   }
 

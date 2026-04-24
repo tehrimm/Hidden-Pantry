@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'loading_one.dart'; // Ensure OnboardingProgressBar is available
 import 'loading_three.dart';
 import 'terms_and_condition.dart';
+import 'loading_five.dart';
 
 class LoadingFour extends StatelessWidget {
   const LoadingFour({super.key});
@@ -121,7 +122,7 @@ class LoadingFour extends StatelessWidget {
                         Navigator.pushReplacement(
                           context,
                           PageRouteBuilder(
-                            pageBuilder: (_, __, ___) => const TermsAndConditionScreen(),
+                            pageBuilder: (_, __, ___) => LoadingFive(),
                             transitionDuration: const Duration(milliseconds: 500),
                             transitionsBuilder: (_, anim, __, child) =>
                                 FadeTransition(opacity: anim, child: child),

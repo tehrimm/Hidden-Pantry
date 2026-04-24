@@ -19,7 +19,7 @@ class NutritionistPostsScreen extends StatefulWidget {
 class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
   final Color purple = const Color(0xFF462F4D);
   final Color orange = const Color(0xFFEF8A54);
-  final Color bg = const Color(0xFFFFF3EB);
+  final Color bg = const Color(0xFFFFF7F2);
   final Color cardBg = const Color(0xFFF9E3D5);
   final Color cardInner = const Color(0xFFFFF2EA);
 
@@ -165,10 +165,10 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
     return Container(
       margin: EdgeInsets.only(bottom: 16.sh),
       decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(24.sw),
+        color: const Color(0xFFFFF9F5),
+        borderRadius: BorderRadius.circular(22.sw),
         boxShadow: [
-          BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 15.sw, offset: Offset(0, 4.sh)),
+          BoxShadow(color: purple.withValues(alpha:0.03), blurRadius: 15.sw, offset: Offset(0, 4.sh)),
         ],
       ),
       child: Column(
@@ -176,77 +176,94 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
         children: [
           // ── Author Row ──
           Padding(
-            padding: EdgeInsets.fromLTRB(16.sw, 16.sh, 16.sw, 0),
+            padding: EdgeInsets.fromLTRB(12.sw, 12.sh, 12.sw, 0),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 18.sw,
-                  backgroundColor: cardInner,
-                  backgroundImage: _photoUrl != null && _photoUrl!.startsWith("http")
-                      ? NetworkImage(_photoUrl!)
-                      : null,
-                  child: _photoUrl == null
-                      ? Icon(Icons.person, color: orange, size: 18.sw)
-                      : null,
+                Container(
+                  padding: EdgeInsets.all(2.sw),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: orange.withValues(alpha: 0.2), width: 1.5),
+                  ),
+                  child: CircleAvatar(
+                    radius: 16.sw,
+                    backgroundColor: cardInner,
+                    backgroundImage: _photoUrl != null && _photoUrl!.startsWith("http")
+                        ? NetworkImage(_photoUrl!)
+                        : null,
+                    child: _photoUrl == null
+                        ? Icon(Icons.person, color: orange, size: 16.sw)
+                        : null,
+                  ),
                 ),
-                SizedBox(width: 10.sw),
+                SizedBox(width: 12.sw),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         _fullName ?? "You",
-                        style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14.sp, fontFamily: "Satoshi"),
+                        style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13.sp, fontFamily: "Satoshi"),
                       ),
                       Text(
                         timeAgo,
-                        style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 11.sp),
+                        style: TextStyle(color: purple.withValues(alpha:0.3), fontSize: 10.sp),
                       ),
                     ],
                   ),
                 ),
                 // Tier badge
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 5.sh),
-                  decoration: BoxDecoration(
-                    color: tierColors[minTier].withValues(alpha:0.15),
-                    borderRadius: BorderRadius.circular(10.sw),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(tierIcons[minTier], size: 12.sw, color: tierColors[minTier]),
-                      SizedBox(width: 4.sw),
-                      Text(
-                        tierLabels[minTier],
-                        style: TextStyle(
-                          color: tierColors[minTier],
-                          fontSize: 10.sp,
-                          fontWeight: FontWeight.bold,
+                if (minTier > 0)
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8.sw, vertical: 4.sh),
+                    decoration: BoxDecoration(
+                      color: (minTier == 3 
+                          ? const Color(0xFF6A4C93) // Platinum
+                          : minTier == 2 
+                            ? const Color(0xFFD4AF37) // Gold
+                            : const Color(0xFF8A9EA7)).withValues(alpha:0.1), // Silver
+                      borderRadius: BorderRadius.circular(10.sw),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          minTier == 3 ? Icons.diamond_rounded : (minTier == 2 ? Icons.star_rounded : Icons.star_half_rounded), 
+                          size: 10.sw, 
+                          color: (minTier == 3 ? const Color(0xFF6A4C93) : (minTier == 2 ? const Color(0xFFD4AF37) : const Color(0xFF8A9EA7)))
                         ),
-                      ),
-                    ],
+                        SizedBox(width: 4.sw),
+                        Text(
+                          minTier == 3 ? "PLATINUM" : minTier == 2 ? "GOLD" : "SILVER",
+                          style: TextStyle(
+                            color: (minTier == 3 ? const Color(0xFF6A4C93) : (minTier == 2 ? const Color(0xFFD4AF37) : const Color(0xFF8A9EA7))),
+                            fontSize: 9.sp,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
               ],
             ),
           ),
 
           // ── Content ──
           Padding(
-            padding: EdgeInsets.fromLTRB(16.sw, 14.sh, 16.sw, 10.sh),
+            padding: EdgeInsets.fromLTRB(12.sw, 14.sh, 12.sw, 10.sh),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (content.isNotEmpty)
                   Padding(
-                    padding: EdgeInsets.only(bottom: 12.sh),
+                    padding: EdgeInsets.only(bottom: 8.sh),
                     child: Text(
                       content,
                       style: TextStyle(
-                        color: purple.withValues(alpha:0.85),
-                        fontSize: 15.sp,
-                        height: 1.6,
+                        color: purple.withValues(alpha:0.75),
+                        fontSize: 13.sp,
+                        height: 1.4,
                       ),
                     ),
                   ),
@@ -298,6 +315,7 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
                     },
                     child: Container(
                       padding: EdgeInsets.all(12.sw),
+                      margin: EdgeInsets.only(bottom: 12.sh),
                       decoration: BoxDecoration(
                         color: purple.withValues(alpha:0.05),
                         borderRadius: BorderRadius.circular(12.sw),
@@ -309,7 +327,7 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
                           SizedBox(width: 12.sw),
                           Expanded(
                             child: Text(
-                              "View Attached Document",
+                              "Attached Document",
                               style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13.sp),
                             ),
                           ),
@@ -398,7 +416,7 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
   }
 
   Widget _mealPlanPreview(String? planId, String fallback, String uid) {
-    if (planId == null) return Text(fallback);
+    if (planId == null) return Container();
 
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance
@@ -409,13 +427,15 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
           .snapshots(),
       builder: (context, snap) {
         if (!snap.hasData || !snap.data!.exists) {
-           return Text(fallback, style: TextStyle(color: purple.withValues(alpha:0.5)));
+           return Text(fallback, style: TextStyle(color: purple, fontWeight: FontWeight.bold));
         }
         final plan = snap.data!.data() as Map<String, dynamic>;
-        final title = plan["title"] ?? "Meal Plan";
+        final title = plan["title"] ?? "Expert Meal Plan";
+        final days = plan["duration"] ?? 0;
+        final cals = plan["targetCalories"] ?? 0;
         
         return Container(
-          padding: EdgeInsets.all(12.sw),
+          padding: EdgeInsets.all(16.sw),
           decoration: BoxDecoration(
             color: cardInner,
             borderRadius: BorderRadius.circular(16.sw),
@@ -424,21 +444,32 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
           child: Row(
             children: [
               Container(
-                 padding: EdgeInsets.all(8.sw),
+                 padding: EdgeInsets.all(10.sw),
                  decoration: BoxDecoration(color: orange.withValues(alpha:0.1), shape: BoxShape.circle),
-                 child: Icon(Icons.restaurant_menu_rounded, color: orange, size: 20.sw),
+                 child: Icon(Icons.restaurant_menu_rounded, color: orange, size: 24.sw),
               ),
-              SizedBox(width: 12.sw),
+              SizedBox(width: 16.sw),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14.sp)),
-                    Text("${plan['duration'] ?? 0} Days", style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 11.sp)),
+                    Text(title, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp)),
+                    SizedBox(height: 4.sh),
+                    Text("$days Days • $cals kcal", style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 13.sp)),
                   ],
                 ),
               ),
-              Icon(Icons.visibility_outlined, color: Colors.grey, size: 18.sw),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 8.sh),
+                decoration: BoxDecoration(
+                  color: orange,
+                  borderRadius: BorderRadius.circular(10.sw),
+                ),
+                child: Text(
+                  "View",
+                  style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.bold),
+                ),
+              ),
             ],
           ),
         );
@@ -662,11 +693,13 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
   }
 
   Widget _recipePreview(String recipeId, String? fallbackName, String? fallbackImage) {
+    if (recipeId.isEmpty) return Container();
+    final title = (fallbackName == null || fallbackName.isEmpty) ? "Shared Recipe" : fallbackName;
+
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance.collection("recipes").doc(recipeId).snapshots(),
       builder: (context, snap) {
-        // Fallback data if doc doesn't exist or is loading
-        String name = fallbackName ?? "Shared Recipe";
+        String name = title;
         String? img = fallbackImage;
 
         if (snap.hasData && snap.data!.exists) {
@@ -676,7 +709,7 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
         }
 
         return Container(
-          padding: EdgeInsets.all(12.sw),
+          padding: EdgeInsets.all(16.sw),
           decoration: BoxDecoration(
             color: cardInner,
             borderRadius: BorderRadius.circular(16.sw),
@@ -684,24 +717,19 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
           ),
           child: Row(
             children: [
-              // Square Thumbnail
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12.sw),
-                child: Container(
-                  width: 50.sw,
-                  height: 50.sw,
-                  color: orange.withValues(alpha: 0.05),
-                  child: (img != null && img.isNotEmpty)
-                      ? Image.network(
-                          img,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _recipeCardPlaceholder(),
-                        )
-                      : _recipeCardPlaceholder(),
+              Container(
+                width: 50.sw,
+                height: 50.sh,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: orange.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12.sw),
                 ),
+                child: (img != null && img.startsWith("http"))
+                    ? Image.network(img, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _recipeCardPlaceholder())
+                    : _recipeCardPlaceholder(),
               ),
-              SizedBox(width: 12.sw),
-              // Info Middle
+              SizedBox(width: 16.sw),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -711,43 +739,38 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
                       style: TextStyle(
                         color: purple,
                         fontWeight: FontWeight.bold,
-                        fontSize: 14.sp,
+                        fontSize: 16.sp,
                         fontFamily: "Satoshi",
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    SizedBox(height: 2.sh),
+                    SizedBox(height: 4.sh),
                     Text(
-                      "View detailed recipe instructions",
+                      "Shared Recipe Instructions",
                       style: TextStyle(
-                        color: purple.withValues(alpha: 0.4),
-                        fontSize: 11.sp,
-                        fontFamily: "Satoshi",
+                        color: purple.withValues(alpha: 0.5),
+                        fontSize: 13.sp,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
               SizedBox(width: 8.sw),
-              // Button Right
               InkWell(
                 onTap: () => _navigateToRecipe(recipeId),
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 6.sh),
+                  padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 8.sh),
                   decoration: BoxDecoration(
                     color: orange,
-                    borderRadius: BorderRadius.circular(8.sw),
+                    borderRadius: BorderRadius.circular(10.sw),
                   ),
                   child: Text(
                     "View",
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 11.sp,
+                      fontSize: 12.sp,
                       fontWeight: FontWeight.bold,
-                      fontFamily: "Satoshi",
                     ),
                   ),
                 ),

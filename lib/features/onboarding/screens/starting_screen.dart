@@ -38,9 +38,6 @@ class _StartingScreenState extends State<StartingScreen>
     super.initState();
     debugPrint('[StartingScreen] initState - App Start / Splash');
 
-    // Hide system navigation & status bars
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-
     // Dots rotation -> 6 seconds
     _rotateCtrl = AnimationController(
       vsync: this,

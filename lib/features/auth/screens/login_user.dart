@@ -68,7 +68,6 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
   void initState() {
     super.initState();
     _authService = widget.authService ?? AuthService();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
     _mainController = AnimationController(
       vsync: this,
@@ -172,10 +171,9 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       setState(() {
-        if (e.code == "user-not-found") {
-          _gmailErr = "*user not found";
-        } else if (e.code == "wrong-password") {
-          _passErr = "*wrong password";
+        if (e.code == "user-not-found" || e.code == "wrong-password" || e.code == "invalid-credential") {
+          _gmailErr = "*invalid email or password";
+          _passErr = "*invalid email or password";
         } else if (e.code == "invalid-email") {
           _gmailErr = "*invalid email";
         } else {
@@ -589,7 +587,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                                     child: Container(
                                       height: 59.sh,
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFF9E3D5).withValues(alpha: 0.6),
+                                        color: const Color(0xFFF9E3D5),
                                         borderRadius: BorderRadius.circular(15.sw),
                                         border: Border.all(
                                           color: Colors.white.withValues(alpha: 0.4),
@@ -613,7 +611,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                                     child: Container(
                                       height: 59.sh,
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFFF9E3D5).withValues(alpha: 0.6),
+                                        color: const Color(0xFFF9E3D5),
                                         borderRadius: BorderRadius.circular(15.sw),
                                         border: Border.all(
                                           color: Colors.white.withValues(alpha: 0.4),

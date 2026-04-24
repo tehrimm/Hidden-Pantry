@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,6 +7,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/chat_interface_part.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
+import 'dart:math' as math;
+import 'package:flutter/services.dart';
 
 
 class NutritionistChatListScreen extends StatefulWidget {
@@ -18,7 +22,7 @@ class NutritionistChatListScreen extends StatefulWidget {
 class _NutritionistChatListScreenState extends State<NutritionistChatListScreen> {
   final Color purple = const Color(0xFF462F4D);
   final Color orange = const Color(0xFFEF8A54);
-  final Color bg = const Color(0xFFFFF3EB);
+  final Color bg = const Color(0xFFFFF7F2);
 
   bool _isSubsLoading = true;
   List<String> _activeSubscriberIds = [];
@@ -234,17 +238,37 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
     if (user == null) return const Center(child: Text("Please log in"));
     ResponsiveUtils.init(context);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Custom Header
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 16.sh),
-          child: Text(
-            "Messages",
-            style: TextStyle(color: purple, fontSize: 28.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
-          ),
-        ),
+    return Scaffold(
+      backgroundColor: bg,
+      body: Stack(
+        children: [
+          const PatternBackground(opacity: 0.5),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: MediaQuery.of(context).padding.top + 16.sh),
+              // Custom Header
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.sw, vertical: 12.sh),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 4.sw,
+                      height: 24.sh,
+                      decoration: BoxDecoration(
+                        color: orange,
+                        borderRadius: BorderRadius.circular(2.sw),
+                      ),
+                    ),
+                    SizedBox(width: 12.sw),
+                    Text(
+                      "Conversations",
+                      style: TextStyle(color: purple, fontSize: 26.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 10.sh),
         // Content
         Expanded(
           child: _isSubsLoading
@@ -323,6 +347,7 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
                     });
 
                     return ListView.builder(
+                      physics: const BouncingScrollPhysics(),
                       padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 10.sh),
                       itemCount: chatsData.length,
                       itemBuilder: (context, index) {
@@ -331,15 +356,21 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
                           future: _getUserDetails(client["userId"]),
                           builder: (context, userSnap) {
                             final userData = userSnap.data ?? {"name": "User"};
-                            return _buildClientTile({...client, ...userData});
+                            return _FadeSlideEntry(
+                              delayMs: index * 100,
+                              child: _buildClientTile({...client, ...userData}),
+                            );
                           },
                         );
                       },
                     );
                   },
                 ),
-        ),
-      ],
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -357,105 +388,135 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
       isTyping = typingMap[client["userId"]] == true;
     }
 
-    return GestureDetector(
-      onLongPress: () => _confirmDeleteChat(client),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ChatInterface(
-              nutritionistId: FirebaseAuth.instance.currentUser!.uid,
-              nutritionistData: {},
-              chatIdOverride: chatId,
-              otherUserName: name,
-              otherUserPhoto: photoUrl, // Pass photo for header
-              clientId: client["userId"], // Added
+    return Container(
+      margin: EdgeInsets.only(bottom: 14.sh),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24.sw),
+        boxShadow: [
+          BoxShadow(color: purple.withValues(alpha:0.04), blurRadius: 15.sw, offset: Offset(0, 6.sh)),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24.sw),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Container(
+            padding: EdgeInsets.all(16.sw),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha:0.7),
+              borderRadius: BorderRadius.circular(24.sw),
+              border: Border.all(color: Colors.white, width: 1.5.sw),
             ),
-          ),
-        ).then((_) {
-          // No need to manually refresh, stream handles it
-        }); 
-      },
-      child: Container(
-        margin: EdgeInsets.only(bottom: 12.sh),
-        padding: EdgeInsets.all(16.sw),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF9E3D5),
-          borderRadius: BorderRadius.circular(20.sw),
-          boxShadow: [
-            BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10.sw, offset: Offset(0, 4.sh)),
-          ],
-        ),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 24.sw,
-              backgroundColor: orange.withValues(alpha:0.1),
-              backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
-              child: photoUrl == null ? Icon(Icons.person, color: orange, size: 24.sw) : null,
-            ),
-            SizedBox(width: 16.sw),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          name,
-                          style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp, fontFamily: "Satoshi"),
-                          overflow: TextOverflow.ellipsis,
-                        ),
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(24.sw),
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChatInterface(
+                        nutritionistId: FirebaseAuth.instance.currentUser!.uid,
+                        nutritionistData: {},
+                        chatIdOverride: chatId,
+                        otherUserName: name,
+                        otherUserPhoto: photoUrl,
+                        clientId: client["userId"],
                       ),
-                      if (timestamp != null)
-                        Text(
-                          _formatTime(timestamp),
-                          style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 11.sp),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          isTyping 
-                              ? "Typing..." 
-                              : lastMsg.isNotEmpty ? lastMsg : "Tap to start chatting",
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: isTyping 
-                                ? orange 
-                                : lastMsg.isEmpty
-                                    ? purple.withValues(alpha:0.3)
-                                    : unread > 0
-                                        ? purple
-                                        : purple.withValues(alpha:0.5),
-                            fontWeight: (unread > 0 || isTyping) ? FontWeight.bold : FontWeight.normal,
-                            fontStyle: (lastMsg.isEmpty && !isTyping) ? FontStyle.italic : FontStyle.normal,
-                            fontSize: 13.sp,
-                          ),
-                        ),
+                    ),
+                  );
+                },
+                onLongPress: () {
+                   HapticFeedback.mediumImpact();
+                   _confirmDeleteChat(client);
+                },
+                child: Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(2.sw),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(color: orange.withValues(alpha:0.2), width: 2.sw),
                       ),
-                      if (unread > 0)
-                        Container(
-                          padding: EdgeInsets.all(6.sw),
-                          decoration: BoxDecoration(color: orange, shape: BoxShape.circle),
-                          child: Text(
-                            unread.toString(),
-                            style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                      child: CircleAvatar(
+                        radius: 26.sw,
+                        backgroundColor: orange.withValues(alpha:0.05),
+                        backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+                        child: photoUrl == null ? Icon(Icons.person, color: orange, size: 26.sw) : null,
+                      ),
+                    ),
+                    SizedBox(width: 16.sw),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  name,
+                                  style: TextStyle(color: purple, fontWeight: FontWeight.w900, fontSize: 16.sp, fontFamily: "Satoshi"),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              if (timestamp != null)
+                                Text(
+                                  _formatTime(timestamp),
+                                  style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 10.sp, fontWeight: FontWeight.bold),
+                                ),
+                            ],
                           ),
-                        ),
-                    ],
-                  ),
-                ],
+                          const SizedBox(height: 4),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  isTyping 
+                                      ? "Typing..." 
+                                      : lastMsg.isNotEmpty ? lastMsg : "No messages yet",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: isTyping 
+                                        ? orange 
+                                        : lastMsg.isEmpty
+                                            ? purple.withValues(alpha:0.3)
+                                            : unread > 0
+                                                ? purple
+                                                : purple.withValues(alpha:0.5),
+                                    fontWeight: (unread > 0 || isTyping) ? FontWeight.w800 : FontWeight.w500,
+                                    fontStyle: (lastMsg.isEmpty && !isTyping) ? FontStyle.italic : FontStyle.normal,
+                                    fontSize: 13.sp,
+                                    fontFamily: "Satoshi",
+                                  ),
+                                ),
+                              ),
+                              if (unread > 0)
+                                Container(
+                                  padding: EdgeInsets.symmetric(horizontal: 8.sw, vertical: 4.sh),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(colors: [orange, const Color(0xFFE48E5B)]),
+                                    borderRadius: BorderRadius.circular(10.sw),
+                                    boxShadow: [BoxShadow(color: orange.withValues(alpha:0.3), blurRadius: 6.sw, offset: const Offset(0, 2))],
+                                  ),
+                                  child: Text(
+                                    unread.toString(),
+                                    style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.w900),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -468,5 +529,50 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
       return "${date.hour}:${date.minute.toString().padLeft(2, '0')}";
     }
     return "${date.day}/${date.month}";
+  }
+}
+
+class _FadeSlideEntry extends StatefulWidget {
+  final Widget child;
+  final int delayMs;
+  const _FadeSlideEntry({required this.child, this.delayMs = 0});
+
+  @override
+  State<_FadeSlideEntry> createState() => _FadeSlideEntryState();
+}
+
+class _FadeSlideEntryState extends State<_FadeSlideEntry> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
+    _fade = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _slide = Tween<Offset>(begin: const Offset(0.05, 0), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+
+    Future.delayed(Duration(milliseconds: widget.delayMs), () {
+      if (mounted) _ctrl.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: widget.child,
+      ),
+    );
   }
 }

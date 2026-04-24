@@ -11,9 +11,10 @@ import 'package:add_2_calendar/add_2_calendar.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
-import 'dart:io';
 import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'dart:async';
+import 'dart:ui' as ui;
+import 'package:hidden_pantry_app/core/services/chat_encryption_service.dart';
 
 class ChatInterface extends StatefulWidget {
   final String nutritionistId;
@@ -40,8 +41,8 @@ class ChatInterface extends StatefulWidget {
 class _ChatInterfaceState extends State<ChatInterface> {
   final TextEditingController _msgCtrl = TextEditingController();
   final ScrollController _scrollCtrl = ScrollController();
-  final Color purple = const Color(0xFF462F4D);
-  final Color orange = const Color(0xFFEF8A54);
+  final Color purple = const Color(0xFF321B3A);
+  final Color orange = const Color(0xFFFF8C5A);
 
   Timer? _typingTimer;
   bool _isTyping = false;
@@ -52,6 +53,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
   @override
   void initState() {
     super.initState();
+    ChatEncryptionService().initializeKeys(); // Initialize E2EE
     _resetUnreadCount();
     _clearRelatedNotifications();
     _msgCtrl.addListener(_onTextChanged);
@@ -279,7 +281,6 @@ class _ChatInterfaceState extends State<ChatInterface> {
     
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF3EB),
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -295,20 +296,36 @@ class _ChatInterfaceState extends State<ChatInterface> {
         ),
         title: Row(
           children: [
-            CircleAvatar(
-              radius: 18.sw,
-              backgroundColor: purple.withValues(alpha:0.1),
-              backgroundImage: photoUrl != null && photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
-              child: photoUrl == null || photoUrl.isEmpty
-                  ? Icon(Icons.person, color: purple, size: 20.sw)
-                  : null,
+            Container(
+              padding: EdgeInsets.all(2.sw),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: orange.withValues(alpha:0.3), width: 1.5.sw),
+              ),
+              child: CircleAvatar(
+                radius: 18.sw,
+                backgroundColor: purple.withValues(alpha:0.1),
+                backgroundImage: photoUrl != null && photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
+                child: photoUrl == null || photoUrl.isEmpty
+                    ? Icon(Icons.person, color: purple, size: 20.sw)
+                    : null,
+              ),
             ),
-            SizedBox(width: 10.sw),
+            SizedBox(width: 12.sw),
             Expanded(
-              child: Text(
-                title,
-                style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
-                overflow: TextOverflow.ellipsis,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    "Online", // Simplified for now
+                    style: TextStyle(color: Colors.green, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                  ),
+                ],
               ),
             ),
           ],
@@ -336,21 +353,32 @@ class _ChatInterfaceState extends State<ChatInterface> {
           ),
         ],
       ),
+      backgroundColor: const Color(0xFFFFF7F2),
       body: Stack(
         children: [
-          const Positioned.fill(child: PatternBackground()),
+          const PatternBackground(opacity: 0.5),
           Column(
             children: [
               SizedBox(height: kToolbarHeight + MediaQuery.of(context).padding.top),
               // Encryption notice
               Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 4.sh),
-                color: Colors.black.withValues(alpha:0.02),
-                child: Text(
-                  "Messages are end-to-end encrypted",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 10.sp),
+                margin: EdgeInsets.symmetric(vertical: 8.sh),
+                padding: EdgeInsets.symmetric(vertical: 6.sh, horizontal: 16.sw),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha:0.5),
+                  borderRadius: BorderRadius.circular(20.sw),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.lock_outline_rounded, color: purple.withValues(alpha:0.4), size: 10.sp),
+                    SizedBox(width: 6.sw),
+                    Text(
+                      "Messages are end-to-end encrypted",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 9.sp, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
               ),
               // Messages
@@ -387,14 +415,17 @@ class _ChatInterfaceState extends State<ChatInterface> {
                       return ListView.builder(
                         reverse: true,
                         controller: _scrollCtrl,
-                        padding: const EdgeInsets.all(16),
+                        padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 20.sh),
                         itemCount: docs.length,
                         itemBuilder: (context, index) {
                           final data = docs[index].data() as Map<String, dynamic>;
                           final docId = docs[index].id;
                           final isMe = data["senderId"] == FirebaseAuth.instance.currentUser?.uid;
 
-                          return _buildMessageItem(data, isMe, docId);
+                          return _FadeSlideEntry(
+                            delayMs: index * 50, // Slight stagger
+                            child: _buildMessageItem(data, isMe, docId),
+                          );
                         },
                       );
                     },
@@ -448,10 +479,11 @@ class _ChatInterfaceState extends State<ChatInterface> {
               ),
               // Input bar
                 Container(
-                  padding: EdgeInsets.all(16.sw),
+                  padding: EdgeInsets.fromLTRB(16.sw, 12.sh, 16.sw, MediaQuery.of(context).padding.bottom + 12.sh),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFF3EB).withValues(alpha:0.9),
-                    boxShadow: [BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10.sw, offset: Offset(0, -4.sh))],
+                    color: Colors.white.withValues(alpha:0.8),
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(24.sw)),
+                    boxShadow: [BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 15.sw, offset: Offset(0, -5.sh))],
                   ),
                   child: Row(
                     children: [
@@ -459,38 +491,57 @@ class _ChatInterfaceState extends State<ChatInterface> {
                         GestureDetector(
                           onTap: () => _showActionSheet(),
                           child: Container(
-                            width: 40.sw,
-                            height: 40.sw,
+                            width: 44.sw,
+                            height: 44.sw,
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF9E3D5),
-                              borderRadius: BorderRadius.circular(12.sw),
+                              color: orange.withValues(alpha:0.1),
+                              borderRadius: BorderRadius.circular(14.sw),
                             ),
-                            child: Icon(Icons.add_rounded, color: const Color(0xFF74503C), size: 22.sw),
+                            child: Icon(Icons.add_rounded, color: orange, size: 24.sw),
                           ),
                         ),
-                        SizedBox(width: 10.sw),
+                        SizedBox(width: 12.sw),
                       ],
                       Expanded(
-                        child: TextField(
-                          controller: _msgCtrl,
-                          style: TextStyle(fontSize: 14.sp),
-                          decoration: InputDecoration(
-                            hintText: "Type a message...",
-                            hintStyle: TextStyle(color: const Color(0xFFBFA89A), fontSize: 14.sp),
-                            filled: true,
-                            fillColor: const Color(0xFFFDECE4),
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(24.sw), borderSide: BorderSide.none),
-                            contentPadding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 12.sh),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF9E3D5).withValues(alpha:0.4),
+                            borderRadius: BorderRadius.circular(18.sw),
+                          ),
+                          child: TextField(
+                            controller: _msgCtrl,
+                            style: TextStyle(fontSize: 14.sp, color: purple, fontWeight: FontWeight.w500),
+                            decoration: InputDecoration(
+                              hintText: "Message...",
+                              hintStyle: TextStyle(color: purple.withValues(alpha:0.3), fontSize: 14.sp),
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 12.sh),
+                            ),
                           ),
                         ),
                       ),
-                      SizedBox(width: 8.sw),
-                      CircleAvatar(
-                        radius: 24.sw,
-                        backgroundColor: const Color(0xFFE48E5B),
-                        child: IconButton(
-                          icon: Icon(Icons.send_rounded, color: Colors.white, size: 20.sw),
-                          onPressed: _sendMessage,
+                      SizedBox(width: 12.sw),
+                      GestureDetector(
+                        onTap: _sendMessage,
+                        child: Container(
+                          width: 44.sw,
+                          height: 44.sw,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [orange, const Color(0xFFE48E5B)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(14.sw),
+                            boxShadow: [
+                              BoxShadow(
+                                color: orange.withValues(alpha:0.3),
+                                blurRadius: 8.sw,
+                                offset: Offset(0, 3.sh),
+                              ),
+                            ],
+                          ),
+                          child: Icon(Icons.send_rounded, color: Colors.white, size: 18.sw),
                         ),
                       ),
                     ],
@@ -504,19 +555,15 @@ class _ChatInterfaceState extends State<ChatInterface> {
   }
 
   void _showActionSheet() {
-    const Color purple = Color(0xFF462F4D);
-    const Color actionOrange = Color(0xFFE48E5B);
-    const Color subTextColor = Color(0xFFBFA89A);
-
     final actions = [
       if (_canShareMealPlans) ...[
-        {"icon": Icons.restaurant_menu_rounded, "title": "Create New Meal Plan", "subtitle": "Design a custom plan for your client"},
-        {"icon": Icons.bookmark_rounded, "title": "Share Saved Meal Plans", "subtitle": "Send from your existing plans library"},
+        {"icon": Icons.restaurant_menu_rounded, "title": "Create New Meal Plan", "subtitle": "Design a custom plan for your client", "color": const Color(0xFFFF8C5A)},
+        {"icon": Icons.bookmark_rounded, "title": "Share Saved Meal Plans", "subtitle": "Send from your existing plans library", "color": const Color(0xFF7B61FF)},
       ],
       if (_canShareSupplements)
-        {"icon": Icons.medical_services_rounded, "title": "Share Supplement Guide", "subtitle": "Send personalized recommendations"},
-      {"icon": Icons.calendar_month_rounded, "title": "Schedule Meeting", "subtitle": "Set up a consultation session"},
-      {"icon": Icons.attach_file_rounded, "title": "Attach File", "subtitle": "Send documents, images, or reports"},
+        {"icon": Icons.medical_services_rounded, "title": "Share Supplement Guide", "subtitle": "Send personalized recommendations", "color": const Color(0xFF00C853)},
+      {"icon": Icons.calendar_month_rounded, "title": "Schedule Meeting", "subtitle": "Set up a consultation session", "color": const Color(0xFF2979FF)},
+      {"icon": Icons.attach_file_rounded, "title": "Attach File", "subtitle": "Send documents, images, or reports", "color": const Color(0xFF795548)},
     ];
 
     showModalBottomSheet(
@@ -524,110 +571,121 @@ class _ChatInterfaceState extends State<ChatInterface> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => Container(
+        padding: EdgeInsets.symmetric(horizontal: 20.sw),
         decoration: BoxDecoration(
-          color: const Color(0xFFF9E3D5), // Sheet becomes darker beige
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28.sw)),
+          color: const Color(0xFF321B3A).withValues(alpha: 0.95),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32.sw)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Handle
+            SizedBox(height: 12.sh),
             Container(
-              margin: EdgeInsets.only(top: 10.sh),
-              width: 50.sw, height: 5.sh,
-              decoration: BoxDecoration(color: actionOrange, borderRadius: BorderRadius.circular(3.sw)),
-            ),
-            SizedBox(height: 20.sh),
-            // Title row
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 22.sw),
-              child: Row(
-                children: [
-                  Text(
-                    "Quick Actions",
-                    style: TextStyle(color: purple, fontSize: 20.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
-                  ),
-                ],
+              width: 50.sw,
+              height: 4.sh,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(2.sw),
               ),
             ),
-            SizedBox(height: 24.sh), // Added spacing
-            // Action items — individual cards
+            SizedBox(height: 32.sh),
+            Row(
+              children: [
+                Text(
+                  "Quick Actions",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: "Satoshi",
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 24.sh),
             ...List.generate(actions.length, (i) {
               final action = actions[i];
-              return Container(
-                margin: EdgeInsets.only(left: 16.sw, right: 16.sw, bottom: i < actions.length - 1 ? 8.sh : 0),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFF2EA), // Cards become lighter
-                  borderRadius: BorderRadius.circular(16.sw),
-                  boxShadow: [
-                    BoxShadow(color: purple.withValues(alpha:0.04), blurRadius: 8.sw, offset: Offset(0, 2.sh)),
-                  ],
+              return TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.0, end: 1.0),
+                duration: Duration(milliseconds: 400 + (i * 100)),
+                curve: Curves.easeOutQuint,
+                builder: (context, value, child) => Opacity(
+                  opacity: value,
+                  child: Transform.translate(
+                    offset: Offset(0, 30 * (1 - value)),
+                    child: child,
+                  ),
                 ),
-                child: Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(16.sw),
-                    onTap: () {
-                      Navigator.pop(context);
-                      if (action["title"] == "Create New Meal Plan") {
-                        Navigator.push(context, MaterialPageRoute(builder: (_) => const MealPlanCreatorScreen()));
-                      } else if (action["title"] == "Schedule Meeting") {
-                        _showScheduleMeetingDialog();
-                      } else if (action["title"] == "Share Saved Meal Plans") {
-                        _showSavedPlansSheet();
-                      } else if (action["title"] == "Share Supplement Guide") {
-                        _sendSupplementGuide();
-                      } else {
-                        Toaster.show(context, "${action["title"]} coming soon!");
-                      }
-                    },
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 14.sh),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 48.sw,
-                            height: 48.sw,
-                            decoration: BoxDecoration(
-                              color: purple.withValues(alpha:0.1),
-                              borderRadius: BorderRadius.circular(14.sw),
-                              border: Border.all(color: purple.withValues(alpha:0.06)),
+                child: Container(
+                  margin: EdgeInsets.only(bottom: 12.sh),
+                  child: Material(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(20.sw),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20.sw),
+                      onTap: () {
+                        Navigator.pop(context);
+                        if (action["title"] == "Create New Meal Plan") {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const MealPlanCreatorScreen()));
+                        } else if (action["title"] == "Schedule Meeting") {
+                          _showScheduleMeetingDialog();
+                        } else if (action["title"] == "Share Saved Meal Plans") {
+                          _showSavedPlansSheet();
+                        } else if (action["title"] == "Share Supplement Guide") {
+                          _sendSupplementGuide();
+                        } else {
+                          Toaster.show(context, "${action["title"]} coming soon!");
+                        }
+                      },
+                      child: Padding(
+                        padding: EdgeInsets.all(16.sw),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(12.sw),
+                              decoration: BoxDecoration(
+                                color: (action["color"] as Color).withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(16.sw),
+                              ),
+                              child: Icon(action["icon"] as IconData, color: action["color"] as Color, size: 24.sw),
                             ),
-                            child: Icon(action["icon"] as IconData, color: actionOrange, size: 22.sw),
-                          ),
-                          SizedBox(width: 14.sw),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  action["title"] as String,
-                                  style: TextStyle(color: purple, fontWeight: FontWeight.w700, fontSize: 15.sp, fontFamily: "Satoshi"),
-                                ),
-                                SizedBox(height: 3.sh),
-                                Text(
-                                  action["subtitle"] as String,
-                                  style: TextStyle(color: subTextColor, fontSize: 12.sp, height: 1.3),
-                                ),
-                              ],
+                            SizedBox(width: 16.sw),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    action["title"] as String,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 16.sp,
+                                      fontWeight: FontWeight.w700,
+                                      fontFamily: "Satoshi",
+                                    ),
+                                  ),
+                                  SizedBox(height: 2.sh),
+                                  Text(
+                                    action["subtitle"] as String,
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(alpha: 0.4),
+                                      fontSize: 12.sp,
+                                      fontFamily: "Satoshi",
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          Container(
-                            width: 30.sw, height: 30.sw,
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF9E3D5),
-                              borderRadius: BorderRadius.circular(8.sw),
-                            ),
-                            child: Icon(Icons.arrow_forward_ios_rounded, size: 14.sw, color: const Color(0xFF74503C)),
-                          ),
-                        ],
+                            Icon(Icons.chevron_right_rounded, color: Colors.white.withValues(alpha: 0.2)),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
               );
             }),
-            SizedBox(height: MediaQuery.of(context).padding.bottom + 20.sh),
+            SizedBox(height: MediaQuery.of(context).padding.bottom + 24.sh),
           ],
         ),
       ),
@@ -670,14 +728,22 @@ class _ChatInterfaceState extends State<ChatInterface> {
 
     await chatRef.set(updateData, SetOptions(merge: true));
 
-    await chatRef.collection("messages").add({
-      "text": text,
-      "senderId": user.uid,
-      "timestamp": FieldValue.serverTimestamp(),
-    });
+    // Encryption Layer
+    final recipientId = _isNutritionist ? widget.clientId : widget.nutritionistId;
+    if (recipientId != null) {
+      final encryptedData = await ChatEncryptionService().encryptMessage(text, recipientId);
+      
+      await chatRef.collection("messages").add({
+        "text": encryptedData['isEncrypted'] == 'true' ? "[Encrypted]" : text, // Fallback for old apps
+        "cipherText": encryptedData['cipherText'],
+        "encryptedKey": encryptedData['encryptedKey'],
+        "isEncrypted": encryptedData['isEncrypted'],
+        "senderId": user.uid,
+        "timestamp": FieldValue.serverTimestamp(),
+      });
+    }
 
     // Trigger Notification
-    final recipientId = _isNutritionist ? widget.clientId : widget.nutritionistId;
     if (recipientId != null && recipientId.isNotEmpty) {
       String senderName = user.displayName ?? "";
       
@@ -832,23 +898,60 @@ class _ChatInterfaceState extends State<ChatInterface> {
       child = Align(
         alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
         child: Container(
-          margin: EdgeInsets.symmetric(vertical: 4.sh),
-          padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 10.sh),
+          margin: EdgeInsets.symmetric(vertical: 6.sh),
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
           decoration: BoxDecoration(
-            color: isMe ? const Color(0xFFEF8A54) : Colors.white,
             borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(16.sw),
-              topRight: Radius.circular(16.sw),
-              bottomLeft: Radius.circular(isMe ? 16.sw : 0),
-              bottomRight: Radius.circular(isMe ? 0 : 16.sw),
+              topLeft: Radius.circular(22.sw),
+              topRight: Radius.circular(22.sw),
+              bottomLeft: Radius.circular(isMe ? 22.sw : 4.sw),
+              bottomRight: Radius.circular(isMe ? 4.sw : 22.sw),
             ),
             boxShadow: [
-              BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 4.sw, offset: Offset(0, 2.sh))
+              BoxShadow(
+                color: isMe ? orange.withValues(alpha:0.15) : Colors.black.withValues(alpha:0.04),
+                blurRadius: 10.sw,
+                offset: Offset(0, 4.sh),
+              )
             ],
           ),
-          child: Text(
-            data["text"] ?? "",
-            style: TextStyle(color: isMe ? Colors.white : purple, fontSize: 15.sp),
+          child: ClipRRect(
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(22.sw),
+              topRight: Radius.circular(22.sw),
+              bottomLeft: Radius.circular(isMe ? 22.sw : 4.sw),
+              bottomRight: Radius.circular(isMe ? 4.sw : 22.sw),
+            ),
+            child: BackdropFilter(
+              filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 18.sw, vertical: 12.sh),
+                decoration: BoxDecoration(
+                  gradient: isMe 
+                    ? LinearGradient(
+                        colors: [orange, const Color(0xFFE48E5B)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                    : LinearGradient(
+                        colors: [Colors.white.withValues(alpha:0.9), Colors.white.withValues(alpha:0.7)],
+                      ),
+                  border: Border.all(
+                    color: isMe ? Colors.white.withValues(alpha:0.2) : Colors.white.withValues(alpha:0.8),
+                    width: 1.sw,
+                  ),
+                ),
+                child: _DecryptedMessage(
+                  data: data,
+                  style: TextStyle(
+                    color: isMe ? Colors.white : purple,
+                    fontSize: 14.5.sp,
+                    fontWeight: isMe ? FontWeight.w600 : FontWeight.w500,
+                    fontFamily: "Satoshi",
+                  ),
+                ),
+              ),
+            ),
           ),
         ),
       );
@@ -1473,6 +1576,84 @@ class _ChatInterfaceState extends State<ChatInterface> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _DecryptedMessage extends StatelessWidget {
+  final Map<String, dynamic> data;
+  final TextStyle style;
+  const _DecryptedMessage({required this.data, required this.style});
+
+  @override
+  Widget build(BuildContext context) {
+    // If not encrypted, return plain text
+    if (data['isEncrypted'] != 'true') {
+      return Text(data['text'] ?? "", style: style);
+    }
+
+    return FutureBuilder<String>(
+      future: ChatEncryptionService().decryptMessage(data),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return SizedBox(
+            width: 20.sw,
+            height: 10.sh,
+            child: LinearProgressIndicator(
+              backgroundColor: Colors.transparent,
+              valueColor: AlwaysStoppedAnimation<Color>(
+                style.color!.withValues(alpha:0.3),
+              ),
+            ),
+          );
+        }
+        return Text(snapshot.data ?? "[Encrypted]", style: style);
+      },
+    );
+  }
+}
+
+class _FadeSlideEntry extends StatefulWidget {
+  final Widget child;
+  final int delayMs;
+  const _FadeSlideEntry({required this.child, this.delayMs = 0});
+
+  @override
+  State<_FadeSlideEntry> createState() => _FadeSlideEntryState();
+}
+
+class _FadeSlideEntryState extends State<_FadeSlideEntry> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
+    _fade = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _slide = Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+
+    Future.delayed(Duration(milliseconds: widget.delayMs), () {
+      if (mounted) _ctrl.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: widget.child,
       ),
     );
   }

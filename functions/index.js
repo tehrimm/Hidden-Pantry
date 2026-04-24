@@ -338,9 +338,20 @@ exports.createNutritionistCheckout = functions.https.onCall(async (data, context
     const userDoc = await db.collection('users').doc(uid).get();
     const userName = userDoc.exists ? (userDoc.data().fullName || userDoc.data().name || 'User') : 'User';
 
-    // Map interval
-    const intervalMap = { 'week': 'week', 'weekly': 'week', 'month': 'month', 'monthly': 'month', 'year': 'year', 'yearly': 'year' };
-    const stripeInterval = intervalMap[(interval || 'month').toLowerCase()] || 'month';
+    // Map interval and count for Stripe
+    const intervalMap = { 
+        'week': { interval: 'week', count: 1 },
+        'weekly': { interval: 'week', count: 1 },
+        'month': { interval: 'month', count: 1 },
+        'monthly': { interval: 'month', count: 1 },
+        'quarter': { interval: 'month', count: 3 },
+        'quarterly': { interval: 'month', count: 3 },
+        'year': { interval: 'year', count: 1 },
+        'yearly': { interval: 'year', count: 1 }
+    };
+    const intervalInfo = intervalMap[(interval || 'month').toLowerCase()] || { interval: 'month', count: 1 };
+    const stripeInterval = intervalInfo.interval;
+    const stripeIntervalCount = intervalInfo.count;
 
     try {
         let proRatedCredit = 0;
@@ -426,13 +437,17 @@ exports.createNutritionistCheckout = functions.https.onCall(async (data, context
                         description: isDowngrade ? `Scheduled Downgrade to ${planTitle}` : `Upgrade to ${planTitle}`,
                     },
                     unit_amount: Math.round(price * 100),
-                    recurring: { interval: stripeInterval },
+                    recurring: { 
+                        interval: stripeInterval,
+                        interval_count: stripeIntervalCount
+                    },
                 },
                 quantity: 1,
             }],
             discounts,
             subscription_data: {
                 trial_end: trialEnd, // Used for Downgrades: no charge until this date
+                application_fee_percent: 10.0, // Platform cut (e.g., 10%)
                 transfer_data: { destination: stripeAccountId },
                 metadata: {
                     subscriptionDocId: subDoc.id,
@@ -441,6 +456,9 @@ exports.createNutritionistCheckout = functions.https.onCall(async (data, context
                     tierLevel: String(tierLevel || 1),
                     oldStripeSubId: oldStripeSubId || '',
                     isDowngrade: isDowngrade ? 'true' : 'false',
+                    interval: stripeInterval,
+                    intervalCount: String(stripeIntervalCount),
+                    displayInterval: interval || 'Monthly',
                 },
             },
             success_url: 'https://arched-sunbeam-478306-u3.web.app/payment-success?session_id={CHECKOUT_SESSION_ID}',
@@ -467,48 +485,7 @@ exports.createNutritionistCheckout = functions.https.onCall(async (data, context
 });
 
 
-/**
- * CALLABLE: Create a Stripe Checkout session for the nutritionist to pay SaaS fee to platform.
- */
-exports.subscribeToPlatform = functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Must be logged in');
-    }
-
-    const uid = context.auth.uid;
-    const db = admin.firestore();
-    const nutDoc = await db.collection('nutritionists').doc(uid).get();
-
-    try {
-        const session = await stripe.checkout.sessions.create({
-            mode: 'subscription',
-            payment_method_types: ['card'],
-            line_items: [{
-                price_data: {
-                    currency: 'pkr',
-                    product_data: {
-                        name: 'Hidden Pantry Nutritionist SaaS Fee',
-                        description: 'Monthly platform membership fee',
-                    },
-                    unit_amount: 1200 * 100, // Fixed SaaS fee of 1200 PKR
-                    recurring: { interval: 'month' },
-                },
-                quantity: 1,
-            }],
-            success_url: 'https://arched-sunbeam-478306-u3.web.app/saas-success',
-            cancel_url: 'https://arched-sunbeam-478306-u3.web.app/saas-cancelled',
-            metadata: {
-                nutritionistId: uid,
-                type: 'platform_saas'
-            },
-        });
-
-        return { url: session.url, sessionId: session.id };
-    } catch (error) {
-        console.error('subscribeToPlatform error:', error);
-        throw new functions.https.HttpsError('internal', error.message);
-    }
-});
+// subscribeToPlatform has been removed - Hidden Pantry now takes a cut per subscription instead
 
 /**
  * CALLABLE: Cancel a subscription at period end.
@@ -646,20 +623,34 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                     if (subscriptionDocId) {
                         // Update the pending doc to active
                         const expiryDate = new Date();
-                        expiryDate.setMonth(expiryDate.getMonth() + 1);
+                        const interval = metadata.interval || 'month';
+                        const count = parseInt(metadata.intervalCount || '1');
+                        
+                        if (interval === 'year') expiryDate.setFullYear(expiryDate.getFullYear() + count);
+                        else if (interval === 'month') expiryDate.setMonth(expiryDate.getMonth() + count);
+                        else if (interval === 'week') expiryDate.setDate(expiryDate.getDate() + (count * 7));
+                        else expiryDate.setMonth(expiryDate.getMonth() + 1); // Default
 
                         await db.collection('subscriptions').doc(subscriptionDocId).update({
                             status: 'active',
                             tierLevel: parseInt(tierLevel) || 1,
                             stripeSubscriptionId: session.subscription,
                             expiryDate: admin.firestore.Timestamp.fromDate(expiryDate),
+                            interval: metadata.displayInterval || 'Monthly',
+                            intervalCount: count,
                             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                         });
                         console.log(`Updated subscription doc ${subscriptionDocId} to active with tier ${tierLevel}`);
                     } else {
                         // Fallback: create a new subscription doc
                         const expiryDate = new Date();
-                        expiryDate.setMonth(expiryDate.getMonth() + 1);
+                        const interval = metadata.interval || 'month';
+                        const count = parseInt(metadata.intervalCount || '1');
+                        
+                        if (interval === 'year') expiryDate.setFullYear(expiryDate.getFullYear() + count);
+                        else if (interval === 'month') expiryDate.setMonth(expiryDate.getMonth() + count);
+                        else if (interval === 'week') expiryDate.setDate(expiryDate.getDate() + (count * 7));
+                        else expiryDate.setMonth(expiryDate.getMonth() + 1); // Default
 
                         await db.collection('subscriptions').add({
                             userId,
@@ -670,6 +661,8 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                             status: 'active',
                             stripeSubscriptionId: session.subscription,
                             expiryDate: admin.firestore.Timestamp.fromDate(expiryDate),
+                            interval: metadata.displayInterval || 'Monthly',
+                            intervalCount: count,
                             createdAt: admin.firestore.FieldValue.serverTimestamp(),
                             type: 'direct_subscription',
                             userName: metadata.userName,
@@ -794,9 +787,22 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
                     .get();
 
                 if (!subSnap.empty) {
+                    const subDoc = subSnap.docs[0];
+                    const subData = subDoc.data();
+                    
+                    // Fetch sub from Stripe to get current interval if not in doc
+                    const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+                    const item = stripeSub.items.data[0];
+                    const interval = item.plan.interval;
+                    const count = item.plan.interval_count;
+
                     const expiryDate = new Date();
-                    expiryDate.setMonth(expiryDate.getMonth() + 1);
-                    await subSnap.docs[0].ref.update({
+                    if (interval === 'year') expiryDate.setFullYear(expiryDate.getFullYear() + count);
+                    else if (interval === 'month') expiryDate.setMonth(expiryDate.getMonth() + count);
+                    else if (interval === 'week') expiryDate.setDate(expiryDate.getDate() + (count * 7));
+                    else expiryDate.setMonth(expiryDate.getMonth() + 1);
+
+                    await subDoc.ref.update({
                         status: 'active',
                         expiryDate: admin.firestore.Timestamp.fromDate(expiryDate)
                     });

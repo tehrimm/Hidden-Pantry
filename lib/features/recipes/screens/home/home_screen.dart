@@ -1118,7 +1118,7 @@ void _openUserProfile() {
                 // 🌄 IMAGE (cinematic zoom)
                 Positioned.fill(
                   child: Transform.scale(
-                    scale: 1.18,
+                    scale: 1.12,
                     child: Image.network(
                       r.imageUrl ?? "",
                       fit: BoxFit.cover,
@@ -1136,11 +1136,11 @@ void _openUserProfile() {
                         begin: Alignment.bottomCenter,
                         end: Alignment.topCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.88),
-                          Colors.black.withValues(alpha: 0.35),
+                          Colors.black.withValues(alpha: 0.7),
+                          Colors.black.withValues(alpha: 0.15),
                           Colors.transparent,
                         ],
-                        stops: const [0.0, 0.55, 1.0],
+                        stops: const [0.0, 0.45, 1.0],
                       ),
                     ),
                   ),
@@ -1233,17 +1233,17 @@ void _openUserProfile() {
 
                 // 🧊 GLASS CONTENT
                 Positioned(
-                  left: 16.sw,
-                  right: 16.sw,
-                  bottom: 16.sh,
+                  left: 14.sw,
+                  right: 14.sw,
+                  bottom: 12.sh,
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(18.sw),
+                    borderRadius: BorderRadius.circular(20.sw),
                     child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                      filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
                       child: Container(
-                        padding: EdgeInsets.all(14.sw),
+                        padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 10.sh),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.04),
+                          color: Colors.white.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(18.sw),
                           border: Border.all(
                             color: Colors.white.withValues(alpha: 0.15),
@@ -1256,11 +1256,11 @@ void _openUserProfile() {
                             // TITLE
                             Text(
                               r.name,
-                              maxLines: 2,
+                              maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 18.sp,
+                                fontSize: 16.sp,
                                 fontWeight: FontWeight.w900,
                                 letterSpacing: -0.5,
                               ),
@@ -1325,12 +1325,11 @@ void _openUserProfile() {
                               ],
                             ),
 
-                            SizedBox(height: 12.sh),
-
+                            SizedBox(height: 10.sh),
                             // CTA BUTTON (premium feel)
                             Container(
                               padding: EdgeInsets.symmetric(
-                                  horizontal: 14.sw, vertical: 9.sh),
+                                  horizontal: 12.sw, vertical: 7.sh),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [

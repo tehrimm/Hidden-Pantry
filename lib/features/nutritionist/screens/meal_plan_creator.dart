@@ -132,32 +132,38 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
   }
 
   Widget _buildHeaderSection() {
-    return Container(
-      padding: EdgeInsets.all(20.sw),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24.sw),
-        boxShadow: [
-          BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10.sw, offset: Offset(0, 4.sh)),
-        ],
-      ),
-      child: TextField(
-        controller: _titleCtrl,
-        style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.bold),
-        decoration: InputDecoration(
-          hintText: "Plan Title (e.g., Weight Loss Week 1)",
-          hintStyle: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 16.sp),
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.zero,
+    return _FadeSlideEntry(
+      delayMs: 100,
+      child: Container(
+        padding: EdgeInsets.all(20.sw),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(24.sw),
+          border: Border.all(color: Colors.white, width: 1.5),
+          boxShadow: [
+            BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 15, offset: const Offset(0, 6)),
+          ],
+        ),
+        child: TextField(
+          controller: _titleCtrl,
+          style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi", height: 1.1),
+          decoration: InputDecoration(
+            hintText: "Plan Title (e.g., Weight Loss Week 1)",
+            hintStyle: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 16.sp, fontWeight: FontWeight.normal),
+            border: InputBorder.none,
+            contentPadding: EdgeInsets.zero,
+          ),
         ),
       ),
     );
   }
 
   Widget _buildDurationSelector() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+    return _FadeSlideEntry(
+      delayMs: 150,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
         Text("Duration", style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.bold)),
         SizedBox(height: 12.sh),
         SingleChildScrollView(
@@ -190,13 +196,16 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
           ),
         ),
       ],
+    ),
     );
   }
 
   Widget _buildDaySelector() {
-    return SizedBox(
-      height: 60.sh,
-      child: ListView.builder(
+    return _FadeSlideEntry(
+      delayMs: 200,
+      child: SizedBox(
+        height: 60.sh,
+        child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: _durationDays,
         itemBuilder: (context, index) {
@@ -236,6 +245,7 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
             ),
           );
         },
+        ),
       ),
     );
   }
@@ -257,13 +267,16 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
   Widget _buildCategorySection(String title, IconData icon) {
     final meals = _dayMeals[_selectedDay]?.where((m) => m["type"] == title).toList() ?? [];
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20.sw),
-        boxShadow: [BoxShadow(color: purple.withValues(alpha:0.04), blurRadius: 8.sw, offset: Offset(0, 2.sh))],
-      ),
-      padding: EdgeInsets.all(16.sw),
+    return _FadeSlideEntry(
+      delayMs: 300,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(20.sw),
+          border: Border.all(color: Colors.white, width: 1.5),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 15, offset: const Offset(0, 6))],
+        ),
+        padding: EdgeInsets.all(16.sw),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -322,6 +335,7 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
             ],
           ),
         ],
+      ),
       ),
     );
   }
@@ -403,17 +417,21 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
   }
 
   Widget _buildNotesSection() {
-    return Container(
-      padding: EdgeInsets.all(20.sw),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24.sw),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("Notes", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp)),
-          SizedBox(height: 12.sh),
+    return _FadeSlideEntry(
+      delayMs: 400,
+      child: Container(
+        padding: EdgeInsets.all(20.sw),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.5),
+          borderRadius: BorderRadius.circular(24.sw),
+          border: Border.all(color: Colors.white, width: 1.5),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 15, offset: const Offset(0, 6))],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Nutritionist's Note", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp)),
+            SizedBox(height: 12.sh),
           TextField(
             controller: _notesCtrl,
             maxLines: 3,
@@ -428,6 +446,7 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -699,6 +718,53 @@ class _RecipeSearchModalState extends State<_RecipeSearchModal> {
                       ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FadeSlideEntry extends StatefulWidget {
+  final Widget child;
+  final int delayMs;
+  const _FadeSlideEntry({required this.child, this.delayMs = 0});
+  @override
+  State<_FadeSlideEntry> createState() => _FadeSlideEntryState();
+}
+
+class _FadeSlideEntryState extends State<_FadeSlideEntry> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _fade = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _slide = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+
+    if (widget.delayMs > 0) {
+      Future.delayed(Duration(milliseconds: widget.delayMs), () {
+        if (mounted) _ctrl.forward();
+      });
+    } else {
+      _ctrl.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: widget.child,
       ),
     );
   }

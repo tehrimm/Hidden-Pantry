@@ -58,7 +58,6 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with 
   @override
   void initState() {
     super.initState();
-    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 
     _mainController = AnimationController(
       vsync: this,
@@ -177,14 +176,11 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with 
     } on FirebaseAuthException catch (e) {
       if (!mounted) return;
       setState(() {
-        if (e.code == "user-not-found") {
-          _emailErr = "*user not found";
-        } else if (e.code == "wrong-password") {
-          _passErr = "*wrong password";
+        if (e.code == "user-not-found" || e.code == "wrong-password" || e.code == "invalid-credential") {
+          _emailErr = "*invalid email or password";
+          _passErr = "*invalid email or password";
         } else if (e.code == "invalid-email") {
           _emailErr = "*invalid email";
-        } else if (e.code == "invalid-credential") {
-           _passErr = "*invalid credentials";
         } else {
           _snack("${e.message ?? "Login failed (Error: ${e.code})"}");
         }
@@ -574,7 +570,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with 
                                       child: Container(
                                         height: 59.sh,
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFF9E3D5).withValues(alpha: 0.6),
+                                          color: const Color(0xFFF9E3D5),
                                           borderRadius: BorderRadius.circular(15.sw),
                                           border: Border.all(
                                             color: Colors.white.withValues(alpha: 0.4),
@@ -598,7 +594,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with 
                                       child: Container(
                                         height: 59.sh,
                                         decoration: BoxDecoration(
-                                          color: const Color(0xFFF9E3D5).withValues(alpha: 0.6),
+                                          color: const Color(0xFFF9E3D5),
                                           borderRadius: BorderRadius.circular(15.sw),
                                           border: Border.all(
                                             color: Colors.white.withValues(alpha: 0.4),
