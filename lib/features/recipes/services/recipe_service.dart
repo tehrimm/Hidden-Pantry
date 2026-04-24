@@ -11,6 +11,7 @@ import 'package:hidden_pantry_app/core/constants/api_constants.dart';
 
 class RecipeService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final RecipeApiService _api = const RecipeApiService(baseUrl: ApiConstants.baseUrl);
 
   /// Increments the view count for a specific recipe to track popularity.
@@ -900,6 +901,34 @@ class RecipeService {
     } catch (e) {
       print("[RecipeService] Error deleting recipe $recipeId: $e");
       rethrow;
+    }
+  }
+
+  /// Synchronizes author information across all their recipes.
+  /// Useful when a user/nutritionist updates their profile name or photo.
+  Future<void> syncAuthorName(String authorId, String newName, String? photoUrl) async {
+    print("[RecipeService] Syncing author info for $authorId -> $newName");
+    try {
+      final batch = _firestore.batch();
+      final recipes = await _firestore
+          .collection('recipes')
+          .where('author_id', isEqualTo: authorId)
+          .get();
+      
+      print("[RecipeService] Found ${recipes.docs.length} recipes to update");
+      
+      for (var doc in recipes.docs) {
+        batch.update(doc.reference, {
+          'author_name': newName,
+          if (photoUrl != null) 'author_profile_image_url': photoUrl,
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      }
+      
+      await batch.commit();
+      print("[RecipeService] Author info sync completed successfully");
+    } catch (e) {
+      print("[RecipeService] Author info sync failed: $e");
     }
   }
 }

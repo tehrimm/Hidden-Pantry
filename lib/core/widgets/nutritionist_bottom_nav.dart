@@ -130,8 +130,8 @@ class NbBottomNav extends StatelessWidget {
         children: [
           Image.asset(
             isActive ? active : inactive,
-            width: 24.sw,
-            height: 24.sw,
+            width: index == 1 ? 35.sw : 24.sw,
+            height: index == 1 ? 35.sw : 24.sw,
             fit: BoxFit.contain,
           ),
           SizedBox(height: 6.sh),

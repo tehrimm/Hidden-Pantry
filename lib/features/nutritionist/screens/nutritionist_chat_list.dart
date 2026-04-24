@@ -239,10 +239,9 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
     ResponsiveUtils.init(context);
 
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          const PatternBackground(opacity: 0.5),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

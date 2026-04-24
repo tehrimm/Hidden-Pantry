@@ -131,21 +131,6 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
               _buildTrialBadge(),
             ],
           ),
-          if (kDebugMode) ...[
-            SizedBox(height: 12.sh),
-            TextButton(
-              onPressed: () => _iapService.test_simulatePurchaseSuccess(context, _isAnnual),
-              child: Text(
-                "DEBUG: Bypass Payment",
-                style: TextStyle(
-                  color: _orange,
-                  fontSize: 12.sp,
-                  fontWeight: FontWeight.bold,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -409,7 +394,23 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
   void _handleSubscription(BuildContext context) async {
     HapticFeedback.heavyImpact();
     
-    if (_iapService.products.isEmpty && !kDebugMode) {
+    // Check for tester first (they don't need real products loaded)
+    if (_iapService.isTesterAccount()) {
+      await _iapService.buyProduct(
+        ProductDetails(
+          id: _isAnnual ? IAPService.annualID : IAPService.monthlyID,
+          title: 'Premium',
+          description: '',
+          price: '0',
+          rawPrice: 0,
+          currencyCode: 'PKR'
+        ),
+        context: context
+      );
+      return;
+    }
+
+    if (_iapService.products.isEmpty) {
       Toaster.show(context, "Billing service not ready. Please try again.", isError: true);
       return;
     }
@@ -421,10 +422,10 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
         orElse: () => _iapService.products.first
       );
 
-      await _iapService.buyProduct(product);
+      await _iapService.buyProduct(product, context: context);
     } catch (e) {
       if (context.mounted) {
-        Toaster.show(context, StripeService.friendlyError(e), isError: true);
+        Toaster.show(context, "Unable to process payment. Please try again.", isError: true);
       }
     }
   }

@@ -13,6 +13,7 @@ import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/features/nutritionist/services/nutritionist_service.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 
 class NutritionistProfileSettingScreen extends StatefulWidget {
   const NutritionistProfileSettingScreen({super.key});
@@ -22,7 +23,7 @@ class NutritionistProfileSettingScreen extends StatefulWidget {
 }
 
 class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSettingScreen> {
-  static const Color bg = Color(0xFFFFF3EB);
+  static const Color bg = Color(0xFFFFF7F2);
   static const Color text = Color(0xFF462F4D);
   static const Color hint = Color(0xFFBFA89A);
   static const Color orange = Color(0xFFF2894F);
@@ -177,6 +178,17 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
         await user.updateDisplayName(_nameCtrl.text.trim());
       }
       await user.reload();
+      
+      // 🔄 SYNC: Update author info on all recipes
+      try {
+        await RecipeService().syncAuthorName(
+          user.uid, 
+          _nameCtrl.text.trim(), 
+          photoUrl
+        );
+      } catch (syncErr) {
+        print("[NutritionistProfileSetting] Background sync failed: $syncErr");
+      }
 
       _photoUrl = photoUrl;
       _pickedImage = null;
@@ -484,6 +496,7 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
                                               'assets/icons/notification.png',
                                               width: 18.sw,
                                               height: 18.sw,
+                                              color: text,
                                             ),
                                           ),
                                         ),
@@ -502,6 +515,7 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
                                         _NotifSwitch(
                                           value: _notifEnabled,
                                           onChanged: (v) => setState(() => _notifEnabled = v),
+                                          text: text,
                                         ),
                                       ],
                                     ),
@@ -526,7 +540,7 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
                                             borderRadius: BorderRadius.circular(10.sw),
                                           ),
                                           child: Center(
-                                            child: Icon(Icons.mic_rounded, color: orange, size: 20.sw),
+                                            child: Icon(Icons.mic_rounded, color: text, size: 20.sw),
                                           ),
                                         ),
                                         SizedBox(width: 16.sw),
@@ -558,6 +572,7 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
                                         _NotifSwitch(
                                           value: _voiceEnabled,
                                           onChanged: (v) => setState(() => _voiceEnabled = v),
+                                          text: text,
                                         ),
                                       ],
                                     ),
@@ -749,10 +764,12 @@ class _InputCard extends StatelessWidget {
 class _NotifSwitch extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
+  final Color text;
 
   const _NotifSwitch({
     required this.value,
     required this.onChanged,
+    required this.text,
   });
 
   @override
@@ -761,8 +778,8 @@ class _NotifSwitch extends StatelessWidget {
     final trackH = 24.sh;
     final knobSize = 20.sw;
 
-    final trackColor = value ? const Color(0xFFDFBFE5) : const Color(0xFFE5CCBF);
-    final knobColor = value ? const Color(0xFF462F4D) : const Color(0xFF74503C);
+    final trackColor = value ? text.withValues(alpha: 0.3) : text.withValues(alpha: 0.15);
+    final knobColor = text;
 
     return GestureDetector(
       onTap: () => onChanged(!value),

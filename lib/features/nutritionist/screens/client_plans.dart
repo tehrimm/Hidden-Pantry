@@ -93,7 +93,7 @@ class _ClientPlansScreenState extends State<ClientPlansScreen> {
                 return Center(child: Text("Error: ${snapshot.error}", style: const TextStyle(color: Colors.red)));
               }
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return Center(child: CircularProgressIndicator(color: orange));
               }
 
               final plans = snapshot.data?.docs ?? [];
@@ -117,16 +117,28 @@ class _ClientPlansScreenState extends State<ClientPlansScreen> {
                   final plan = doc.data() as Map<String, dynamic>;
                   final planId = doc.id;
 
-                  return Padding(
-                    padding: EdgeInsets.only(top: 20.sh),
-                    child: _planCard(
-                      planId: planId,
-                      plan: plan,
-                      title: plan["title"] ?? "Untitled",
-                      price: plan["price"]?.toString() ?? "0",
-                      interval: plan["interval"] ?? "Monthly",
-                      benefits: List<Map<String, dynamic>>.from(plan["benefits"] ?? []),
-                      isActive: plan["isActive"] ?? true,
+                  return TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: Duration(milliseconds: 600 + (index * 150)),
+                    curve: Curves.easeOutQuart,
+                    builder: (context, value, child) => Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, 50 * (1 - value)),
+                        child: child,
+                      ),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 20.sh),
+                      child: _planCard(
+                        planId: planId,
+                        plan: plan,
+                        title: plan["title"] ?? "Untitled",
+                        price: plan["price"]?.toString() ?? "0",
+                        interval: plan["interval"] ?? "Monthly",
+                        benefits: List<Map<String, dynamic>>.from(plan["benefits"] ?? []),
+                        isActive: plan["isActive"] ?? true,
+                      ),
                     ),
                   );
                 },
@@ -140,25 +152,43 @@ class _ClientPlansScreenState extends State<ClientPlansScreen> {
 
   Widget _header() {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 16.sh),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      padding: EdgeInsets.fromLTRB(22.sw, 24.sh, 22.sw, 12.sh),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Text(
-            "Subscription Hub",
-            style: TextStyle(
-              color: purple,
-              fontSize: 28.sp,
-              fontWeight: FontWeight.w900,
-              fontFamily: "Satoshi",
+          Container(
+            padding: EdgeInsets.all(12.sw),
+            decoration: BoxDecoration(
+              color: orange.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16.sw),
             ),
+            child: Icon(Icons.hub_rounded, color: orange, size: 28.sw),
           ),
-          Text(
-            "Grow your premium community",
-            style: TextStyle(
-              color: purple.withValues(alpha: 0.6),
-              fontSize: 14.sp,
-              fontFamily: "Satoshi",
+          SizedBox(width: 16.sw),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Subscription Hub",
+                  style: TextStyle(
+                    color: purple,
+                    fontSize: 28.sp,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: "Satoshi",
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                Text(
+                  "Grow your premium community",
+                  style: TextStyle(
+                    color: purple.withValues(alpha: 0.5),
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: "Satoshi",
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -238,31 +268,43 @@ class _ClientPlansScreenState extends State<ClientPlansScreen> {
         );
       },
       child: Container(
-        height: 64.sh,
+        height: 68.sh,
         width: double.infinity,
         decoration: BoxDecoration(
-          color: purple,
-          borderRadius: BorderRadius.circular(20.sw),
+          gradient: LinearGradient(
+            colors: [purple, const Color(0xFF2D1E32)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(24.sw),
           boxShadow: [
             BoxShadow(
               color: purple.withValues(alpha: 0.3),
-              blurRadius: 20.sw,
-              offset: Offset(0, 10.sh),
+              blurRadius: 25.sw,
+              offset: Offset(0, 12.sh),
             ),
           ],
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.add_rounded, color: Colors.white, size: 24.sw),
-            SizedBox(width: 12.sw),
+            Container(
+              padding: EdgeInsets.all(6.sw),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.add_rounded, color: Colors.white, size: 24.sw),
+            ),
+            SizedBox(width: 16.sw),
             Text(
               "Create New Tier",
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 16.sp,
-                fontWeight: FontWeight.bold,
+                fontSize: 18.sp,
+                fontWeight: FontWeight.w900,
                 fontFamily: "Satoshi",
+                letterSpacing: 0.5,
               ),
             ),
           ],
@@ -320,16 +362,23 @@ class _PlanCardItemState extends State<_PlanCardItem> {
 
   @override
   Widget build(BuildContext context) {
+    final tierColor = widget.plan["tierLevel"] == 3 
+        ? const Color(0xFF673AB7) 
+        : widget.plan["tierLevel"] == 2 
+            ? const Color(0xFFDAA520) 
+            : const Color(0xFF607D8B);
+
     return Container(
-      padding: EdgeInsets.all(24.sw),
+      padding: EdgeInsets.all(26.sw),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9E3D5),
-        borderRadius: BorderRadius.circular(24.sw),
+        color: Colors.white.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(32.sw),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: purple.withValues(alpha: 0.05),
-            blurRadius: 15.sw,
-            offset: Offset(0, 8.sh),
+            color: purple.withValues(alpha: 0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
@@ -339,86 +388,93 @@ class _PlanCardItemState extends State<_PlanCardItem> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                widget.title,
-                style: TextStyle(
-                  color: purple,
-                  fontSize: 22.sp,
-                  fontWeight: FontWeight.w900,
-                  fontFamily: "Satoshi",
-                ),
-              ),
-              PopupMenuButton<String>(
-                icon: Icon(Icons.more_horiz_rounded, color: purple.withValues(alpha: 0.3)),
-                onSelected: (value) {
-                  if (value == "edit") widget.onEdit();
-                  if (value == "delete") widget.onDelete();
-                },
-                itemBuilder: (context) => [
-                  const PopupMenuItem(value: "edit", child: Text("Edit")),
-                  const PopupMenuItem(value: "delete", child: Text("Delete", style: TextStyle(color: Colors.red))),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 6.sh),
+                    decoration: BoxDecoration(
+                      color: tierColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12.sw),
+                      border: Border.all(color: tierColor.withValues(alpha: 0.15)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          widget.plan["tierLevel"] == 3 
+                              ? Icons.diamond_rounded 
+                              : widget.plan["tierLevel"] == 2 
+                                  ? Icons.workspace_premium_rounded 
+                                  : Icons.verified_user_rounded, 
+                          size: 14.sw, 
+                          color: tierColor
+                        ),
+                        SizedBox(width: 6.sw),
+                        Text(
+                          widget.plan["tierLevel"] == 3 ? "PLATINUM" : widget.plan["tierLevel"] == 2 ? "GOLD" : "SILVER",
+                          style: TextStyle(
+                            color: tierColor,
+                            fontSize: 10.sp,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 12.sh),
+                  Text(
+                    widget.title,
+                    style: TextStyle(
+                      color: purple,
+                      fontSize: 24.sp,
+                      fontWeight: FontWeight.w900,
+                      fontFamily: "Satoshi",
+                      letterSpacing: -0.5,
+                    ),
+                  ),
                 ],
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-               Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 5.sh),
+              Container(
                 decoration: BoxDecoration(
-                  color: (widget.plan["tierLevel"] == 3 
-                    ? const Color(0xFF4B0082) 
-                    : widget.plan["tierLevel"] == 2 
-                      ? const Color(0xFFDAA520) 
-                      : const Color(0xFF708090)).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10.sw),
+                  color: purple.withValues(alpha: 0.04),
+                  shape: BoxShape.circle,
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      widget.plan["tierLevel"] == 3 
-                        ? Icons.diamond_rounded 
-                        : widget.plan["tierLevel"] == 2 
-                          ? Icons.star_rounded 
-                          : Icons.star_half_rounded, 
-                      size: 12.sw, 
-                      color: widget.plan["tierLevel"] == 3 
-                        ? const Color(0xFF4B0082) 
-                        : widget.plan["tierLevel"] == 2 
-                          ? const Color(0xFFDAA520) 
-                          : const Color(0xFF708090)
+                child: PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert_rounded, color: purple.withValues(alpha: 0.4), size: 22.sw),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.sw)),
+                  onSelected: (value) {
+                    if (value == "edit") widget.onEdit();
+                    if (value == "delete") widget.onDelete();
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: "edit", 
+                      child: Row(
+                        children: [
+                          Icon(Icons.edit_rounded, size: 18.sw, color: purple),
+                          SizedBox(width: 12.sw),
+                          const Text("Edit Tier"),
+                        ],
+                      )
                     ),
-                    SizedBox(width: 4.sw),
-                    Text(
-                      widget.plan["tierLevel"] == 3 ? "PLATINUM" : widget.plan["tierLevel"] == 2 ? "GOLD" : "SILVER",
-                      style: TextStyle(
-                        color: widget.plan["tierLevel"] == 3 
-                          ? const Color(0xFF4B0082) 
-                          : widget.plan["tierLevel"] == 2 
-                            ? const Color(0xFFDAA520) 
-                            : const Color(0xFF708090),
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    PopupMenuItem(
+                      value: "delete", 
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_outline_rounded, size: 18.sw, color: Colors.red),
+                          SizedBox(width: 12.sw),
+                          const Text("Delete", style: TextStyle(color: Colors.red)),
+                        ],
+                      )
                     ),
                   ],
                 ),
               ),
-              SizedBox(width: 8.sw),
-              if (!_currentActive)
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 5.sh),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10.sw),
-                  ),
-                  child: Text("HIDDEN", style: TextStyle(color: Colors.red, fontSize: 10.sp, fontWeight: FontWeight.bold)),
-                ),
             ],
           ),
-          SizedBox(height: 12.sh),
+          SizedBox(height: 24.sh),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
@@ -426,26 +482,37 @@ class _PlanCardItemState extends State<_PlanCardItem> {
                 "Rs. ${widget.price}",
                 style: TextStyle(
                   color: orange,
-                  fontSize: 30.sp,
+                  fontSize: 34.sp,
                   fontWeight: FontWeight.w900,
                   fontFamily: "Satoshi",
                 ),
               ),
               Padding(
-                padding: EdgeInsets.only(bottom: 6.sh, left: 4.sw),
+                padding: EdgeInsets.only(bottom: 8.sh, left: 6.sw),
                 child: Text(
-                  "/ ${widget.interval}",
+                  "/ ${widget.interval.toLowerCase()}",
                   style: TextStyle(
                     color: purple.withValues(alpha: 0.4),
                     fontSize: 14.sp,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
               ),
             ],
           ),
-          SizedBox(height: 20.sh),
-          ...widget.benefits.map((b) => _benefitRow(b["title"] ?? b["text"] ?? "", true)),
+          SizedBox(height: 24.sh),
+          Container(
+            padding: EdgeInsets.all(18.sw),
+            decoration: BoxDecoration(
+              color: purple.withValues(alpha: 0.03),
+              borderRadius: BorderRadius.circular(24.sw),
+            ),
+            child: Column(
+              children: [
+                ...widget.benefits.map((b) => _benefitRow(b["title"] ?? b["text"] ?? "", true)),
+              ],
+            ),
+          ),
           SizedBox(height: 24.sh),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -467,23 +534,30 @@ class _PlanCardItemState extends State<_PlanCardItem> {
                         tierRevenue += (dData["price"] ?? 0.0).toDouble();
                       }
                     }
-                    return Row(
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                          Text(
-                            "$count ACTIVE CLIENTS",
-                            style: TextStyle(
-                              color: purple.withValues(alpha: 0.4),
-                              fontSize: 11.sp,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.5.sw,
+                        Row(
+                          children: [
+                            Icon(Icons.group_rounded, size: 14.sw, color: purple.withValues(alpha: 0.4)),
+                            SizedBox(width: 6.sw),
+                            Text(
+                              "$count ACTIVE CLIENTS",
+                              style: TextStyle(
+                                color: purple.withValues(alpha: 0.5),
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.5,
+                              ),
                             ),
-                          ),
-                        const Spacer(),
+                          ],
+                        ),
+                        SizedBox(height: 4.sh),
                         Text(
-                          "VAL: Rs. ${tierRevenue.toInt()}",
+                          "EST. REVENUE: Rs. ${tierRevenue.toInt()}",
                           style: TextStyle(
-                            color: orange.withValues(alpha: 0.6),
-                            fontSize: 11.sp,
+                            color: orange.withValues(alpha: 0.8),
+                            fontSize: 12.sp,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
@@ -492,28 +566,43 @@ class _PlanCardItemState extends State<_PlanCardItem> {
                   }
                 ),
               ),
-              Switch(
-                value: _currentActive,
-                onChanged: (v) async {
-                  setState(() => _currentActive = v);
-                  try {
-                    final user = FirebaseAuth.instance.currentUser;
-                    if (user == null) return;
-                    await FirebaseFirestore.instance
-                        .collection("nutritionists")
-                        .doc(user.uid)
-                        .collection("subscription_plans")
-                        .doc(widget.planId)
-                        .update({"isActive": v, "updatedAt": FieldValue.serverTimestamp()});
-                  } catch (e) {
-                    setState(() => _currentActive = !v);
-                    if (mounted) {
-                      Toaster.show(context, "Error: $e", isError: true);
-                    }
-                  }
-                },
-                activeThumbColor: orange,
-                activeTrackColor: orange.withValues(alpha: 0.1),
+              Column(
+                children: [
+                  Text(
+                    _currentActive ? "VISIBLE" : "HIDDEN",
+                    style: TextStyle(
+                      color: _currentActive ? Colors.green : Colors.red,
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  Transform.scale(
+                    scale: 0.8,
+                    child: Switch(
+                      value: _currentActive,
+                      onChanged: (v) async {
+                        setState(() => _currentActive = v);
+                        try {
+                          final user = FirebaseAuth.instance.currentUser;
+                          if (user == null) return;
+                          await FirebaseFirestore.instance
+                              .collection("nutritionists")
+                              .doc(user.uid)
+                              .collection("subscription_plans")
+                              .doc(widget.planId)
+                              .update({"isActive": v, "updatedAt": FieldValue.serverTimestamp()});
+                        } catch (e) {
+                          setState(() => _currentActive = !v);
+                          if (mounted) {
+                            Toaster.show(context, "Error: $e", isError: true);
+                          }
+                        }
+                      },
+                      activeColor: orange,
+                      activeTrackColor: orange.withValues(alpha: 0.2),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -524,16 +613,25 @@ class _PlanCardItemState extends State<_PlanCardItem> {
 
   Widget _benefitRow(String text, bool active) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 10.sh),
+      padding: EdgeInsets.symmetric(vertical: 6.sh),
       child: Row(
         children: [
+          Container(
+            padding: EdgeInsets.all(4.sw),
+            decoration: BoxDecoration(
+              color: orange.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.check_rounded, color: orange, size: 10.sw),
+          ),
+          SizedBox(width: 12.sw),
           Expanded(
             child: Text(
               text,
               style: TextStyle(
-                color: purple,
+                color: purple.withValues(alpha: 0.8),
                 fontSize: 14.sp,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
                 fontFamily: "Satoshi",
               ),
             ),

@@ -15,10 +15,17 @@ class IAPService {
   factory IAPService() => _instance;
   IAPService._internal();
 
+  /// Check if the current user is a designated tester account
+  bool isTesterAccount() {
+    final user = FirebaseAuth.instance.currentUser;
+    return user?.email == 'hiddenpantry50@gmail.com';
+  }
+
   // Product IDs (Must match Google Play Console)
   static const String monthlyID = 'platform_premium_monthly';
   static const String annualID = 'platform_premium_annual';
-  static const Set<String> _productIds = {monthlyID, annualID};
+  static const String nutritionistMembershipID = 'nutritionist_platform_membership';
+  static const Set<String> _productIds = {monthlyID, annualID, nutritionistMembershipID};
 
   List<ProductDetails> _products = [];
   List<ProductDetails> get products => _products;
@@ -51,9 +58,30 @@ class IAPService {
   }
 
   /// Start purchase flow
-  Future<void> buyProduct(ProductDetails product) async {
+  Future<void> buyProduct(ProductDetails product, {BuildContext? context}) async {
+    // Tester Account Bypass
+    if (isTesterAccount()) {
+      debugPrint("Tester account detected: Bypassing payment for ${product.id}");
+      if (context != null) {
+        await _verifyAndEnablePremium(PurchaseDetails(
+          productID: product.id,
+          purchaseID: 'tester_${DateTime.now().millisecondsSinceEpoch}',
+          status: PurchaseStatus.purchased,
+          transactionDate: DateTime.now().millisecondsSinceEpoch.toString(),
+          verificationData: PurchaseVerificationData(localVerificationData: '', serverVerificationData: '', source: ''),
+        ));
+        
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text("Tester Access Granted: Premium Unlocked!")),
+          );
+          Navigator.pop(context);
+        }
+      }
+      return;
+    }
+
     final PurchaseParam purchaseParam = PurchaseParam(productDetails: product);
-    
     // For subscriptions, we use buyNonConsumable
     await _iap.buyNonConsumable(purchaseParam: purchaseParam);
   }
@@ -81,29 +109,48 @@ class IAPService {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final isMonthly = purchase.productID == monthlyID;
+    final isNutritionistMembership = purchase.productID == nutritionistMembershipID;
+    final isMonthly = purchase.productID == monthlyID || isNutritionistMembership;
     final now = DateTime.now();
     final expiry = isMonthly ? now.add(const Duration(days: 30)) : now.add(const Duration(days: 365));
 
-    await FirebaseFirestore.instance.collection('subscriptions').add({
-      'userId': user.uid,
-      'planId': 'platform_premium',
-      'planTitle': 'Hidden Pantry Premium',
-      'productId': purchase.productID,
-      'purchaseId': purchase.purchaseID,
-      'status': 'active',
-      'startDate': FieldValue.serverTimestamp(),
-      'expiryDate': Timestamp.fromDate(expiry),
-      'interval': isMonthly ? 'month' : 'year',
-      'billingSource': 'google_play', // or 'app_store'
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-    
-    // Also update user doc for quick access
-    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-      'isPremium': true,
-      'subscriptionExpiry': Timestamp.fromDate(expiry),
-    });
+    if (isNutritionistMembership) {
+      // Nutritionist Platform Membership
+      await FirebaseFirestore.instance.collection('nutritionists').doc(user.uid).update({
+        'isActive': true,
+        'membershipExpiry': Timestamp.fromDate(expiry),
+        'lastPaymentDate': FieldValue.serverTimestamp(),
+      });
+
+      await FirebaseFirestore.instance.collection('nutritionists').doc(user.uid).collection('payments').add({
+        'amount': 500, // Platform fee amount
+        'currency': 'PKR',
+        'status': 'success',
+        'purchaseId': purchase.purchaseID,
+        'timestamp': FieldValue.serverTimestamp(),
+        'source': purchase.verificationData.source,
+      });
+    } else {
+      // User Premium
+      await FirebaseFirestore.instance.collection('subscriptions').add({
+        'userId': user.uid,
+        'planId': 'platform_premium',
+        'planTitle': 'Hidden Pantry Premium',
+        'productId': purchase.productID,
+        'purchaseId': purchase.purchaseID,
+        'status': 'active',
+        'startDate': FieldValue.serverTimestamp(),
+        'expiryDate': Timestamp.fromDate(expiry),
+        'interval': isMonthly ? 'month' : 'year',
+        'billingSource': purchase.verificationData.source.isEmpty ? 'native_store' : purchase.verificationData.source,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+      
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+        'isPremium': true,
+        'subscriptionExpiry': Timestamp.fromDate(expiry),
+      });
+    }
   }
 
   /// 🧪 DEBUG ONLY: Simulate a successful purchase without involving the store.

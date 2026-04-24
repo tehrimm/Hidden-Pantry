@@ -126,4 +126,34 @@ class SubscriptionService {
         return true;
     }
   }
+
+  /// Checks if a user has an active subscription to a specific nutritionist.
+  Future<bool> hasNutritionistAccess(String nutritionistId) async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+
+    // Nutritionists can always see their own recipes
+    if (user.uid == nutritionistId) return true;
+
+    try {
+      final snap = await _firestore
+          .collection('subscriptions')
+          .where('userId', isEqualTo: user.uid)
+          .where('nutritionistId', isEqualTo: nutritionistId)
+          .where('status', isEqualTo: 'active')
+          .get();
+
+      if (snap.docs.isNotEmpty) {
+        final data = snap.docs.first.data();
+        final expiry = data['expiryDate'];
+        if (expiry is Timestamp) {
+          return expiry.toDate().isAfter(DateTime.now());
+        }
+      }
+      return false;
+    } catch (e) {
+      debugPrint("Error checking nutritionist access: $e");
+      return false;
+    }
+  }
 }

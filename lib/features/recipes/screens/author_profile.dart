@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
@@ -94,11 +95,18 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
           final apiRecipes = results[1] as List<Recipe>;
           final fsRecipes = results[2] as List<Recipe>;
           final byId = <String, Recipe>{};
+          final currentUid = FirebaseAuth.instance.currentUser?.uid;
           for (final r in [...apiRecipes, ...fsRecipes]) {
-            if (r.id.isNotEmpty && r.isPublic) byId[r.id] = r;
+            if (r.id.isNotEmpty && (r.isPublic || widget.authorId == currentUid)) byId[r.id] = r;
           }
           _recipes = byId.values.toList();
-          if (_stats['recipe_count'] == null || _stats['recipe_count'] == 0) {
+          // 🛡️ Ensure recipe count is accurate if metadata is missing or 0
+          final dynamic rawCount = _stats['recipe_count'];
+          bool countIsZero = rawCount == null || 
+                            (rawCount is int && rawCount == 0) || 
+                            (rawCount is String && (rawCount == '0' || rawCount.isEmpty));
+          
+          if (countIsZero && _recipes.isNotEmpty) {
             _stats['recipe_count'] = _recipes.length;
           }
           _isFollowing = results[3] as bool;                                  
@@ -106,7 +114,7 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
           final firestoreFollowStats = results[4] as Map<String, int>;        
           final firestoreMetricStats = results[5] as Map<String, dynamic>;    
 
-          
+
           _stats['followers'] = firestoreFollowStats['followers'];
           _stats['following'] = firestoreFollowStats['following'];
           
@@ -166,11 +174,15 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
 
   Future<List<Recipe>> _fetchFirestoreRecipesByAuthor(String authorId) async {
     try {
-      final snap = await FirebaseFirestore.instance
+      final currentUid = FirebaseAuth.instance.currentUser?.uid;
+      final query = FirebaseFirestore.instance
           .collection('recipes')
-          .where('author_id', isEqualTo: authorId)
-          .where('is_public', isEqualTo: true)
-          .get();
+          .where('author_id', isEqualTo: authorId);
+      
+      final snap = (authorId == currentUid) 
+        ? await query.get() 
+        : await query.where('is_public', isEqualTo: true).get();
+        
       return snap.docs.map((d) => Recipe.fromJson(d.data())).toList();
     } catch (e) {
       print("[AuthorProfile] Error fetching Firestore recipes for author $authorId: $e");
@@ -269,45 +281,46 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
 
           SizedBox(height: 16.sh),
 
-          // Follow Button
-          SizedBox(
-            width: 140.sw,
-            height: 44.sh,
-            child: ElevatedButton(
-              onPressed: () async {
-                final newValue = !_isFollowing;
-                setState(() {
-                  _isFollowing = newValue;
-                  // Local optimistic update for stats
-                  if (_stats.containsKey('followers')) {
-                    int current = _stats['followers'] is int 
-                      ? _stats['followers'] 
-                      : int.tryParse(_stats['followers'].toString()) ?? 0;
-                    _stats['followers'] = newValue ? current + 1 : (current - 1).clamp(0, double.infinity).toInt();
-                  }
-                });
-                await _followService.toggleFollow(
-                  widget.authorId, 
-                  shouldFollow: newValue,
-                  authorName: widget.authorName,
-                  photoUrl: widget.profileImageUrl,
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _isFollowing ? Colors.white : orange,
-                foregroundColor: _isFollowing ? orange : Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(22.sw),
-                  side: _isFollowing ? const BorderSide(color: orange) : BorderSide.none,
+          // Follow Button (Hidden if viewing own profile)
+          if (FirebaseAuth.instance.currentUser?.uid != widget.authorId)
+            SizedBox(
+              width: 140.sw,
+              height: 44.sh,
+              child: ElevatedButton(
+                onPressed: () async {
+                  final newValue = !_isFollowing;
+                  setState(() {
+                    _isFollowing = newValue;
+                    // Local optimistic update for stats
+                    if (_stats.containsKey('followers')) {
+                      int current = _stats['followers'] is int 
+                        ? _stats['followers'] 
+                        : int.tryParse(_stats['followers'].toString()) ?? 0;
+                      _stats['followers'] = newValue ? current + 1 : (current - 1).clamp(0, double.infinity).toInt();
+                    }
+                  });
+                  await _followService.toggleFollow(
+                    widget.authorId, 
+                    shouldFollow: newValue,
+                    authorName: widget.authorName,
+                    photoUrl: widget.profileImageUrl,
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _isFollowing ? Colors.white : orange,
+                  foregroundColor: _isFollowing ? orange : Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(22.sw),
+                    side: _isFollowing ? const BorderSide(color: orange) : BorderSide.none,
+                  ),
+                ),
+                child: Text(
+                  _isFollowing ? "Following" : "Follow",
+                  style: TextStyle(fontWeight: FontWeight.w800, fontFamily: "Satoshi", fontSize: 14.sp),
                 ),
               ),
-              child: Text(
-                _isFollowing ? "Following" : "Follow",
-                style: TextStyle(fontWeight: FontWeight.w800, fontFamily: "Satoshi", fontSize: 14.sp),
-              ),
             ),
-          ),
 
           SizedBox(height: 28.sh),
 
@@ -318,7 +331,9 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
               _statItem("Recipes", _stats['recipe_count']?.toString() ?? "0"),
               _statItem("Followers", _stats['followers']?.toString() ?? "0"),
               _statItem("Following", _stats['following']?.toString() ?? "0"),
-              if (_stats['avg_rating'] != null && _stats['avg_rating'] != "0.0")
+              if (_stats['avg_rating'] != null && 
+                  _stats['avg_rating'].toString() != "0.0" && 
+                  _stats['avg_rating'].toString() != "0")
                 _statItem("Rating", _stats['avg_rating']?.toString() ?? "0.0"),
             ],
           ),

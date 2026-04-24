@@ -71,7 +71,7 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF3EB),
+      backgroundColor: const Color(0xFFFFF7F2),
       extendBodyBehindAppBar: true, 
       appBar: AppBar(
         title: Text(
@@ -603,7 +603,7 @@ class _RecipeSearchModalState extends State<_RecipeSearchModal> {
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF3EB),
+        color: const Color(0xFFFFF7F2),
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.sw)),
       ),
       child: Column(

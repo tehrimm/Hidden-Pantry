@@ -47,6 +47,7 @@ class RecipeSelectionSheet extends StatelessWidget {
                 stream: FirebaseFirestore.instance
                     .collection("recipes")
                     .where("author_id", isEqualTo: user?.uid)
+                    .where("is_public", isEqualTo: true)
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.hasError) {

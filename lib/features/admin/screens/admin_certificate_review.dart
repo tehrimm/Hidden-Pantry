@@ -72,14 +72,23 @@ class _AdminCertificateReviewScreenState extends State<AdminCertificateReviewScr
                 FadeTransition(
                   opacity: _headerFade,
                   child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 30.sw),
+                    padding: EdgeInsets.fromLTRB(22.sw, 20.sh, 22.sw, 0),
                     child: Row(
                       children: [
                         BackButtonWidget(
                           onPressed: () => Navigator.pop(context),
                           color: purple,
                         ),
-                        SizedBox(width: 20.sw),
+                        SizedBox(width: 16.sw),
+                        Container(
+                          padding: EdgeInsets.all(12.sw),
+                          decoration: BoxDecoration(
+                            color: orange.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(16.sw),
+                          ),
+                          child: Icon(Icons.verified_user_rounded, color: orange, size: 28.sw),
+                        ),
+                        SizedBox(width: 16.sw),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -87,7 +96,7 @@ class _AdminCertificateReviewScreenState extends State<AdminCertificateReviewScr
                               "Certificates",
                               style: TextStyle(
                                 color: purple,
-                                fontSize: 28.sp,
+                                fontSize: 26.sp,
                                 fontWeight: FontWeight.w900,
                                 fontFamily: "Satoshi",
                                 letterSpacing: -0.5,
@@ -135,8 +144,17 @@ class _AdminCertificateReviewScreenState extends State<AdminCertificateReviewScr
                         itemCount: list.length,
                         separatorBuilder: (_, __) => SizedBox(height: 20.sh),
                         itemBuilder: (context, index) {
-                          return _StaggeredEntry(
-                            index: index,
+                          return TweenAnimationBuilder<double>(
+                            tween: Tween(begin: 0.0, end: 1.0),
+                            duration: Duration(milliseconds: 500 + (index * 150)),
+                            curve: Curves.easeOutQuart,
+                            builder: (context, value, child) => Opacity(
+                              opacity: value,
+                              child: Transform.translate(
+                                offset: Offset(0, 40 * (1 - value)),
+                                child: child,
+                              ),
+                            ),
                             child: _PendingNutritionistCard(
                               data: list[index],
                               onApprove: () => _handleApprove(context, list[index]['uid']),
@@ -157,15 +175,39 @@ class _AdminCertificateReviewScreenState extends State<AdminCertificateReviewScr
   }
 
   Future<void> _handleApprove(BuildContext context, String uid) async {
-    const nutritionistService = NutritionistService();
-    try {
-      await nutritionistService.approveNutritionist(uid);
-      if (context.mounted) {
-        _showModernSnack(context, "Account approved successfully!", isError: false);
-      }
-    } catch (e) {
-      if (context.mounted) {
-        _showModernSnack(context, "Approval failed: $e", isError: true);
+    final confirmed = await GlassDialog.show<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.white.withValues(alpha: 0.9),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28.sw)),
+        title: Text("Approve Expert", style: TextStyle(color: purple, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
+        content: Text("Are you sure you want to approve this professional? They will gain full platform access immediately.", 
+          style: TextStyle(color: purple.withValues(alpha: 0.7), fontSize: 14.sp, fontFamily: "Satoshi")),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text("Cancel", style: TextStyle(color: purple.withValues(alpha: 0.5), fontWeight: FontWeight.bold)),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4CAF50), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.sw))),
+            child: const Text("Approve", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      const nutritionistService = NutritionistService();
+      try {
+        await nutritionistService.approveNutritionist(uid);
+        if (context.mounted) {
+          _showModernSnack(context, "Account approved successfully!", isError: false);
+        }
+      } catch (e) {
+        if (context.mounted) {
+          _showModernSnack(context, "Approval failed: $e", isError: true);
+        }
       }
     }
   }
@@ -175,16 +217,29 @@ class _AdminCertificateReviewScreenState extends State<AdminCertificateReviewScr
     final result = await GlassDialog.show<String>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: bg,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28.sw)),
-        title: Text(
-          "Reject Application",
-          style: TextStyle(
-            color: purple,
-            fontWeight: FontWeight.w900,
-            fontFamily: "Satoshi",
-            fontSize: 20.sp,
-          ),
+        backgroundColor: Colors.white.withValues(alpha: 0.9),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(32.sw),
+          side: BorderSide(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+        ),
+        title: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(8.sw),
+              decoration: BoxDecoration(color: Colors.redAccent.withValues(alpha: 0.1), shape: BoxShape.circle),
+              child: Icon(Icons.cancel_outlined, color: Colors.redAccent, size: 22.sw),
+            ),
+            SizedBox(width: 12.sw),
+            Text(
+              "Reject Application",
+              style: TextStyle(
+                color: purple,
+                fontWeight: FontWeight.w900,
+                fontFamily: "Satoshi",
+                fontSize: 20.sp,
+              ),
+            ),
+          ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -194,26 +249,27 @@ class _AdminCertificateReviewScreenState extends State<AdminCertificateReviewScr
               "Please provide a specific reason for rejection to help the applicant improve.",
               style: TextStyle(
                 color: purple.withValues(alpha: 0.6),
-                fontSize: 13.sp,
+                fontSize: 14.sp,
                 fontFamily: "Satoshi",
+                height: 1.4,
               ),
             ),
-            SizedBox(height: 16.sh),
+            SizedBox(height: 20.sh),
             TextField(
               controller: reasonController,
-              style: TextStyle(color: purple, fontFamily: "Satoshi", fontSize: 14.sp, fontWeight: FontWeight.w600),
+              style: TextStyle(color: purple, fontFamily: "Satoshi", fontSize: 15.sp, fontWeight: FontWeight.w600),
               decoration: InputDecoration(
                 hintText: "E.g. Blurred certificate, Expired license...",
                 hintStyle: TextStyle(color: purple.withValues(alpha: 0.3), fontFamily: "Satoshi", fontSize: 14.sp),
                 filled: true,
-                fillColor: surface,
+                fillColor: purple.withValues(alpha: 0.04),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18.sw),
+                  borderRadius: BorderRadius.circular(20.sw),
                   borderSide: BorderSide.none,
                 ),
-                contentPadding: EdgeInsets.all(16.sw),
+                contentPadding: EdgeInsets.all(18.sw),
               ),
-              maxLines: 4,
+              maxLines: 3,
             ),
           ],
         ),
@@ -222,23 +278,25 @@ class _AdminCertificateReviewScreenState extends State<AdminCertificateReviewScr
             onPressed: () => Navigator.pop(context),
             child: Text(
               "Cancel",
-              style: TextStyle(color: purple, fontFamily: "Satoshi", fontWeight: FontWeight.bold),
+              style: TextStyle(color: purple.withValues(alpha: 0.5), fontFamily: "Satoshi", fontWeight: FontWeight.bold),
             ),
           ),
-          ElevatedButton(
-            onPressed: () {
-              if (reasonController.text.trim().length >= 5) {
-                Navigator.pop(context, reasonController.text.trim());
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent,
-              elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.sw)),
-            ),
-            child: Text(
-              "Reject",
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+          Padding(
+            padding: EdgeInsets.only(right: 8.sw),
+            child: ElevatedButton(
+              onPressed: () {
+                if (reasonController.text.trim().length >= 5) {
+                  Navigator.pop(context, reasonController.text.trim());
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.redAccent,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding: EdgeInsets.symmetric(horizontal: 24.sw, vertical: 12.sh),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.sw)),
+              ),
+              child: const Text("Confirm Rejection", style: TextStyle(fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
             ),
           ),
         ],
@@ -313,11 +371,12 @@ class _PendingNutritionistCard extends StatefulWidget {
 
 class _PendingNutritionistCardState extends State<_PendingNutritionistCard> {
   bool _isPressed = false;
+  static const Color purple = Color(0xFF462F4D);
+  static const Color orange = Color(0xFFEF8A54);
+  static const Color surface = Color(0xFFFDECE4);
 
   @override
   Widget build(BuildContext context) {
-    final purple = const Color(0xFF462F4D);
-    final surface = const Color(0xFFFDECE4);
 
     return AnimatedScale(
       scale: _isPressed ? 0.98 : 1.0,
@@ -326,177 +385,172 @@ class _PendingNutritionistCardState extends State<_PendingNutritionistCard> {
         onTapDown: (_) => setState(() => _isPressed = true),
         onTapUp: (_) => setState(() => _isPressed = false),
         onTapCancel: () => setState(() => _isPressed = false),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28.sw),
-          child: BackdropFilter(
-            filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              padding: EdgeInsets.all(22.sw),
-              decoration: BoxDecoration(
-                color: surface.withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(28.sw),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5.sw),
-                boxShadow: [
-                  BoxShadow(
-                    color: purple.withValues(alpha: 0.05),
-                    blurRadius: 20,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
+        child: Container(
+          padding: EdgeInsets.all(24.sw),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.6),
+            borderRadius: BorderRadius.circular(32.sw),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+            boxShadow: [
+              BoxShadow(
+                color: purple.withValues(alpha: 0.05),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 56.sw,
-                        height: 56.sw,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [purple, purple.withValues(alpha: 0.7)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(color: purple.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 4)),
-                          ],
-                        ),
-                        child: Icon(Icons.person_rounded, color: Colors.white, size: 28.sp),
-                      ),
-                      SizedBox(width: 16.sw),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.data['fullName'] ?? "Nutritionist Candidate",
-                              style: TextStyle(
-                                color: purple,
-                                fontSize: 17.sp,
-                                fontWeight: FontWeight.w900,
-                                fontFamily: "Satoshi",
-                                letterSpacing: -0.2,
-                              ),
-                            ),
-                            SizedBox(height: 2.sh),
-                            Text(
-                              widget.data['email'] ?? "No email provided",
-                              style: TextStyle(
-                                color: purple.withValues(alpha: 0.5),
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.w500,
-                                fontFamily: "Satoshi",
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 6.sh),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEF8A54).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10.sw),
-                        ),
-                        child: Text(
-                          "PENDING",
-                          style: TextStyle(
-                            color: const Color(0xFFEF8A54),
-                            fontSize: 10.sp,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  SizedBox(height: 20.sh),
-
-                  // Info Grid
                   Container(
-                    padding: EdgeInsets.all(16.sw),
+                    width: 60.sw,
+                    height: 60.sw,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.4),
-                      borderRadius: BorderRadius.circular(20.sw),
+                      gradient: LinearGradient(
+                        colors: [purple, const Color(0xFF2D1E32)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(color: purple.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 4)),
+                      ],
                     ),
-                    child: Row(
+                    child: Icon(Icons.person_rounded, color: Colors.white, size: 28.sw),
+                  ),
+                  SizedBox(width: 16.sw),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _infoItem(Icons.verified_user_outlined, "License", widget.data['licenseNumber'] ?? "N/A"),
-                        Container(width: 1, height: 30.sh, color: purple.withValues(alpha: 0.1)),
-                        _infoItem(Icons.calendar_today_outlined, "Joined", "Recent"),
+                        Text(
+                          widget.data['fullName'] ?? "Nutritionist Candidate",
+                          style: TextStyle(
+                            color: purple,
+                            fontSize: 18.sp,
+                            fontWeight: FontWeight.w900,
+                            fontFamily: "Satoshi",
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                        SizedBox(height: 4.sh),
+                        Text(
+                          widget.data['email'] ?? "No email provided",
+                          style: TextStyle(
+                            color: purple.withValues(alpha: 0.4),
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: "Satoshi",
+                          ),
+                        ),
                       ],
                     ),
                   ),
-
-                  SizedBox(height: 20.sh),
-
-                  // View Certificate (Primary)
-                  GestureDetector(
-                    onTap: () async {
-                      final url = Uri.parse(widget.data['certificateUrl'] ?? "");
-                      if (await canLaunchUrl(url)) {
-                        await launchUrl(url);
-                      }
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      height: 56.sh,
-                      decoration: BoxDecoration(
-                        color: purple,
-                        borderRadius: BorderRadius.circular(18.sw),
-                        boxShadow: [
-                          BoxShadow(color: purple.withValues(alpha: 0.2), blurRadius: 15, offset: const Offset(0, 6)),
-                        ],
-                      ),
-                      alignment: Alignment.center,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.visibility_outlined, color: Colors.white, size: 20.sp),
-                          SizedBox(width: 10.sw),
-                          Text(
-                            "Review Credentials",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.w800,
-                              fontFamily: "Satoshi",
-                            ),
-                          ),
-                        ],
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 6.sh),
+                    decoration: BoxDecoration(
+                      color: orange.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10.sw),
+                      border: Border.all(color: orange.withValues(alpha: 0.1)),
+                    ),
+                    child: Text(
+                      "NEW",
+                      style: TextStyle(
+                        color: orange,
+                        fontSize: 9.sp,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.0,
                       ),
                     ),
                   ),
+                ],
+              ),
 
-                  SizedBox(height: 16.sh),
+              SizedBox(height: 24.sh),
 
-                  // Action Buttons
-                  Row(
+              // Info Grid
+              Container(
+                padding: EdgeInsets.all(18.sw),
+                decoration: BoxDecoration(
+                  color: purple.withValues(alpha: 0.03),
+                  borderRadius: BorderRadius.circular(24.sw),
+                ),
+                child: Row(
+                  children: [
+                    _infoItem(Icons.badge_outlined, "LICENSE", widget.data['licenseNumber'] ?? "N/A"),
+                    Container(width: 1.5, height: 24.sh, color: purple.withValues(alpha: 0.05)),
+                    _infoItem(Icons.calendar_today_outlined, "APPLIED", "Just now"),
+                  ],
+                ),
+              ),
+
+              SizedBox(height: 24.sh),
+
+              // View Certificate (Primary)
+              GestureDetector(
+                onTap: () async {
+                  final url = Uri.parse(widget.data['certificateUrl'] ?? "");
+                  if (await canLaunchUrl(url)) {
+                    await launchUrl(url);
+                  }
+                },
+                child: Container(
+                  width: double.infinity,
+                  height: 56.sh,
+                  decoration: BoxDecoration(
+                    color: purple,
+                    borderRadius: BorderRadius.circular(18.sw),
+                    boxShadow: [
+                      BoxShadow(color: purple.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 8)),
+                    ],
+                  ),
+                  alignment: Alignment.center,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Expanded(
-                        child: _actionBtn(
-                          "Reject",
-                          Colors.redAccent.withValues(alpha: 0.1),
-                          Colors.redAccent,
-                          widget.onReject,
-                        ),
-                      ),
-                      SizedBox(width: 14.sw),
-                      Expanded(
-                        child: _actionBtn(
-                          "Approve",
-                          const Color(0xFF4CAF50).withValues(alpha: 0.1),
-                          const Color(0xFF4CAF50),
-                          widget.onApprove,
+                      Icon(Icons.description_outlined, color: Colors.white, size: 20.sw),
+                      SizedBox(width: 12.sw),
+                      Text(
+                        "Review Credentials",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.w900,
+                          fontFamily: "Satoshi",
                         ),
                       ),
                     ],
                   ),
+                ),
+              ),
+
+              SizedBox(height: 16.sh),
+
+              // Action Buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: _actionBtn(
+                      "Reject",
+                      Colors.redAccent.withValues(alpha: 0.08),
+                      Colors.redAccent,
+                      widget.onReject,
+                    ),
+                  ),
+                  SizedBox(width: 14.sw),
+                  Expanded(
+                    child: _actionBtn(
+                      "Approve",
+                      const Color(0xFF4CAF50).withValues(alpha: 0.08),
+                      const Color(0xFF4CAF50),
+                      widget.onApprove,
+                    ),
+                  ),
                 ],
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -504,7 +558,6 @@ class _PendingNutritionistCardState extends State<_PendingNutritionistCard> {
   }
 
   Widget _infoItem(IconData icon, String label, String value) {
-    final purple = const Color(0xFF462F4D);
     return Expanded(
       child: Column(
         children: [

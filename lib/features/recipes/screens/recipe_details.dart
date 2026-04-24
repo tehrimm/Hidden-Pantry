@@ -23,6 +23,7 @@ import 'package:hidden_pantry_app/features/recipes/widgets/recipe_details_fab.da
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_details_states.dart';
 import 'package:hidden_pantry_app/features/user/services/subscription_service.dart';
 import 'package:hidden_pantry_app/features/user/screens/premium_paywall_screen.dart';
+import 'package:hidden_pantry_app/features/user/screens/tier_comparison_screen.dart';
 
 class RecipeDetailsScreen extends StatefulWidget {
   final Recipe recipe;
@@ -217,14 +218,27 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
       _error = null;
     });
 
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      if (mounted) setState(() => _loading = false);
+      return;
+    }
+
     try {
       // 1. Try Firestore first (handles user-uploaded recipes reliably)
       try {
         final firestoreRecipe = await _recipeService.getRecipeById(_recipe.id).timeout(const Duration(seconds: 3));
         if (firestoreRecipe != null) {
-          final bool isPartial = firestoreRecipe.name.isEmpty || firestoreRecipe.directions.isEmpty;
-          if (!isPartial) {
-            final count = await _recipeService.countRecipesByAuthor(firestoreRecipe.authorId).timeout(const Duration(seconds: 3));
+          // --- 🛡️ ACCESS CONTROL: Nutritionist Recipe Check ---
+          if (firestoreRecipe.isNutritionistRecipe) {
+            final hasAccess = await SubscriptionService().hasNutritionistAccess(firestoreRecipe.authorId);
+            if (!hasAccess && mounted) {
+              _showRestrictedAccess(firestoreRecipe.authorId);
+              return;
+            }
+          }
+
+          final count = await _recipeService.countRecipesByAuthor(firestoreRecipe.authorId).timeout(const Duration(seconds: 3));
             
             if (mounted) {
               setState(() {
@@ -245,7 +259,6 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
             }
             return;
           }
-        }
       } catch (fsErr) {
         print("[RecipeDetails] Firestore fetch failed: $fsErr. Trying API...");
         if (mounted) {
@@ -312,7 +325,6 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
       }
 
       // 3. Fallback to Local Storage (if both Firestore and API fail)
-      final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         final isOffline = await _localService.isRecipeOffline(_recipe.id, user.uid);
         if (isOffline) {
@@ -561,6 +573,10 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   Widget _buildBodyState(BuildContext context) {
     if (_loading) {
       return const RecipeSkeletonLoader();
+    }
+
+    if (_error == "RESTRICTED_ACCESS") {
+      return _buildRestrictedUI(context);
     }
 
     if (_error != null) {
@@ -1706,6 +1722,103 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _metricTile(String label, String value) {
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: textColor.withValues(alpha: 0.6),
+                  fontSize: 12.sp,
+                  fontFamily: "Satoshi",
+                ),
+              ),
+              Text(
+                value,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: "Satoshi",
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _showRestrictedAccess(String authorId) async {
+    if (!mounted) return;
+    try {
+      final authorDoc = await FirebaseFirestore.instance.collection('nutritionists').doc(authorId).get();
+      if (!authorDoc.exists) {
+        if (mounted) setState(() { _loading = false; _error = "Expert profile not found."; });
+        return;
+      }
+      final authorData = authorDoc.data()!;
+      if (mounted) {
+        setState(() { _loading = false; _error = "RESTRICTED_ACCESS"; });
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => TierComparisonScreen(
+              nutritionistId: authorId,
+              nutritionistData: authorData,
+              currentTier: 0,
+            ),
+          ),
+        );
+        if (result == "refresh" && mounted) _loadFullDetails();
+      }
+    } catch (e) {
+      if (mounted) setState(() { _loading = false; _error = "Failed to verify access permissions."; });
+    }
+  }
+
+  Widget _buildRestrictedUI(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: EdgeInsets.all(30.sw),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: EdgeInsets.all(20.sw),
+              decoration: BoxDecoration(color: orange.withValues(alpha: 0.1), shape: BoxShape.circle),
+              child: Icon(Icons.lock_person_rounded, color: orange, size: 60.sw),
+            ),
+            SizedBox(height: 24.sh),
+            Text("Exclusive Recipe", style: TextStyle(color: textColor, fontSize: 24.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
+            SizedBox(height: 12.sh),
+            Text("This professional recipe is only available to subscribers of ${_recipe.authorName ?? 'this expert'}.",
+              textAlign: TextAlign.center, style: TextStyle(color: textColor.withValues(alpha: 0.7), fontSize: 15.sp, fontFamily: "Satoshi", height: 1.5)),
+            SizedBox(height: 40.sh),
+            ElevatedButton(
+              onPressed: () => _loadFullDetails(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: orange, foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: 32.sw, vertical: 16.sh),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.sw)),
+              ),
+              child: Text("Check Access / Subscribe", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp)),
+            ),
+            SizedBox(height: 12.sh),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Go Back", style: TextStyle(color: textColor.withValues(alpha: 0.5), fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

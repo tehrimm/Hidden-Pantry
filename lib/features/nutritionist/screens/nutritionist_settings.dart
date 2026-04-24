@@ -20,7 +20,7 @@ import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/features/user/screens/my_subscriptions.dart';
-import 'package:hidden_pantry_app/features/user/screens/my_plans.dart';
+
 
 class NutritionistSettingsScreen extends StatefulWidget {
   const NutritionistSettingsScreen({super.key});
@@ -189,11 +189,6 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
                                   onTap: () => _go(const NutritionistMealPlansScreen()),
                                 ),
                                 _tile(
-                                  iconData: Icons.shopping_bag_outlined,
-                                  title: "Purchased Plans",
-                                  onTap: () => _go(const MyPlansScreen()),
-                                ),
-                                _tile(
                                   icon: "assets/icons/card.png",
                                   title: "My Subscriptions",
                                   onTap: () => _go(const MySubscriptionsScreen()),
@@ -311,7 +306,7 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
               top: topPad + 36.sh,
               child: BackButtonWidget(
                 onPressed: () => Navigator.pop(context),
-                color: brown,
+                color: purple,
               ),
             ),
             Positioned(
@@ -514,7 +509,7 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
                   ),
                   child: Center(
                     child: icon != null
-                        ? Image.asset(icon, width: 20.sw, fit: BoxFit.contain)
+                        ? Image.asset(icon, width: 20.sw, fit: BoxFit.contain, color: purple)
                         : Icon(iconData, color: purple, size: 22.sw),
                   ),
                 ),

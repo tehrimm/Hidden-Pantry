@@ -18,7 +18,8 @@ import 'package:hidden_pantry_app/features/nutritionist/services/nutritionist_se
 import 'package:hidden_pantry_app/features/nutritionist/widgets/recipe_selection_sheet.dart';
 import 'package:hidden_pantry_app/features/nutritionist/widgets/share_recipe_post_dialog.dart';
 import 'dart:io';
-import 'dart:ui';
+import 'dart:ui' as ui;
+import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:file_picker/file_picker.dart';
@@ -92,7 +93,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
 
     final actions = [
       {"icon": Icons.restaurant_menu_rounded, "title": "Create New Meal Plan", "subtitle": "Design a custom plan for your client", "action": "plan"},
-      {"icon": Icons.medical_services_rounded, "title": "Share Supplement Guide", "subtitle": "Send personalized recommendations", "action": "supplement"},
+      {"icon": Icons.auto_stories_rounded, "title": "Share Meal Plan", "subtitle": "Send personalized recommendations", "action": "share_meal_plan"},
       {"icon": Icons.add_box_outlined, "title": "Make a Post", "subtitle": "Share health advice, recipes, or updates", "action": "tip"},
     ];
 
@@ -100,44 +101,70 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFFF9E3D5),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              margin: const EdgeInsets.only(top: 10),
-              width: 50, height: 5,
-              decoration: BoxDecoration(color: actionOrange, borderRadius: BorderRadius.circular(3)),
-            ),
-            const SizedBox(height: 20),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 22),
-              child: Row(
-                children: [
-                  Text(
-                    "Quick Actions",
-                    style: TextStyle(color: purple, fontSize: 20, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
-                  ),
-                ],
+      builder: (context) => BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+        child: Container(
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9E3D5).withValues(alpha: 0.95),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
+            boxShadow: [
+              BoxShadow(color: purple.withValues(alpha: 0.1), blurRadius: 30, offset: const Offset(0, -10)),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40, height: 4,
+                decoration: BoxDecoration(color: purple.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
               ),
-            ),
-            const SizedBox(height: 16),
-            Flexible(
-              child: SingleChildScrollView(
-                padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
                   children: [
-                    ...actions.map((a) => _actionItem(a)),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(color: orange.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                      child: Icon(Icons.bolt_rounded, color: orange, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      "Quick Actions",
+                      style: TextStyle(color: purple, fontSize: 22, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+                    ),
                   ],
                 ),
               ),
-            ),
-          ],
+              const SizedBox(height: 20),
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 24),
+                  child: Column(
+                    children: actions.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final a = entry.value;
+                      return TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0.0, end: 1.0),
+                        duration: Duration(milliseconds: 500 + (index * 100)),
+                        curve: Curves.easeOutBack,
+                        builder: (context, value, child) => Opacity(
+                          opacity: value.clamp(0.0, 1.0),
+                          child: Transform.translate(
+                            offset: Offset(0, 40 * (1 - value)),
+                            child: child,
+                          ),
+                        ),
+                        child: _actionItem(a),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -146,23 +173,23 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
   
 
   Widget _actionItem(Map<String, dynamic> action) {
-    const Color actionOrange = Color(0xFFE48E5B);
+    const Color actionOrange = Color(0xFFEF8A54);
     const Color iconColor = Color(0xFF74503C);
     const Color subTextColor = Color(0xFFBFA89A);
 
     return Container(
-      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 8),
+      margin: const EdgeInsets.only(left: 16, right: 16, bottom: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFFFF2EA),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: purple.withValues(alpha:0.04), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(color: purple.withValues(alpha: 0.05), blurRadius: 15, offset: const Offset(0, 8)),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           onTap: () async {
             Navigator.pop(context);
             final key = action["action"] as String;
@@ -172,46 +199,50 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
               Future.delayed(const Duration(milliseconds: 300), () {
                 if (mounted) _showMakePostDialog();
               });
-            } else if (key == "supplement") {
-              _showSelectClientSheet({}, "supplement_guide", benefitTitle: "Supplement Guide");
+            } else if (key == "share_meal_plan") {
+              _showMealPlanSelectionSheet();
             }
           },
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            padding: const EdgeInsets.all(16),
             child: Row(
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 52,
+                  height: 52,
                   decoration: BoxDecoration(
-                    color: purple.withValues(alpha:0.1),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: purple.withValues(alpha:0.06)),
+                    gradient: LinearGradient(
+                      colors: [actionOrange.withValues(alpha: 0.1), actionOrange.withValues(alpha: 0.05)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: actionOrange.withValues(alpha: 0.1)),
                   ),
-                  child: Icon(action["icon"] as IconData, color: actionOrange, size: 22),
+                  child: Icon(action["icon"] as IconData, color: actionOrange, size: 24),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         action["title"] as String,
-                        style: TextStyle(color: purple, fontWeight: FontWeight.w700, fontSize: 15, fontFamily: "Satoshi"),
+                        style: TextStyle(color: purple, fontWeight: FontWeight.w800, fontSize: 16, fontFamily: "Satoshi"),
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 4),
                       Text(
                         action["subtitle"] as String,
-                        style: TextStyle(color: subTextColor, fontSize: 12, height: 1.3),
+                        style: TextStyle(color: subTextColor, fontSize: 12, height: 1.4, fontFamily: "Satoshi"),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  width: 30, height: 30,
+                  width: 32, height: 32,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF9E3D5),
-                    borderRadius: BorderRadius.circular(8),
+                    color: const Color(0xFFF9E3D5).withValues(alpha: 0.5),
+                    shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: iconColor),
                 ),
@@ -664,6 +695,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
           child: Stack(
             children: [
               const _DashboardBackgroundPattern(),
+              PatternBackground(opacity: 0.6),
               SafeArea(
                 bottom: false,
                 child: Column(
@@ -1938,11 +1970,10 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
 
   
 
-  void _showSelectClientSheet(Map<String, dynamic> planData, String planId, {String? benefitTitle}) {
+  void _showMealPlanSelectionSheet() {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    const Color actionOrange = Color(0xFFE48E5B);
-
+    
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -1958,93 +1989,35 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
             Container(
               margin: EdgeInsets.only(top: 10.sh, bottom: 20.sh),
               width: 50.sw, height: 5.sh,
-              decoration: BoxDecoration(color: actionOrange, borderRadius: BorderRadius.circular(3.sw)),
+              decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(3.sw)),
             ),
-            Text(
-              benefitTitle != null ? "Share $benefitTitle" : "Select Client to Share With",
-              style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.bold),
-            ),
+            Text("Select Meal Plan to Share", style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.bold)),
             SizedBox(height: 16.sh),
             Expanded(
-              child: FutureBuilder<List<Map<String, dynamic>>>(
-                future: _fetchClientsForShare(user.uid, requiredBenefit: benefitTitle ?? "InChat meal plans"),
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance.collection("nutritionists").doc(user.uid).collection("meal_plans").snapshots(),
                 builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator(color: actionOrange));
-                  }
-                  if (snapshot.hasError) {
-                    return const Center(child: Text("Error loading clients"));
-                  }
-
-                  final clients = snapshot.data ?? [];
-                  if (clients.isEmpty) return const Center(child: Text("No clients found."));
-
+                  if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+                  final plans = snapshot.data!.docs;
+                  if (plans.isEmpty) return const Center(child: Text("No meal plans created yet."));
+                  
                   return ListView.separated(
                     padding: EdgeInsets.all(20.sw),
-                    itemCount: clients.length,
+                    itemCount: plans.length,
                     separatorBuilder: (_, __) => SizedBox(height: 12.sh),
                     itemBuilder: (context, index) {
-                      final client = clients[index];
-                      final otherUserId = client["userId"] as String;
-                      final otherUserName = client["name"] as String;
-                      final otherUserPhoto = client["photoUrl"] as String?;
-                      final chatId = client["chatId"] as String;
-
+                      final planDoc = plans[index];
+                      final plan = planDoc.data() as Map<String, dynamic>;
                       return ListTile(
-                        onTap: () async {
-                           try {
-                             await FirebaseFirestore.instance
-                               .collection("chats")
-                               .doc(chatId)
-                               .collection("messages")
-                               .add({
-                                 "senderId": user.uid,
-                                 "type": "meal_plan",
-                                 "planData": {...planData, "planId": planId},
-                                 "timestamp": FieldValue.serverTimestamp(),
-                                 "read": false,
-                               });
-                             
-                             await FirebaseFirestore.instance.collection("chats").doc(chatId).set({
-                               "lastMessage": "Shared a meal plan: ${planData['title'] ?? 'Untitled'}",
-                               "lastMessageTime": FieldValue.serverTimestamp(),
-                               "userUnread": FieldValue.increment(1),
-                               "nutritionistUnread": 0,
-                               // Make sure participants array exists in case this is a brand new chat
-                               "participants": FieldValue.arrayUnion([user.uid, otherUserId]),
-                             }, SetOptions(merge: true));
-
-                             if (context.mounted) {
-                               Navigator.pop(context); // Close client selection
-                               Toaster.show(context, planId == "supplement_guide" ? "Supplement request sent to $otherUserName" : "Meal plan sent to $otherUserName");
-                             }
-                           } catch (e) {
-                             if (context.mounted) {
-                               Toaster.show(context, "Error sharing meal plan: $e", isError: true);
-                             }
-                           }
+                        onTap: () {
+                          Navigator.pop(context);
+                          _showSelectClientSheet(plan, planDoc.id, benefitTitle: "Meal Plan");
                         },
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                          side: BorderSide(color: purple.withValues(alpha:0.05)),
-                        ),
                         tileColor: Colors.white,
-                        leading: CircleAvatar(
-                          radius: 24.sw,
-                          backgroundColor: purple.withValues(alpha:0.1),
-                          backgroundImage: otherUserPhoto != null ? NetworkImage(otherUserPhoto) : null,
-                          child: otherUserPhoto == null ? Icon(Icons.person, color: purple, size: 24.sw) : null,
-                        ),
-                        title: Text(otherUserName, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp)),
-                        trailing: Container(
-                          padding: EdgeInsets.all(8.sw),
-                          decoration: BoxDecoration(
-                            color: actionOrange.withValues(alpha:0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(Icons.send_rounded, color: actionOrange, size: 20.sw),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.sw)),
+                        title: Text(plan["title"] ?? "Untitled Plan", style: TextStyle(color: purple, fontWeight: FontWeight.bold)),
+                        subtitle: Text("${plan["duration"] ?? 0} Days • ${plan["targetCalories"] ?? 0} kcal"),
+                        trailing: Icon(Icons.arrow_forward_ios_rounded, size: 16.sw, color: orange),
                       );
                     },
                   );
@@ -2052,6 +2025,163 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showSelectClientSheet(Map<String, dynamic> planData, String planId, {String? benefitTitle}) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    const Color actionOrange = Color(0xFFE48E5B);
+    final Set<String> selectedChatIds = {};
+    final Map<String, String> chatIdToUserId = {};
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setSheetState) => Container(
+          height: MediaQuery.of(context).size.height * 0.85,
+          decoration: BoxDecoration(
+            color: const Color(0xFFFFF3EB),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30.sw)),
+          ),
+          child: Column(
+            children: [
+              Container(
+                margin: EdgeInsets.only(top: 10.sh, bottom: 20.sh),
+                width: 50.sw, height: 5.sh,
+                decoration: BoxDecoration(color: actionOrange, borderRadius: BorderRadius.circular(3.sw)),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.sw),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      benefitTitle != null ? "Share $benefitTitle" : "Select Clients",
+                      style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.bold),
+                    ),
+                    if (selectedChatIds.isNotEmpty)
+                      Text("${selectedChatIds.length} Selected", style: TextStyle(color: actionOrange, fontWeight: FontWeight.bold, fontSize: 14.sp)),
+                  ],
+                ),
+              ),
+              SizedBox(height: 16.sh),
+              Expanded(
+                child: FutureBuilder<List<Map<String, dynamic>>>(
+                  future: _fetchClientsForShare(user.uid, requiredBenefit: benefitTitle ?? "InChat meal plans"),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator(color: actionOrange));
+                    }
+                    final clients = snapshot.data ?? [];
+                    if (clients.isEmpty) return const Center(child: Text("No clients found."));
+
+                    return ListView.separated(
+                      padding: EdgeInsets.symmetric(horizontal: 20.sw),
+                      itemCount: clients.length,
+                      separatorBuilder: (_, __) => SizedBox(height: 12.sh),
+                      itemBuilder: (context, index) {
+                        final client = clients[index];
+                        final otherUserId = client["userId"] as String;
+                        final otherUserName = client["name"] as String;
+                        final otherUserPhoto = client["photoUrl"] as String?;
+                        final chatId = client["chatId"] as String;
+                        final isSelected = selectedChatIds.contains(chatId);
+                        
+                        chatIdToUserId[chatId] = otherUserId;
+
+                        return InkWell(
+                          onTap: () {
+                            setSheetState(() {
+                              if (isSelected) {
+                                selectedChatIds.remove(chatId);
+                              } else {
+                                selectedChatIds.add(chatId);
+                              }
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: isSelected ? actionOrange.withValues(alpha:0.1) : Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: isSelected ? actionOrange : purple.withValues(alpha:0.05)),
+                            ),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  radius: 24.sw,
+                                  backgroundColor: purple.withValues(alpha:0.1),
+                                  backgroundImage: (otherUserPhoto != null && otherUserPhoto.startsWith("http")) ? NetworkImage(otherUserPhoto) : null,
+                                  child: (otherUserPhoto == null || !otherUserPhoto.startsWith("http")) ? Icon(Icons.person, color: purple, size: 24.sw) : null,
+                                ),
+                                SizedBox(width: 12.sw),
+                                Expanded(child: Text(otherUserName, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp))),
+                                Icon(
+                                  isSelected ? Icons.check_circle_rounded : Icons.add_circle_outline_rounded,
+                                  color: isSelected ? actionOrange : purple.withValues(alpha:0.2),
+                                  size: 24.sw,
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+              // Bottom Share Button
+              if (selectedChatIds.isNotEmpty)
+                Padding(
+                  padding: EdgeInsets.all(20.sw),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                         Navigator.pop(context);
+                         int count = 0;
+                         for (final chatId in selectedChatIds) {
+                           try {
+                             final uid = chatIdToUserId[chatId]!;
+                             await FirebaseFirestore.instance.collection("chats").doc(chatId).collection("messages").add({
+                               "senderId": user.uid,
+                               "type": "meal_plan",
+                               "planData": {...planData, "planId": planId},
+                               "timestamp": FieldValue.serverTimestamp(),
+                               "read": false,
+                             });
+                             await FirebaseFirestore.instance.collection("chats").doc(chatId).set({
+                               "lastMessage": "Shared a meal plan: ${planData['title'] ?? 'Untitled'}",
+                               "lastMessageTime": FieldValue.serverTimestamp(),
+                               "userUnread": FieldValue.increment(1),
+                               "participants": FieldValue.arrayUnion([user.uid, uid]),
+                             }, SetOptions(merge: true));
+                             count++;
+                           } catch (e) {
+                             debugPrint("Error sharing to $chatId: $e");
+                           }
+                         }
+                         if (mounted) {
+                           Toaster.show(context, "Meal plan shared with $count client${count > 1 ? 's' : ''}");
+                         }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: actionOrange,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 16.sh),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.sw)),
+                      ),
+                      child: Text("Share with ${selectedChatIds.length} Clients", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16.sp)),
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -2139,13 +2269,11 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
           final userData = userDoc.data() as Map<String, dynamic>;
           entry["name"] = userData["fullName"] ?? "User";
           entry["photoUrl"] = userData["photoUrl"];
-        } else {
-          entry["name"] = "User";
+          clients.add(entry); // Only add if user exists
         }
-      } catch (_) {
-        entry["name"] = "User";
+      } catch (e) {
+        debugPrint("Error fetching user $userId: $e");
       }
-      clients.add(entry);
     }
     
     clients.sort((a, b) => (a["name"] as String).compareTo(b["name"] as String));

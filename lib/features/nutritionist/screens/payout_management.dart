@@ -109,9 +109,14 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
                           
                           _FadeSlideEntry(
                             delayMs: 200,
+                            child: _membershipSection(data),
+                          ),
+                          SizedBox(height: 24.sh),
+                          
+                          _FadeSlideEntry(
+                            delayMs: 300,
                             child: _stripeConnectSection(data),
                           ),
-                          SizedBox(height: 28.sh),
 
                           _FadeSlideEntry(
                             delayMs: 300,
@@ -303,6 +308,123 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
 
   Widget _emptyMinorState(String msg) {
     return Center(child: Padding(padding: EdgeInsets.all(20.sw), child: Text(msg, style: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 13.sp, fontFamily: "Satoshi"))));
+  }
+
+  Widget _membershipSection(Map<String, dynamic> data) {
+    final bool isActive = data["isActive"] ?? true;
+    final expiry = (data["membershipExpiry"] as Timestamp?)?.toDate();
+    final isTester = FirebaseAuth.instance.currentUser?.email == 'hiddenpantry50@gmail.com';
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 18.sh),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(22.sw),
+        border: Border.all(color: isActive ? Colors.white : orange.withValues(alpha: 0.3), width: 1.5),
+        boxShadow: [
+          BoxShadow(color: purple.withValues(alpha: 0.04), blurRadius: 10.sw, offset: Offset(0, 4.sh)),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.all(14.sw),
+            decoration: BoxDecoration(
+              color: isActive ? purple.withValues(alpha: 0.1) : orange.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(16.sw),
+            ),
+            child: Icon(
+              isActive ? Icons.verified_rounded : Icons.error_outline_rounded,
+              color: isActive ? purple : orange,
+              size: 24.sw,
+            ),
+          ),
+          SizedBox(width: 16.sw),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Platform Membership",
+                  style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+                ),
+                SizedBox(height: 4.sh),
+                Text(
+                  isActive 
+                    ? (expiry != null ? "Active until ${DateFormat('MMM d').format(expiry)}" : "Status: Active")
+                    : "Status: Inactive (Profile Hidden)",
+                  style: TextStyle(
+                    color: isActive ? purple.withValues(alpha: 0.6) : orange,
+                    fontSize: 12.sp,
+                    fontFamily: "Satoshi",
+                    fontWeight: isActive ? FontWeight.normal : FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: () async {
+              HapticFeedback.mediumImpact();
+              final iap = IAPService();
+              
+              // Helper to handle membership payment
+              void startMembershipFlow() async {
+                 if (iap.products.isEmpty && !isTester) {
+                  await iap.fetchProducts();
+                }
+                
+                ProductDetails? product;
+                try {
+                  product = iap.products.firstWhere((p) => p.id == IAPService.nutritionistMembershipID);
+                } catch (_) {
+                  // Fallback for tester if product list empty
+                  if (isTester) {
+                    product = ProductDetails(
+                      id: IAPService.nutritionistMembershipID,
+                      title: 'Membership',
+                      description: '',
+                      price: 'Rs. 500',
+                      rawPrice: 500,
+                      currencyCode: 'PKR'
+                    );
+                  }
+                }
+
+                if (product != null) {
+                  await iap.buyProduct(product, context: context);
+                } else {
+                  if (mounted) Toaster.show(context, "Membership service unavailable.", isError: true);
+                }
+              }
+
+              if (isActive) {
+                // Show info or allow early renewal
+                Toaster.show(context, "Your membership is active!");
+              } else {
+                startMembershipFlow();
+              }
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 10.sh),
+              decoration: BoxDecoration(
+                color: isActive ? purple.withValues(alpha: 0.1) : orange,
+                borderRadius: BorderRadius.circular(12.sw),
+                boxShadow: isActive ? [] : [BoxShadow(color: orange.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3))],
+              ),
+              child: Text(
+                isActive ? "Renew" : "Pay Fee",
+                style: TextStyle(
+                  color: isActive ? purple : Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13.sp,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _stripeConnectSection(Map<String, dynamic> data) {

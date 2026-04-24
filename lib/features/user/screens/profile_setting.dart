@@ -12,7 +12,7 @@ import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
-
+import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 
 
 class ProfileSettingScreen extends StatefulWidget {
@@ -177,6 +177,17 @@ Future<String?> _uploadToStorage(File file) async {
         await user.updateDisplayName(_nameCtrl.text.trim());
       }
       await user.reload(); // Refresh auth token/state
+      
+      // 🔄 SYNC: Update author info on all recipes
+      try {
+        await RecipeService().syncAuthorName(
+          user.uid, 
+          _nameCtrl.text.trim(), 
+          photoUrl
+        );
+      } catch (syncErr) {
+        print("[ProfileSetting] Background sync failed: $syncErr");
+      }
 
       _photoUrl = photoUrl;
       _pickedImage = null;
@@ -433,6 +444,7 @@ void _openPreferences() {
                                               'assets/icons/notification.png',
                                               width: 18.sw,
                                               height: 18.sw,
+                                              color: text,
                                             ),
                                           ),
                                         ),
@@ -451,6 +463,7 @@ void _openPreferences() {
                                         _NotifSwitch(
                                           value: _notifEnabled,
                                           onChanged: (v) => setState(() => _notifEnabled = v),
+                                          text: text,
                                         ),
                                       ],
                                     ),
@@ -475,7 +488,7 @@ void _openPreferences() {
                                             borderRadius: BorderRadius.circular(10.sw),
                                           ),
                                           child: Center(
-                                            child: Icon(Icons.mic_rounded, color: orange, size: 20.sw),
+                                            child: Icon(Icons.mic_rounded, color: text, size: 20.sw),
                                           ),
                                         ),
                                         SizedBox(width: 16.sw),
@@ -507,6 +520,7 @@ void _openPreferences() {
                                         _NotifSwitch(
                                           value: _voiceEnabled,
                                           onChanged: (v) => setState(() => _voiceEnabled = v),
+                                          text: text,
                                         ),
                                       ],
                                     ),
@@ -585,10 +599,7 @@ void _openPreferences() {
                                         ? SizedBox(
                                             width: 22.sw,
                                             height: 22.sw,
-                                            child: const CircularProgressIndicator(
-                                              color: Colors.white,
-                                              strokeWidth: 2,
-                                            ),
+                                            child: CircularProgressIndicator(color: orange),
                                           )
                                         : Text(
                                             'Save Changes',
@@ -698,10 +709,12 @@ class _InputCard extends StatelessWidget {
 class _NotifSwitch extends StatelessWidget {
   final bool value;
   final ValueChanged<bool> onChanged;
+  final Color text;
 
   const _NotifSwitch({
     required this.value,
     required this.onChanged,
+    required this.text,
   });
 
   @override
@@ -710,8 +723,8 @@ class _NotifSwitch extends StatelessWidget {
     final trackH = 24.sh;
     final knobSize = 20.sw;
 
-    final trackColor = value ? const Color(0xFFDFBFE5) : const Color(0xFFE5CCBF);
-    final knobColor = value ? const Color(0xFF462F4D) : const Color(0xFF74503C);
+    final trackColor = value ? text.withValues(alpha: 0.3) : text.withValues(alpha: 0.15);
+    final knobColor = text;
 
     return GestureDetector(
       onTap: () => onChanged(!value),

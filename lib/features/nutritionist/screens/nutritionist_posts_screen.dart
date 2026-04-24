@@ -139,6 +139,211 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
     );
   }
 
+  void _showFullScreenImage(BuildContext context, String imageUrl) {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "Image",
+      barrierColor: Colors.black.withValues(alpha: 0.9),
+      pageBuilder: (context, anim1, anim2) {
+        return Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Stack(
+            children: [
+              Center(
+                child: InteractiveViewer(
+                  minScale: 0.5,
+                  maxScale: 4.0,
+                  child: Image.network(
+                    imageUrl,
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 50.sh,
+                right: 20.sw,
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    padding: EdgeInsets.all(8.sw),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.close_rounded, color: Colors.white, size: 24.sw),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showComments(String tipId, String nutritionistId) {
+    if (tipId.isEmpty || nutritionistId.isEmpty) return;
+    final commentCtrl = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.7,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32.sw)),
+        ),
+        child: Column(
+          children: [
+            Container(
+              margin: EdgeInsets.only(top: 12.sh),
+              width: 40.sw, height: 4.sh,
+              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2.sw)),
+            ),
+            Padding(
+              padding: EdgeInsets.all(20.sw),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text("Comments", style: TextStyle(color: purple, fontWeight: FontWeight.w900, fontSize: 20.sp, fontFamily: "Satoshi")),
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Icon(Icons.close_rounded, color: purple.withValues(alpha: 0.4)),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection("nutritionists")
+                    .doc(nutritionistId)
+                    .collection("tips")
+                    .doc(tipId)
+                    .collection("comments")
+                    .orderBy("timestamp", descending: false)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.chat_bubble_outline_rounded, color: purple.withValues(alpha: 0.1), size: 48.sw),
+                          SizedBox(height: 12.sh),
+                          Text("No comments yet", style: TextStyle(color: purple.withValues(alpha: 0.3), fontSize: 14.sp)),
+                        ],
+                      ),
+                    );
+                  }
+                  final docs = snapshot.data!.docs;
+                  return ListView.builder(
+                    padding: EdgeInsets.symmetric(horizontal: 20.sw),
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+                      final c = docs[index].data() as Map<String, dynamic>;
+                      final Timestamp? ts = c["timestamp"] as Timestamp?;
+                      final time = ts != null ? _timeAgo(ts.toDate()) : "Just now";
+                      
+                      return Padding(
+                        padding: EdgeInsets.only(bottom: 20.sh),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CircleAvatar(
+                              radius: 16.sw,
+                              backgroundColor: cardBg,
+                              backgroundImage: c["userPhotoUrl"] != null ? NetworkImage(c["userPhotoUrl"]) : null,
+                              child: c["userPhotoUrl"] == null ? Icon(Icons.person, size: 16.sw, color: orange) : null,
+                            ),
+                            SizedBox(width: 12.sw),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(c["userName"] ?? "User", style: TextStyle(color: purple, fontWeight: FontWeight.w900, fontSize: 13.sp)),
+                                      SizedBox(width: 8.sw),
+                                      Text(time, style: TextStyle(color: purple.withValues(alpha: 0.3), fontSize: 10.sp)),
+                                    ],
+                                  ),
+                                  SizedBox(height: 4.sh),
+                                  Text(
+                                    c["text"] ?? "", 
+                                    style: TextStyle(color: purple.withValues(alpha: 0.7), fontSize: 13.sp, height: 1.4),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.fromLTRB(20.sw, 12.sh, 20.sw, MediaQuery.of(context).viewInsets.bottom + 24.sh),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [BoxShadow(color: purple.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, -5))],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: commentCtrl,
+                      style: TextStyle(fontSize: 14.sp, fontFamily: "Satoshi", fontWeight: FontWeight.w600),
+                      decoration: InputDecoration(
+                        hintText: "Add a comment...",
+                        hintStyle: TextStyle(color: purple.withValues(alpha: 0.3)),
+                        filled: true,
+                        fillColor: purple.withValues(alpha: 0.03),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(25.sw), borderSide: BorderSide.none),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 12.sh),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12.sw),
+                  GestureDetector(
+                    onTap: () async {
+                      final text = commentCtrl.text.trim();
+                      if (text.isEmpty) return;
+                      commentCtrl.clear();
+                      final user = FirebaseAuth.instance.currentUser;
+                      final tipRef = FirebaseFirestore.instance
+                          .collection("nutritionists").doc(nutritionistId)
+                          .collection("tips").doc(tipId);
+                      
+                      await tipRef.collection("comments").add({
+                        "text": text,
+                        "userId": user?.uid,
+                        "userName": user?.displayName ?? "Expert",
+                        "userPhotoUrl": user?.photoURL,
+                        "timestamp": FieldValue.serverTimestamp(),
+                      });
+                      await tipRef.update({"commentCount": FieldValue.increment(1)});
+                    },
+                    child: Container(
+                      padding: EdgeInsets.all(12.sw),
+                      decoration: BoxDecoration(color: orange, shape: BoxShape.circle),
+                      child: Icon(Icons.send_rounded, color: Colors.white, size: 20.sw),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _postCard(Map<String, dynamic> data, String docId, String uid) {
     final String content = data["content"] ?? "";
     final String type = data["type"] ?? "tip";
@@ -163,12 +368,16 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
     ];
 
     return Container(
-      margin: EdgeInsets.only(bottom: 16.sh),
+      margin: EdgeInsets.only(bottom: 14.sh),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF9F5),
         borderRadius: BorderRadius.circular(22.sw),
         boxShadow: [
-          BoxShadow(color: purple.withValues(alpha:0.03), blurRadius: 15.sw, offset: Offset(0, 4.sh)),
+          BoxShadow(
+            color: purple.withValues(alpha: 0.03),
+            blurRadius: 15.sw,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -272,20 +481,29 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
                 if (data["imageUrl"] != null)
                   Padding(
                     padding: EdgeInsets.only(bottom: 12.sh),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16.sw),
-                      child: Image.network(
-                        data["imageUrl"],
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Container(
-                            height: 200.sh,
-                            color: purple.withValues(alpha:0.05),
-                            child: const Center(child: CircularProgressIndicator()),
-                          );
-                        },
+                    child: GestureDetector(
+                      onTap: () => _showFullScreenImage(context, data["imageUrl"]),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16.sw),
+                        child: Image.network(
+                          data["imageUrl"],
+                          width: double.infinity,
+                          height: 180.sh,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              height: 180.sh,
+                              color: purple.withValues(alpha: 0.05),
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: orange,
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ),
@@ -303,43 +521,14 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
                     padding: EdgeInsets.only(bottom: 12.sh),
                     child: _recipePreview(data["recipeId"], data["recipeName"], data["recipeImageUrl"] ?? data["imageUrl"]),
                   ),
-
-                // Document Attachment
                 if (data["docUrl"] != null)
-                  GestureDetector(
-                    onTap: () async {
-                      final url = Uri.parse(data["docUrl"]);
-                      if (await canLaunchUrl(url)) {
-                        await launchUrl(url, mode: LaunchMode.externalApplication);
-                      }
-                    },
-                    child: Container(
-                      padding: EdgeInsets.all(12.sw),
-                      margin: EdgeInsets.only(bottom: 12.sh),
-                      decoration: BoxDecoration(
-                        color: purple.withValues(alpha:0.05),
-                        borderRadius: BorderRadius.circular(12.sw),
-                        border: Border.all(color: purple.withValues(alpha:0.1)),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.insert_drive_file_rounded, color: orange, size: 24.sw),
-                          SizedBox(width: 12.sw),
-                          Expanded(
-                            child: Text(
-                              "Attached Document",
-                              style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13.sp),
-                            ),
-                          ),
-                          Icon(Icons.open_in_new_rounded, color: purple.withValues(alpha:0.4), size: 18.sw),
-                        ],
-                      ),
-                    ),
+                  Padding(
+                    padding: EdgeInsets.only(bottom: 12.sh),
+                    child: Text("Document: ${data["docName"] ?? "Attachment"}", style: TextStyle(color: orange, fontWeight: FontWeight.bold)),
                   ),
               ],
             ),
           ),
-
           // ── Divider ──
           Container(
             height: 1.sh,
@@ -505,139 +694,6 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
     );
   }
 
-  void _showComments(String tipId, String uid) {
-    final commentCtrl = TextEditingController();
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.6,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24.sw)),
-        ),
-        child: Column(
-          children: [
-            // Handle
-            Container(
-              margin: EdgeInsets.only(top: 12.sh),
-              width: 40.sw, height: 4.sh,
-              decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2.sw)),
-            ),
-            Padding(
-              padding: EdgeInsets.all(16.sw),
-              child: Text("Comments", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 18.sp, fontFamily: "Satoshi")),
-            ),
-            Expanded(
-              child: StreamBuilder<QuerySnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection("nutritionists")
-                    .doc(uid)
-                    .collection("tips")
-                    .doc(tipId)
-                    .collection("comments")
-                    .orderBy("timestamp", descending: false)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                    return Center(
-                      child: Text("No comments yet", style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 14.sp)),
-                    );
-                  }
-                  final docs = snapshot.data!.docs;
-                  return ListView.builder(
-                    padding: EdgeInsets.symmetric(horizontal: 16.sw),
-                    itemCount: docs.length,
-                    itemBuilder: (context, index) {
-                      final c = docs[index].data() as Map<String, dynamic>;
-                      return Padding(
-                        padding: EdgeInsets.only(bottom: 12.sh),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            CircleAvatar(
-                              radius: 14.sw,
-                              backgroundColor: cardBg,
-                              child: Icon(Icons.person, size: 14.sw, color: orange),
-                            ),
-                            SizedBox(width: 10.sw),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(c["userName"] ?? "User", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13.sp)),
-                                  SizedBox(height: 2.sh),
-                                  Text(c["text"] ?? "", style: TextStyle(color: purple.withValues(alpha:0.7), fontSize: 13.sp)),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
-            // Input row
-            Container(
-              padding: EdgeInsets.fromLTRB(16.sw, 8.sh, 16.sw, MediaQuery.of(context).viewInsets.bottom + 16.sh),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 10.sw, offset: Offset(0, -4.sh))],
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: commentCtrl,
-                      style: TextStyle(fontSize: 14.sp),
-                      decoration: InputDecoration(
-                        hintText: "Add a comment...",
-                        hintStyle: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 14.sp),
-                        filled: true,
-                        fillColor: cardInner,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(20.sw), borderSide: BorderSide.none),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 10.sh),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 8.sw),
-                  CircleAvatar(
-                    radius: 20.sw,
-                    backgroundColor: orange,
-                    child: IconButton(
-                      icon: Icon(Icons.send_rounded, color: Colors.white, size: 16.sw),
-                      onPressed: () async {
-                        final text = commentCtrl.text.trim();
-                        if (text.isEmpty) return;
-                        commentCtrl.clear();
-                        final user = FirebaseAuth.instance.currentUser;
-                        final tipRef = FirebaseFirestore.instance
-                            .collection("nutritionists").doc(uid)
-                            .collection("tips").doc(tipId);
-                        
-                        await tipRef.collection("comments").add({
-                          "text": text,
-                          "userId": user?.uid,
-                          "userName": user?.displayName ?? _fullName ?? "You",
-                          "timestamp": FieldValue.serverTimestamp(),
-                        });
-                        // Update comment count
-                        await tipRef.update({"commentCount": FieldValue.increment(1)});
-                      },
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
   void _confirmDelete(String docId, String uid) {
     GlassDialog.show(
