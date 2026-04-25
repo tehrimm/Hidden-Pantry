@@ -444,9 +444,8 @@ class _ForgetPasswordPhoneOtpScreenState
                     ),
                   ),
                 ),
-              ],
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -500,52 +499,47 @@ class _OtpBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12.sw),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-        child: Container(
-          width: width,
-          height: height,
-          decoration: BoxDecoration(
-            color: const Color(0xFFFDECE4).withValues(alpha: 0.4),
-            borderRadius: BorderRadius.circular(12.sw),
-            border: Border.all(
-              color: Colors.white.withValues(alpha: 0.5),
-              width: 1.5,
-            ),
-          ),
-          child: KeyboardListener(
-            focusNode: FocusNode(skipTraversal: true),
-            onKeyEvent: (event) {
-              if (event is KeyDownEvent &&
-                  event.logicalKey == LogicalKeyboardKey.backspace) {
-                onBackspace();
-              }
-            },
+    return Container(
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        color: const Color(0xFFFDECE4).withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(12.sw),
+        border: Border.all(color: Colors.white, width: 1.5),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12.sw),
+        child: BackdropFilter(
+          filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+          child: Center(
             child: TextField(
               controller: controller,
               focusNode: focusNode,
+              onChanged: onChanged,
               keyboardType: TextInputType.number,
               textAlign: TextAlign.center,
-              maxLength: 1,
-              cursorColor: purple,
+              maxLength: 2,
               style: TextStyle(
                 color: purple,
-                fontSize: 24.sp,
+                fontSize: 18.sp,
                 fontWeight: FontWeight.bold,
                 fontFamily: "Satoshi",
               ),
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
-                LengthLimitingTextInputFormatter(1),
               ],
               decoration: const InputDecoration(
                 counterText: "",
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.zero,
               ),
-              onChanged: onChanged,
+              onTap: () {
+                if (controller.text.isNotEmpty) {
+                  controller.selection = TextSelection.fromPosition(
+                    TextPosition(offset: controller.text.length),
+                  );
+                }
+              },
             ),
           ),
         ),
@@ -635,7 +629,3 @@ class _AuthFloatingOrbState extends State<_AuthFloatingOrb> with SingleTickerPro
     );
   }
 }
-
-
-
-

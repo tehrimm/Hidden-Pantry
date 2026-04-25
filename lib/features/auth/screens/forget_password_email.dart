@@ -1,39 +1,34 @@
 
-import 'dart:ui' as ui;
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'login_user.dart';
-import 'forget_password.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
-import 'package:hidden_pantry_app/core/utils/auth_validator.dart';
+import 'package:hidden_pantry_app/core/utils/toaster.dart';
 
-import 'package:hidden_pantry_app/core/services/auth_service.dart';
-
-class ForgetPasswordEmailScreen extends StatefulWidget {
-  final AuthService? authService;
-  const ForgetPasswordEmailScreen({super.key, this.authService});
+class ForgetPasswordScreen extends StatefulWidget {
+  const ForgetPasswordScreen({super.key});
 
   @override
-  State<ForgetPasswordEmailScreen> createState() =>
-      _ForgetPasswordEmailScreenState();
+  State<ForgetPasswordScreen> createState() => _ForgetPasswordScreenState();
 }
 
-class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> with TickerProviderStateMixin {
-  late final AuthService _authService;
-  final _emailCtrl = TextEditingController();
-
-  bool _loading = false;
-  String? _emailErr;
-
+class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with TickerProviderStateMixin {
+  // Colors
   static const Color bg = Color(0xFFFFF3EB);
   static const Color purple = Color(0xFF462F4D);
-  static const Color orange = Color(0xFFF2894F);
-  static const Color btnText = Color(0xFFFFF2EA);
   static const Color hint = Color(0xFFBFA89A);
+  static const Color enabledText = Color(0xFF462F4D);
+  static const Color btnOrange = Color(0xFFF2894F);
+  static const Color btnText = Color(0xFFFFF2EA);
   static const Color errText = Color(0xFFFD3250);
+
+  final _gmailCtrl = TextEditingController();
+  bool _loading = false;
+  String? _gmailErr;
 
   // Animations
   late AnimationController _mainController;
@@ -42,7 +37,6 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> w
   @override
   void initState() {
     super.initState();
-    _authService = widget.authService ?? AuthService();
     _mainController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -63,55 +57,46 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> w
     _mainController.forward();
   }
 
+  @override
+  void dispose() {
+    _gmailCtrl.dispose();
+    _mainController.dispose();
+    super.dispose();
+  }
+
   void _snack(String msg) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    Toaster.show(context, msg);
   }
 
-  bool _validate() {
-    final email = _emailCtrl.text.trim();
+  Future<void> _onReset() async {
+    final email = _gmailCtrl.text.trim();
+    if (email.isEmpty) {
+      setState(() => _gmailErr = "Email is required");
+      return;
+    }
+
     setState(() {
-      _emailErr = AuthValidator.validateEmail(email);
+      _gmailErr = null;
+      _loading = true;
     });
-    return _emailErr == null;
-  }
 
-  Future<void> _sendEmailReset() async {
-    if (!_validate()) return;
-
-    setState(() => _loading = true);
     try {
-      final email = _emailCtrl.text.trim();
-      await _authService.sendPasswordResetEmail(email: email);
+      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
       _snack("Reset link sent to $email");
-      await Future.delayed(const Duration(seconds: 2));
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const UserLoginScreen()),
-      );
-    } on FirebaseAuthException catch (e) {
-      if (e.code == "invalid-email") {
-        setState(() => _emailErr = "*incorrect email");
-      } else if (e.code == "user-not-found") {
-        _snack("No account found for this email.");
-      } else if (e.code == "too-many-requests") {
-        _snack("Too many attempts. Try again later.");
-      } else {
-        _snack(e.message ?? "Failed to send reset email.");
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const UserLoginScreen()),
+        );
       }
-    } catch (_) {
-      _snack("Something went wrong. Try again.");
+    } on FirebaseAuthException catch (e) {
+      _snack(e.message ?? "Something went wrong");
+    } catch (e) {
+      _snack("Something went wrong");
     } finally {
       if (mounted) setState(() => _loading = false);
     }
-  }
-
-  @override
-  void dispose() {
-    _emailCtrl.dispose();
-    _mainController.dispose();
-    super.dispose();
   }
 
   @override
@@ -119,176 +104,155 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> w
     ResponsiveUtils.init(context);
     final mq = MediaQuery.of(context);
 
-    return Scaffold(
-      backgroundColor: bg,
-      resizeToAvoidBottomInset: false,
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Stack(
-          children: [
-            // 1. Background Gradient (Fixed)
-            Positioned.fill(
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFFFFF3EB), Color(0xFFF6DFD1)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    stops: [0.4, 1.0],
+    final fieldHeight = 70.sh;
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const UserLoginScreen()),
+        );
+      },
+      child: Scaffold(
+        backgroundColor: bg,
+        resizeToAvoidBottomInset: false,
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Stack(
+            children: [
+              // 1. Background Gradient (Fixed)
+              Positioned.fill(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFFFF3EB), Color(0xFFF6DFD1)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      stops: [0.4, 1.0],
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            // 2. Decorative Patterns (Fixed)
-            const Positioned.fill(child: _AuthBackgroundPattern()),
-            const Positioned.fill(child: PatternBackground()),
+              // 2. Decorative Patterns (Fixed)
+              const Positioned.fill(child: _AuthBackgroundPattern()),
+              const Positioned.fill(child: PatternBackground()),
 
-            // 3. Scrollable Content
-            SingleChildScrollView(
-                padding: EdgeInsets.only(
-                  left: 30.sw,
-                  right: 30.sw,
-                  top: mq.padding.top + 36.sh,
-                  bottom: 22.sh + mq.viewInsets.bottom,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _AnimatedWrapper(
-                      animation: _staggeredAnimations[0],
-                      child: BackButtonWidget(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (_) => const ForgetPasswordScreen()),
-                          );
-                        },
-                      ),
-                    ),
-
-                    SizedBox(height: 38.sh),
-
-                    _AnimatedWrapper(
-                      animation: _staggeredAnimations[1],
-                      child: Text(
-                        "Verify Email",
-                        style: TextStyle(
-                          color: purple,
-                          fontSize: 40.sp,
-                          fontWeight: FontWeight.w900,
-                          height: 1.1,
-                          fontFamily: "Satoshi",
+              // 3. Content
+              SafeArea(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 30.sw),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(height: 38.sh),
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[0],
+                        child: BackButtonWidget(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (_) => const UserLoginScreen()),
+                            );
+                          },
                         ),
                       ),
-                    ),
 
-                    SizedBox(height: 12.sh),
+                      SizedBox(height: 38.sh),
 
-                    _AnimatedWrapper(
-                      animation: _staggeredAnimations[2],
-                      child: SizedBox(
-                        width: 290.sw,
-                        child: Text(
-                          "Enter your email and we will send you a password reset link.",
-                          style: TextStyle(
-                            color: purple,
-                            fontSize: 15.sp,
-                            fontFamily: "Satoshi",
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[1],
+                        child: SizedBox(
+                          width: 235.sw,
+                          child: Text(
+                            "Forgot Password?",
+                            style: TextStyle(
+                              color: purple,
+                              fontSize: 40.sp,
+                              fontWeight: FontWeight.w900,
+                              height: 1.1,
+                              fontFamily: "Satoshi",
+                            ),
                           ),
                         ),
                       ),
-                    ),
 
-                    SizedBox(height: 26.sh),
+                      SizedBox(height: 12.sh),
 
-                    _AnimatedWrapper(
-                      animation: _staggeredAnimations[3],
-                      child: _GlassField(
-                        height: 62.sh,
-                        isError: _emailErr != null,
-                        child: Row(
-                          children: [
-                            SizedBox(width: 16.sw),
-                            Container(
-                              width: 46.sw,
-                              height: 47.sh,
-                              decoration: BoxDecoration(
-                                color: orange,
-                                borderRadius: BorderRadius.circular(10.sw),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: orange.withValues(alpha: 0.3),
-                                    blurRadius: 10,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              alignment: Alignment.center,
-                              child: Image.asset(
-                                "assets/icons/gmail.png",
-                                width: 18.sw,
-                                height: 18.sw,
-                                fit: BoxFit.contain,
-                              ),
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[2],
+                        child: SizedBox(
+                          width: 300.sw,
+                          child: Text(
+                            "Enter the email address you used to create your account and we will email you a link to reset your password.",
+                            style: TextStyle(
+                              color: purple,
+                              fontSize: 15.sp,
+                              fontFamily: "Satoshi",
                             ),
-                            SizedBox(width: 12.sw),
-                            Expanded(
-                              child: TextField(
-                                controller: _emailCtrl,
-                                keyboardType: TextInputType.emailAddress,
-                                textInputAction: TextInputAction.done,
-                                onSubmitted: (_) => _sendEmailReset(),
-                                cursorColor: purple,
-                                style: TextStyle(
-                                  color: (_emailErr != null) ? errText : purple,
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w600,
-                                  fontFamily: "Satoshi",
-                                ),
-                                decoration: InputDecoration(
-                                  border: InputBorder.none,
-                                  hintText: "Gmail",
-                                  hintStyle: TextStyle(
-                                    color: hint,
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w500,
-                                    fontFamily: "Satoshi",
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 12.sw),
-                          ],
+                          ),
                         ),
                       ),
-                    ),
 
-                    if (_emailErr != null) ...[
-                      SizedBox(height: 6.sh),
-                      _ErrorText(text: _emailErr!),
-                    ],
+                      SizedBox(height: 48.sh),
 
-                    SizedBox(height: 28.sh),
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[3],
+                        child: _GlassField(
+                          height: fieldHeight,
+                          isError: _gmailErr != null,
+                          child: TextField(
+                            controller: _gmailCtrl,
+                            cursorColor: purple,
+                            textAlignVertical: TextAlignVertical.center,
+                            style: TextStyle(
+                              color: (_gmailErr != null) ? errText : enabledText,
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.2,
+                              fontFamily: "Satoshi",
+                            ),
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                              hintText: "Email",
+                              hintStyle: TextStyle(
+                                color: hint,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 0.2,
+                                fontFamily: "Satoshi",
+                              ),
+                              contentPadding: EdgeInsets.symmetric(horizontal: 30.sw, vertical: 22.sh),
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (_gmailErr != null) ...[
+                        SizedBox(height: 6.sh),
+                        _ErrorText(text: _gmailErr!),
+                      ],
 
-                    _AnimatedWrapper(
-                      animation: _staggeredAnimations[4],
-                      child: Align(
-                        alignment: Alignment.centerRight,
+                      SizedBox(height: 40.sh),
+
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[4],
                         child: GestureDetector(
-                          onTap: _loading ? null : _sendEmailReset,
+                          onTap: _loading ? null : _onReset,
                           child: Container(
-                            width: 221.sw,
+                            width: double.infinity,
                             height: 62.sh,
                             decoration: BoxDecoration(
-                              color: orange,
+                              color: btnOrange,
                               borderRadius: BorderRadius.circular(20.sw),
                               boxShadow: [
-                                BoxShadow(
-                                  color: orange.withValues(alpha: 0.3),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 8),
-                                ),
+                                if (!_loading)
+                                  BoxShadow(
+                                    color: btnOrange.withValues(alpha: 0.3),
+                                    blurRadius: 15,
+                                    offset: const Offset(0, 8),
+                                  ),
                               ],
                             ),
                             alignment: Alignment.center,
@@ -298,7 +262,7 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> w
                                     children: [
                                       SizedBox(
                                         width: 18.sw, height: 18.sw,
-                                        child: const CircularProgressIndicator(strokeWidth: 2, color: btnText),
+                                        child: const CircularProgressIndicator(color: btnText, strokeWidth: 2),
                                       ),
                                       SizedBox(width: 10.sw),
                                       Text(
@@ -320,8 +284,8 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> w
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -487,6 +451,3 @@ class _AuthFloatingOrbState extends State<_AuthFloatingOrb> with SingleTickerPro
     );
   }
 }
-
-
-

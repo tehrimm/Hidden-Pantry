@@ -333,8 +333,10 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> with 
               const Positioned.fill(child: PatternBackground()),
 
               // 3. Scrollable Content
-              Column(
-                children: [
+              SafeArea(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: Column(
                     children: [
                       _AnimatedWrapper(
                         animation: _staggeredAnimations[0],
@@ -612,15 +614,15 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> with 
                           ),
 
                           SizedBox(height: 40.sh),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                ],
               ),
-            ),
+            ],
           ),
         ),
       ),

@@ -91,10 +91,10 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
             const Positioned.fill(child: PatternBackground()),
 
             // 3. Scrollable Content
-            Padding(
-
-              // Main content
-              Padding(
+            SafeArea(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Padding(
                 padding: EdgeInsets.only(
                   left: 30.sw,
                   right: 30.sw,
@@ -202,7 +202,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const ForgetPasswordEmailScreen(),
+                                  builder: (_) => const ForgetPasswordScreen(),
                                 ),
                               );
                             } else {
@@ -254,11 +254,12 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                     ),
 
                     SizedBox(height: 14.sh),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

@@ -682,13 +682,11 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                         ],
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
-        ),
-      ),
     );
   }
 }

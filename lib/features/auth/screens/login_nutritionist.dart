@@ -327,8 +327,8 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with 
                     bottom: 20.sh + mq.viewInsets.bottom,
                   ),
                   child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                             _AnimatedWrapper(
                               animation: _staggeredAnimations[0],
                               child: Row(
@@ -662,15 +662,13 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with 
                                 ),
                               ),
                             ),
-                        ],
-                      ),
-                    ),
                   ],
                 ),
               ),
             ),
-          ),
+          ],
         ),
+      ),
       ),
     );
   }

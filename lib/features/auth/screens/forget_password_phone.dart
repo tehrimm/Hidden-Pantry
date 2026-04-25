@@ -241,6 +241,8 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> w
             // 3. Scrollable Content
             SafeArea(
               child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: Padding(
                   padding: EdgeInsets.only(
                     left: 30.sw,
                     right: 30.sw,
@@ -464,9 +466,9 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> w
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

@@ -286,33 +286,246 @@ class _SignupNutritionistScreenState extends State<SignupNutritionistScreen> wit
               // 2. Decorative Patterns (Fixed)
               const Positioned.fill(child: _AuthBackgroundPattern()),
               const Positioned.fill(child: PatternBackground()),
-
-              // 3. Scrollable Content
-              Column(
-                children: [
+              SafeArea(
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.only(
+                    left: 30.sw,
+                    right: 30.sw,
+                    top: topPad + 36.sh,
+                    bottom: 20.sh + mq.viewInsets.bottom,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _AnimatedWrapper(
                         animation: _staggeredAnimations[0],
-                        child: Padding(
-                          padding: EdgeInsets.fromLTRB(30.sw, topPad + 36.sh, 30.sw, 20.sh),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            BackButtonWidget(onPressed: _goLoadingFive),
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (_) => const LoginNutritionistScreen()),
+                                );
+                              },
+                              child: Text(
+                                "Login",
+                                style: TextStyle(
+                                  color: purple,
+                                  fontSize: 14.sp,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: "Satoshi",
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: 46.sh),
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[1],
+                        child: SizedBox(
+                          width: 337.sw,
+                          child: Text(
+                            "Register",
+                            style: TextStyle(
+                              color: purple,
+                              fontSize: 40.sp,
+                              fontWeight: FontWeight.w900,
+                              height: 1.1,
+                              fontFamily: "Satoshi",
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 46.sh),
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[2],
+                        child: _GlassField(
+                          height: fieldH,
+                          isError: _nameErr != null,
+                          child: TextField(
+                            controller: _fullNameCtrl,
+                            onChanged: (_) => setState(() {}),
+                            cursorColor: purple,
+                            textAlignVertical: TextAlignVertical.center,
+                            style: TextStyle(
+                              color: (_nameErr != null) ? errText : enabledText,
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.2,
+                              fontFamily: "Satoshi",
+                            ),
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                              hintText: "Full Name",
+                              hintStyle: TextStyle(
+                                color: hint,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 0.2,
+                                fontFamily: "Satoshi",
+                              ),
+                              contentPadding: padMain(),
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (_nameErr != null) ...[
+                        SizedBox(height: errOffset),
+                        _ErrorText(text: _nameErr!),
+                      ],
+                      SizedBox(height: baseGap),
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[3],
+                        child: _GlassField(
+                          height: fieldH,
+                          isError: _emailErr != null,
+                          child: TextField(
+                            controller: _emailCtrl,
+                            onChanged: (_) => setState(() {}),
+                            cursorColor: purple,
+                            textAlignVertical: TextAlignVertical.center,
+                            style: TextStyle(
+                              color: (_emailErr != null) ? errText : enabledText,
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.2,
+                              fontFamily: "Satoshi",
+                            ),
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                              hintText: "Email",
+                              hintStyle: TextStyle(
+                                color: hint,
+                                fontSize: 12.sp,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 0.2,
+                                fontFamily: "Satoshi",
+                              ),
+                              contentPadding: padMain(),
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (_emailErr != null) ...[
+                        SizedBox(height: errOffset),
+                        _ErrorText(text: _emailErr!),
+                      ],
+                      SizedBox(height: baseGap),
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[4],
+                        child: _GlassField(
+                          height: fieldH,
+                          isError: _phoneErr != null,
                           child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              BackButtonWidget(onPressed: _goLoadingFive),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => const LoginNutritionistScreen()),
-                                  );
-                                },
-                                child: Text(
-                                  "Login",
-                                  style: TextStyle(
-                                    color: purple,
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w700,
+                              SizedBox(width: 10.sw),
+                              SizedBox(
+                                width: 135.sw,
+                                child: CountryCodePicker(
+                                  onChanged: (c) => setState(
+                                    () => _countryCode = c.dialCode ?? "+92",
+                                  ),
+                                  initialSelection: _countryCode,
+                                  favorite: const ["+92", "+91", "+971", "+44", "+1"],
+                                  alignLeft: true,
+                                  padding: EdgeInsets.zero,
+                                  showDropDownButton: false,
+                                  textStyle: TextStyle(
+                                    color: _phoneErr != null ? errText : purple,
+                                    fontSize: 12.sw,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.2,
                                     fontFamily: "Satoshi",
+                                  ),
+                                ),
+                              ),
+                              Container(width: 1.sw, height: 36.sh, color: stroke),
+                              SizedBox(width: 14.sw),
+                              Expanded(
+                                child: TextField(
+                                  controller: _phoneCtrl,
+                                  onChanged: (_) => setState(() {}),
+                                  keyboardType: TextInputType.phone,
+                                  cursorColor: purple,
+                                  textAlignVertical: TextAlignVertical.center,
+                                  style: TextStyle(
+                                    color: (_phoneErr != null) ? errText : enabledText,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.2,
+                                    fontFamily: "Satoshi",
+                                  ),
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: "Phone Number",
+                                    hintStyle: TextStyle(
+                                      color: hint,
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w500,
+                                      letterSpacing: 0.2,
+                                      fontFamily: "Satoshi",
+                                    ),
+                                    contentPadding: EdgeInsets.only(top: 24.sh, bottom: 18.sh),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: 12.sw),
+                            ],
+                          ),
+                        ),
+                      ),
+                      if (_phoneErr != null) ...[
+                        SizedBox(height: errOffset),
+                        _ErrorText(text: _phoneErr!),
+                      ],
+                      SizedBox(height: baseGap),
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[5],
+                        child: _GlassField(
+                          height: fieldH,
+                          isError: _passErr != null,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _passwordCtrl,
+                                  onChanged: (_) => setState(() {}),
+                                  obscureText: _obscurePassword,
+                                  cursorColor: purple,
+                                  textAlignVertical: TextAlignVertical.center,
+                                  style: TextStyle(
+                                    color: (_passErr != null) ? errText : enabledText,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w600,
+                                    letterSpacing: 0.2,
+                                    fontFamily: "Satoshi",
+                                  ),
+                                  decoration: InputDecoration(
+                                    border: InputBorder.none,
+                                    hintText: "Password",
+                                    hintStyle: TextStyle(
+                                      color: hint,
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w500,
+                                      letterSpacing: 0.2,
+                                      fontFamily: "Satoshi",
+                                    ),
+                                    contentPadding: padMain(),
+                                  ),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => setState(() => _obscurePassword = !_obscurePassword),
+                                child: Padding(
+                                  padding: EdgeInsets.only(right: 16.sw),
+                                  child: Image.asset(
+                                    _obscurePassword ? "assets/icons/eye_disable.png" : "assets/icons/eye.png",
+                                    width: 19.sw, height: 20.sw, fit: BoxFit.contain,
                                   ),
                                 ),
                               ),
@@ -320,405 +533,165 @@ class _SignupNutritionistScreenState extends State<SignupNutritionistScreen> wit
                           ),
                         ),
                       ),
-
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: EdgeInsets.only(
-                            left: 30.sw,
-                            right: 30.sw,
-                            bottom: 30.sh + mq.padding.bottom + mq.viewInsets.bottom,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                      if (_passErr != null) ...[
+                        SizedBox(height: errOffset),
+                        _ErrorText(text: _passErr!),
+                      ],
+                      SizedBox(height: 30.sh),
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[6],
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 10.sw),
+                          child: Row(
                             children: [
-
-                          _AnimatedWrapper(
-                            animation: _staggeredAnimations[1],
-                            child: SizedBox(
-                              width: 337.sw,
-                              child: Text(
-                                "Register",
-                                style: TextStyle(
-                                  color: purple,
-                                  fontSize: 40.sp,
-                                  fontWeight: FontWeight.w900,
-                                  height: 1.1,
-                                  fontFamily: "Satoshi",
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          SizedBox(height: 46.sh),
-
-                          _AnimatedWrapper(
-                            animation: _staggeredAnimations[2],
-                            child: _GlassField(
-                              height: fieldH,
-                              isError: _nameErr != null,
-                              child: TextField(
-                                controller: _fullNameCtrl,
-                                onChanged: (_) => setState(() {}),
-                                cursorColor: purple,
-                                textAlignVertical: TextAlignVertical.center,
-                                style: TextStyle(
-                                  color: (_nameErr != null) ? errText : enabledText,
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.2,
-                                  fontFamily: "Satoshi",
-                                ),
-                                decoration: InputDecoration(
-                                  border: InputBorder.none,
-                                  hintText: "Full Name",
-                                  hintStyle: TextStyle(
-                                    color: hint,
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w500,
-                                    letterSpacing: 0.2,
-                                    fontFamily: "Satoshi",
-                                  ),
-                                  contentPadding: padMain(),
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (_nameErr != null) ...[
-                            SizedBox(height: errOffset),
-                            _ErrorText(text: _nameErr!),
-                          ],
-
-                          SizedBox(height: baseGap),
-
-                          _AnimatedWrapper(
-                            animation: _staggeredAnimations[3],
-                            child: _GlassField(
-                              height: fieldH,
-                              isError: _emailErr != null,
-                              child: TextField(
-                                controller: _emailCtrl,
-                                onChanged: (_) => setState(() {}),
-                                cursorColor: purple,
-                                textAlignVertical: TextAlignVertical.center,
-                                style: TextStyle(
-                                  color: (_emailErr != null) ? errText : enabledText,
-                                  fontSize: 12.sp,
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.2,
-                                  fontFamily: "Satoshi",
-                                ),
-                                decoration: InputDecoration(
-                                  border: InputBorder.none,
-                                  hintText: "Email",
-                                  hintStyle: TextStyle(
-                                    color: hint,
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w500,
-                                    letterSpacing: 0.2,
-                                    fontFamily: "Satoshi",
-                                  ),
-                                  contentPadding: padMain(),
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (_emailErr != null) ...[
-                            SizedBox(height: errOffset),
-                            _ErrorText(text: _emailErr!),
-                          ],
-
-                          SizedBox(height: baseGap),
-
-                          _AnimatedWrapper(
-                            animation: _staggeredAnimations[4],
-                            child: _GlassField(
-                              height: fieldH,
-                              isError: _phoneErr != null,
-                              child: Row(
-                                children: [
-                                  SizedBox(width: 10.sw),
-                                  SizedBox(
-                                    width: 135.sw,
-                                    child: CountryCodePicker(
-                                      onChanged: (c) => setState(
-                                        () => _countryCode = c.dialCode ?? "+92",
-                                      ),
-                                      initialSelection: _countryCode,
-                                      favorite: const ["+92", "+91", "+971", "+44", "+1"],
-                                      alignLeft: true,
-                                      padding: EdgeInsets.zero,
-                                      showDropDownButton: false,
-                                      textStyle: TextStyle(
-                                        color: _phoneErr != null ? errText : purple,
-                                        fontSize: 12.sw,
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: 0.2,
-                                        fontFamily: "Satoshi",
-                                      ),
+                              GestureDetector(
+                                onTap: () => setState(() => _agreed = !_agreed),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  width: 20.sw,
+                                  height: 20.sw,
+                                  decoration: BoxDecoration(
+                                    color: _agreed ? btnOrange : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(6.sw),
+                                    border: Border.all(
+                                      color: _agreed ? btnOrange : purple.withValues(alpha: 0.3),
+                                      width: 1.5,
                                     ),
                                   ),
-                                  Container(width: 1.sw, height: 36.sh, color: stroke),
-                                  SizedBox(width: 14.sw),
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _phoneCtrl,
-                                      onChanged: (_) => setState(() {}),
-                                      keyboardType: TextInputType.phone,
-                                      cursorColor: purple,
-                                      textAlignVertical: TextAlignVertical.center,
+                                  child: _agreed
+                                      ? Icon(Icons.check, size: 14.sw, color: Colors.white)
+                                      : null,
+                                ),
+                              ),
+                              SizedBox(width: 12.sw),
+                              Expanded(
+                                child: Wrap(
+                                  children: [
+                                    Text(
+                                      "I agree to the ",
                                       style: TextStyle(
-                                        color: (_phoneErr != null) ? errText : enabledText,
+                                        color: purple.withValues(alpha: 0.7),
                                         fontSize: 12.sp,
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: 0.2,
+                                        fontWeight: FontWeight.w500,
                                         fontFamily: "Satoshi",
                                       ),
-                                      decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: "Phone Number",
-                                        hintStyle: TextStyle(
-                                          color: hint,
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w500,
-                                          letterSpacing: 0.2,
-                                          fontFamily: "Satoshi",
-                                        ),
-                                        contentPadding: EdgeInsets.only(top: 24.sh, bottom: 18.sh),
-                                      ),
                                     ),
-                                  ),
-                                  SizedBox(width: 12.sw),
-                                ],
-                              ),
-                            ),
-                          ),
-                          if (_phoneErr != null) ...[
-                            SizedBox(height: errOffset),
-                            _ErrorText(text: _phoneErr!),
-                          ],
-
-                          SizedBox(height: baseGap),
-
-                          _AnimatedWrapper(
-                            animation: _staggeredAnimations[5],
-                            child: _GlassField(
-                              height: fieldH,
-                              isError: _passErr != null,
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: TextField(
-                                      controller: _passwordCtrl,
-                                      onChanged: (_) => setState(() {}),
-                                      obscureText: _obscurePassword,
-                                      cursorColor: purple,
-                                      textAlignVertical: TextAlignVertical.center,
-                                      style: TextStyle(
-                                        color: (_passErr != null) ? errText : enabledText,
-                                        fontSize: 12.sp,
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: 0.2,
-                                        fontFamily: "Satoshi",
-                                      ),
-                                      decoration: InputDecoration(
-                                        border: InputBorder.none,
-                                        hintText: "Password",
-                                        hintStyle: TextStyle(
-                                          color: hint,
-                                          fontSize: 12.sp,
-                                          fontWeight: FontWeight.w500,
-                                          letterSpacing: 0.2,
-                                          fontFamily: "Satoshi",
-                                        ),
-                                        contentPadding: padMain(),
-                                      ),
-                                    ),
-                                  ),
-                                  GestureDetector(
-                                    onTap: () => setState(() => _obscurePassword = !_obscurePassword),
-                                    child: Padding(
-                                      padding: EdgeInsets.only(right: 16.sw),
-                                      child: Image.asset(
-                                        _obscurePassword ? "assets/icons/eye_disable.png" : "assets/icons/eye.png",
-                                        width: 19.sw, height: 20.sw, fit: BoxFit.contain,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          if (_passErr != null) ...[
-                            SizedBox(height: errOffset),
-                            _ErrorText(text: _passErr!),
-                          ],
-
-                          SizedBox(height: 30.sh),
-
-                          _AnimatedWrapper(
-                            animation: _staggeredAnimations[6],
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 10.sw),
-                              child: Row(
-                                children: [
-                                  GestureDetector(
-                                    onTap: () => setState(() => _agreed = !_agreed),
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      width: 20.sw,
-                                      height: 20.sw,
-                                      decoration: BoxDecoration(
-                                        color: _agreed ? btnOrange : Colors.transparent,
-                                        borderRadius: BorderRadius.circular(6.sw),
-                                        border: Border.all(
-                                          color: _agreed ? btnOrange : purple.withValues(alpha: 0.3),
-                                          width: 1.5,
-                                        ),
-                                      ),
-                                      child: _agreed
-                                          ? Icon(Icons.check, size: 14.sw, color: Colors.white)
-                                          : null,
-                                    ),
-                                  ),
-                                  SizedBox(width: 12.sw),
-                                  Expanded(
-                                    child: Wrap(
-                                      children: [
-                                        Text(
-                                          "I agree to the ",
-                                          style: TextStyle(
-                                            color: purple.withValues(alpha: 0.7),
-                                            fontSize: 12.sp,
-                                            fontWeight: FontWeight.w500,
-                                            fontFamily: "Satoshi",
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (_) => const TermsAndConditionScreen(viewOnly: true),
                                           ),
+                                        );
+                                      },
+                                      child: Text(
+                                        "Terms and Conditions",
+                                        style: TextStyle(
+                                          color: purple,
+                                          fontSize: 12.sp,
+                                          fontWeight: FontWeight.w900,
+                                          fontFamily: "Satoshi",
+                                          decoration: TextDecoration.underline,
                                         ),
-                                        GestureDetector(
-                                          onTap: () {
-                                            Navigator.push(
-                                              context,
-                                              MaterialPageRoute(
-                                                builder: (_) => const TermsAndConditionScreen(viewOnly: true),
-                                              ),
-                                            );
-                                          },
-                                          child: Text(
-                                            "Terms and Conditions",
-                                            style: TextStyle(
-                                              color: purple,
-                                              fontSize: 12.sp,
-                                              fontWeight: FontWeight.w900,
-                                              fontFamily: "Satoshi",
-                                              decoration: TextDecoration.underline,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-
-                          SizedBox(height: 40.sh),
-
-                          _AnimatedWrapper(
-                            animation: _staggeredAnimations[7],
-                            child: GestureDetector(
-                              onTap: _onNext,
-                              child: Container(
-                                width: double.infinity,
-                                height: 62.sh,
-                                decoration: BoxDecoration(
-                                  color: btnOrange,
-                                  borderRadius: BorderRadius.circular(20.sw),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: btnOrange.withValues(alpha: 0.3),
-                                      blurRadius: 15,
-                                      offset: const Offset(0, 8),
+                                      ),
                                     ),
                                   ],
                                 ),
-                                alignment: Alignment.center,
-                                child: _loading
-                                    ? Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          SizedBox(
-                                            width: 18.sw, height: 18.sw,
-                                            child: const CircularProgressIndicator(strokeWidth: 2, color: btnText),
-                                          ),
-                                          SizedBox(width: 10.sw),
-                                          Text(
-                                            "Next...",
-                                            style: TextStyle(
-                                              color: btnText, fontSize: 12.sp,
-                                              fontWeight: FontWeight.bold, fontFamily: "Satoshi",
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                    : Text(
-                                        "Next",
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 40.sh),
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[7],
+                        child: GestureDetector(
+                          onTap: _onNext,
+                          child: Container(
+                            width: double.infinity,
+                            height: 62.sh,
+                            decoration: BoxDecoration(
+                              color: btnOrange,
+                              borderRadius: BorderRadius.circular(20.sw),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: btnOrange.withValues(alpha: 0.3),
+                                  blurRadius: 15,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                            ),
+                            alignment: Alignment.center,
+                            child: _loading
+                                ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: 18.sw, height: 18.sw,
+                                        child: const CircularProgressIndicator(strokeWidth: 2, color: btnText),
+                                      ),
+                                      SizedBox(width: 10.sw),
+                                      Text(
+                                        "Next...",
                                         style: TextStyle(
                                           color: btnText, fontSize: 12.sp,
                                           fontWeight: FontWeight.bold, fontFamily: "Satoshi",
                                         ),
                                       ),
+                                    ],
+                                  )
+                                : Text(
+                                    "Next",
+                                    style: TextStyle(
+                                      color: btnText, fontSize: 12.sp,
+                                      fontWeight: FontWeight.bold, fontFamily: "Satoshi",
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 12.sh),
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[8],
+                        child: Center(
+                          child: Text(
+                            "Or register with",
+                            style: TextStyle(
+                              color: purple, fontSize: 12.sp, fontWeight: FontWeight.w500,
+                              letterSpacing: 0.2, fontFamily: "Satoshi",
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 12.sh),
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[9],
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: _SocialBtn(
+                                icon: "assets/logos/google.png",
+                                iconW: 48.sw, iconH: 27.sh,
+                                onTap: _onGoogleLogin,
                               ),
                             ),
-                          ),
-
-                          SizedBox(height: 12.sh),
-
-                          _AnimatedWrapper(
-                            animation: _staggeredAnimations[8],
-                            child: Center(
-                              child: Text(
-                                "Or register with",
-                                style: TextStyle(
-                                  color: purple, fontSize: 12.sp, fontWeight: FontWeight.w500,
-                                  letterSpacing: 0.2, fontFamily: "Satoshi",
-                                ),
+                            SizedBox(width: 12.sw),
+                            Expanded(
+                              child: _SocialBtn(
+                                icon: "assets/logos/apple.png",
+                                iconW: 70.sw, iconH: 44.sh,
+                                onTap: _onAppleLogin,
                               ),
                             ),
-                          ),
-
-                          SizedBox(height: 12.sh),
-
-                          _AnimatedWrapper(
-                            animation: _staggeredAnimations[9],
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: _SocialBtn(
-                                    icon: "assets/logos/google.png",
-                                    iconW: 48.sw, iconH: 27.sh,
-                                    onTap: _onGoogleLogin,
-                                  ),
-                                ),
-                                SizedBox(width: 12.sw),
-                                Expanded(
-                                  child: _SocialBtn(
-                                    icon: "assets/logos/apple.png",
-                                    iconW: 70.sw, iconH: 44.sh,
-                                    onTap: _onAppleLogin,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                            ],
-                          ),
+                          ],
                         ),
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),
@@ -905,6 +878,3 @@ class _AuthFloatingOrbState extends State<_AuthFloatingOrb> with SingleTickerPro
     );
   }
 }
-
-
-
