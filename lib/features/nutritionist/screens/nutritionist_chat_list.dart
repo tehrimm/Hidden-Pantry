@@ -444,8 +444,9 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
                           CircleAvatar(
                             radius: 26.sw,
                             backgroundColor: orange.withValues(alpha: 0.05),
-                            backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
-                            child: photoUrl == null ? Icon(Icons.person, color: orange, size: 26.sw) : null,
+                            backgroundImage: NetworkImage(photoUrl != null && photoUrl.isNotEmpty 
+                                ? photoUrl 
+                                : "https://ui-avatars.com/api/?name=User&background=random&color=fff"),
                           ),
                           StreamBuilder<DocumentSnapshot>(
                             stream: UserStatusService().getStatusStream(client["userId"], false),

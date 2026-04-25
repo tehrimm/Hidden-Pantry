@@ -22,8 +22,10 @@ class ChatInterface extends StatefulWidget {
   final Map<String, dynamic> nutritionistData;
   final String? chatIdOverride;
   final String? otherUserName;
-  final String? otherUserPhoto; // NEW
-  final String? clientId; // NEW: The user UID when a nutritionist is chatting
+  final String? otherUserPhoto; 
+  final String? clientId; 
+
+  static const String defaultProfileUrl = "https://ui-avatars.com/api/?name=User&background=random&color=fff";
 
   const ChatInterface({
     super.key,
@@ -49,6 +51,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
   bool _isTyping = false;
   bool _canShareMealPlans = false;
   bool _canShareSupplements = false;
+  String? _myPhotoUrl;
 
 
   @override
@@ -58,6 +61,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
     _resetUnreadCount();
     _clearRelatedNotifications();
     _msgCtrl.addListener(_onTextChanged);
+    _fetchMyProfile();
     if (_isNutritionist) {
       _checkClientBenefits();
     } else {
@@ -186,6 +190,32 @@ class _ChatInterfaceState extends State<ChatInterface> {
     }
   }
 
+  Future<void> _fetchMyProfile() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      // Nutritionists are in 'nutritionists' collection, users are in 'users' collection
+      // First try to detect which one the current user is
+      final nutDoc = await FirebaseFirestore.instance.collection("nutritionists").doc(user.uid).get();
+      if (nutDoc.exists && mounted) {
+        setState(() {
+          _myPhotoUrl = nutDoc.data()?["photoUrl"] ?? nutDoc.data()?["imageUrl"];
+        });
+        return;
+      }
+
+      final userDoc = await FirebaseFirestore.instance.collection("users").doc(user.uid).get();
+      if (userDoc.exists && mounted) {
+        setState(() {
+          _myPhotoUrl = userDoc.data()?["photoUrl"] ?? userDoc.data()?["imageUrl"];
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching my profile: $e");
+    }
+  }
+
   String get _chatId {
     if (widget.chatIdOverride != null) return widget.chatIdOverride!;
     final uid = FirebaseAuth.instance.currentUser?.uid ?? "";
@@ -295,7 +325,8 @@ class _ChatInterfaceState extends State<ChatInterface> {
     ResponsiveUtils.init(context);
     // 1. Determine title & photo
     final String title = widget.otherUserName ?? widget.nutritionistData["fullName"] ?? "Chat";
-    final String? photoUrl = widget.otherUserPhoto ?? widget.nutritionistData["imageUrl"];
+    String photoUrl = widget.otherUserPhoto ?? widget.nutritionistData["photoUrl"] ?? widget.nutritionistData["imageUrl"] ?? "";
+    if (photoUrl.isEmpty) photoUrl = ChatInterface.defaultProfileUrl;
     
 
     return Scaffold(
@@ -320,13 +351,51 @@ class _ChatInterfaceState extends State<ChatInterface> {
                 shape: BoxShape.circle,
                 border: Border.all(color: orange.withValues(alpha:0.3), width: 1.5.sw),
               ),
-              child: CircleAvatar(
-                radius: 18.sw,
-                backgroundColor: purple.withValues(alpha:0.1),
-                backgroundImage: photoUrl != null && photoUrl.isNotEmpty ? NetworkImage(photoUrl) : null,
-                child: photoUrl == null || photoUrl.isEmpty
-                    ? Icon(Icons.person, color: purple, size: 20.sw)
-                    : null,
+              child: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 18.sw,
+                    backgroundColor: purple.withValues(alpha:0.1),
+                    child: ClipOval(
+                      child: Image.network(
+                        photoUrl,
+                        width: 36.sw,
+                        height: 36.sw,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) => Image.network(
+                          "${ChatInterface.defaultProfileUrl}&name=${Uri.encodeComponent(title)}",
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  ),
+                  StreamBuilder<DocumentSnapshot>(
+                    stream: UserStatusService().getStatusStream(
+                      _isNutritionist ? (widget.clientId ?? "") : widget.nutritionistId,
+                      !_isNutritionist,
+                    ),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData || !snapshot.data!.exists) return const SizedBox.shrink();
+                      final data = snapshot.data!.data() as Map<String, dynamic>;
+                      final bool isOnline = data['isOnline'] ?? false;
+                      if (!isOnline) return const SizedBox.shrink();
+
+                      return Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 10.sw,
+                          height: 10.sw,
+                          decoration: BoxDecoration(
+                            color: Colors.green,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2.sw),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
             ),
             SizedBox(width: 12.sw),
@@ -399,9 +468,9 @@ class _ChatInterfaceState extends State<ChatInterface> {
                 value: 'clear',
                 child: Row(
                   children: [
-                    Icon(Icons.delete_sweep_rounded, color: Colors.red, size: 20.sw),
+                    Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20.sw),
                     SizedBox(width: 8.sw),
-                    Text("Clear Chat History", style: TextStyle(color: Colors.red, fontSize: 14.sp)),
+                    Text("Clear Chat", style: TextStyle(color: Colors.red, fontSize: 14.sp)),
                   ],
                 ),
               ),
@@ -788,11 +857,13 @@ class _ChatInterfaceState extends State<ChatInterface> {
     final recipientId = _isNutritionist ? widget.clientId : widget.nutritionistId;
     if (recipientId != null) {
       final encryptedData = await ChatEncryptionService().encryptMessage(text, recipientId);
+      debugPrint("Encryption check: key matches ${encryptedData['serverKeyMatch']}");
       
       await chatRef.collection("messages").add({
         "text": encryptedData['isEncrypted'] == 'true' ? "[Encrypted]" : text, // Fallback for old apps
         "cipherText": encryptedData['cipherText'],
         "encryptedKey": encryptedData['encryptedKey'],
+        "senderEncryptedKey": encryptedData['senderEncryptedKey'], // Added for self-decryption
         "isEncrypted": encryptedData['isEncrypted'],
         "senderId": user.uid,
         "timestamp": FieldValue.serverTimestamp(),
@@ -822,13 +893,14 @@ class _ChatInterfaceState extends State<ChatInterface> {
       NotificationService().sendNotification(
         recipientId: recipientId,
         title: "New Message from $senderName",
-        body: text,
+        body: "[Encrypted Message]", // Hide content for E2EE privacy
         type: NotificationType.chat_message,
         targetId: _chatId,
         recipientRole: _isNutritionist ? 'user' : 'nutritionist',
       );
     }
   }
+
 
   Widget _dotAnimation() {
     return Row(
@@ -870,78 +942,29 @@ class _ChatInterfaceState extends State<ChatInterface> {
   }
 
   void _showDeleteOptions(String docId, bool isMe) {
-    GlassDialog.show(
+    showGeneralDialog(
       context: context,
-      builder: (context) => Dialog(
-        backgroundColor: const Color(0xFFF9E3D5),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                "Delete Message",
-                style: TextStyle(color: purple, fontSize: 20, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
-              ),
-              const SizedBox(height: 24),
-              _deleteOptionButton("Delete for me", Icons.delete_outline_rounded, () {
-                Navigator.pop(context);
-                _deleteMessageForMe(docId);
-              }),
-              if (isMe) ...[
-                const SizedBox(height: 12),
-                _deleteOptionButton("Delete for everyone", Icons.delete_forever_rounded, () {
-                  Navigator.pop(context);
-                  _deleteMessageForEveryone(docId);
-                }, isRed: true),
-              ],
-              const SizedBox(height: 12),
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEF8A54), // Apps orange
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Center(
-                    child: Text("Cancel", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+      barrierDismissible: true,
+      barrierLabel: "Dismiss",
+      barrierColor: Colors.black.withValues(alpha: 0.3),
+      transitionDuration: const Duration(milliseconds: 400),
+      pageBuilder: (context, anim1, anim2) => _DeleteMessageDialog(
+        isMe: isMe,
+        onDeleteForMe: () => _deleteMessageForMe(docId),
+        onDeleteForEveryone: () => _deleteMessageForEveryone(docId),
       ),
+      transitionBuilder: (context, anim1, anim2, child) {
+        return FadeTransition(
+          opacity: CurvedAnimation(parent: anim1, curve: Curves.easeIn),
+          child: ScaleTransition(
+            scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
+            child: child,
+          ),
+        );
+      },
     );
   }
 
-  Widget _deleteOptionButton(String label, IconData icon, VoidCallback onTap, {bool isRed = false}) {
-    // Apps orange color = 0xFFEF8A54
-    final Color mainColor = isRed ? Colors.red : const Color(0xFFEF8A54);
-    
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
-        decoration: BoxDecoration(
-          color: Colors.transparent,
-          border: Border.all(color: mainColor, width: 1.5),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: mainColor, size: 22.sw),
-            SizedBox(width: 12.sw),
-            Text(label, style: TextStyle(color: mainColor, fontWeight: FontWeight.bold, fontSize: 16.sp)),
-          ],
-        ),
-      ),
-    );
-  }
 
   Widget _buildMessageItem(Map<String, dynamic> data, bool isMe, String docId) {
     Widget child;
@@ -1017,7 +1040,10 @@ class _ChatInterfaceState extends State<ChatInterface> {
       onLongPress: () {
         _showDeleteOptions(docId, isMe);
       },
-      child: child,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: 8.sh),
+        child: child,
+      ),
     );
   }
 
@@ -1092,81 +1118,137 @@ class _ChatInterfaceState extends State<ChatInterface> {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        width: 260.sw,
-        margin: EdgeInsets.symmetric(vertical: 4.sh),
-        padding: EdgeInsets.all(16.sw),
-        decoration: BoxDecoration(
-          color: bgColor,
+        width: 280.sw,
+        margin: EdgeInsets.symmetric(vertical: 8.sh),
+        child: ClipRRect(
           borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20.sw),
-            topRight: Radius.circular(20.sw),
-            bottomLeft: Radius.circular(isMe ? 20.sw : 0),
-            bottomRight: Radius.circular(isMe ? 0 : 20.sw),
+            topLeft: Radius.circular(24.sw),
+            topRight: Radius.circular(24.sw),
+            bottomLeft: Radius.circular(isMe ? 24.sw : 4.sw),
+            bottomRight: Radius.circular(isMe ? 4.sw : 24.sw),
           ),
-          border: Border.all(color: borderColor),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 4.sw, offset: Offset(0, 2.sh))
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.event_available_rounded, color: const Color(0xFFE48E5B), size: 20.sw),
-                SizedBox(width: 8.sw),
-                Expanded(child: Text("Consultation Scheduled", style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14.sp))),
-              ],
-            ),
-            Divider(height: 20.sh, color: purple.withValues(alpha:0.1)),
-            Text(dateStr, style: TextStyle(color: textColor, fontSize: 16.sp, fontWeight: FontWeight.bold)),
-            if (time != null) Text(time, style: TextStyle(color: subheadColor, fontSize: 14.sp)),
-            if (notes != null && notes.isNotEmpty) ...[
-              SizedBox(height: 8.sh),
-              Container(
-                padding: EdgeInsets.all(8.sw),
-                decoration: BoxDecoration(
-                  color: btnBgColor.withValues(alpha:0.1),
-                  borderRadius: BorderRadius.circular(8.sw),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(
+              padding: EdgeInsets.all(18.sw),
+              decoration: BoxDecoration(
+                color: isMe 
+                  ? orange.withValues(alpha: 0.12) 
+                  : Colors.white.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24.sw),
+                  topRight: Radius.circular(24.sw),
+                  bottomLeft: Radius.circular(isMe ? 24.sw : 4.sw),
+                  bottomRight: Radius.circular(isMe ? 4.sw : 24.sw),
                 ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Icon(Icons.notes_rounded, size: 14.sw, color: btnBgColor),
-                    SizedBox(width: 6.sw),
-                    Expanded(child: Text(notes, style: TextStyle(color: subheadColor, fontSize: 13.sp, fontStyle: FontStyle.italic))),
-                  ],
+                border: Border.all(
+                  color: isMe 
+                    ? orange.withValues(alpha: 0.3) 
+                    : Colors.white.withValues(alpha: 0.8),
+                  width: 1.5,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: purple.withValues(alpha: 0.05),
+                    blurRadius: 15,
+                    offset: const Offset(0, 5),
+                  )
+                ],
               ),
-            ],
-            SizedBox(height: 16.sh),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  if (date != null && time != null) {
-                    _addToCalendar(date, time, notes ?? "");
-                  } else {
-                    Toaster.show(context, "Missing valid date or time", isError: true);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: btnBgColor,
-                  padding: EdgeInsets.symmetric(vertical: 12.sh),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.sw)),
-                  elevation: 0,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.calendar_month_rounded, color: btnTextColor, size: 16.sw),
-                    SizedBox(width: 6.sw),
-                    Text("Add to Calendar", style: TextStyle(color: btnTextColor, fontWeight: FontWeight.bold, fontSize: 14.sp)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: EdgeInsets.all(8.sw),
+                        decoration: BoxDecoration(
+                          color: orange.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(Icons.videocam_rounded, color: orange, size: 18.sw),
+                      ),
+                      SizedBox(width: 12.sw),
+                      Expanded(
+                        child: Text(
+                          "Consultation",
+                          style: TextStyle(
+                            color: purple,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14.sp,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 16.sh),
+                  Text(
+                    dateStr,
+                    style: TextStyle(
+                      color: purple,
+                      fontSize: 18.sp,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  SizedBox(height: 4.sh),
+                  Text(
+                    time ?? "TBD",
+                    style: TextStyle(
+                      color: purple.withValues(alpha: 0.6),
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  if (notes != null && notes.isNotEmpty) ...[
+                    SizedBox(height: 12.sh),
+                    Container(
+                      padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 8.sh),
+                      decoration: BoxDecoration(
+                        color: purple.withValues(alpha: 0.04),
+                        borderRadius: BorderRadius.circular(12.sw),
+                      ),
+                      child: Text(
+                        notes,
+                        style: TextStyle(
+                          color: purple.withValues(alpha: 0.7),
+                          fontSize: 12.sp,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
                   ],
-                ),
+                  SizedBox(height: 20.sh),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        if (date != null && time != null) {
+                          _addToCalendar(date, time, notes ?? "");
+                        } else {
+                          Toaster.show(context, "Missing valid date or time", isError: true);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: orange,
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 12.sh),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.sw)),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        "Add to Calendar",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14.sp,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -1563,75 +1645,160 @@ class _ChatInterfaceState extends State<ChatInterface> {
     return Align(
       alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
       child: Container(
-        width: 260.sw,
-        margin: EdgeInsets.symmetric(vertical: 4.sh),
-        padding: EdgeInsets.all(16.sw),
-        decoration: BoxDecoration(
-          color: bgColor,
+        width: 280.sw,
+        margin: EdgeInsets.symmetric(vertical: 8.sh),
+        child: ClipRRect(
           borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(20.sw),
-            topRight: Radius.circular(20.sw),
-            bottomLeft: Radius.circular(isMe ? 20.sw : 0),
-            bottomRight: Radius.circular(isMe ? 0 : 20.sw),
+            topLeft: Radius.circular(24.sw),
+            topRight: Radius.circular(24.sw),
+            bottomLeft: Radius.circular(isMe ? 24.sw : 4.sw),
+            bottomRight: Radius.circular(isMe ? 4.sw : 24.sw),
           ),
-          border: Border.all(color: borderColor),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 4.sw, offset: Offset(0, 2.sh))
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.restaurant_menu_rounded, color: const Color(0xFFE48E5B), size: 20),
-                const SizedBox(width: 8),
-                Expanded(child: Text("Meal Plan Shared", style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 14))),
-              ],
-            ),
-            Divider(height: 20, color: purple.withValues(alpha:0.1)),
-            if (coverImage != null && coverImage.isNotEmpty)
-              Container(
-                width: double.infinity,
-                height: 120.sh,
-                margin: EdgeInsets.only(bottom: 12.sh),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12.sw),
-                  image: DecorationImage(
-                    image: NetworkImage(coverImage),
-                    fit: BoxFit.cover,
-                  ),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              decoration: BoxDecoration(
+                color: isMe 
+                  ? orange.withValues(alpha: 0.1) 
+                  : Colors.white.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(24.sw),
+                  topRight: Radius.circular(24.sw),
+                  bottomLeft: Radius.circular(isMe ? 24.sw : 4.sw),
+                  bottomRight: Radius.circular(isMe ? 4.sw : 24.sw),
+                ),
+                border: Border.all(
+                  color: isMe 
+                    ? orange.withValues(alpha: 0.2) 
+                    : Colors.white.withValues(alpha: 0.8),
+                  width: 1.5,
                 ),
               ),
-            Text(title, style: TextStyle(color: textColor, fontSize: 16.sp, fontWeight: FontWeight.bold)),
-            Text("$days Days • Target $cals kcal", style: TextStyle(color: subheadColor, fontSize: 14.sp)),
-            SizedBox(height: 16.sh),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => MealPlanViewScreen(
-                        planData: plan,
-                        // hide save logic for nutritionist view
-                        isViewingSavedPlan: _isNutritionist, 
-                      ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Header Image / Title Section
+                  if (coverImage != null)
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(24.sw),
+                            topRight: Radius.circular(24.sw),
+                          ),
+                          child: Image.network(
+                            coverImage,
+                            height: 120.sh,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              height: 120.sh,
+                              color: orange.withValues(alpha: 0.1),
+                              child: Icon(Icons.restaurant_menu_rounded, color: orange, size: 40.sw),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 10.sh,
+                          right: 10.sw,
+                          child: Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8.sw, vertical: 4.sh),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(20.sw),
+                            ),
+                            child: Text(
+                              "Meal Plan",
+                              style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: btnBgColor,
-                  padding: EdgeInsets.symmetric(vertical: 12.sh),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.sw)),
-                  elevation: 0,
-                ),
-                child: Text(buttonText, style: TextStyle(color: btnTextColor, fontWeight: FontWeight.bold, fontSize: 14.sp)),
+                  
+                  Padding(
+                    padding: EdgeInsets.all(16.sw),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: TextStyle(
+                            color: purple,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 16.sp,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        SizedBox(height: 12.sh),
+                        Row(
+                          children: [
+                            _statChip(Icons.calendar_today_rounded, "$days Days"),
+                            SizedBox(width: 8.sw),
+                            _statChip(Icons.local_fire_department_rounded, "$cals kcal"),
+                          ],
+                        ),
+                        SizedBox(height: 20.sh),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              final pId = plan["planId"] ?? plan["id"];
+                              if (pId != null) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => MealPlanViewScreen(
+                                      planData: plan,
+                                      isViewingSavedPlan: true,
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: orange,
+                              foregroundColor: Colors.white,
+                              padding: EdgeInsets.symmetric(vertical: 12.sh),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.sw)),
+                              elevation: 0,
+                            ),
+                            child: Text(
+                              buttonText,
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
+      ),
+    );
+  }
+
+  Widget _statChip(IconData icon, String label) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8.sw, vertical: 4.sh),
+      decoration: BoxDecoration(
+        color: purple.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(8.sw),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12.sw, color: purple.withValues(alpha: 0.6)),
+          SizedBox(width: 4.sw),
+          Text(
+            label,
+            style: TextStyle(color: purple.withValues(alpha: 0.7), fontSize: 11.sp, fontWeight: FontWeight.bold),
+          ),
+        ],
       ),
     );
   }
@@ -1748,6 +1915,173 @@ class _SingleDotState extends State<_SingleDot> with SingleTickerProviderStateMi
         decoration: BoxDecoration(
           color: const Color(0xFF462F4D).withValues(alpha:0.3 + (0.7 * _ctrl.value)),
           shape: BoxShape.circle,
+        ),
+      ),
+    );
+  }
+}
+
+class _DeleteMessageDialog extends StatelessWidget {
+  final bool isMe;
+  final VoidCallback onDeleteForMe;
+  final VoidCallback onDeleteForEveryone;
+
+  const _DeleteMessageDialog({
+    required this.isMe,
+    required this.onDeleteForMe,
+    required this.onDeleteForEveryone,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color purple = const Color(0xFF321B3A);
+    final Color orange = const Color(0xFFFF8C5A);
+
+    return Center(
+      child: Container(
+        margin: EdgeInsets.all(32.sw),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(32.sw),
+          child: BackdropFilter(
+            filter: ui.ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+            child: Container(
+              padding: EdgeInsets.all(24.sw),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF3EB).withValues(alpha: 0.9),
+                borderRadius: BorderRadius.circular(32.sw),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 48.sw,
+                      height: 48.sw,
+                      decoration: BoxDecoration(
+                        color: orange.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.delete_sweep_rounded, color: orange, size: 28.sw),
+                    ),
+                    SizedBox(height: 16.sh),
+                    Text(
+                      "Delete Message",
+                      style: TextStyle(
+                        color: purple,
+                        fontSize: 22.sp,
+                        fontWeight: FontWeight.w900,
+                        fontFamily: "Satoshi",
+                      ),
+                    ),
+                    SizedBox(height: 8.sh),
+                    Text(
+                      "Are you sure you want to remove this message? This action cannot be undone.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: purple.withValues(alpha: 0.6),
+                        fontSize: 14.sp,
+                        fontFamily: "Satoshi",
+                      ),
+                    ),
+                    SizedBox(height: 24.sh),
+                    _FadeSlideEntry(
+                      delayMs: 100,
+                      child: _dialogButton(
+                        label: "Delete for me",
+                        icon: Icons.person_outline_rounded,
+                        color: purple,
+                        onTap: () {
+                          Navigator.pop(context);
+                          onDeleteForMe();
+                        },
+                      ),
+                    ),
+                    if (isMe) ...[
+                      SizedBox(height: 12.sh),
+                      _FadeSlideEntry(
+                        delayMs: 200,
+                        child: _dialogButton(
+                          label: "Delete for everyone",
+                          icon: Icons.public_rounded,
+                          color: const Color(0xFFFD3250),
+                          onTap: () {
+                            Navigator.pop(context);
+                            onDeleteForEveryone();
+                          },
+                          isFilled: true,
+                        ),
+                      ),
+                    ],
+                    SizedBox(height: 12.sh),
+                    _FadeSlideEntry(
+                      delayMs: 300,
+                      child: GestureDetector(
+                        onTap: () => Navigator.pop(context),
+                        child: Container(
+                          width: double.infinity,
+                          padding: EdgeInsets.symmetric(vertical: 16.sh),
+                          alignment: Alignment.center,
+                          child: Text(
+                            "Cancel",
+                            style: TextStyle(
+                              color: purple.withValues(alpha: 0.4),
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16.sp,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _dialogButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+    bool isFilled = false,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: 16.sh, horizontal: 20.sw),
+        decoration: BoxDecoration(
+          color: isFilled ? color : color.withValues(alpha: 0.05),
+          borderRadius: BorderRadius.circular(16.sw),
+          border: Border.all(color: color.withValues(alpha: isFilled ? 0 : 0.2)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: isFilled ? Colors.white : color, size: 20.sw),
+            SizedBox(width: 12.sw),
+            Text(
+              label,
+              style: TextStyle(
+                color: isFilled ? Colors.white : color,
+                fontWeight: FontWeight.bold,
+                fontSize: 16.sp,
+                fontFamily: "Satoshi",
+              ),
+            ),
+          ],
         ),
       ),
     );

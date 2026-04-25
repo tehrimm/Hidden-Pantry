@@ -988,9 +988,10 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                               );
                             },
                             child: _animatedStatCard(
-                              label: "Total Earnings", 
-                              value: loading ? "..." : "Rs. ${total.toInt()}", 
+                              label: "Net Earnings", 
+                              value: loading ? "..." : "Rs. ${(total * 0.9).toInt()}", 
                               icon: Icons.monetization_on_rounded,
+                              subtitle: "After 10% Fee",
                               delay: 300,
                             ),
                           ),
@@ -998,10 +999,10 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                         SizedBox(width: 16.sw),
                          Expanded(
                           child: _animatedStatCard(
-                            label: "Projected/Mo", 
-                            value: "Rs. ${projectedMonthly.toInt()}", 
+                            label: "Projected Net/Mo", 
+                            value: "Rs. ${(projectedMonthly * 0.9).toInt()}", 
                             icon: Icons.trending_up_rounded,
-                            subtitle: "Active subs only",
+                            subtitle: "90% Share (Active)",
                             delay: 400,
                           ),
                         ),
@@ -2330,12 +2331,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
         ),
         SizedBox(height: 16.sh),
         StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection("reviews")
-              .where("authorId", isEqualTo: uid)
-              .orderBy("createdAt", descending: true)
-              .limit(5)
-              .snapshots(),
+          stream: const NutritionistService().getReviews(uid),
           builder: (context, snap) {
             if (snap.connectionState == ConnectionState.waiting) {
               return Center(child: Padding(
@@ -2343,8 +2339,10 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                 child: CircularProgressIndicator(color: orange, strokeWidth: 2.sw),
               ));
             }
-
-            if (!snap.hasData || snap.data!.docs.isEmpty) {
+ 
+            // Only show up to 5
+            final docs = snap.data?.docs ?? [];
+            if (docs.isEmpty) {
               return Container(
                 width: double.infinity,
                 padding: EdgeInsets.symmetric(vertical: 24.sh),
@@ -2362,12 +2360,22 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                 ),
               );
             }
+ 
+            final displayDocs = docs.take(5).toList();
 
-            return Column(
-              children: snap.data!.docs.map((doc) {
-                final data = doc.data() as Map<String, dynamic>;
-                return _reviewListItem(data);
-              }).toList(),
+            return SizedBox(
+              height: 200.sh,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.symmetric(vertical: 8.sh),
+                itemCount: displayDocs.length,
+                separatorBuilder: (context, _) => SizedBox(width: 16.sw),
+                itemBuilder: (context, index) {
+                  final data = displayDocs[index].data() as Map<String, dynamic>;
+                  return _reviewListItem(data);
+                },
+              ),
             );
           },
         ),
@@ -2376,21 +2384,21 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
   }
 
   Widget _reviewListItem(Map<String, dynamic> data) {
-    final double rating = (data['rating'] ?? 0.0).toDouble();
+    final double rating = (data['rating'] as num?)?.toDouble() ?? 0.0;
     final String userName = data['userName'] ?? "Anonymous";
-    final String comment = data['comment'] ?? "";
-    final Timestamp? time = data['createdAt'] as Timestamp?;
+    final String comment = data['reviewText'] ?? "";
+    final Timestamp? time = data['timestamp'] as Timestamp?;
     final String userImg = data['userImageUrl'] ?? "";
 
     return Container(
-      margin: EdgeInsets.only(bottom: 12.sh),
+      width: 320.sw, // Increased width
       padding: EdgeInsets.all(16.sw),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(20.sw),
-        border: Border.all(color: Colors.white, width: 1),
+        color: Colors.white.withValues(alpha: 0.6), // Reverted to original alpha
+        borderRadius: BorderRadius.circular(20.sw), // Reverted to original radius
+        border: Border.all(color: Colors.white, width: 1), // Reverted to original border
         boxShadow: [
-          BoxShadow(color: purple.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: purple.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)), // Reverted to original shadow
         ],
       ),
       child: Column(
@@ -2401,8 +2409,17 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
               CircleAvatar(
                 radius: 18.sw,
                 backgroundColor: const Color(0xFFF9E3D5),
-                backgroundImage: (userImg.isNotEmpty && userImg.startsWith("http")) ? NetworkImage(userImg) : null,
-                child: (userImg.isEmpty || !userImg.startsWith("http")) ? Icon(Icons.person, size: 18.sw, color: orange) : null,
+                child: ClipOval(
+                  child: (userImg.isNotEmpty && userImg.startsWith("http"))
+                      ? Image.network(
+                          userImg,
+                          width: 36.sw,
+                          height: 36.sw,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(Icons.person, size: 18.sw, color: orange),
+                        )
+                      : Icon(Icons.person, size: 18.sw, color: orange),
+                ),
               ),
               SizedBox(width: 12.sw),
               Expanded(

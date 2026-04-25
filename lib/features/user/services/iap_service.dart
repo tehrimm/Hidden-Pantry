@@ -47,24 +47,31 @@ class IAPService {
 
   /// Fetch products from store
   Future<void> fetchProducts() async {
-    final bool available = await _iap.isAvailable();
-    if (!available) return;
+    try {
+      final bool available = await _iap.isAvailable();
+      if (!available) {
+        debugPrint("IAP: Billing service is NOT available. Check if Play Store is set up.");
+        return;
+      }
 
-    final ProductDetailsResponse response = await _iap.queryProductDetails(_productIds);
-    if (response.notFoundIDs.isNotEmpty) {
-      debugPrint("Products not found: ${response.notFoundIDs}");
+      final ProductDetailsResponse response = await _iap.queryProductDetails(_productIds);
+      if (response.notFoundIDs.isNotEmpty) {
+        debugPrint("IAP: Products not found in store: ${response.notFoundIDs}");
+      }
+      
+      if (response.error != null) {
+        debugPrint("IAP: Query Error: ${response.error!.message}");
+      }
+
+      _products = response.productDetails;
+      debugPrint("IAP: Loaded ${_products.length} products successfully.");
+    } catch (e) {
+      debugPrint("IAP: Fatal error fetching products: $e");
     }
-    _products = response.productDetails;
   }
 
   /// Start purchase flow
   Future<void> buyProduct(ProductDetails product, {BuildContext? context}) async {
-    // Tester Account Bypass
-    if (isTesterAccount()) {
-      await buyTesterProduct(productId: product.id, context: context);
-      return;
-    }
-
     final PurchaseParam purchaseParam = PurchaseParam(productDetails: product);
     // For subscriptions, we use buyNonConsumable
     await _iap.buyNonConsumable(purchaseParam: purchaseParam);

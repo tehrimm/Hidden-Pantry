@@ -428,22 +428,6 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
   void _handleSubscription(BuildContext context) async {
     HapticFeedback.heavyImpact();
     
-    // Check for tester first (they don't need real products loaded)
-    if (_iapService.isTesterAccount()) {
-      await _iapService.buyProduct(
-        ProductDetails(
-          id: _isAnnual ? IAPService.annualID : IAPService.monthlyID,
-          title: 'Premium',
-          description: '',
-          price: '0',
-          rawPrice: 0,
-          currencyCode: 'PKR'
-        ),
-        context: context
-      );
-      return;
-    }
-
     if (_iapService.products.isEmpty) {
       Toaster.show(context, "Billing service not ready. Please try again.", isError: true);
       return;
