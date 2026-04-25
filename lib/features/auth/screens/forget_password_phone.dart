@@ -1,5 +1,3 @@
-
-import 'dart:async';
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'dart:math' as math;
@@ -212,6 +210,8 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> w
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
     final mq = MediaQuery.of(context);
+    final horizontal = 30.sw;
+    final topPad = mq.padding.top;
 
     return Scaffold(
       backgroundColor: bg,
@@ -238,23 +238,16 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> w
             const Positioned.fill(child: _AuthBackgroundPattern()),
             const Positioned.fill(child: PatternBackground()),
 
-            // 3. Scrollable Content
-            SafeArea(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    left: 30.sw,
-                    right: 30.sw,
-                    top: mq.padding.top + 36.sh,
-                    bottom: 14.sh + mq.padding.bottom,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _AnimatedWrapper(
-                        animation: _staggeredAnimations[0],
-                        child: BackButtonWidget(
+            // 3. Content
+            Column(
+              children: [
+                _AnimatedWrapper(
+                  animation: _staggeredAnimations[0],
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(horizontal, topPad + 36.sh, horizontal, 20.sh),
+                    child: Row(
+                      children: [
+                        BackButtonWidget(
                           onPressed: () {
                             Navigator.pushReplacement(
                               context,
@@ -262,211 +255,211 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> w
                             );
                           },
                         ),
-                      ),
-
-                      SizedBox(height: 38.sh),
-
-                      _AnimatedWrapper(
-                        animation: _staggeredAnimations[1],
-                        child: SizedBox(
-                          width: 235.sw,
-                          child: Text(
-                            "Reset\nPassword",
-                            style: TextStyle(
-                              color: purple,
-                              fontSize: 40.sp,
-                              fontWeight: FontWeight.w900,
-                              height: 1.1,
-                              fontFamily: "Satoshi",
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.only(
+                      left: horizontal,
+                      right: horizontal,
+                      bottom: 14.sh + mq.padding.bottom,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 18.sh),
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[1],
+                          child: SizedBox(
+                            width: 235.sw,
+                            child: Text(
+                              "Reset\nPassword",
+                              style: TextStyle(
+                                color: purple,
+                                fontSize: 40.sp,
+                                fontWeight: FontWeight.w900,
+                                height: 1.1,
+                                fontFamily: "Satoshi",
+                              ),
                             ),
                           ),
                         ),
-                      ),
-
-                      SizedBox(height: 18.sh),
-
-                      _AnimatedWrapper(
-                        animation: _staggeredAnimations[2],
-                        child: SizedBox(
-                          width: 260.sw,
-                          child: Text(
-                            "Please enter your phone number to reset the password",
-                            style: TextStyle(
-                              color: purple,
-                              fontSize: 15.sp,
-                              fontFamily: "Satoshi",
+                        SizedBox(height: 18.sh),
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[2],
+                          child: SizedBox(
+                            width: 260.sw,
+                            child: Text(
+                              "Please enter your phone number to reset the password",
+                              style: TextStyle(
+                                color: purple,
+                                fontSize: 15.sp,
+                                fontFamily: "Satoshi",
+                              ),
                             ),
                           ),
                         ),
-                      ),
-
-                      SizedBox(height: 26.sh),
-
-                      _AnimatedWrapper(
-                        animation: _staggeredAnimations[3],
-                        child: _GlassField(
-                          height: 70.sh,
-                          isError: _err != null,
-                          child: Row(
-                            children: [
-                              Padding(
-                                padding: EdgeInsets.only(left: 12.sw),
-                                child: CountryCodePicker(
-                                  onChanged: (code) {
-                                    setState(() {
-                                      _dialCode = code.dialCode ?? _dialCode;
-                                    });
-                                  },
-                                  initialSelection: 'PK',
-                                  favorite: const ['+92', 'PK', '+1', 'US'],
-                                  showCountryOnly: false,
-                                  showOnlyCountryWhenClosed: false,
-                                  alignLeft: false,
-                                  padding: EdgeInsets.zero,
-                                  textStyle: TextStyle(
-                                    color: hint,
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.2,
-                                    fontFamily: "Satoshi",
-                                  ),
-                                  barrierColor: Colors.black54,
-                                  showDropDownButton: true,
-                                ),
-                              ),
-
-                              Container(
-                                width: 1,
-                                height: 36.sh,
-                                color: const Color(0xFFEAD2C6).withValues(alpha: 0.5),
-                              ),
-
-                              SizedBox(width: 12.sw),
-
-                              Expanded(
-                                child: TextField(
-                                  controller: _phoneCtrl,
-                                  keyboardType: TextInputType.phone,
-                                  cursorColor: purple,
-                                  style: TextStyle(
-                                    color: purple,
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.2,
-                                    fontFamily: "Satoshi",
-                                  ),
-                                  decoration: InputDecoration(
-                                    border: InputBorder.none,
-                                    hintText: "Phone Number",
-                                    hintStyle: TextStyle(
+                        SizedBox(height: 26.sh),
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[3],
+                          child: _GlassField(
+                            height: 70.sh,
+                            isError: _err != null,
+                            child: Row(
+                              children: [
+                                Padding(
+                                  padding: EdgeInsets.only(left: 12.sw),
+                                  child: CountryCodePicker(
+                                    onChanged: (code) {
+                                      setState(() {
+                                        _dialCode = code.dialCode ?? _dialCode;
+                                      });
+                                    },
+                                    initialSelection: 'PK',
+                                    favorite: const ['+92', 'PK', '+1', 'US'],
+                                    showCountryOnly: false,
+                                    showOnlyCountryWhenClosed: false,
+                                    alignLeft: false,
+                                    padding: EdgeInsets.zero,
+                                    textStyle: TextStyle(
                                       color: hint,
                                       fontSize: 12.sp,
-                                      fontWeight: FontWeight.w500,
+                                      fontWeight: FontWeight.w600,
                                       letterSpacing: 0.2,
                                       fontFamily: "Satoshi",
                                     ),
-                                    contentPadding: EdgeInsets.symmetric(vertical: 20.sh),
+                                    barrierColor: Colors.black54,
+                                    showDropDownButton: true,
                                   ),
                                 ),
-                              ),
-
-                              SizedBox(width: 12.sw),
-                            ],
+                                Container(
+                                  width: 1,
+                                  height: 36.sh,
+                                  color: const Color(0xFFEAD2C6).withValues(alpha: 0.5),
+                                ),
+                                SizedBox(width: 12.sw),
+                                Expanded(
+                                  child: TextField(
+                                    controller: _phoneCtrl,
+                                    keyboardType: TextInputType.phone,
+                                    cursorColor: purple,
+                                    style: TextStyle(
+                                      color: purple,
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.2,
+                                      fontFamily: "Satoshi",
+                                    ),
+                                    decoration: InputDecoration(
+                                      border: InputBorder.none,
+                                      hintText: "Phone Number",
+                                      hintStyle: TextStyle(
+                                        color: hint,
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.w500,
+                                        letterSpacing: 0.2,
+                                        fontFamily: "Satoshi",
+                                      ),
+                                      contentPadding: EdgeInsets.symmetric(vertical: 20.sh),
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 12.sw),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
-
-                      if (_err != null) ...[
-                        SizedBox(height: 6.sh),
-                        _ErrorText(text: _err!),
-                      ],
-
-                      if (_inCooldown()) ...[
-                        SizedBox(height: 8.sh),
+                        if (_err != null) ...[
+                          SizedBox(height: 6.sh),
+                          _ErrorText(text: _err!),
+                        ],
+                        if (_inCooldown()) ...[
+                          SizedBox(height: 8.sh),
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[4],
+                            child: Text(
+                              "Try again in $_cooldownLeft seconds",
+                              style: TextStyle(
+                                color: hint,
+                                fontSize: 11.sp,
+                                fontWeight: FontWeight.w600,
+                                fontFamily: "Satoshi",
+                              ),
+                            ),
+                          ),
+                        ],
+                        SizedBox(height: 40.sh),
                         _AnimatedWrapper(
-                          animation: _staggeredAnimations[4],
-                          child: Text(
-                            "Try again in $_cooldownLeft seconds",
-                            style: TextStyle(
-                              color: hint,
-                              fontSize: 11.sp,
-                              fontWeight: FontWeight.w600,
-                              fontFamily: "Satoshi",
-                            ),
-                          ),
-                        ),
-                      ],
-
-                      SizedBox(height: 40.sh),
-
-                      _AnimatedWrapper(
-                        animation: _staggeredAnimations[5],
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: GestureDetector(
-                            onTap: (_loading || _inCooldown()) ? null : _verifyPhoneNumber,
-                            child: Container(
-                              width: 221.sw,
-                              height: 62.sh,
-                              decoration: BoxDecoration(
-                                color: (_loading || _inCooldown()) ? hint : orange,
-                                borderRadius: BorderRadius.circular(20.sw),
-                                boxShadow: [
-                                  if (!_loading && !_inCooldown())
-                                    BoxShadow(
-                                      color: orange.withValues(alpha: 0.3),
-                                      blurRadius: 15,
-                                      offset: const Offset(0, 8),
-                                    ),
-                                ],
+                          animation: _staggeredAnimations[5],
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: GestureDetector(
+                              onTap: (_loading || _inCooldown()) ? null : _verifyPhoneNumber,
+                              child: Container(
+                                width: 221.sw,
+                                height: 62.sh,
+                                decoration: BoxDecoration(
+                                  color: (_loading || _inCooldown()) ? hint : orange,
+                                  borderRadius: BorderRadius.circular(20.sw),
+                                  boxShadow: [
+                                    if (!_loading && !_inCooldown())
+                                      BoxShadow(
+                                        color: orange.withValues(alpha: 0.3),
+                                        blurRadius: 15,
+                                        offset: const Offset(0, 8),
+                                      ),
+                                  ],
+                                ),
+                                alignment: Alignment.center,
+                                child: _loading
+                                    ? Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(
+                                            width: 18.sw, height: 18.sw,
+                                            child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                                          ),
+                                          SizedBox(width: 10.sw),
+                                          Text(
+                                            "Sending...",
+                                            style: TextStyle(
+                                              color: btnText, fontSize: 12.sp,
+                                              fontWeight: FontWeight.bold, fontFamily: "Satoshi",
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            _inCooldown() ? "Wait..." : "Next",
+                                            style: TextStyle(
+                                              color: btnText, fontSize: 12.sp,
+                                              fontWeight: FontWeight.bold, fontFamily: "Satoshi",
+                                            ),
+                                          ),
+                                          SizedBox(width: 8.sw),
+                                          Icon(
+                                            Icons.arrow_forward_ios_rounded,
+                                            size: 12.sw,
+                                            color: btnText,
+                                          ),
+                                        ],
+                                      ),
                               ),
-                              alignment: Alignment.center,
-                              child: _loading
-                                  ? Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        SizedBox(
-                                          width: 18.sw, height: 18.sw,
-                                          child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-                                        ),
-                                        SizedBox(width: 10.sw),
-                                        Text(
-                                          "Sending...",
-                                          style: TextStyle(
-                                            color: btnText, fontSize: 12.sp,
-                                            fontWeight: FontWeight.bold, fontFamily: "Satoshi",
-                                          ),
-                                        ),
-                                      ],
-                                    )
-                                  : Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Text(
-                                          _inCooldown() ? "Wait..." : "Next",
-                                          style: TextStyle(
-                                            color: btnText, fontSize: 12.sp,
-                                            fontWeight: FontWeight.bold, fontFamily: "Satoshi",
-                                          ),
-                                        ),
-                                        SizedBox(width: 8.sw),
-                                        Icon(
-                                          Icons.arrow_forward_ios_rounded,
-                                          size: 12.sw,
-                                          color: btnText,
-                                        ),
-                                      ],
-                                    ),
                             ),
                           ),
                         ),
-                      ),
-
-                      SizedBox(height: 14.sh),
-                    ],
+                        SizedBox(height: 14.sh),
+                      ],
+                    ),
                   ),
                 ),
-              ),
+              ],
             ),
           ],
         ),
@@ -630,6 +623,3 @@ class _AuthFloatingOrbState extends State<_AuthFloatingOrb> with SingleTickerPro
     );
   }
 }
-
-
-

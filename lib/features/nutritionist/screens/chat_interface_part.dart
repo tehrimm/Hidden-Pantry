@@ -15,6 +15,7 @@ import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:hidden_pantry_app/core/services/chat_encryption_service.dart';
+import 'package:hidden_pantry_app/core/services/user_status_service.dart';
 
 class ChatInterface extends StatefulWidget {
   final String nutritionistId;
@@ -338,9 +339,47 @@ class _ChatInterfaceState extends State<ChatInterface> {
                     style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
                     overflow: TextOverflow.ellipsis,
                   ),
-                  Text(
-                    "Online", // Simplified for now
-                    style: TextStyle(color: Colors.green, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                  StreamBuilder<DocumentSnapshot>(
+                    stream: UserStatusService().getStatusStream(
+                      _isNutritionist ? (widget.clientId ?? "") : widget.nutritionistId,
+                      !_isNutritionist, // If I'm NOT a nutritionist, I'm looking for a nutritionist's status
+                    ),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData || !snapshot.data!.exists) {
+                        return const SizedBox.shrink();
+                      }
+                      final data = snapshot.data!.data() as Map<String, dynamic>;
+                      final bool isOnline = data['isOnline'] ?? false;
+                      final Timestamp? lastSeen = data['lastSeen'] as Timestamp?;
+
+                      if (isOnline) {
+                        return Text(
+                          "Online",
+                          style: TextStyle(color: Colors.green, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                        );
+                      } else {
+                        String lastSeenText = "Offline";
+                        if (lastSeen != null) {
+                          final DateTime lastSeenDate = lastSeen.toDate();
+                          final now = DateTime.now();
+                          final diff = now.difference(lastSeenDate);
+
+                          if (diff.inMinutes < 1) {
+                            lastSeenText = "Last seen just now";
+                          } else if (diff.inMinutes < 60) {
+                            lastSeenText = "Last seen ${diff.inMinutes}m ago";
+                          } else if (diff.inHours < 24) {
+                            lastSeenText = "Last seen ${diff.inHours}h ago";
+                          } else {
+                            lastSeenText = "Last seen ${DateFormat('MMM d, HH:mm').format(lastSeenDate)}";
+                          }
+                        }
+                        return Text(
+                          lastSeenText,
+                          style: TextStyle(color: purple.withValues(alpha: 0.4), fontSize: 10.sp, fontWeight: FontWeight.bold),
+                        );
+                      }
+                    },
                   ),
                 ],
               ),

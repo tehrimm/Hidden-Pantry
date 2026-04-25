@@ -1,4 +1,3 @@
-
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -9,14 +8,14 @@ import 'login_user.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 
-class ForgetPasswordScreen extends StatefulWidget {
-  const ForgetPasswordScreen({super.key});
+class ForgetPasswordEmailScreen extends StatefulWidget {
+  const ForgetPasswordEmailScreen({super.key});
 
   @override
-  State<ForgetPasswordScreen> createState() => _ForgetPasswordScreenState();
+  State<ForgetPasswordEmailScreen> createState() => _ForgetPasswordEmailScreenState();
 }
 
-class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with TickerProviderStateMixin {
+class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> with TickerProviderStateMixin {
   // Colors
   static const Color bg = Color(0xFFFFF3EB);
   static const Color purple = Color(0xFF462F4D);
@@ -103,6 +102,8 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
     final mq = MediaQuery.of(context);
+    final horizontal = 30.sw;
+    final topPad = mq.padding.top;
 
     final fieldHeight = 70.sh;
 
@@ -141,152 +142,159 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
               const Positioned.fill(child: PatternBackground()),
 
               // 3. Content
-              SafeArea(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 30.sw),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SizedBox(height: 38.sh),
-                      _AnimatedWrapper(
-                        animation: _staggeredAnimations[0],
-                        child: BackButtonWidget(
-                          onPressed: () {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(builder: (_) => const UserLoginScreen()),
-                            );
-                          },
-                        ),
-                      ),
-
-                      SizedBox(height: 38.sh),
-
-                      _AnimatedWrapper(
-                        animation: _staggeredAnimations[1],
-                        child: SizedBox(
-                          width: 235.sw,
-                          child: Text(
-                            "Forgot Password?",
-                            style: TextStyle(
-                              color: purple,
-                              fontSize: 40.sp,
-                              fontWeight: FontWeight.w900,
-                              height: 1.1,
-                              fontFamily: "Satoshi",
-                            ),
+              Column(
+                children: [
+                  _AnimatedWrapper(
+                    animation: _staggeredAnimations[0],
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(horizontal, topPad + 36.sh, horizontal, 20.sh),
+                      child: Row(
+                        children: [
+                          BackButtonWidget(
+                            onPressed: () {
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (_) => const UserLoginScreen()),
+                              );
+                            },
                           ),
-                        ),
+                        ],
                       ),
-
-                      SizedBox(height: 12.sh),
-
-                      _AnimatedWrapper(
-                        animation: _staggeredAnimations[2],
-                        child: SizedBox(
-                          width: 300.sw,
-                          child: Text(
-                            "Enter the email address you used to create your account and we will email you a link to reset your password.",
-                            style: TextStyle(
-                              color: purple,
-                              fontSize: 15.sp,
-                              fontFamily: "Satoshi",
-                            ),
-                          ),
-                        ),
+                    ),
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: EdgeInsets.only(
+                        left: horizontal,
+                        right: horizontal,
+                        bottom: 20.sh + mq.viewInsets.bottom,
                       ),
-
-                      SizedBox(height: 48.sh),
-
-                      _AnimatedWrapper(
-                        animation: _staggeredAnimations[3],
-                        child: _GlassField(
-                          height: fieldHeight,
-                          isError: _gmailErr != null,
-                          child: TextField(
-                            controller: _gmailCtrl,
-                            cursorColor: purple,
-                            textAlignVertical: TextAlignVertical.center,
-                            style: TextStyle(
-                              color: (_gmailErr != null) ? errText : enabledText,
-                              fontSize: 12.sp,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.2,
-                              fontFamily: "Satoshi",
-                            ),
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              hintText: "Email",
-                              hintStyle: TextStyle(
-                                color: hint,
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.w500,
-                                letterSpacing: 0.2,
-                                fontFamily: "Satoshi",
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 15.sh),
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[1],
+                            child: SizedBox(
+                              width: 235.sw,
+                              child: Text(
+                                "Forgot Password?",
+                                style: TextStyle(
+                                  color: purple,
+                                  fontSize: 40.sp,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.1,
+                                  fontFamily: "Satoshi",
+                                ),
                               ),
-                              contentPadding: EdgeInsets.symmetric(horizontal: 30.sw, vertical: 22.sh),
                             ),
                           ),
-                        ),
-                      ),
-                      if (_gmailErr != null) ...[
-                        SizedBox(height: 6.sh),
-                        _ErrorText(text: _gmailErr!),
-                      ],
-
-                      SizedBox(height: 40.sh),
-
-                      _AnimatedWrapper(
-                        animation: _staggeredAnimations[4],
-                        child: GestureDetector(
-                          onTap: _loading ? null : _onReset,
-                          child: Container(
-                            width: double.infinity,
-                            height: 62.sh,
-                            decoration: BoxDecoration(
-                              color: btnOrange,
-                              borderRadius: BorderRadius.circular(20.sw),
-                              boxShadow: [
-                                if (!_loading)
-                                  BoxShadow(
-                                    color: btnOrange.withValues(alpha: 0.3),
-                                    blurRadius: 15,
-                                    offset: const Offset(0, 8),
-                                  ),
-                              ],
+                          SizedBox(height: 12.sh),
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[2],
+                            child: SizedBox(
+                              width: 300.sw,
+                              child: Text(
+                                "Enter the email address you used to create your account and we will email you a link to reset your password.",
+                                style: TextStyle(
+                                  color: purple,
+                                  fontSize: 15.sp,
+                                  fontFamily: "Satoshi",
+                                ),
+                              ),
                             ),
-                            alignment: Alignment.center,
-                            child: _loading
-                                ? Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SizedBox(
-                                        width: 18.sw, height: 18.sw,
-                                        child: const CircularProgressIndicator(color: btnText, strokeWidth: 2),
+                          ),
+                          SizedBox(height: 48.sh),
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[3],
+                            child: _GlassField(
+                              height: fieldHeight,
+                              isError: _gmailErr != null,
+                              child: TextField(
+                                controller: _gmailCtrl,
+                                cursorColor: purple,
+                                textAlignVertical: TextAlignVertical.center,
+                                style: TextStyle(
+                                  color: (_gmailErr != null) ? errText : enabledText,
+                                  fontSize: 12.sp,
+                                  fontWeight: FontWeight.w600,
+                                  letterSpacing: 0.2,
+                                  fontFamily: "Satoshi",
+                                ),
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  hintText: "Email",
+                                  hintStyle: TextStyle(
+                                    color: hint,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w500,
+                                    letterSpacing: 0.2,
+                                    fontFamily: "Satoshi",
+                                  ),
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 30.sw, vertical: 22.sh),
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (_gmailErr != null) ...[
+                            SizedBox(height: 6.sh),
+                            _ErrorText(text: _gmailErr!),
+                          ],
+                          SizedBox(height: 40.sh),
+                          _AnimatedWrapper(
+                            animation: _staggeredAnimations[4],
+                            child: GestureDetector(
+                              onTap: _loading ? null : _onReset,
+                              child: Container(
+                                width: double.infinity,
+                                height: 62.sh,
+                                decoration: BoxDecoration(
+                                  color: btnOrange,
+                                  borderRadius: BorderRadius.circular(20.sw),
+                                  boxShadow: [
+                                    if (!_loading)
+                                      BoxShadow(
+                                        color: btnOrange.withValues(alpha: 0.3),
+                                        blurRadius: 15,
+                                        offset: const Offset(0, 8),
                                       ),
-                                      SizedBox(width: 10.sw),
-                                      Text(
-                                        "Sending...",
+                                  ],
+                                ),
+                                alignment: Alignment.center,
+                                child: _loading
+                                    ? Row(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          SizedBox(
+                                            width: 18.sw, height: 18.sw,
+                                            child: const CircularProgressIndicator(color: btnText, strokeWidth: 2),
+                                          ),
+                                          SizedBox(width: 10.sw),
+                                          Text(
+                                            "Sending...",
+                                            style: TextStyle(
+                                              color: btnText, fontSize: 12.sp,
+                                              fontWeight: FontWeight.bold, fontFamily: "Satoshi",
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Text(
+                                        "Send Link",
                                         style: TextStyle(
                                           color: btnText, fontSize: 12.sp,
                                           fontWeight: FontWeight.bold, fontFamily: "Satoshi",
                                         ),
                                       ),
-                                    ],
-                                  )
-                                : Text(
-                                    "Send Link",
-                                    style: TextStyle(
-                                      color: btnText, fontSize: 12.sp,
-                                      fontWeight: FontWeight.bold, fontFamily: "Satoshi",
-                                    ),
-                                  ),
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ],
           ),

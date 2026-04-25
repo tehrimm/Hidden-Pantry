@@ -12,6 +12,7 @@ import 'package:hidden_pantry_app/core/services/fcm_service.dart';
 import 'package:hidden_pantry_app/core/services/navigation_service.dart';
 import 'package:hidden_pantry_app/core/services/notification_service.dart';
 import 'package:hidden_pantry_app/features/user/services/iap_service.dart';
+import 'package:hidden_pantry_app/core/services/user_status_service.dart';
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -77,6 +78,7 @@ class _HiddenPantryAppState extends State<HiddenPantryApp> with WidgetsBindingOb
     // Initialize In-App Purchases
     IAPService().initialize();
     _hideSystemUI();
+    UserStatusService().updateStatus(true);
   }
 
   void _hideSystemUI() {
@@ -88,6 +90,9 @@ class _HiddenPantryAppState extends State<HiddenPantryApp> with WidgetsBindingOb
     // Re-apply when user returns to the app (Android drops immersive on swipe)
     if (state == AppLifecycleState.resumed) {
       _hideSystemUI();
+      UserStatusService().updateStatus(true);
+    } else if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive || state == AppLifecycleState.detached) {
+      UserStatusService().updateStatus(false);
     }
   }
 

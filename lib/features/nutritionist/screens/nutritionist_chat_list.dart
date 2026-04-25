@@ -10,6 +10,7 @@ import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'dart:math' as math;
 import 'package:flutter/services.dart';
+import 'package:hidden_pantry_app/core/services/user_status_service.dart';
 
 
 class NutritionistChatListScreen extends StatefulWidget {
@@ -438,11 +439,38 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
                         shape: BoxShape.circle,
                         border: Border.all(color: orange.withValues(alpha:0.2), width: 2.sw),
                       ),
-                      child: CircleAvatar(
-                        radius: 26.sw,
-                        backgroundColor: orange.withValues(alpha:0.05),
-                        backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
-                        child: photoUrl == null ? Icon(Icons.person, color: orange, size: 26.sw) : null,
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 26.sw,
+                            backgroundColor: orange.withValues(alpha: 0.05),
+                            backgroundImage: photoUrl != null ? NetworkImage(photoUrl) : null,
+                            child: photoUrl == null ? Icon(Icons.person, color: orange, size: 26.sw) : null,
+                          ),
+                          StreamBuilder<DocumentSnapshot>(
+                            stream: UserStatusService().getStatusStream(client["userId"], false),
+                            builder: (context, statusSnap) {
+                              if (!statusSnap.hasData || !statusSnap.data!.exists) return const SizedBox.shrink();
+                              final statusData = statusSnap.data!.data() as Map<String, dynamic>;
+                              final bool isOnline = statusData['isOnline'] ?? false;
+                              if (!isOnline) return const SizedBox.shrink();
+
+                              return Positioned(
+                                right: 2.sw,
+                                bottom: 2.sw,
+                                child: Container(
+                                  width: 12.sw,
+                                  height: 12.sw,
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2.sw),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ],
                       ),
                     ),
                     SizedBox(width: 16.sw),

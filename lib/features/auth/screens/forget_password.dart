@@ -1,4 +1,3 @@
-
 import 'dart:ui' as ui;
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -65,6 +64,8 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
     final mq = MediaQuery.of(context);
+    final horizontal = 30.sw;
+    final topPad = mq.padding.top;
 
     return Scaffold(
       backgroundColor: bg,
@@ -90,174 +91,173 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
             const Positioned.fill(child: _AuthBackgroundPattern()),
             const Positioned.fill(child: PatternBackground()),
 
-            // 3. Scrollable Content
-            SafeArea(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: Padding(
-                padding: EdgeInsets.only(
-                  left: 30.sw,
-                  right: 30.sw,
-                  top: mq.padding.top + 36.sh,
-                  bottom: 22.sh,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _AnimatedWrapper(
-                      animation: _staggeredAnimations[0],
-                      child: BackButtonWidget(
-                        onPressed: () {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (_) => const UserLoginScreen()),
-                          );
-                        },
-                      ),
-                    ),
-                    SizedBox(height: 38.sh),
-
-
-                    _AnimatedWrapper(
-                      animation: _staggeredAnimations[1],
-                      child: SizedBox(
-                        width: 260.sw,
-                        child: Text(
-                          "Verification Method",
-                          style: TextStyle(
-                            color: purple,
-                            fontSize: 40.sp,
-                            fontWeight: FontWeight.w900,
-                            height: 1.1,
-                            fontFamily: "Satoshi",
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    SizedBox(height: 12.sh),
-
-                    _AnimatedWrapper(
-                      animation: _staggeredAnimations[2],
-                      child: SizedBox(
-                        width: 280.sw,
-                        child: Text(
-                          "Choose one way where you want us to send an OTP",
-                          style: TextStyle(
-                            color: purple,
-                            fontSize: 15.sp,
-                            fontFamily: "Satoshi",
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    SizedBox(height: 28.sh),
-
-                    _AnimatedWrapper(
-                      animation: _staggeredAnimations[3],
-                      child: Row(
-                        children: [
-                          Expanded(
-                             child: _OptionCard(
-                              title: "Email",
-                              subtitle: "your@email.com",
-                              icon: Image.asset(
-                                "assets/icons/gmail.png",
-                                width: 18.sw,
-                                height: 18.sw,
-                                fit: BoxFit.contain,
-                              ),
-                              selected: _selected == 0,
-                              onTap: () => setState(() => _selected = 0),
-                            ),
-                          ),
-                          SizedBox(width: 16.sw),
-                          Expanded(
-                            child: _OptionCard(
-                              title: "Phone",
-                              subtitle: "+Areacode \nXXX XXXXXXX",
-                              icon: Icon(
-                                Icons.phone_in_talk_rounded,
-                                size: 18.sw,
-                                color: Colors.white,
-                              ),
-                              selected: _selected == 1,
-                              onTap: () => setState(() => _selected = 1),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    SizedBox(height: 40.sh),
-
-                    _AnimatedWrapper(
-                      animation: _staggeredAnimations[4],
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: GestureDetector(
-                          onTap: () {
-                            if (_selected == 0) {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const ForgetPasswordScreen(),
-                                ),
-                              );
-                            } else {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const ForgetPasswordPhoneScreen(),
-                                ),
-                              );
-                            }
+            // 3. Content
+            Column(
+              children: [
+                _AnimatedWrapper(
+                  animation: _staggeredAnimations[0],
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(horizontal, topPad + 36.sh, horizontal, 20.sh),
+                    child: Row(
+                      children: [
+                        BackButtonWidget(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (_) => const UserLoginScreen()),
+                            );
                           },
-                          child: Container(
-                            width: 221.sw,
-                            height: 62.sh,
-                            decoration: BoxDecoration(
-                              color: orange,
-                              borderRadius: BorderRadius.circular(20.sw),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: orange.withValues(alpha: 0.3),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "Next",
-                                  style: TextStyle(
-                                    color: btnText,
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: "Satoshi",
-                                  ),
-                                ),
-                                SizedBox(width: 8.sw),
-                                Icon(
-                                  Icons.arrow_forward_ios_rounded,
-                                  size: 12.sp,
-                                  color: btnText,
-                                ),
-                              ],
-                            ),
-                          ),
                         ),
-                      ),
+                      ],
                     ),
-
-                    SizedBox(height: 14.sh),
-                    ],
                   ),
                 ),
-              ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.only(
+                      left: horizontal,
+                      right: horizontal,
+                      bottom: 22.sh,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: 18.sh),
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[1],
+                          child: SizedBox(
+                            width: 260.sw,
+                            child: Text(
+                              "Verification Method",
+                              style: TextStyle(
+                                color: purple,
+                                fontSize: 40.sp,
+                                fontWeight: FontWeight.w900,
+                                height: 1.1,
+                                fontFamily: "Satoshi",
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 12.sh),
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[2],
+                          child: SizedBox(
+                            width: 280.sw,
+                            child: Text(
+                              "Choose one way where you want us to send an OTP",
+                              style: TextStyle(
+                                color: purple,
+                                fontSize: 15.sp,
+                                fontFamily: "Satoshi",
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 28.sh),
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[3],
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _OptionCard(
+                                  title: "Email",
+                                  subtitle: "your@email.com",
+                                  icon: Image.asset(
+                                    "assets/icons/gmail.png",
+                                    width: 18.sw,
+                                    height: 18.sw,
+                                    fit: BoxFit.contain,
+                                  ),
+                                  selected: _selected == 0,
+                                  onTap: () => setState(() => _selected = 0),
+                                ),
+                              ),
+                              SizedBox(width: 16.sw),
+                              Expanded(
+                                child: _OptionCard(
+                                  title: "Phone",
+                                  subtitle: "+Areacode \nXXX XXXXXXX",
+                                  icon: Icon(
+                                    Icons.phone_in_talk_rounded,
+                                    size: 18.sw,
+                                    color: Colors.white,
+                                  ),
+                                  selected: _selected == 1,
+                                  onTap: () => setState(() => _selected = 1),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 40.sh),
+                        _AnimatedWrapper(
+                          animation: _staggeredAnimations[4],
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: GestureDetector(
+                              onTap: () {
+                                if (_selected == 0) {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const ForgetPasswordEmailScreen(),
+                                    ),
+                                  );
+                                } else {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const ForgetPasswordPhoneScreen(),
+                                    ),
+                                  );
+                                }
+                              },
+                              child: Container(
+                                width: 221.sw,
+                                height: 62.sh,
+                                decoration: BoxDecoration(
+                                  color: orange,
+                                  borderRadius: BorderRadius.circular(20.sw),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: orange.withValues(alpha: 0.3),
+                                      blurRadius: 15,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      "Next",
+                                      style: TextStyle(
+                                        color: btnText,
+                                        fontSize: 12.sp,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: "Satoshi",
+                                      ),
+                                    ),
+                                    SizedBox(width: 8.sw),
+                                    Icon(
+                                      Icons.arrow_forward_ios_rounded,
+                                      size: 12.sp,
+                                      color: btnText,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 14.sh),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -464,6 +464,3 @@ class _AuthFloatingOrbState extends State<_AuthFloatingOrb> with SingleTickerPro
     );
   }
 }
-
-
-

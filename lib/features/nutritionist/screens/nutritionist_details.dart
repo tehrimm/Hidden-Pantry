@@ -22,6 +22,7 @@ import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart'
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'chat_interface_part.dart';
+import 'package:hidden_pantry_app/core/services/user_status_service.dart';
 
 class NutritionistDetailsScreen extends StatefulWidget {
   final String nutritionistId;
@@ -633,13 +634,40 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
                     shape: BoxShape.circle,
                     border: Border.all(color: orange.withValues(alpha: 0.2), width: 1.5),
                   ),
-                  child: CircleAvatar(
-                       radius: 16.sw, 
-                       backgroundColor: cardInner,
-                       backgroundImage: widget.nutritionistData["photoUrl"] != null && widget.nutritionistData["photoUrl"].toString().startsWith("http")
-                          ? NetworkImage(widget.nutritionistData["photoUrl"]) 
-                          : null,
-                       child: (widget.nutritionistData["photoUrl"] == null) ? Icon(Icons.person, color: orange, size: 16.sw) : null,
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                           radius: 16.sw, 
+                           backgroundColor: cardInner,
+                           backgroundImage: widget.nutritionistData["photoUrl"] != null && widget.nutritionistData["photoUrl"].toString().startsWith("http")
+                              ? NetworkImage(widget.nutritionistData["photoUrl"]) 
+                              : null,
+                           child: (widget.nutritionistData["photoUrl"] == null) ? Icon(Icons.person, color: orange, size: 16.sw) : null,
+                      ),
+                      StreamBuilder<DocumentSnapshot>(
+                        stream: UserStatusService().getStatusStream(widget.nutritionistId, true),
+                        builder: (context, statusSnap) {
+                          if (!statusSnap.hasData || !statusSnap.data!.exists) return const SizedBox.shrink();
+                          final statusData = statusSnap.data!.data() as Map<String, dynamic>;
+                          final bool isOnline = statusData['isOnline'] ?? false;
+                          if (!isOnline) return const SizedBox.shrink();
+
+                          return Positioned(
+                            right: 0,
+                            bottom: 0,
+                            child: Container(
+                              width: 8.sw,
+                              height: 8.sw,
+                              decoration: BoxDecoration(
+                                color: Colors.green,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 1.sw),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
                 SizedBox(width: 12.sw),
@@ -1197,12 +1225,39 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-           CircleAvatar(
-            radius: 40.sw,
-            backgroundColor: Colors.white,
-            backgroundImage: photo != null && photo.startsWith("http")
-                ? NetworkImage(photo)
-                : const AssetImage("assets/logos/main_logo.png") as ImageProvider,
+           Stack(
+            children: [
+              CircleAvatar(
+                radius: 40.sw,
+                backgroundColor: Colors.white,
+                backgroundImage: photo != null && photo.startsWith("http")
+                    ? NetworkImage(photo)
+                    : const AssetImage("assets/logos/main_logo.png") as ImageProvider,
+              ),
+              StreamBuilder<DocumentSnapshot>(
+                stream: UserStatusService().getStatusStream(widget.nutritionistId, true),
+                builder: (context, statusSnap) {
+                  if (!statusSnap.hasData || !statusSnap.data!.exists) return const SizedBox.shrink();
+                  final statusData = statusSnap.data!.data() as Map<String, dynamic>;
+                  final bool isOnline = statusData['isOnline'] ?? false;
+                  if (!isOnline) return const SizedBox.shrink();
+
+                  return Positioned(
+                    right: 4.sw,
+                    bottom: 4.sw,
+                    child: Container(
+                      width: 16.sw,
+                      height: 16.sw,
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: Colors.white, width: 3.sw),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
           SizedBox(width: 20.sw),
           Expanded(

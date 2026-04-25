@@ -1,4 +1,3 @@
-
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
@@ -300,7 +299,6 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
     final topPad = mq.padding.top;
 
     final fieldHeight = 70.sh;
-    final radius = 30.sw;
 
     return PopScope(
       canPop: false,
@@ -333,50 +331,52 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
               const Positioned.fill(child: _AuthBackgroundPattern()),
               const Positioned.fill(child: PatternBackground()),
 
-              // 3. Scrollable Content
-              SafeArea(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: EdgeInsets.only(
-                    left: horizontal,
-                    right: horizontal,
-                    top: 36.sh,
-                    bottom: 20.sh + mq.viewInsets.bottom,
-                  ),
-                  child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              // 3. Content
+              Column(
+                children: [
+                  _AnimatedWrapper(
+                    animation: _staggeredAnimations[0],
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(horizontal, topPad + 36.sh, horizontal, 20.sh),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _AnimatedWrapper(
-                            animation: _staggeredAnimations[0],
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                BackButtonWidget(onPressed: _goLoadingFive),
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) => const LoginNutritionistScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: Text(
-                                    "Nutritionist",
-                                    style: TextStyle(
-                                      color: purple,
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.w700,
-                                      fontFamily: "Satoshi",
-                                    ),
-                                  ),
+                          BackButtonWidget(onPressed: _goLoadingFive),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const LoginNutritionistScreen(),
                                 ),
-                              ],
+                              );
+                            },
+                            child: Text(
+                              "Nutritionist",
+                              style: TextStyle(
+                                color: purple,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: "Satoshi",
+                              ),
                             ),
                           ),
-
-                          SizedBox(height: 45.sh),
-
+                        ],
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: EdgeInsets.only(
+                        left: horizontal,
+                        right: horizontal,
+                        bottom: 20.sh + mq.viewInsets.bottom,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(height: 15.sh),
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[1],
                             child: Text(
@@ -390,9 +390,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                               ),
                             ),
                           ),
-
                           SizedBox(height: 10.sh),
-
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[2],
                             child: Text(
@@ -404,9 +402,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                               ),
                             ),
                           ),
-
                           SizedBox(height: 30.sh),
-
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[3],
                             child: _LabeledField(
@@ -441,9 +437,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                               ),
                             ),
                           ),
-
                           SizedBox(height: 16.sh),
-
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[4],
                             child: _LabeledField(
@@ -501,9 +495,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                               ),
                             ),
                           ),
-
                           SizedBox(height: 10.sh),
-
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[4],
                             child: Align(
@@ -530,9 +522,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                               ),
                             ),
                           ),
-
                           SizedBox(height: 60.sh),
-
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[5],
                             child: GestureDetector(
@@ -588,9 +578,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                               ),
                             ),
                           ),
-
                           SizedBox(height: 16.sh),
-
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[6],
                             child: Row(
@@ -645,9 +633,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                               ],
                             ),
                           ),
-
                           SizedBox(height: 32.sh),
-
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[7],
                             child: Center(
@@ -685,8 +671,10 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                   ),
                 ],
               ),
-            ),
+            ],
           ),
+        ),
+      ),
     );
   }
 }
@@ -857,6 +845,3 @@ class _AuthFloatingOrbState extends State<_AuthFloatingOrb> with SingleTickerPro
     );
   }
 }
-
-
-

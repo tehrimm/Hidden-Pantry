@@ -1,5 +1,3 @@
-
-
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'dart:math' as math;
@@ -228,12 +226,12 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> with 
             builder: (context) => AlertDialog(
               backgroundColor: bg,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.sw)),
-              title: Text("Certificate Submitted", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
-              content: Text("Your certificate has been sent for approval. You will be notified once it's reviewed.", style: TextStyle(color: purple, fontFamily: "Satoshi")),
+              title: const Text("Certificate Submitted", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+              content: const Text("Your certificate has been sent for approval. You will be notified once it's reviewed.", style: TextStyle(color: purple, fontFamily: "Satoshi")),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: Text("OK", style: TextStyle(color: btnOrange, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+                  child: const Text("OK", style: TextStyle(color: btnOrange, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
                 ),
               ],
             ),
@@ -332,53 +330,49 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> with 
               const Positioned.fill(child: _AuthBackgroundPattern()),
               const Positioned.fill(child: PatternBackground()),
 
-              // 3. Scrollable Content
-              SafeArea(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  child: Column(
-                    children: [
-                      _AnimatedWrapper(
-                        animation: _staggeredAnimations[0],
-                        child: Padding(
-                          padding: EdgeInsets.fromLTRB(30.sw, topPad + 36.sh, 30.sw, 20.sh),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const BackButtonWidget(),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => const LoginNutritionistScreen()),
-                                  );
-                                },
-                                child: Text(
-                                  "Login",
-                                  style: TextStyle(
-                                    color: purple,
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w700,
-                                    fontFamily: "Satoshi",
-                                  ),
-                                ),
+              // 3. Content
+              Column(
+                children: [
+                  _AnimatedWrapper(
+                    animation: _staggeredAnimations[0],
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(30.sw, topPad + 36.sh, 30.sw, 20.sh),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const BackButtonWidget(),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const LoginNutritionistScreen()),
+                              );
+                            },
+                            child: Text(
+                              "Login",
+                              style: TextStyle(
+                                color: purple,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: "Satoshi",
                               ),
-                            ],
+                            ),
                           ),
-                        ),
+                        ],
                       ),
-
-                      Expanded(
-                        child: SingleChildScrollView(
-                          padding: EdgeInsets.only(
-                            left: 30.sw,
-                            right: 30.sw,
-                            bottom: 30.sh + mq.padding.bottom + mq.viewInsets.bottom,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-
+                    ),
+                  ),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: EdgeInsets.only(
+                        left: 30.sw,
+                        right: 30.sw,
+                        bottom: 30.sh + mq.padding.bottom + mq.viewInsets.bottom,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[1],
                             child: SizedBox(
@@ -395,9 +389,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> with 
                               ),
                             ),
                           ),
-
                           SizedBox(height: 46.sh),
-
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[2],
                             child: GestureDetector(
@@ -435,9 +427,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> with 
                             SizedBox(height: 4.sh),
                             _ErrorText(text: _certErr!),
                           ],
-
                           SizedBox(height: baseGap),
-
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[3],
                             child: _GlassField(
@@ -474,9 +464,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> with 
                             SizedBox(height: errOffset),
                             _ErrorText(text: _licenseErr!),
                           ],
-
                           SizedBox(height: baseGap),
-
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[4],
                             child: _GlassField(
@@ -513,9 +501,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> with 
                             SizedBox(height: errOffset),
                             _ErrorText(text: _organizationErr!),
                           ],
-
                           SizedBox(height: baseGap),
-
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[5],
                             child: _GlassField(
@@ -561,9 +547,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> with 
                             SizedBox(height: errOffset),
                             _ErrorText(text: _expiryErr!),
                           ],
-
                           SizedBox(height: 40.sh),
-
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[6],
                             child: GestureDetector(
@@ -612,15 +596,12 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> with 
                               ),
                             ),
                           ),
-
                           SizedBox(height: 40.sh),
-                            ],
-                          ),
-                        ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
+                ],
               ),
             ],
           ),
@@ -785,6 +766,3 @@ class _AuthFloatingOrbState extends State<_AuthFloatingOrb> with SingleTickerPro
     );
   }
 }
-
-
-

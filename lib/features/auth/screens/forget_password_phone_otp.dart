@@ -1,4 +1,3 @@
-
 import 'dart:ui' as ui;
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
@@ -237,6 +236,8 @@ class _ForgetPasswordPhoneOtpScreenState
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
     final mq = MediaQuery.of(context);
+    final horizontal = 30.sw;
+    final topPad = mq.padding.top;
 
     final boxW = 44.sw;
     final boxH = 51.sh;
@@ -266,35 +267,39 @@ class _ForgetPasswordPhoneOtpScreenState
             const Positioned.fill(child: _AuthBackgroundPattern()),
             const Positioned.fill(child: PatternBackground()),
 
-            // 3. Scrollable Content
-            SafeArea(
-              child: SingleChildScrollView(
-                  padding: EdgeInsets.only(
-                    left: 30.sw,
-                    right: 30.sw,
-                    top: mq.padding.top + 22.sh,
-                    bottom: 22.sh + mq.viewInsets.bottom,
+            // 3. Content
+            Column(
+              children: [
+                _AnimatedWrapper(
+                  animation: _staggeredAnimations[0],
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(horizontal, topPad + 36.sh, horizontal, 20.sh),
+                    child: Row(
+                      children: [
+                        BackButtonWidget(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(builder: (_) => const ForgetPasswordPhoneScreen()),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      minHeight: mq.size.height - mq.padding.top - mq.padding.bottom,
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.only(
+                      left: horizontal,
+                      right: horizontal,
+                      bottom: 22.sh + mq.viewInsets.bottom,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _AnimatedWrapper(
-                          animation: _staggeredAnimations[0],
-                          child: BackButtonWidget(
-                            onPressed: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(builder: (_) => const ForgetPasswordPhoneScreen()),
-                              );
-                            },
-                          ),
-                        ),
-                        SizedBox(height: 38.sh),
-
+                        SizedBox(height: 18.sh),
                         _AnimatedWrapper(
                           animation: _staggeredAnimations[1],
                           child: SizedBox(
@@ -311,9 +316,7 @@ class _ForgetPasswordPhoneOtpScreenState
                             ),
                           ),
                         ),
-
                         SizedBox(height: 12.sh),
-
                         _AnimatedWrapper(
                           animation: _staggeredAnimations[2],
                           child: SizedBox(
@@ -328,15 +331,15 @@ class _ForgetPasswordPhoneOtpScreenState
                             ),
                           ),
                         ),
-
                         SizedBox(height: 26.sh),
-
                         _AnimatedWrapper(
                           animation: _staggeredAnimations[3],
-                          child: LayoutBuilder(
-                            builder: (context, c) {
-                              final boxes = List.generate(6, (i) {
-                                return _OtpBox(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(6, (i) {
+                              return Padding(
+                                padding: EdgeInsets.only(left: i == 0 ? 0 : 10.sw),
+                                child: _OtpBox(
                                   width: boxW,
                                   height: boxH,
                                   brown: brown,
@@ -345,24 +348,12 @@ class _ForgetPasswordPhoneOtpScreenState
                                   focusNode: _focus[i],
                                   onChanged: (v) => _onChanged(i, v),
                                   onBackspace: () => _onBackspace(i),
-                                );
-                              });
-
-                              return Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  for (int i = 0; i < boxes.length; i++) ...[
-                                    if (i != 0) SizedBox(width: 10.sw),
-                                    boxes[i],
-                                  ],
-                                ],
+                                ),
                               );
-                            },
+                            }),
                           ),
                         ),
-
                         SizedBox(height: 26.sh),
-
                         _AnimatedWrapper(
                           animation: _staggeredAnimations[4],
                           child: GestureDetector(
@@ -411,9 +402,7 @@ class _ForgetPasswordPhoneOtpScreenState
                             ),
                           ),
                         ),
-
                         SizedBox(height: 18.sh),
-
                         _AnimatedWrapper(
                           animation: _staggeredAnimations[5],
                           child: Center(
@@ -438,12 +427,12 @@ class _ForgetPasswordPhoneOtpScreenState
                             ),
                           ),
                         ),
-
                         SizedBox(height: 40.sh),
                       ],
                     ),
                   ),
                 ),
+              ],
             ),
           ],
         ),
