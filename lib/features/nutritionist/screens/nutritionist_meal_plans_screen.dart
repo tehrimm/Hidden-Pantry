@@ -17,7 +17,7 @@ class NutritionistMealPlansScreen extends StatefulWidget {
 }
 
 class _NutritionistMealPlansScreenState extends State<NutritionistMealPlansScreen> {
-  final Color bg = const Color(0xFFFFF7F2);
+  final Color bg = const Color(0xFFFFF3EB);
   final Color purple = const Color(0xFF462F4D);
   final Color orange = const Color(0xFFEF8A54);
   final Color cardBg = const Color(0xFFF9E3D5);

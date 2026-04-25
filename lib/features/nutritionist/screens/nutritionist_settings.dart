@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -156,11 +157,9 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
     
     return Scaffold(
       backgroundColor: bg,
-      body: Container(
-        color: bg,
-        child: Stack(
-          children: [
-            const PatternBackground(),
+      body: Stack(
+        children: [
+          const PatternBackground(),
 
             // Content Area
             SafeArea(
@@ -329,7 +328,6 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
             ),
           ],
         ),
-      ),
     );
   }
 
@@ -573,3 +571,4 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
     );
   }
 }
+

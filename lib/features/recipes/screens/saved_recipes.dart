@@ -169,9 +169,11 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return const Scaffold(body: Center(child: Text("Please login")));
 
-    Widget content = Stack(
-      children: [
-        const PatternBackground(),
+    Widget content = Container(
+      color: widget.inShell ? Colors.transparent : bg,
+      child: Stack(
+        children: [
+          if (!widget.inShell) const PatternBackground(),
         
         // Force the Stack to be at least screen-sized to prevent RenderFlex overflow
         const SizedBox.expand(),
@@ -281,12 +283,13 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
           ),
         ),
       ],
-    );
+    ),
+  );
 
     if (widget.inShell) return content;
 
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: widget.inShell ? Colors.transparent : bg,
       body: content,
       bottomNavigationBar: HpBottomNav(
         currentIndex: 3,
@@ -462,6 +465,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
                 ),
               );
             },
+            onLongPress: () => _showRecipeOptions(recipes[index]),
           ),
         );
       },
@@ -479,6 +483,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
           ),
         );
       },
+      onLongPress: () => _showRecipeOptions(recipe),
     );
   }
 
@@ -782,6 +787,163 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showRecipeOptions(Recipe recipe) {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => _modernActionSheet(
+        title: "Recipe Options",
+        subtitle: recipe.name,
+        actions: [
+          _actionItem(
+            icon: Icons.share_rounded,
+            label: "Share Recipe",
+            color: orange,
+            onTap: () {
+              Navigator.pop(context);
+              // Implementation for sharing
+              Clipboard.setData(ClipboardData(text: "Check out this recipe: ${recipe.name}\n\nShared from Hidden Pantry"));
+              Toaster.show(context, "Link copied to clipboard!");
+            },
+          ),
+          _actionItem(
+            icon: Icons.delete_outline_rounded,
+            label: "Remove from Cookbook",
+            color: Colors.red,
+            onTap: () {
+              Navigator.pop(context);
+              _removeFromCookbook(recipe);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _removeFromCookbook(Recipe recipe) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null || _selectedCookbookId == null) return;
+
+    try {
+      if (_selectedCookbookId == 'favorite_internal') {
+        await _recipeService.toggleFavorite(user.uid, recipe.id);
+      } else {
+        await _recipeService.removeRecipeFromCookbook(user.uid, _selectedCookbookId!, recipe.id);
+      }
+      if (mounted) {
+        Toaster.show(context, "Removed from cookbook");
+      }
+    } catch (e) {
+      if (mounted) {
+        Toaster.show(context, "Error: $e", isError: true);
+      }
+    }
+  }
+
+  Widget _modernActionSheet({
+    required String title,
+    required String subtitle,
+    required List<Widget> actions,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 24.sw, vertical: 20.sh),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32.sw)),
+        boxShadow: [
+          BoxShadow(color: purple.withValues(alpha: 0.1), blurRadius: 40, offset: const Offset(0, -10)),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40.sw, height: 4.sh,
+            decoration: BoxDecoration(color: purple.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(2.sw)),
+          ),
+          SizedBox(height: 24.sh),
+          Text(title, style: TextStyle(color: purple, fontSize: 20.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
+          SizedBox(height: 4.sh),
+          Text(subtitle, style: TextStyle(color: purple.withValues(alpha: 0.4), fontSize: 13.sp, fontWeight: FontWeight.w500, fontFamily: "Satoshi")),
+          SizedBox(height: 32.sh),
+          ...actions.asMap().entries.map((entry) {
+            final index = entry.key;
+            final action = entry.value;
+            return TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: Duration(milliseconds: 400 + (index * 100)),
+              curve: Curves.easeOutCubic,
+              builder: (context, value, child) => Opacity(
+                opacity: value,
+                child: Transform.translate(
+                  offset: Offset(0, 20 * (1 - value)),
+                  child: child,
+                ),
+              ),
+              child: action,
+            );
+          }),
+          SizedBox(height: 12.sh),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionItem({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12.sh),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onTap();
+          },
+          borderRadius: BorderRadius.circular(20.sw),
+          child: Container(
+            padding: EdgeInsets.all(16.sw),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(20.sw),
+              border: Border.all(color: color.withValues(alpha: 0.1), width: 1),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(10.sw),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12.sw),
+                  ),
+                  child: Icon(icon, color: color, size: 20.sw),
+                ),
+                SizedBox(width: 16.sw),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: color == Colors.red ? Colors.red : purple,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16.sp,
+                    fontFamily: "Satoshi",
+                  ),
+                ),
+                const Spacer(),
+                Icon(Icons.arrow_forward_ios_rounded, color: color.withValues(alpha: 0.3), size: 14.sw),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

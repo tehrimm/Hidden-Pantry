@@ -465,11 +465,11 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: widget.inShell ? Colors.transparent : bg,
       resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
-          PatternBackground(),
+          if (!widget.inShell) PatternBackground(),
           SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

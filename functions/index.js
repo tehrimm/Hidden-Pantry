@@ -1,7 +1,23 @@
-const functions = require('firebase-functions'); // Deployment Force: 2026-02-19T01:23:00
+const { onCall, onRequest, HttpsError } = require('firebase-functions/v2/https');
+const { onDocumentUpdated, onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { onSchedule } = require('firebase-functions/v2/scheduler');
+const { defineSecret } = require('firebase-functions/params');
 const admin = require('firebase-admin');
 
 admin.initializeApp();
+
+// Define secrets for Stripe
+const stripeSecret = defineSecret('STRIPE_SECRET_KEY');
+const stripeWebhookSecret = defineSecret('STRIPE_WEBHOOK_SECRET');
+
+// Helper to get Stripe instance lazily at runtime
+let stripeInstance;
+function getStripe() {
+    if (!stripeInstance) {
+        stripeInstance = require('stripe')(stripeSecret.value());
+    }
+    return stripeInstance;
+}
 
 /**
  * Scheduled function to delete rejected nutritionist accounts after 5 days
@@ -9,15 +25,16 @@ admin.initializeApp();
  * 
  * Runs daily at 2:00 AM UTC
  */
-exports.deleteRejectedNutritionists = functions.pubsub
-    .schedule('0 2 * * *') // Daily at 2:00 AM UTC
-    .timeZone('UTC')
-    .onRun(async (context) => {
-        const db = admin.firestore();
-        const storage = admin.storage();
-        const auth = admin.auth();
+exports.deleteRejectedNutritionists = onSchedule({
+    schedule: '0 2 * * *',
+    timeZone: 'UTC',
+    retryCount: 3,
+}, async (event) => {
+    const db = admin.firestore();
+    const storage = admin.storage();
+    const auth = admin.auth();
 
-        console.log('Starting rejected nutritionist cleanup...');
+    console.log('Starting rejected nutritionist cleanup...');
 
         try {
             // Get all rejected nutritionists
@@ -101,18 +118,16 @@ exports.deleteRejectedNutritionists = functions.pubsub
  * Triggered when a nutritionist document is updated.
  * Sends a push notification if verificationStatus changes to 'approved' or 'rejected'.
  */
-exports.onNutritionistStatusChange = functions.firestore
-    .document('nutritionists/{uid}')
-    .onUpdate(async (change, context) => {
-        const after = change.after.data();
-        const before = change.before.data();
+exports.onNutritionistStatusChange = onDocumentUpdated('nutritionists/{uid}', async (event) => {
+    const after = event.data.after.data();
+    const before = event.data.before.data();
 
         // Check if status changed
         if (after.verificationStatus === before.verificationStatus) {
             return null;
         }
 
-        const uid = context.params.uid;
+        const uid = event.params.uid;
 
         // NEW: Delete certificate immediately if approved or rejected
         if ((after.verificationStatus === 'approved' || after.verificationStatus === 'rejected') && after.certificateUrl) {
@@ -127,7 +142,7 @@ exports.onNutritionistStatusChange = functions.firestore
                 console.log(`Deleted certificate for ${uid} on status: ${after.verificationStatus}`);
 
                 // Clear URL in Firestore
-                await change.after.ref.update({
+                await event.data.after.ref.update({
                     certificateUrl: admin.firestore.FieldValue.delete()
                 });
             } catch (error) {
@@ -138,7 +153,7 @@ exports.onNutritionistStatusChange = functions.firestore
 
         const fcmToken = after.fcmToken;
         if (!fcmToken) {
-            console.log(`No FCM token for user ${context.params.uid}`);
+            console.log(`No FCM token for user ${event.params.uid}`);
             return null;
         }
 
@@ -169,7 +184,7 @@ exports.onNutritionistStatusChange = functions.firestore
 
         try {
             await admin.messaging().send(message);
-            console.log(`Notification sent to ${context.params.uid}`);
+            console.log(`Notification sent to ${event.params.uid}`);
         } catch (error) {
             console.error('Error sending notification:', error);
         }
@@ -179,11 +194,9 @@ exports.onNutritionistStatusChange = functions.firestore
  * Generic trigger for all user and nutritionist notifications.
  * Sends a push notification whenever a new doc is added to any 'notifications' subcollection.
  */
-exports.onNotificationCreated = functions.firestore
-    .document('{collection}/{uid}/notifications/{id}')
-    .onCreate(async (snap, context) => {
-        const data = snap.data();
-        const { collection, uid } = context.params;
+exports.onNotificationCreated = onDocumentCreated('{collection}/{uid}/notifications/{id}', async (event) => {
+    const data = event.data.data();
+    const { collection, uid } = event.params;
 
         // Only handle 'users' and 'nutritionists' collections
         if (collection !== 'users' && collection !== 'nutritionists') {
@@ -241,33 +254,24 @@ exports.onNotificationCreated = functions.firestore
 
         try {
             await admin.messaging().send(message);
-            console.log(`Push sent to ${collection}/${uid} for notification ${context.params.id}`);
+            console.log(`Push sent to ${collection}/${uid} for notification ${event.params.id}`);
         } catch (error) {
             console.error('Error sending push:', error);
         }
         return null;
     });
 
-// ═══════════════════════════════════════════════════════════════
-// STRIPE PAYMENT & SUBSCRIPTION FUNCTIONS
-// ═══════════════════════════════════════════════════════════════
-
-const stripe = require('stripe')(functions.config().stripe?.secret_key || 'sk_test_REPLACE_ME');
-
-// ─────────────────────────────────────────────────────────────────
-// NEW STRIPE CONNECT FUNCTIONS
-// ─────────────────────────────────────────────────────────────────
-
 /**
  * CALLABLE: Onboard a nutritionist to Stripe Connect (Standard).
  * Creates a Standard account and returns an Account Link URL.
  */
-exports.onboardNutritionist = functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Must be logged in');
+exports.onboardNutritionist = onCall({ secrets: [stripeSecret] }, async (request) => {
+    const stripe = getStripe();
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'Must be logged in');
     }
 
-    const uid = context.auth.uid;
+    const uid = request.auth.uid;
     const db = admin.firestore();
     const nutRef = db.collection('nutritionists').doc(uid);
     const nutDoc = await nutRef.get();
@@ -309,22 +313,23 @@ exports.onboardNutritionist = functions.https.onCall(async (data, context) => {
  * CALLABLE: Create a Stripe Checkout session for a user to subscribe to a nutritionist.
  * Uses Direct Charges (payment goes straight to nutritionist account).
  */
-exports.createNutritionistCheckout = functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Must be logged in');
+exports.createNutritionistCheckout = onCall({ secrets: [stripeSecret] }, async (request) => {
+    const stripe = getStripe();
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'Must be logged in');
     }
 
-    let { planId, planTitle, price, interval, nutritionistId, nutritionistName, tierLevel, existingSubscriptionId } = data;
+    let { planId, planTitle, price, interval, nutritionistId, nutritionistName, tierLevel, existingSubscriptionId } = request.data;
 
     // Robustly parse price and tierLevel
     price = parseFloat(String(price || 0).replace(/[^\d.-]/g, ''));
     tierLevel = parseInt(String(tierLevel || 1).replace(/[^\d]/g, '')) || 1;
 
     if (isNaN(price) || price <= 0) {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid price provided');
+        throw new HttpsError('invalid-argument', 'Invalid price provided');
     }
 
-    const uid = context.auth.uid;
+    const uid = request.auth.uid;
     const db = admin.firestore();
 
     const nutDoc = await db.collection('nutritionists').doc(nutritionistId).get();
@@ -332,7 +337,7 @@ exports.createNutritionistCheckout = functions.https.onCall(async (data, context
 
     if (!stripeAccountId) {
         console.warn(`Checkout failed: Nutritionist ${nutritionistId} (${nutritionistName}) has no stripeAccountId`);
-        throw new functions.https.HttpsError('failed-precondition', 'Nutritionist has not set up their Stripe account yet.');
+        throw new HttpsError('failed-precondition', 'Nutritionist has not set up their Stripe account yet.');
     }
 
     const userDoc = await db.collection('users').doc(uid).get();
@@ -480,7 +485,7 @@ exports.createNutritionistCheckout = functions.https.onCall(async (data, context
         return { url: session.url, sessionId: session.id, subscriptionDocId: subDoc.id };
     } catch (error) {
         console.error('createNutritionistCheckout error:', error);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new HttpsError('internal', error.message);
     }
 });
 
@@ -490,14 +495,15 @@ exports.createNutritionistCheckout = functions.https.onCall(async (data, context
 /**
  * CALLABLE: Cancel a subscription at period end.
  */
-exports.cancelSubscription = functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Must be logged in');
+exports.cancelSubscription = onCall({ secrets: [stripeSecret] }, async (request) => {
+    const stripe = getStripe();
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'Must be logged in');
     }
 
-    const { subscriptionDocId } = data;
+    const { subscriptionDocId } = request.data;
     if (!subscriptionDocId) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing subscriptionDocId');
+        throw new HttpsError('invalid-argument', 'Missing subscriptionDocId');
     }
 
     const db = admin.firestore();
@@ -505,12 +511,12 @@ exports.cancelSubscription = functions.https.onCall(async (data, context) => {
     const doc = await docRef.get();
 
     if (!doc.exists) {
-        throw new functions.https.HttpsError('not-found', 'Subscription not found');
+        throw new HttpsError('not-found', 'Subscription not found');
     }
 
     // Verify ownership
-    if (doc.data().userId !== context.auth.uid) {
-        throw new functions.https.HttpsError('permission-denied', 'Not your subscription');
+    if (doc.data().userId !== request.auth.uid) {
+        throw new HttpsError('permission-denied', 'Not your subscription');
     }
 
     const stripeSubId = doc.data().stripeSubscriptionId;
@@ -531,23 +537,23 @@ exports.cancelSubscription = functions.https.onCall(async (data, context) => {
         return { success: true };
     } catch (error) {
         console.error('cancelSubscription error:', error);
-        throw new functions.https.HttpsError('internal', error.message || 'Cancellation failed');
+        throw new HttpsError('internal', error.message || 'Cancellation failed');
     }
 });
 
 /**
  * CALLABLE: Nutritionist requests a payout of their current balance.
  */
-exports.requestPayout = functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Must be logged in');
+exports.requestPayout = onCall(async (request) => {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'Must be logged in');
     }
 
-    const uid = context.auth.uid;
-    const { amount, payoutMethod } = data;
+    const uid = request.auth.uid;
+    const { amount, payoutMethod } = request.data;
 
     if (!amount || amount <= 0) {
-        throw new functions.https.HttpsError('invalid-argument', 'Invalid payout amount');
+        throw new HttpsError('invalid-argument', 'Invalid payout amount');
     }
 
     const db = admin.firestore();
@@ -586,7 +592,7 @@ exports.requestPayout = functions.https.onCall(async (data, context) => {
         });
     } catch (error) {
         console.error('requestPayout error:', error);
-        throw new functions.https.HttpsError('internal', error.message || 'Payout request failed');
+        throw new HttpsError('internal', error.message || 'Payout request failed');
     }
 });
 
@@ -594,9 +600,10 @@ exports.requestPayout = functions.https.onCall(async (data, context) => {
  * HTTP: Stripe Webhook endpoint.
  * Handles invoice.paid (renewal) and customer.subscription.deleted (deactivation).
  */
-exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
+exports.stripeWebhook = onRequest({ secrets: [stripeSecret, stripeWebhookSecret] }, async (req, res) => {
+    const stripe = getStripe();
     const sig = req.headers['stripe-signature'];
-    const webhookSecret = functions.config().stripe?.webhook_secret || 'whsec_REPLACE_ME';
+    const webhookSecret = stripeWebhookSecret.value();
 
     let event;
     try {
@@ -900,12 +907,13 @@ exports.stripeWebhook = functions.https.onRequest(async (req, res) => {
 /**
  * SCHEDULED: Check for expired subscriptions daily and downgrade them.
  */
-exports.checkExpiredSubscriptions = functions.pubsub
-    .schedule('0 3 * * *') // Daily at 3:00 AM UTC
-    .timeZone('UTC')
-    .onRun(async (context) => {
-        const db = admin.firestore();
-        const now = new Date();
+exports.checkExpiredSubscriptions = onSchedule({
+    schedule: '0 3 * * *',
+    timeZone: 'UTC',
+    retryCount: 3,
+}, async (event) => {
+    const db = admin.firestore();
+    const now = new Date();
 
         try {
             const snapshot = await db.collection('subscriptions')
@@ -940,12 +948,13 @@ exports.checkExpiredSubscriptions = functions.pubsub
  * CALLABLE: Cleanup when ANY user deletes their account.
  * Handles both Nutritionists (cleanup their subscribers) and Regular Users (cleanup their own subscriptions).
  */
-exports.cleanupUserDeletion = functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Must be logged in');
+exports.cleanupUserDeletion = onCall({ secrets: [stripeSecret] }, async (request) => {
+    const stripe = getStripe();
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'Must be logged in');
     }
 
-    const uid = context.auth.uid;
+    const uid = request.auth.uid;
     const db = admin.firestore();
 
     try {
@@ -1043,20 +1052,26 @@ exports.cleanupUserDeletion = functions.https.onCall(async (data, context) => {
             });
         }
 
+        // --- 3. FINAL PROFILE DELETION ---
+        const batchDeletion = db.batch();
+        batchDeletion.delete(db.collection('users').doc(uid));
+        batchDeletion.delete(db.collection('nutritionists').doc(uid));
+        await batchDeletion.commit();
+
         return { success: true };
     } catch (error) {
         console.error('cleanupUserDeletion error:', error);
-        throw new functions.https.HttpsError('internal', error.message || 'Cleanup failed');
+        throw new HttpsError('internal', error.message || 'Cleanup failed');
     }
 });
 
 /**
  * CALLABLE: Get accurate nutritionist stats (posts, subscribers) bypassing client side rules.
  */
-exports.getNutritionistStats = functions.https.onCall(async (data, context) => {
-    const { nutritionistId } = data;
+exports.getNutritionistStats = onCall(async (request) => {
+    const { nutritionistId } = request.data;
     if (!nutritionistId) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing nutritionistId');
+        throw new HttpsError('invalid-argument', 'Missing nutritionistId');
     }
 
     const db = admin.firestore();
@@ -1088,6 +1103,10 @@ exports.getNutritionistStats = functions.https.onCall(async (data, context) => {
             }
         });
 
+        // 4. Get Recipes Count
+        const recipesCountSnap = await db.collection('recipes').where('author_id', '==', nutritionistId).get();
+        totalPosts += recipesCountSnap.size;
+
         const totalSubs = uniqueUserIds.size;
 
         return {
@@ -1096,52 +1115,23 @@ exports.getNutritionistStats = functions.https.onCall(async (data, context) => {
         };
     } catch (error) {
         console.error('getNutritionistStats error:', error);
-        throw new functions.https.HttpsError('internal', 'Error calculating stats.');
+        throw new HttpsError('internal', 'Error calculating stats.');
     }
 });
 
-
-/**
- * CALLABLE: Get stats for a nutritionist (posts count, subscriber count).
- */
-exports.getNutritionistStats = functions.https.onCall(async (data, context) => {
-    const { nutritionistId } = data;
-    if (!nutritionistId) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing nutritionistId');
-    }
-
-    const db = admin.firestore();
-    try {
-        const postsSnap = await db.collection('recipes')
-            .where('author_id', '==', nutritionistId)
-            .get();
-        
-        const subsSnap = await db.collection('subscriptions')
-            .where('nutritionistId', '==', nutritionistId)
-            .where('status', '==', 'active')
-            .get();
-
-        return {
-            posts: postsSnap.size,
-            subs: subsSnap.size
-        };
-    } catch (error) {
-        console.error('getNutritionistStats error:', error);
-        throw new functions.https.HttpsError('internal', error.message);
-    }
-});
 
 /**
  * CALLABLE: Reactivate a cancelled subscription before it expires.
  */
-exports.reactivateSubscription = functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Must be logged in');
+exports.resumeSubscription = onCall({ secrets: [stripeSecret] }, async (request) => {
+    const stripe = getStripe();
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'Must be logged in');
     }
 
-    const { subscriptionDocId } = data;
+    const { subscriptionDocId } = request.data;
     if (!subscriptionDocId) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing subscriptionDocId');
+        throw new HttpsError('invalid-argument', 'Missing subscriptionDocId');
     }
 
     const db = admin.firestore();
@@ -1149,11 +1139,11 @@ exports.reactivateSubscription = functions.https.onCall(async (data, context) =>
     const doc = await docRef.get();
 
     if (!doc.exists) {
-        throw new functions.https.HttpsError('not-found', 'Subscription not found');
+        throw new HttpsError('not-found', 'Subscription not found');
     }
 
-    if (doc.data().userId !== context.auth.uid) {
-        throw new functions.https.HttpsError('permission-denied', 'Not your subscription');
+    if (doc.data().userId !== request.auth.uid) {
+        throw new HttpsError('permission-denied', 'Not your subscription');
     }
 
     const stripeSubId = doc.data().stripeSubscriptionId;
@@ -1172,39 +1162,7 @@ exports.reactivateSubscription = functions.https.onCall(async (data, context) =>
 
         return { success: true };
     } catch (error) {
-        console.error('reactivateSubscription error:', error);
-        throw new functions.https.HttpsError('internal', error.message || 'Reactivation failed');
-    }
-});
-
-/**
- * CALLABLE: Cleanup user data when an account is deleted.
- */
-exports.cleanupUserDeletion = functions.https.onCall(async (data, context) => {
-    if (!context.auth) {
-        throw new functions.https.HttpsError('unauthenticated', 'Must be logged in');
-    }
-
-    const uid = context.auth.uid;
-    const db = admin.firestore();
-
-    try {
-        // This is a complex operation, usually handled by a batch or multiple deletions.
-        // For brevity, we delete the main profile and some related data.
-        
-        const batch = db.batch();
-        
-        // Delete from users or nutritionists
-        batch.delete(db.collection('users').doc(uid));
-        batch.delete(db.collection('nutritionists').doc(uid));
-        
-        // In a real app, you'd also delete recipes, posts, etc.
-        // (Better handled via a background trigger on Auth deletion)
-        
-        await batch.commit();
-        return { success: true };
-    } catch (error) {
-        console.error('cleanupUserDeletion error:', error);
-        throw new functions.https.HttpsError('internal', error.message);
+        console.error('resumeSubscription error:', error);
+        throw new HttpsError('internal', error.message || 'Reactivation failed');
     }
 });

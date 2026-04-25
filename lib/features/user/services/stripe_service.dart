@@ -111,7 +111,7 @@ class StripeService {
 
   /// Calls Cloud Function to resume a cancelled subscription before it expires.
   Future<void> reactivateSubscription({required String subscriptionDocId}) async {
-    final callable = FirebaseFunctions.instance.httpsCallable('reactivateSubscription');
+    final callable = FirebaseFunctions.instance.httpsCallable('resumeSubscription');
     await callable.call({'subscriptionDocId': subscriptionDocId});
   }
 

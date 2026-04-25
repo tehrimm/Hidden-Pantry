@@ -223,61 +223,102 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                   const SizedBox(height: 80),
                   Expanded(
                     child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
                       padding: EdgeInsets.only(
-                        left: 22,
-                        right: 22,
-                        bottom: MediaQuery.of(context).viewInsets.bottom + 40,
+                        left: 22.sw,
+                        right: 22.sw,
+                        bottom: MediaQuery.of(context).viewInsets.bottom + 40.sh,
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(height: 16.sh),
-                          _sectionHeader("LIVE PREVIEW"),
-                          SizedBox(height: 16.sh),
-                          _livePreviewCard(),
-                          SizedBox(height: 32.sh),
-                          _sectionHeader("PLAN DETAILS"),
-                          SizedBox(height: 16.sh),
-                          _inputField("PLAN NAME", _nameController),
-                          SizedBox(height: 16.sh),
-                          Row(
-                            children: [
-                              Expanded(child: _inputField(
-                                "PRICE", 
-                                _priceController, 
-                                prefix: "Rs. ",
-                                keyboardType: TextInputType.number,
-                                inputFormatters: [
-                                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                                ],
-                              )),
-                              SizedBox(width: 16.sw),
-                              Expanded(child: _intervalDropdown()),
-                            ],
+                          _FadeSlideEntry(
+                            delayMs: 100,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(height: 16.sh),
+                                _sectionHeader("LIVE PREVIEW"),
+                                SizedBox(height: 16.sh),
+                                _livePreviewCard(),
+                              ],
+                            ),
                           ),
-                          SizedBox(height: 16.sh),
-                          _tierDropdown(), // NEW: Tier Selection
                           SizedBox(height: 32.sh),
-                          _visibilityToggle(),
-                          SizedBox(height: 32.sh),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              _sectionHeader("SELECT BENEFITS"),
-                              GestureDetector(
-                                onTap: _showAddBenefitDialog,
-                                child: Text(
-                                  "+ Add Custom",
-                                  style: TextStyle(color: orange, fontSize: 12.sp, fontWeight: FontWeight.bold),
+                          _FadeSlideEntry(
+                            delayMs: 200,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _sectionHeader("PLAN DETAILS"),
+                                SizedBox(height: 16.sh),
+                                _inputField("PLAN NAME", _nameController),
+                                SizedBox(height: 16.sh),
+                                Row(
+                                  children: [
+                                    Expanded(child: _inputField(
+                                      "PRICE", 
+                                      _priceController, 
+                                      prefix: "Rs. ",
+                                      keyboardType: TextInputType.number,
+                                      inputFormatters: [
+                                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                                      ],
+                                    )),
+                                    SizedBox(width: 16.sw),
+                                    Expanded(child: _intervalDropdown()),
+                                  ],
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                          const SizedBox(height: 16),
-                          ..._benefits.asMap().entries.map((entry) => _benefitToggle(entry.key, entry.value)),
+                          SizedBox(height: 24.sh),
+                          _FadeSlideEntry(
+                            delayMs: 300,
+                            child: _tierSelector(),
+                          ),
+                          SizedBox(height: 32.sh),
+                          _FadeSlideEntry(
+                            delayMs: 400,
+                            child: _visibilityToggle(),
+                          ),
+                          SizedBox(height: 32.sh),
+                          _FadeSlideEntry(
+                            delayMs: 500,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    _sectionHeader("SELECT BENEFITS"),
+                                    GestureDetector(
+                                      onTap: _showAddBenefitDialog,
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 6.sh),
+                                        decoration: BoxDecoration(
+                                          color: orange.withValues(alpha: 0.1),
+                                          borderRadius: BorderRadius.circular(10.sw),
+                                        ),
+                                        child: Text(
+                                          "+ Add Custom",
+                                          style: TextStyle(color: orange, fontSize: 11.sp, fontWeight: FontWeight.w900),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 16),
+                                ..._benefits.asMap().entries.map((entry) => _benefitToggle(entry.key, entry.value)),
+                              ],
+                            ),
+                          ),
                           const SizedBox(height: 40),
                           if (widget.planId != null) ...[
-                            _deleteButton(),
+                            _FadeSlideEntry(
+                              delayMs: 600,
+                              child: _deleteButton(),
+                            ),
                             const SizedBox(height: 40),
                           ],
                         ],
@@ -360,22 +401,46 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
   }
 
   Widget _livePreviewCard() {
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
       width: double.infinity,
       padding: EdgeInsets.all(24.sw),
       decoration: BoxDecoration(
         color: const Color(0xFFF9E3D5),
-        borderRadius: BorderRadius.circular(24.sw),
+        borderRadius: BorderRadius.circular(32.sw),
+        border: Border.all(color: Colors.white, width: 2),
         boxShadow: [
-          BoxShadow(color: purple.withValues(alpha: 0.05), blurRadius: 20.sw, offset: Offset(0, 10.sh)),
+          BoxShadow(
+            color: purple.withValues(alpha: 0.1),
+            blurRadius: 30,
+            offset: const Offset(0, 15),
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            _nameController.text.isEmpty ? "Plan Name" : _nameController.text,
-            style: TextStyle(color: purple, fontSize: 24.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  _nameController.text.isEmpty ? "Plan Name" : _nameController.text,
+                  style: TextStyle(color: purple, fontSize: 24.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
+                ),
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 4.sh),
+                decoration: BoxDecoration(
+                  color: orange.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8.sw),
+                ),
+                child: Text(
+                  _selectedTier.split(' ').first,
+                  style: TextStyle(color: orange, fontSize: 10.sp, fontWeight: FontWeight.w900),
+                ),
+              ),
+            ],
           ),
           SizedBox(height: 8.sh),
           Row(
@@ -386,7 +451,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                 style: TextStyle(color: orange, fontSize: 32.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
               ),
               Padding(
-                padding: const EdgeInsets.only(bottom: 6, left: 4),
+                padding: EdgeInsets.only(bottom: 6.sh, left: 4.sw),
                 child: Text(
                   "/ $_selectedInterval",
                   style: TextStyle(color: purple.withValues(alpha: 0.4), fontSize: 14.sp, fontWeight: FontWeight.bold),
@@ -394,7 +459,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          SizedBox(height: 24.sh),
           ..._benefits.where((b) => b["enabled"]).map((b) => _benefitPreviewRow(b["title"])),
           SizedBox(height: 32.sh),
           Container(
@@ -402,12 +467,15 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
             height: 56.sh,
             decoration: BoxDecoration(
               color: purple,
-              borderRadius: BorderRadius.circular(16.sw),
+              borderRadius: BorderRadius.circular(20.sw),
+              boxShadow: [
+                BoxShadow(color: purple.withValues(alpha: 0.3), blurRadius: 15, offset: const Offset(0, 8)),
+              ],
             ),
             child: Center(
               child: Text(
                 "Subscribe Now",
-                style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
               ),
             ),
           ),
@@ -671,39 +739,59 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     );
   }
 
-  Widget _tierDropdown() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9E3D5),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "TIER LEVEL",
-            style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 10.sp, fontWeight: FontWeight.w900),
+  Widget _tierSelector() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _sectionHeader("TIER LEVEL"),
+        SizedBox(height: 12.sh),
+        Container(
+          height: 64.sh,
+          padding: EdgeInsets.all(6.sw),
+          decoration: BoxDecoration(
+            color: const Color(0xFFF9E3D5),
+            borderRadius: BorderRadius.circular(20.sw),
           ),
-          DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _selectedTier,
-              isExpanded: true,
-              icon: Icon(Icons.layers_rounded, color: purple, size: 24.sw),
-              style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
-              items: _tiers.map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (newValue) {
-                if (newValue != null) setState(() => _selectedTier = newValue);
-              },
-            ),
+          child: Row(
+            children: _tiers.map((tier) {
+              final isSelected = _selectedTier == tier;
+              final shortName = tier.contains("Silver") ? "SILVER" : (tier.contains("Gold") ? "GOLD" : "PLATINUM");
+              final tierColor = shortName == "SILVER" ? const Color(0xFF8A9EA7) : (shortName == "GOLD" ? const Color(0xFFD4AF37) : const Color(0xFF6A4C93));
+
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    HapticFeedback.selectionClick();
+                    setState(() => _selectedTier = tier);
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOutCubic,
+                    decoration: BoxDecoration(
+                      color: isSelected ? Colors.white : Colors.transparent,
+                      borderRadius: BorderRadius.circular(14.sw),
+                      boxShadow: isSelected ? [
+                        BoxShadow(color: tierColor.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 4)),
+                      ] : [],
+                    ),
+                    child: Center(
+                      child: Text(
+                        shortName,
+                        style: TextStyle(
+                          color: isSelected ? tierColor : purple.withValues(alpha: 0.4),
+                          fontSize: 11.sp,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -711,17 +799,62 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     return Center(
       child: TextButton.icon(
         onPressed: _deletePlan,
-        icon: Icon(Icons.delete_outline_rounded, color: Colors.red, size: 20.sw),
+        icon: Icon(Icons.delete_outline_rounded, color: Colors.red.withValues(alpha: 0.7), size: 20.sw),
         label: Text(
           "Delete Plan",
-          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14.sp),
+          style: TextStyle(color: Colors.red.withValues(alpha: 0.7), fontWeight: FontWeight.w900, fontSize: 13.sp, letterSpacing: 0.5),
         ),
         style: TextButton.styleFrom(
           padding: EdgeInsets.symmetric(horizontal: 24.sw, vertical: 12.sh),
           backgroundColor: Colors.red.withValues(alpha: 0.05),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.sw)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16.sw),
+            side: BorderSide(color: Colors.red.withValues(alpha: 0.1)),
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _FadeSlideEntry extends StatefulWidget {
+  final Widget child;
+  final int delayMs;
+  const _FadeSlideEntry({required this.child, required this.delayMs});
+
+  @override
+  State<_FadeSlideEntry> createState() => _FadeSlideEntryState();
+}
+
+class _FadeSlideEntryState extends State<_FadeSlideEntry> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fade;
+  late Animation<Offset> _slide;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _slide = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutQuart));
+
+    Future.delayed(Duration(milliseconds: widget.delayMs), () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child),
     );
   }
 }

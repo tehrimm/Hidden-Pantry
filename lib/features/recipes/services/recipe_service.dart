@@ -241,8 +241,11 @@ class RecipeService {
       }
 
       // 2. WRITES AFTER
+      final authorId = recipeDoc?.data() != null ? (recipeDoc!.data() as Map<String, dynamic>)['author_id'] : null;
+
       transaction.set(reviewRef, {
         ...reviewData,
+        'authorId': authorId, // Store the authorId in the review for easier dashboard querying
         'createdAt': FieldValue.serverTimestamp(),
         'likes': 0,
         'likedBy': [],
@@ -931,4 +934,42 @@ class RecipeService {
       print("[RecipeService] Author info sync failed: $e");
     }
   }
+
+  /// Removes a recipe from the user's default "Favorite" cookbook.
+  /// Falls back to deleting from any cookbook containing the recipe if
+  /// the Favorite cookbook is not found.
+  Future<void> toggleFavorite(String userId, String recipeId) async {
+    try {
+      // Find the Favorite cookbook
+      final snap = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('cookbooks')
+          .where('recipeIds', arrayContains: recipeId)
+          .get();
+
+      for (final doc in snap.docs) {
+        final title = (doc.data()['title']?.toString() ?? '').toLowerCase();
+        if (title == 'favorite') {
+          await doc.reference.update({
+            'recipeIds': FieldValue.arrayRemove([recipeId]),
+          });
+          print('[RecipeService] Removed $recipeId from Favorite cookbook');
+          return;
+        }
+      }
+
+      // Fallback: remove from whichever cookbook contains it
+      if (snap.docs.isNotEmpty) {
+        await snap.docs.first.reference.update({
+          'recipeIds': FieldValue.arrayRemove([recipeId]),
+        });
+        print('[RecipeService] Removed $recipeId from first matching cookbook');
+      }
+    } catch (e) {
+      print('[RecipeService] toggleFavorite failed: $e');
+      rethrow;
+    }
+  }
 }
+

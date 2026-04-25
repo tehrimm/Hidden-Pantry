@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -37,6 +38,21 @@ class _LoadingFiveState extends State<LoadingFive> {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
+                // Background Gradient
+                Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFFFF3EB), Color(0xFFF6DFD1)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      stops: [0.4, 1.0],
+                    ),
+                  ),
+                ),
+
+                // Decorative Orbs
+                const _OnboardingBackgroundPattern(),
+
                 // Background Image
                 Positioned(
                   left: 26.sw,
@@ -201,6 +217,7 @@ class _LoadingFiveState extends State<LoadingFive> {
                       decoration: BoxDecoration(
                         color: const Color(0xFFF9E3D5),
                         borderRadius: BorderRadius.circular(20.sw),
+                        border: Border.all(color: Colors.white, width: 1.5),
                       ),
                       child: FittedBox(
                         fit: BoxFit.scaleDown,
@@ -270,6 +287,88 @@ class _LoadingFiveState extends State<LoadingFive> {
             ),
           ),
         );
+  }
+}
+
+class _OnboardingBackgroundPattern extends StatelessWidget {
+  const _OnboardingBackgroundPattern();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Stack(
+        children: [
+          Positioned(
+            top: -100.sh,
+            right: -100.sw,
+            child: _OnboardingFloatingOrb(
+              color: const Color(0xFFFFE0D3).withValues(alpha: 0.5),
+              size: 400,
+              duration: const Duration(seconds: 15),
+            ),
+          ),
+          Positioned(
+            bottom: 100.sh,
+            left: -150.sw,
+            child: _OnboardingFloatingOrb(
+              color: const Color(0xFFEF8A54).withValues(alpha: 0.1),
+              size: 500,
+              duration: const Duration(seconds: 20),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OnboardingFloatingOrb extends StatefulWidget {
+  final Color color;
+  final double size;
+  final Duration duration;
+
+  const _OnboardingFloatingOrb({required this.color, required this.size, required this.duration});
+
+  @override
+  State<_OnboardingFloatingOrb> createState() => _OnboardingFloatingOrbState();
+}
+
+class _OnboardingFloatingOrbState extends State<_OnboardingFloatingOrb> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration)..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final double angle = _controller.value * 2 * math.pi;
+        return Transform.translate(
+          offset: Offset(math.cos(angle) * 30, math.sin(angle) * 50),
+          child: Container(
+            width: widget.size.sw,
+            height: widget.size.sw,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [widget.color, widget.color.withValues(alpha: 0)],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 

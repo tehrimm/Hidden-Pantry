@@ -57,7 +57,22 @@ class _UserHelpSupportScreenState extends State<UserHelpSupportScreen> {
       backgroundColor: bg,
       body: Stack(
         children: [
-          const Positioned.fill(child: PatternBackground()),
+          // Background Gradient
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFFFF3EB), Color(0xFFF6DFD1)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                stops: [0.4, 1.0],
+              ),
+            ),
+          ),
+
+          // Decorative Orbs
+          const _HelpBackgroundPattern(),
+
+          const PatternBackground(),
 
           // Decorative corner shapes
           Positioned(
@@ -442,6 +457,88 @@ class _UserHelpSupportScreenState extends State<UserHelpSupportScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _HelpBackgroundPattern extends StatelessWidget {
+  const _HelpBackgroundPattern();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Stack(
+        children: [
+          Positioned(
+            top: -100.sh,
+            right: -100.sw,
+            child: _HelpFloatingOrb(
+              color: const Color(0xFFFFE0D3).withValues(alpha: 0.5),
+              size: 400,
+              duration: const Duration(seconds: 15),
+            ),
+          ),
+          Positioned(
+            bottom: 100.sh,
+            left: -150.sw,
+            child: _HelpFloatingOrb(
+              color: const Color(0xFFEF8A54).withValues(alpha: 0.1),
+              size: 500,
+              duration: const Duration(seconds: 20),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HelpFloatingOrb extends StatefulWidget {
+  final Color color;
+  final double size;
+  final Duration duration;
+
+  const _HelpFloatingOrb({required this.color, required this.size, required this.duration});
+
+  @override
+  State<_HelpFloatingOrb> createState() => _HelpFloatingOrbState();
+}
+
+class _HelpFloatingOrbState extends State<_HelpFloatingOrb> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration)..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final double angle = _controller.value * 2 * math.pi;
+        return Transform.translate(
+          offset: Offset(math.cos(angle) * 30, math.sin(angle) * 50),
+          child: Container(
+            width: widget.size.sw,
+            height: widget.size.sw,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [widget.color, widget.color.withValues(alpha: 0)],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

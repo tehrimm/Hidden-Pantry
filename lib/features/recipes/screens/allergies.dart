@@ -161,8 +161,6 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
       backgroundColor: bg,
       body: Stack(
         children: [
-          Positioned.fill(child: Container(color: bg)),
-
           const PatternBackground(),
 
           // Back button ONLY in profile mode

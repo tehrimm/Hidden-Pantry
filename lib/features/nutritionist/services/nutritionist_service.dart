@@ -26,23 +26,42 @@ class NutritionistService {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) throw Exception("No authenticated user found.");
 
-    await _nutritionists.doc(user.uid).set({
-      "uid": user.uid,
-      "fullName": fullName,
-      "email": email,
-      "phoneNumber": phoneNumber,
-      "licenseNumber": licenseNumber,
-      "certificateUrl": certificateUrl,
-      "organizationName": organizationName,
-      "expiryDate": expiryDate,
-      "verificationStatus": (email.trim().toLowerCase() == "testnutritionist@gmail.com" || email.trim().toLowerCase() == "testnutrionist@gmail.com") ? "approved" : "pending",
-      "rejectionReason": null,
-      "rejectionDate": null,
-      "hasLoggedInAfterRejection": false,
-      "lastLoginAt": null,
-      "createdAt": FieldValue.serverTimestamp(),
-      "updatedAt": FieldValue.serverTimestamp(),
-    });
+    final docRef = _nutritionists.doc(user.uid);
+    final docSnap = await docRef.get();
+
+    if (docSnap.exists) {
+      // Document already exists. This can happen if the user previously created it
+      // but the app crashed before navigation. We just update the fields that are allowed
+      // to be updated, to avoid PERMISSION_DENIED on restricted fields like verificationStatus.
+      await docRef.update({
+        "fullName": fullName,
+        "phoneNumber": phoneNumber,
+        "licenseNumber": licenseNumber,
+        "certificateUrl": certificateUrl,
+        "organizationName": organizationName,
+        "expiryDate": expiryDate,
+        "updatedAt": FieldValue.serverTimestamp(),
+      });
+    } else {
+      // Create new document
+      await docRef.set({
+        "uid": user.uid,
+        "fullName": fullName,
+        "email": email,
+        "phoneNumber": phoneNumber,
+        "licenseNumber": licenseNumber,
+        "certificateUrl": certificateUrl,
+        "organizationName": organizationName,
+        "expiryDate": expiryDate,
+        "verificationStatus": (email.trim().toLowerCase() == "testnutritionist@gmail.com" || email.trim().toLowerCase() == "testnutrionist@gmail.com") ? "approved" : "pending",
+        "rejectionReason": null,
+        "rejectionDate": null,
+        "hasLoggedInAfterRejection": false,
+        "lastLoginAt": null,
+        "createdAt": FieldValue.serverTimestamp(),
+        "updatedAt": FieldValue.serverTimestamp(),
+      });
+    }
 
     // Also update Auth profile
     await user.updateDisplayName(fullName);

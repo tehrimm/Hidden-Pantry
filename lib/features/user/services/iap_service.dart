@@ -61,29 +61,34 @@ class IAPService {
   Future<void> buyProduct(ProductDetails product, {BuildContext? context}) async {
     // Tester Account Bypass
     if (isTesterAccount()) {
-      debugPrint("Tester account detected: Bypassing payment for ${product.id}");
-      if (context != null) {
-        await _verifyAndEnablePremium(PurchaseDetails(
-          productID: product.id,
-          purchaseID: 'tester_${DateTime.now().millisecondsSinceEpoch}',
-          status: PurchaseStatus.purchased,
-          transactionDate: DateTime.now().millisecondsSinceEpoch.toString(),
-          verificationData: PurchaseVerificationData(localVerificationData: '', serverVerificationData: '', source: ''),
-        ));
-        
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Tester Access Granted: Premium Unlocked!")),
-          );
-          Navigator.pop(context);
-        }
-      }
+      await buyTesterProduct(productId: product.id, context: context);
       return;
     }
 
     final PurchaseParam purchaseParam = PurchaseParam(productDetails: product);
     // For subscriptions, we use buyNonConsumable
     await _iap.buyNonConsumable(purchaseParam: purchaseParam);
+  }
+
+  /// Development-only bypass for testing premium flow
+  Future<void> buyTesterProduct({String? productId, BuildContext? context}) async {
+    final id = productId ?? nutritionistMembershipID;
+    debugPrint("Tester account detected: Bypassing payment for $id");
+    
+    await _verifyAndEnablePremium(PurchaseDetails(
+      productID: id,
+      purchaseID: 'tester_${DateTime.now().millisecondsSinceEpoch}',
+      status: PurchaseStatus.purchased,
+      transactionDate: DateTime.now().millisecondsSinceEpoch.toString(),
+      verificationData: PurchaseVerificationData(localVerificationData: '', serverVerificationData: '', source: ''),
+    ));
+    
+    if (context != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Tester Access Granted: Premium Unlocked!")),
+      );
+      Navigator.pop(context);
+    }
   }
 
   /// Handle incoming purchase events

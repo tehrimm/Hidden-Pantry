@@ -12,6 +12,7 @@ import 'package:hidden_pantry_app/features/user/services/follow_service.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/core/widgets/food_loader.dart';
+import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 
 
 class CategoriesScreen extends StatefulWidget {
@@ -187,7 +188,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           color: bg,
           child: Stack(
             children: [
-              const _CategoryBackgroundPattern(),
+              const PatternBackground(),
               
               // Back Button
               Positioned(
@@ -361,53 +362,3 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   }
 }
 
-class _CategoryBackgroundPattern extends StatelessWidget {
-  const _CategoryBackgroundPattern();
-
-  @override
-  Widget build(BuildContext context) {
-    ResponsiveUtils.init(context);
-    final stroke = const Color(0xFFF5DDCE);
-
-    return IgnorePointer(
-      child: Stack(
-        children: [
-          Positioned(
-            left: (-154).sw,
-            top: (-14).sh,
-            child: Transform.rotate(
-              angle: 21 * math.pi / 180,
-              child: Container(
-                width: 271.sw,
-                height: 159.sh,
-                decoration: BoxDecoration(
-                  border: Border.all(color: stroke),
-                  borderRadius: BorderRadius.all(
-                    Radius.elliptical(136.sw, 80.sh),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: (-149).sw,
-            top: (-100).sh,
-            child: Transform.rotate(
-              angle: 4 * math.pi / 180,
-              child: Container(
-                width: 303.sw,
-                height: 329.sh,
-                decoration: BoxDecoration(
-                  border: Border.all(color: stroke),
-                  borderRadius: BorderRadius.all(
-                    Radius.elliptical(152.sw, 165.sh),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}

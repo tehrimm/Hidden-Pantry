@@ -33,6 +33,7 @@ import 'package:hidden_pantry_app/core/services/notification_service.dart';
 import 'package:hidden_pantry_app/features/user/models/notification_model.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:permission_handler/permission_handler.dart';
+import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool inShell;
@@ -689,11 +690,11 @@ void _openUserProfile() {
       body: ClipRRect(
         borderRadius: BorderRadius.circular(30.sw),
         child: Container(
-          color: bg,
+          color: widget.inShell ? Colors.transparent : bg,
           child: Stack(
             children: [
               // Background Pattern (Full Screen)
-              const _HomeBackgroundPattern(),
+              if (!widget.inShell) const PatternBackground(),
 
               // Layout: Header + Content
               SafeArea(
@@ -1868,58 +1869,6 @@ Widget _weeklySection() {
         width: 135.sw,
         aspectRatio: 135 / 190,
         onTap: () => _openRecipe(r),
-      ),
-    );
-  }
-}
-
-class _HomeBackgroundPattern extends StatelessWidget {
-  const _HomeBackgroundPattern();
-
-  @override
-  Widget build(BuildContext context) {
-    
-
-    final stroke = const Color(0xFFF5DDCE);
-
-    return IgnorePointer(
-      child: Stack(
-        children: [
-          Positioned(
-            left: (-154).sw,
-            top: (-14).sh,
-            child: Transform.rotate(
-              angle: 21 * math.pi / 180,
-              child: Container(
-                width: 271.sw,
-                height: 159.sh,
-                decoration: BoxDecoration(
-                  border: Border.all(color: stroke),
-                  borderRadius: BorderRadius.all(
-                    Radius.elliptical(136.sw, 80.sh),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            left: (-149).sw,
-            top: (-100).sh,
-            child: Transform.rotate(
-              angle: 4 * math.pi / 180,
-              child: Container(
-                width: 303.sw,
-                height: 329.sh,
-                decoration: BoxDecoration(
-                  border: Border.all(color: stroke),
-                  borderRadius: BorderRadius.all(
-                    Radius.elliptical(152.sw, 165.sh),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

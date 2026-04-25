@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:hidden_pantry_app/features/user/screens/my_plans.dart';
 import 'package:hidden_pantry_app/features/user/screens/my_subscriptions.dart';
 import 'package:hidden_pantry_app/features/user/screens/my_favourites.dart';
@@ -229,11 +230,9 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     final double topPad = MediaQuery.of(context).padding.top;
     return Scaffold(
       backgroundColor: bg,
-      body: Container(
-        color: bg,
-        child: Stack(
-          children: [
-            const PatternBackground(),
+      body: Stack(
+        children: [
+          const PatternBackground(),
 
             // Content Area (Scrollable below header)
             SafeArea(
@@ -390,7 +389,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 
@@ -603,4 +601,5 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 }
+
 

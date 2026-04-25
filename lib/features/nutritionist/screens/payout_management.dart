@@ -9,6 +9,10 @@ import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:hidden_pantry_app/features/user/services/iap_service.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:hidden_pantry_app/features/user/services/iap_service.dart';
 
 class PayoutManagementScreen extends StatefulWidget {
   const PayoutManagementScreen({super.key});
@@ -32,7 +36,7 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
       backgroundColor: bg,
       body: Stack(
         children: [
-          const Positioned.fill(child: PatternBackground()),
+          const PatternBackground(),
 
           // Decorative corner shapes
           Positioned(
@@ -367,28 +371,22 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
             onTap: () async {
               HapticFeedback.mediumImpact();
               final iap = IAPService();
-              
-              // Helper to handle membership payment
-              void startMembershipFlow() async {
-                 if (iap.products.isEmpty && !isTester) {
+
+              Future<void> startMembershipFlow() async {
+                if (iap.products.isEmpty && !isTester) {
                   await iap.fetchProducts();
                 }
-                
+
                 ProductDetails? product;
                 try {
                   product = iap.products.firstWhere((p) => p.id == IAPService.nutritionistMembershipID);
                 } catch (_) {
-                  // Fallback for tester if product list empty
-                  if (isTester) {
-                    product = ProductDetails(
-                      id: IAPService.nutritionistMembershipID,
-                      title: 'Membership',
-                      description: '',
-                      price: 'Rs. 500',
-                      rawPrice: 500,
-                      currencyCode: 'PKR'
-                    );
-                  }
+                  product = null;
+                }
+
+                if (isTester && product == null) {
+                  await iap.buyTesterProduct(context: context);
+                  return;
                 }
 
                 if (product != null) {
@@ -399,10 +397,9 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
               }
 
               if (isActive) {
-                // Show info or allow early renewal
                 Toaster.show(context, "Your membership is active!");
               } else {
-                startMembershipFlow();
+                await startMembershipFlow();
               }
             },
             child: Container(
@@ -492,6 +489,8 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
     );
   }
 }
+
+
 
 class _FadeSlideEntry extends StatefulWidget {
   final Widget child;

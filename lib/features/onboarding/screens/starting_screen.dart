@@ -207,6 +207,9 @@ class SplashPatternBackground extends StatelessWidget {
       ),
       child: Stack(
         children: [
+          // Dynamic Floating Orbs
+          const _SplashBackgroundPattern(),
+
           Positioned(left: -101.sw, top: 248.sh, child: _ring(w: 372.sw, h: 351.sh, rx: 186.sw, ry: 176.sh)),
           Positioned(left: -298.sw, top: 189.sh, child: _ring(w: 633.sw, h: 470.sh, rx: 317.sw, ry: 235.sh)),
           Positioned(left: -707.sw, top: 54.sh, child: _ring(w: 1111.sw, h: 745.sh, rx: 556.sw, ry: 373.sh)),
@@ -284,6 +287,88 @@ class _LogoText extends StatelessWidget {
       width: 258.sw,
       height: 115.sh,
       fit: BoxFit.contain,
+    );
+  }
+}
+
+class _SplashBackgroundPattern extends StatelessWidget {
+  const _SplashBackgroundPattern();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Stack(
+        children: [
+          Positioned(
+            top: -100.sh,
+            right: -100.sw,
+            child: _SplashFloatingOrb(
+              color: const Color(0xFFFFE0D3).withValues(alpha: 0.5),
+              size: 400,
+              duration: const Duration(seconds: 15),
+            ),
+          ),
+          Positioned(
+            bottom: 100.sh,
+            left: -150.sw,
+            child: _SplashFloatingOrb(
+              color: const Color(0xFFEF8A54).withValues(alpha: 0.1),
+              size: 500,
+              duration: const Duration(seconds: 20),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SplashFloatingOrb extends StatefulWidget {
+  final Color color;
+  final double size;
+  final Duration duration;
+
+  const _SplashFloatingOrb({required this.color, required this.size, required this.duration});
+
+  @override
+  State<_SplashFloatingOrb> createState() => _SplashFloatingOrbState();
+}
+
+class _SplashFloatingOrbState extends State<_SplashFloatingOrb> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration)..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final double angle = _controller.value * 2 * math.pi;
+        return Transform.translate(
+          offset: Offset(math.cos(angle) * 30, math.sin(angle) * 50),
+          child: Container(
+            width: widget.size.sw,
+            height: widget.size.sw,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [widget.color, widget.color.withValues(alpha: 0)],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

@@ -238,31 +238,8 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
               onTap: () => FocusScope.of(context).unfocus(),
               child: Stack(
                 children: [
-                  Positioned.fill(child: Container(color: bg)),
+                  // Branded glassmorphic background
                   const PatternBackground(),
-
-                  // Decorative corner shapes
-                  Positioned(
-                    top: -30.sh, right: -30.sw,
-                    child: Container(width: 120.sw, height: 120.sw,
-                      decoration: BoxDecoration(shape: BoxShape.circle, color: orange.withValues(alpha: 0.06))),
-                  ),
-                  Positioned(
-                    bottom: -40.sh, left: -40.sw,
-                    child: Container(width: 160.sw, height: 160.sw,
-                      decoration: BoxDecoration(shape: BoxShape.circle, color: text.withValues(alpha: 0.04))),
-                  ),
-                  Positioned(
-                    top: 200.sh, left: 16.sw,
-                    child: Container(width: 10.sw, height: 10.sw,
-                      decoration: BoxDecoration(shape: BoxShape.circle, color: orange.withValues(alpha: 0.15))),
-                  ),
-                  Positioned(
-                    top: 320.sh, right: 20.sw,
-                    child: Transform.rotate(angle: math.pi / 4,
-                      child: Container(width: 16.sw, height: 16.sw,
-                        decoration: BoxDecoration(color: text.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(3.sw)))),
-                  ),
 
                   // SCROLLABLE CONTENT
                   SafeArea(

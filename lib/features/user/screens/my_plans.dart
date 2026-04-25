@@ -26,6 +26,21 @@ class MyPlansScreen extends StatelessWidget {
       backgroundColor: bg,
       body: Stack(
         children: [
+          // Background Gradient
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFFFF3EB), Color(0xFFF6DFD1)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                stops: [0.4, 1.0],
+              ),
+            ),
+          ),
+          
+          // Decorative Orbs
+          const _MyPlansBackgroundPattern(),
+
           const PatternBackground(),
 
           // Decorative corner shapes
@@ -271,5 +286,87 @@ class _FadeSlideEntryState extends State<_FadeSlideEntry> with SingleTickerProvi
   Widget build(BuildContext context) {
     return FadeTransition(opacity: _fade,
       child: SlideTransition(position: _slide, child: widget.child));
+  }
+}
+
+class _MyPlansBackgroundPattern extends StatelessWidget {
+  const _MyPlansBackgroundPattern();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Stack(
+        children: [
+          Positioned(
+            top: -50.sh,
+            right: -80.sw,
+            child: _MyPlansFloatingOrb(
+              color: const Color(0xFFFFE0D3).withValues(alpha: 0.5),
+              size: 350,
+              duration: const Duration(seconds: 15),
+            ),
+          ),
+          Positioned(
+            bottom: 50.sh,
+            left: -100.sw,
+            child: _MyPlansFloatingOrb(
+              color: const Color(0xFFEF8A54).withValues(alpha: 0.08),
+              size: 450,
+              duration: const Duration(seconds: 20),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MyPlansFloatingOrb extends StatefulWidget {
+  final Color color;
+  final double size;
+  final Duration duration;
+
+  const _MyPlansFloatingOrb({required this.color, required this.size, required this.duration});
+
+  @override
+  State<_MyPlansFloatingOrb> createState() => _MyPlansFloatingOrbState();
+}
+
+class _MyPlansFloatingOrbState extends State<_MyPlansFloatingOrb> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration)..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final double angle = _controller.value * 2 * 3.14159;
+        return Transform.translate(
+          offset: Offset(math.cos(angle) * 20, math.sin(angle) * 40),
+          child: Container(
+            width: widget.size.sw,
+            height: widget.size.sw,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [widget.color, widget.color.withValues(alpha: 0)],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 }

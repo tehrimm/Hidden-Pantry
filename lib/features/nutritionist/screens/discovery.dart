@@ -154,9 +154,11 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
   @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
-    Widget content = Stack(
-      children: [
-        const PatternBackground(),
+    Widget content = Container(
+      color: widget.inShell ? Colors.transparent : bg,
+      child: Stack(
+        children: [
+          if (!widget.inShell) const PatternBackground(),
         
         // Force the Stack to be at least screen-sized to prevent RenderFlex overflow
         const SizedBox.expand(),
@@ -194,12 +196,13 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
           ),
         ),
       ],
-    );
+    ),
+  );
 
     if (widget.inShell) return content;
 
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: widget.inShell ? Colors.transparent : bg,
       resizeToAvoidBottomInset: false,
       bottomNavigationBar: HpBottomNav(
         currentIndex: _bottomIndex,

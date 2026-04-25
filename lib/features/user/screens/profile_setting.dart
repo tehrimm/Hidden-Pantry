@@ -244,7 +244,21 @@ void _openPreferences() {
               onTap: () => FocusScope.of(context).unfocus(),
               child: Stack(
                 children: [
-                  Positioned.fill(child: Container(color: bg)),
+                  // Background Gradient
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFFFFF3EB), Color(0xFFF6DFD1)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        stops: [0.4, 1.0],
+                      ),
+                    ),
+                  ),
+
+                  // Decorative Orbs
+                  const _UserSettingBackgroundPattern(),
+
                   const PatternBackground(),
 
                   // Decorative corner shapes
@@ -803,6 +817,88 @@ class _FadeSlideEntryState extends State<_FadeSlideEntry> with SingleTickerProvi
         position: _slide,
         child: widget.child,
       ),
+    );
+  }
+}
+
+class _UserSettingBackgroundPattern extends StatelessWidget {
+  const _UserSettingBackgroundPattern();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Stack(
+        children: [
+          Positioned(
+            top: -100.sh,
+            right: -100.sw,
+            child: _UserSettingFloatingOrb(
+              color: const Color(0xFFFFE0D3).withValues(alpha: 0.5),
+              size: 400,
+              duration: const Duration(seconds: 15),
+            ),
+          ),
+          Positioned(
+            bottom: 100.sh,
+            left: -150.sw,
+            child: _UserSettingFloatingOrb(
+              color: const Color(0xFFEF8A54).withValues(alpha: 0.1),
+              size: 500,
+              duration: const Duration(seconds: 20),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _UserSettingFloatingOrb extends StatefulWidget {
+  final Color color;
+  final double size;
+  final Duration duration;
+
+  const _UserSettingFloatingOrb({required this.color, required this.size, required this.duration});
+
+  @override
+  State<_UserSettingFloatingOrb> createState() => _UserSettingFloatingOrbState();
+}
+
+class _UserSettingFloatingOrbState extends State<_UserSettingFloatingOrb> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration)..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final double angle = _controller.value * 2 * math.pi;
+        return Transform.translate(
+          offset: Offset(math.cos(angle) * 30, math.sin(angle) * 50),
+          child: Container(
+            width: widget.size.sw,
+            height: widget.size.sw,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [widget.color, widget.color.withValues(alpha: 0)],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

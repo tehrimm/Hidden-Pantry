@@ -87,39 +87,55 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
   }
 
   void _showEditShareSheet(Recipe recipe) {
+    HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
-      backgroundColor: const Color(0xFFF9E3D5),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(30.sw)),
-      ),
-      builder: (context) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              leading: Icon(Icons.edit_rounded, color: const Color(0xFF462F4D), size: 24.sp),
-              title: Text('Edit Recipe', style: TextStyle(color: const Color(0xFF462F4D), fontFamily: 'Satoshi', fontSize: 16.sp)),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => UploadRecipeStep1(editingRecipe: recipe),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.share_rounded, color: const Color(0xFF462F4D), size: 24.sp),
-              title: Text('Share Recipe', style: TextStyle(color: const Color(0xFF462F4D), fontFamily: 'Satoshi', fontSize: 16.sp)),
-              onTap: () {
-                Navigator.pop(context);
-                _showShareOptions(recipe);
-              },
-            ),
-          ],
-        ),
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => _modernActionSheet(
+        title: "Recipe Options",
+        subtitle: recipe.name,
+        actions: [
+          _actionItem(
+            icon: Icons.edit_rounded,
+            label: "Edit Recipe",
+            color: orange,
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => UploadRecipeStep1(editingRecipe: recipe)),
+              );
+            },
+          ),
+          _actionItem(
+            icon: Icons.share_rounded,
+            label: "Share Recipe",
+            color: const Color(0xFF7B61FF),
+            onTap: () {
+              Navigator.pop(context);
+              _showShareOptions(recipe);
+            },
+          ),
+          _actionItem(
+            icon: recipe.isPublic ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+            label: recipe.isPublic ? "Make Private" : "Make Public",
+            color: purple,
+            onTap: () {
+              Navigator.pop(context);
+              _toggleVisibility(recipe);
+            },
+          ),
+          _actionItem(
+            icon: Icons.delete_outline_rounded,
+            label: "Delete Recipe",
+            color: Colors.red,
+            onTap: () {
+              Navigator.pop(context);
+              _confirmDelete(recipe);
+            },
+          ),
+        ],
       ),
     );
   }
@@ -184,96 +200,70 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
   }
 
   void _showManagementOptions(Recipe recipe) {
+    HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: EdgeInsets.all(24.sw),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28.sw)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 50.sw, height: 5.sh,
-              decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(3.sw)),
-            ),
-            SizedBox(height: 24.sh),
-            Text(
-              "Manage Recipe",
-              style: TextStyle(color: purple, fontSize: 20.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
-            ),
-            SizedBox(height: 24.sh),
-            ListTile(
-              leading: Icon(Icons.edit_rounded, color: orange, size: 24.sp),
-              title: Text("Edit Recipe", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp)),
-              onTap: () {
-                Navigator.pop(context);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => UploadRecipeStep1(editingRecipe: recipe),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.delete_outline_rounded, color: Colors.red, size: 24.sp),
-              title: Text("Delete Recipe", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 16.sp)),
-              onTap: () {
-                Navigator.pop(context);
-                _confirmDelete(recipe);
-              },
-            ),
-          ],
-        ),
+      isScrollControlled: true,
+      builder: (context) => _modernActionSheet(
+        title: "Manage Recipe",
+        subtitle: recipe.name,
+        actions: [
+          _actionItem(
+            icon: Icons.edit_rounded,
+            label: "Edit Recipe",
+            color: orange,
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => UploadRecipeStep1(editingRecipe: recipe)),
+              );
+            },
+          ),
+          _actionItem(
+            icon: Icons.delete_outline_rounded,
+            label: "Delete Recipe",
+            color: Colors.red,
+            onTap: () {
+              Navigator.pop(context);
+              _confirmDelete(recipe);
+            },
+          ),
+        ],
       ),
     );
   }
 
   void _showShareOptions(Recipe recipe) {
+    HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: EdgeInsets.all(24.sw),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(28.sw)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 50.sw, height: 5.sh,
-              decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(3.sw)),
-            ),
-            SizedBox(height: 24.sh),
-            Text(
-              "Share Recipe",
-              style: TextStyle(color: purple, fontSize: 20.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
-            ),
-            SizedBox(height: 24.sh),
-            ListTile(
-              leading: Icon(Icons.chat_bubble_outline_rounded, color: orange, size: 24.sp),
-              title: Text("Share with Clients", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp)),
-              onTap: () {
-                Navigator.pop(context);
-                _showSelectClientSheet(recipe);
-              },
-            ),
-            ListTile(
-              leading: Icon(Icons.dynamic_feed_rounded, color: orange, size: 24.sp),
-              title: Text("Post to Wall", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp)),
-              onTap: () {
-                Navigator.pop(context);
-                _shareToWall(recipe);
-              },
-            ),
-          ],
-        ),
+      isScrollControlled: true,
+      builder: (context) => _modernActionSheet(
+        title: "Share Recipe",
+        subtitle: "Select how to share",
+        actions: [
+          _actionItem(
+            icon: Icons.chat_bubble_outline_rounded,
+            label: "Share with Clients",
+            color: orange,
+            onTap: () {
+              Navigator.pop(context);
+              _showSelectClientSheet(recipe);
+            },
+          ),
+          _actionItem(
+            icon: Icons.dynamic_feed_rounded,
+            label: "Post to Wall",
+            color: const Color(0xFF7B61FF),
+            onTap: () {
+              Navigator.pop(context);
+              _shareToWall(recipe);
+            },
+          ),
+        ],
       ),
     );
   }
@@ -373,33 +363,39 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
         height: MediaQuery.of(context).size.height * 0.75,
         decoration: BoxDecoration(
           color: bg,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30.sw)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32.sw)),
+          boxShadow: [
+            BoxShadow(color: purple.withValues(alpha: 0.1), blurRadius: 40, offset: const Offset(0, -10)),
+          ],
         ),
         child: Column(
           children: [
+            SizedBox(height: 12.sh),
             Container(
-              margin: EdgeInsets.only(top: 10.sh, bottom: 20.sh),
-              width: 50.sw, height: 5.sh,
-              decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(3.sw)),
+              width: 40.sw, height: 4.sh,
+              decoration: BoxDecoration(color: purple.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(2.sw)),
             ),
-            Text("Select Client to Share With", style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.bold)),
-            SizedBox(height: 16.sh),
+            SizedBox(height: 24.sh),
+            Text("Share with Client", style: TextStyle(color: purple, fontSize: 20.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
+            SizedBox(height: 4.sh),
+            Text("Select a client from your subscriptions", style: TextStyle(color: purple.withValues(alpha: 0.4), fontSize: 13.sp, fontWeight: FontWeight.w500)),
+            SizedBox(height: 24.sh),
             Expanded(
               child: FutureBuilder<List<Map<String, dynamic>>>(
                 future: _fetchClientsForShare(user.uid),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Center(child: CircularProgressIndicator(color: orange));
+                    return Center(child: CircularProgressIndicator(color: orange, strokeWidth: 2.sw));
                   }
                   if (snapshot.hasError) {
-                    return const Center(child: Text("Error loading clients"));
+                    return Center(child: Text("Error loading clients", style: TextStyle(color: purple.withValues(alpha: 0.5))));
                   }
 
                   final clients = snapshot.data ?? [];
-                  if (clients.isEmpty) return const Center(child: Text("No clients found with matching benefits."));
+                  if (clients.isEmpty) return Center(child: Text("No clients found with matching benefits.", style: TextStyle(color: purple.withValues(alpha: 0.4))));
 
                   return ListView.separated(
-                    padding: EdgeInsets.all(20.sw),
+                    padding: EdgeInsets.fromLTRB(24.sw, 0, 24.sw, 40.sh),
                     itemCount: clients.length,
                     separatorBuilder: (_, __) => SizedBox(height: 12.sh),
                     itemBuilder: (context, index) {
@@ -409,61 +405,78 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                       final otherUserPhoto = client["photoUrl"] as String?;
                       final chatId = client["chatId"] as String;
 
-                      return ListTile(
-                        onTap: () async {
-                           try {
-                             await FirebaseFirestore.instance
-                               .collection("chats")
-                               .doc(chatId)
-                               .collection("messages")
-                               .add({
-                                 "senderId": user.uid,
-                                 "type": "recipe_share",
-                                 "recipeId": recipe.id,
-                                 "recipeName": recipe.name,
-                                 "recipeImage": recipe.imageUrl,
-                                 "timestamp": FieldValue.serverTimestamp(),
-                                 "read": false,
-                               });
-                             
-                             await FirebaseFirestore.instance.collection("chats").doc(chatId).set({
-                               "lastMessage": "Shared a recipe: ${recipe.name}",
-                               "lastMessageTime": FieldValue.serverTimestamp(),
-                               "userUnread": FieldValue.increment(1),
-                               "nutritionistUnread": 0,
-                               "participants": FieldValue.arrayUnion([user.uid, otherUserId]),
-                             }, SetOptions(merge: true));
+                      return _FadeSlideEntry(
+                        delayMs: 50 * index,
+                        child: Material(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          borderRadius: BorderRadius.circular(20.sw),
+                          child: InkWell(
+                            onTap: () async {
+                              HapticFeedback.mediumImpact();
+                               try {
+                                 await FirebaseFirestore.instance
+                                   .collection("chats")
+                                   .doc(chatId)
+                                   .collection("messages")
+                                   .add({
+                                     "senderId": user.uid,
+                                     "type": "recipe_share",
+                                     "recipeId": recipe.id,
+                                     "recipeName": recipe.name,
+                                     "recipeImage": recipe.imageUrl,
+                                     "timestamp": FieldValue.serverTimestamp(),
+                                     "read": false,
+                                   });
+                                 
+                                 await FirebaseFirestore.instance.collection("chats").doc(chatId).set({
+                                   "lastMessage": "Shared a recipe: ${recipe.name}",
+                                   "lastMessageTime": FieldValue.serverTimestamp(),
+                                   "userUnread": FieldValue.increment(1),
+                                   "nutritionistUnread": 0,
+                                   "participants": FieldValue.arrayUnion([user.uid, otherUserId]),
+                                 }, SetOptions(merge: true));
 
-                             if (context.mounted) {
-                               Navigator.pop(context);
-                               Toaster.show(context, "Recipe sent to $otherUserName");
-                             }
-                           } catch (e) {
-                             if (context.mounted) {
-                               Toaster.show(context, "Error sharing recipe: $e", isError: true);
-                             }
-                           }
-                        },
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 8.sh),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16.sw),
-                          side: BorderSide(color: purple.withValues(alpha:0.05)),
-                        ),
-                        tileColor: Colors.white,
-                        leading: CircleAvatar(
-                          radius: 24.sw,
-                          backgroundColor: purple.withValues(alpha:0.1),
-                          backgroundImage: otherUserPhoto != null ? NetworkImage(otherUserPhoto) : null,
-                          child: otherUserPhoto == null ? Icon(Icons.person, color: purple, size: 24.sp) : null,
-                        ),
-                        title: Text(otherUserName, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp)),
-                        trailing: Container(
-                          padding: EdgeInsets.all(8.sw),
-                          decoration: BoxDecoration(
-                            color: orange.withValues(alpha:0.1),
-                            shape: BoxShape.circle,
+                                 if (context.mounted) {
+                                   Navigator.pop(context);
+                                   Toaster.show(context, "Recipe sent to $otherUserName");
+                                 }
+                               } catch (e) {
+                                 if (context.mounted) {
+                                   Toaster.show(context, "Error sharing recipe: $e", isError: true);
+                                 }
+                               }
+                            },
+                            borderRadius: BorderRadius.circular(20.sw),
+                            child: Container(
+                              padding: EdgeInsets.all(16.sw),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(20.sw),
+                                border: Border.all(color: Colors.white, width: 1.5),
+                              ),
+                              child: Row(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 24.sw,
+                                    backgroundColor: purple.withValues(alpha:0.05),
+                                    backgroundImage: otherUserPhoto != null ? NetworkImage(otherUserPhoto) : null,
+                                    child: otherUserPhoto == null ? Icon(Icons.person, color: purple.withValues(alpha: 0.3), size: 24.sp) : null,
+                                  ),
+                                  SizedBox(width: 16.sw),
+                                  Expanded(
+                                    child: Text(otherUserName, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16.sp)),
+                                  ),
+                                  Container(
+                                    padding: EdgeInsets.all(10.sw),
+                                    decoration: BoxDecoration(
+                                      color: orange.withValues(alpha:0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(Icons.send_rounded, color: orange, size: 18.sp),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                          child: Icon(Icons.send_rounded, color: orange, size: 20.sp),
                         ),
                       );
                     },
@@ -682,6 +695,99 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
           },
         );
       },
+    );
+  }
+
+  Widget _modernActionSheet({
+    required String title,
+    required String subtitle,
+    required List<Widget> actions,
+  }) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 24.sw, vertical: 20.sh),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32.sw)),
+        boxShadow: [
+          BoxShadow(color: purple.withValues(alpha: 0.1), blurRadius: 40, offset: const Offset(0, -10)),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 40.sw, height: 4.sh,
+            decoration: BoxDecoration(color: purple.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(2.sw)),
+          ),
+          SizedBox(height: 24.sh),
+          Text(title, style: TextStyle(color: purple, fontSize: 20.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
+          SizedBox(height: 4.sh),
+          Text(subtitle, style: TextStyle(color: purple.withValues(alpha: 0.4), fontSize: 13.sp, fontWeight: FontWeight.w500, fontFamily: "Satoshi")),
+          SizedBox(height: 32.sh),
+          ...actions.asMap().entries.map((entry) {
+            final index = entry.key;
+            final action = entry.value;
+            return _FadeSlideEntry(
+              delayMs: 50 * index,
+              child: action,
+            );
+          }),
+          SizedBox(height: 12.sh),
+        ],
+      ),
+    );
+  }
+
+  Widget _actionItem({
+    required IconData icon,
+    required String label,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12.sh),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () {
+            HapticFeedback.selectionClick();
+            onTap();
+          },
+          borderRadius: BorderRadius.circular(20.sw),
+          child: Container(
+            padding: EdgeInsets.all(16.sw),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(20.sw),
+              border: Border.all(color: color.withValues(alpha: 0.1), width: 1),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(10.sw),
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12.sw),
+                  ),
+                  child: Icon(icon, color: color, size: 20.sw),
+                ),
+                SizedBox(width: 16.sw),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: color == Colors.red ? Colors.red : purple,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 16.sp,
+                    fontFamily: "Satoshi",
+                  ),
+                ),
+                const Spacer(),
+                Icon(Icons.arrow_forward_ios_rounded, color: color.withValues(alpha: 0.3), size: 14.sw),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

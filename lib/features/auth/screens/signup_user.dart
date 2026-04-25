@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -249,6 +250,21 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
         resizeToAvoidBottomInset: false,
         body: Stack(
           children: [
+            // Background Gradient
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFFF3EB), Color(0xFFF6DFD1)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  stops: [0.4, 1.0],
+                ),
+              ),
+            ),
+
+            // Decorative Orbs
+            const _AuthBackgroundPattern(),
+
             const PatternBackground(),
             Column(
               children: [
@@ -771,13 +787,95 @@ class _SocialBtn extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFFF9E3D5),
               borderRadius: BorderRadius.circular(20.sw),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+              border: Border.all(color: Colors.white, width: 1.5),
             ),
             alignment: Alignment.center,
             child: Image.asset(icon, width: iconW, height: iconH, fit: BoxFit.contain),
           ),
         ),
       ),
+    );
+  }
+}
+
+class _AuthBackgroundPattern extends StatelessWidget {
+  const _AuthBackgroundPattern();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Stack(
+        children: [
+          Positioned(
+            top: -100.sh,
+            right: -100.sw,
+            child: _AuthFloatingOrb(
+              color: const Color(0xFFFFE0D3).withValues(alpha: 0.5),
+              size: 400,
+              duration: const Duration(seconds: 15),
+            ),
+          ),
+          Positioned(
+            bottom: 100.sh,
+            left: -150.sw,
+            child: _AuthFloatingOrb(
+              color: const Color(0xFFEF8A54).withValues(alpha: 0.1),
+              size: 500,
+              duration: const Duration(seconds: 20),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AuthFloatingOrb extends StatefulWidget {
+  final Color color;
+  final double size;
+  final Duration duration;
+
+  const _AuthFloatingOrb({required this.color, required this.size, required this.duration});
+
+  @override
+  State<_AuthFloatingOrb> createState() => _AuthFloatingOrbState();
+}
+
+class _AuthFloatingOrbState extends State<_AuthFloatingOrb> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: widget.duration)..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final double angle = _controller.value * 2 * math.pi;
+        return Transform.translate(
+          offset: Offset(math.cos(angle) * 30, math.sin(angle) * 50),
+          child: Container(
+            width: widget.size.sw,
+            height: widget.size.sw,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [widget.color, widget.color.withValues(alpha: 0)],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

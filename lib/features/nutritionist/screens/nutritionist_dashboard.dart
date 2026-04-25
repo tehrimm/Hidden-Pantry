@@ -841,7 +841,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
         SizedBox(height: 32.sh),
         _upcomingAppointments(),
         SizedBox(height: 32.sh),
-        _clientInsights(),
+        _recentReviewsSection(),
         SizedBox(height: 120.sh), // Spacing for bottom nav
       ],
     );
@@ -888,6 +888,31 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
             ),
             SizedBox(width: 16.sw),
             Expanded(
+              child: StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance.collection("nutritionists").doc(uid).snapshots(),
+                builder: (context, snap) {
+                  final data = snap.data?.data() as Map<String, dynamic>? ?? {};
+                  final double ratingSum = (data['total_rating_sum'] ?? 0.0).toDouble();
+                  final int reviewCount = (data['total_review_count'] ?? 0);
+                  double avg = 0.0;
+                  if (reviewCount > 0) avg = ratingSum / reviewCount;
+                  
+                  return _animatedStatCard(
+                    label: "Professional Rating", 
+                    value: avg > 0 ? avg.toStringAsFixed(1) : "0.0", 
+                    icon: Icons.star_rounded,
+                    subtitle: "$reviewCount reviews total",
+                    delay: 200,
+                  );
+                }
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
                     .collection("nutritionists")
@@ -900,7 +925,26 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                     label: "Total Plans", 
                     value: count.toString(), 
                     icon: Icons.restaurant_menu_rounded,
-                    delay: 200,
+                    delay: 250,
+                  );
+                }
+              ),
+            ),
+            SizedBox(width: 16.sw),
+            Expanded(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection("nutritionists")
+                    .doc(uid)
+                    .collection("tips")
+                    .snapshots(),
+                builder: (context, snap) {
+                  final count = snap.data?.docs.length ?? 0;
+                  return _animatedStatCard(
+                    label: "Community Posts", 
+                    value: count.toString(), 
+                    icon: Icons.add_box_outlined,
+                    delay: 300,
                   );
                 }
               ),
@@ -2327,6 +2371,135 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
             }
           }
         },
+      ),
+    );
+  }
+
+  Widget _recentReviewsSection() {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Recent Reviews",
+          style: TextStyle(
+            color: purple,
+            fontSize: 22.sp,
+            fontWeight: FontWeight.w900,
+            fontFamily: "Satoshi",
+          ),
+        ),
+        SizedBox(height: 16.sh),
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection("reviews")
+              .where("authorId", isEqualTo: uid)
+              .orderBy("createdAt", descending: true)
+              .limit(5)
+              .snapshots(),
+          builder: (context, snap) {
+            if (snap.connectionState == ConnectionState.waiting) {
+              return Center(child: Padding(
+                padding: EdgeInsets.all(20.sw),
+                child: CircularProgressIndicator(color: orange, strokeWidth: 2.sw),
+              ));
+            }
+
+            if (!snap.hasData || snap.data!.docs.isEmpty) {
+              return Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 24.sh),
+                decoration: BoxDecoration(
+                  color: orange.withValues(alpha: 0.05),
+                  borderRadius: BorderRadius.circular(24.sw),
+                  border: Border.all(color: orange.withValues(alpha: 0.1), width: 1.sw),
+                ),
+                child: Column(
+                  children: [
+                    Icon(Icons.rate_review_outlined, color: orange.withValues(alpha: 0.2), size: 40.sw),
+                    SizedBox(height: 12.sh),
+                    Text("No reviews yet", style: TextStyle(color: purple.withValues(alpha: 0.4), fontSize: 14.sp, fontWeight: FontWeight.bold)),
+                  ],
+                ),
+              );
+            }
+
+            return Column(
+              children: snap.data!.docs.map((doc) {
+                final data = doc.data() as Map<String, dynamic>;
+                return _reviewListItem(data);
+              }).toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _reviewListItem(Map<String, dynamic> data) {
+    final double rating = (data['rating'] ?? 0.0).toDouble();
+    final String userName = data['userName'] ?? "Anonymous";
+    final String comment = data['comment'] ?? "";
+    final Timestamp? time = data['createdAt'] as Timestamp?;
+    final String userImg = data['userImageUrl'] ?? "";
+
+    return Container(
+      margin: EdgeInsets.only(bottom: 12.sh),
+      padding: EdgeInsets.all(16.sw),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(20.sw),
+        border: Border.all(color: Colors.white, width: 1),
+        boxShadow: [
+          BoxShadow(color: purple.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                radius: 18.sw,
+                backgroundColor: const Color(0xFFF9E3D5),
+                backgroundImage: (userImg.isNotEmpty && userImg.startsWith("http")) ? NetworkImage(userImg) : null,
+                child: (userImg.isEmpty || !userImg.startsWith("http")) ? Icon(Icons.person, size: 18.sw, color: orange) : null,
+              ),
+              SizedBox(width: 12.sw),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(userName, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14.sp)),
+                    Row(
+                      children: List.generate(5, (i) => Icon(
+                        i < rating.floor() ? Icons.star_rounded : Icons.star_border_rounded,
+                        color: orange,
+                        size: 14.sw,
+                      )),
+                    ),
+                  ],
+                ),
+              ),
+              if (time != null)
+                Text(
+                  "${time.toDate().day}/${time.toDate().month}",
+                  style: TextStyle(color: purple.withValues(alpha: 0.4), fontSize: 11.sp),
+                ),
+            ],
+          ),
+          if (comment.isNotEmpty) ...[
+            SizedBox(height: 10.sh),
+            Text(
+              comment,
+              style: TextStyle(color: purple.withValues(alpha: 0.8), fontSize: 13.sp, height: 1.4),
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
       ),
     );
   }
