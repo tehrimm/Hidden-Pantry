@@ -42,7 +42,6 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
   String? fullName;
   String? photoUrl;
   bool loadingProfile = true;
-  String saasStatus = "active"; // Default to avoid flashing warning
 
   @override
   void initState() {
@@ -65,7 +64,6 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
         setState(() {
           fullName = data?['fullName'] ?? user.displayName ?? "Nutritionist";
           photoUrl = data?['photoUrl'] ?? user.photoURL;
-          saasStatus = data?['saasStatus'] ?? "unpaid";
           loadingProfile = false;
         });
       }
@@ -776,7 +774,6 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
   }
 
   Widget _dashboardHome() {
-    final bool isSaaSInactive = saasStatus != "active";
     final hour = DateTime.now().hour;
     String greeting = "Good morning";
     if (hour >= 12 && hour < 17) greeting = "Good afternoon";
@@ -786,21 +783,6 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
       padding: EdgeInsets.symmetric(horizontal: 22.sw),
       physics: const BouncingScrollPhysics(),
       children: [
-        if (isSaaSInactive && !loadingProfile) ...[
-          SizedBox(height: 12.sh),
-          TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0.0, end: 1.0),
-            duration: const Duration(milliseconds: 600),
-            builder: (context, value, child) => Opacity(
-              opacity: value,
-              child: Transform.translate(
-                offset: Offset(0, 20 * (1 - value)),
-                child: child,
-              ),
-            ),
-            child: _saasWarningBanner(),
-          ),
-        ],
         SizedBox(height: 20.sh),
         TweenAnimationBuilder<double>(
           tween: Tween(begin: 0.0, end: 1.0),
@@ -1965,56 +1947,6 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
 
   
 
-  Widget _saasWarningBanner() {
-    return Container(
-      padding: EdgeInsets.all(16.sw),
-      decoration: BoxDecoration(
-        color: orange.withValues(alpha:0.1),
-        borderRadius: BorderRadius.circular(20.sw),
-        border: Border.all(color: orange.withValues(alpha:0.3)),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: orange, size: 20.sw),
-              SizedBox(width: 12.sw),
-              Expanded(
-                child: Text(
-                  "Platform Membership Inactive",
-                  style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14.sp),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 8.sh),
-          Text(
-            "Your profile is currently hidden from users. Pay the monthly fee to activate your listing.",
-            style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 12.sp),
-          ),
-          SizedBox(height: 12.sh),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const PayoutManagementScreen()),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: orange,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.sw)),
-                elevation: 0,
-              ),
-              child: Text("Resolve Now", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13.sp)),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
   
 

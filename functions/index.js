@@ -452,7 +452,7 @@ exports.createNutritionistCheckout = onCall({ secrets: [stripeSecret] }, async (
             discounts,
             subscription_data: {
                 trial_end: trialEnd, // Used for Downgrades: no charge until this date
-                application_fee_percent: 10.0, // Platform cut (e.g., 10%)
+                application_fee_percent: 10.0, // 10% Platform commission cut for Hidden Pantry
                 transfer_data: { destination: stripeAccountId },
                 metadata: {
                     subscriptionDocId: subDoc.id,

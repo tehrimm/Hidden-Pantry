@@ -244,10 +244,9 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
 
         for (final data in enriched) {
           final id = data['_id'] as String;
-          final saasStatus = data['saasStatus'] ?? 'unpaid';
           if (_subscribedIds.contains(id)) {
             subscribedList.add(data);
-          } else if (saasStatus == 'active') {
+          } else {
             othersList.add(data);
           }
         }
