@@ -176,7 +176,8 @@ class ReviewsScreen extends StatelessWidget {
                     radius: 18.sw,
                     backgroundColor: purple.withValues(alpha:0.1),
                     backgroundImage: (userImageUrl.trim().isNotEmpty && userImageUrl.startsWith("http")) ? NetworkImage(userImageUrl) : null,
-                    child: (userImageUrl.trim().isEmpty || !userImageUrl.startsWith("http")) ? Icon(Icons.person, color: purple, size: 18.sp) : null,
+                    onBackgroundImageError: (_, __) {},
+                    child: Icon(Icons.person_rounded, color: purple, size: 18.sp),
                   ),
                   SizedBox(width: 12.sw),
                   Expanded(
@@ -446,9 +447,8 @@ class _ReviewCardState extends State<_ReviewCard> {
                 backgroundImage: (userImageUrl != null && userImageUrl.toString().trim().isNotEmpty && userImageUrl.toString().startsWith("http"))
                     ? NetworkImage(userImageUrl.toString())
                     : null,
-                child: (userImageUrl == null || userImageUrl.toString().trim().isEmpty || !userImageUrl.toString().startsWith("http"))
-                    ? Icon(Icons.person, color: widget.purple, size: 18.sp)
-                    : null,
+                onBackgroundImageError: (_, __) {},
+                child: Icon(Icons.person_rounded, color: widget.purple, size: 18.sp),
               ),
               SizedBox(width: 12.sw),
               Expanded(
@@ -701,9 +701,8 @@ class _ReplyItem extends StatelessWidget {
             backgroundImage: (userImageUrl != null && userImageUrl.trim().isNotEmpty && userImageUrl.startsWith("http"))
                 ? NetworkImage(userImageUrl)
                 : null,
-            child: (userImageUrl == null || userImageUrl.trim().isEmpty || !userImageUrl.startsWith("http"))
-                ? Icon(Icons.person, color: purple, size: 12.sp)
-                : null,
+            onBackgroundImageError: (_, __) {},
+            child: Icon(Icons.person_rounded, color: purple, size: 12.sp),
           ),
           SizedBox(width: 10.sw),
           Expanded(

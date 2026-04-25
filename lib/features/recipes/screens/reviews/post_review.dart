@@ -274,9 +274,25 @@ class _PostReviewScreenState extends State<PostReviewScreen> with TickerProvider
                       boxShadow: [BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 10)],
                     ),
                     child: ClipOval(
-                      child: (userImageUrl.startsWith("http")) 
-                        ? Image.network(userImageUrl, fit: BoxFit.cover) 
-                        : Icon(Icons.person, color: const Color(0xFFEF8A54)),
+                      child: (userImageUrl.isNotEmpty && userImageUrl.startsWith("http")) 
+                        ? Image.network(
+                            userImageUrl, 
+                            fit: BoxFit.cover,
+                            width: 48.sw,
+                            height: 48.sw,
+                            errorBuilder: (_, __, ___) => Container(
+                              width: 48.sw,
+                              height: 48.sw,
+                              color: const Color(0xFF462F4D).withValues(alpha: 0.1),
+                              child: Icon(Icons.person_rounded, color: const Color(0xFF462F4D), size: 24.sw),
+                            ),
+                          ) 
+                        : Container(
+                            width: 48.sw,
+                            height: 48.sw,
+                            color: const Color(0xFF462F4D).withValues(alpha: 0.1),
+                            child: Icon(Icons.person_rounded, color: const Color(0xFF462F4D), size: 24.sw),
+                          ),
                     ),
                   ),
                   SizedBox(width: 16.sw),

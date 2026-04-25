@@ -7,6 +7,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'dart:ui' as ui;
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/reviews/post_review.dart';
+import 'package:hidden_pantry_app/features/recipes/screens/reviews/reviews.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/core/utils/ingredient_icon_mapper.dart';
@@ -736,13 +737,41 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
     return res ?? false;
   }
 
-  void _openReview() {
-    Navigator.push(
+  void _openReview() async {
+    // Stop TTS and mic before navigating to review
+    await _tts.stop();
+    if (mounted) setState(() => _isPlaying = false);
+
+    if (_isVoiceEnabled) {
+      await _speech.cancel();
+      _stopListenLoop();
+    }
+
+    if (!mounted) return;
+
+    final reviewPosted = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => PostReviewScreen(recipe: widget.recipe),
       ),
     );
+
+    if (reviewPosted == true && mounted) {
+      // Review was posted — exit cooking mode and go to Tips & Photos
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ReviewsScreen(recipe: widget.recipe),
+        ),
+      );
+      return;
+    }
+
+    // User came back without posting — resume voice mode
+    if (mounted && _isVoiceEnabled && !_isManuallyStopped) {
+      _startListenLoop();
+      _safeRestartListening();
+    }
   }
 
   @override

@@ -492,12 +492,15 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
     
     // Add DB/Consolidated cookbooks
     for (var data in consolidatedCookbooks) {
+      final title = data['title']?.toString() ?? '';
+      final isFavorite = data['isDefault'] == true || title.toLowerCase() == 'favorite';
       cards.add(_buildCookbookCard(
         id: data['id'],
         title: data['title'],
         description: data['description'],
         recipeIds: List<String>.from(data['recipeIds'] ?? []),
         imageUrl: data['imageUrl'],
+        isDefault: isFavorite,
       ));
     }
     
