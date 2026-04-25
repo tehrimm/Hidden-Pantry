@@ -609,8 +609,16 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
             child: SizedBox(
               width: 80.sw, height: 80.sw,
               child: _photoUrl != null
-                  ? Image.network(_photoUrl!, fit: BoxFit.cover)
-                  : Image.asset('assets/logos/profile_placeholder.png', scale: 2),
+                  ? Image.network(
+                      _photoUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Center(
+                        child: Icon(Icons.person_rounded, color: purple, size: 40.sw),
+                      ),
+                    )
+                  : Center(
+                      child: Icon(Icons.person_rounded, color: purple, size: 40.sw),
+                    ),
             ),
           ),
         ),

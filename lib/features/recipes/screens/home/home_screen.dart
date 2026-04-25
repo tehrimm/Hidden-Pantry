@@ -813,22 +813,12 @@ void _openUserProfile() {
                     ? Image.network(
                         displayUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => Padding(
-                          padding: EdgeInsets.all(12.sw),
-                          child: Image.asset(
-                            "assets/icons/users.png", 
-                             color: purple,
-                             fit: BoxFit.contain,
-                          ),
+                        errorBuilder: (_, __, ___) => Center(
+                          child: Icon(Icons.person_rounded, color: purple, size: 28.sw),
                         ),
                       )
-                    : Padding(
-                        padding: EdgeInsets.all(12.sw),
-                        child: Image.asset(
-                          "assets/icons/users.png",
-                          color: purple,
-                          fit: BoxFit.contain,
-                        ),
+                    : Center(
+                        child: Icon(Icons.person_rounded, color: purple, size: 28.sw),
                       ),
               ),
             ),
