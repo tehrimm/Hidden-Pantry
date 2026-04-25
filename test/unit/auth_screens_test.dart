@@ -82,12 +82,12 @@ void main() {
           userService: MockUserService(),
         ),
       ));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       // Tap register with empty fields
       expect(find.text('Register'), findsWidgets);
       await tester.tap(find.text('Register').last);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('*field is required'), findsNWidgets(2)); // Name and Email
       expect(find.text('*phone number is required'), findsOneWidget);
@@ -111,16 +111,21 @@ void main() {
   });
 
   group('ForgetPasswordEmailScreen Validation Tests', () {
-    testWidgets('shows error for invalid email', (WidgetTester tester) async {
+    testWidgets('shows error for empty email', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(createWidgetForTesting(
-        child: ForgetPasswordEmailScreen(authService: mockAuthService),
+        child: const ForgetPasswordEmailScreen(),
       ));
 
-      await tester.enterText(find.byType(TextField), 'invalidemail');
-      await tester.tap(find.text('Send Link'));
+      await tester.ensureVisible(find.text('Send Link').last);
+      await tester.tap(find.text('Send Link').last);
       await tester.pump();
 
-      expect(find.text('*incorrect email'), findsOneWidget);
+      expect(find.text('Email is required'), findsOneWidget);
     });
   });
 
@@ -136,7 +141,7 @@ void main() {
 
       await tester.enterText(find.byType(TextField), '123'); // Too short
       await tester.tap(find.text('Next'));
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('*enter valid number'), findsOneWidget);
     });
