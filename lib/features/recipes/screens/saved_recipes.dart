@@ -562,13 +562,13 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: isDefault ? Colors.redAccent.withValues(alpha: 0.1) : const Color(0xFFD9D9D9),
-                        image: (imageUrl != null && imageUrl.trim().isNotEmpty)
+                        image: (!isDefault && imageUrl != null && imageUrl.trim().isNotEmpty)
                             ? DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover)
                             : null,
                       ),
-                      child: (imageUrl == null && isDefault)
+                      child: isDefault
                         ? Icon(Icons.favorite_rounded, color: Colors.redAccent, size: 30.sp)
-                        : (imageUrl == null && !isDefault) 
+                        : (imageUrl == null || imageUrl.trim().isEmpty) 
                           ? Icon(Icons.restaurant_menu, color: purple.withValues(alpha:0.5), size: 30.sp)
                           : null,
                     ),

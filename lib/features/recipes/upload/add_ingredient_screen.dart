@@ -25,7 +25,7 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
   final Color cardBg = const Color(0xFFF9E3D5);
   final Color bg = const Color(0xFFFFF3EB);
   final List<String> _units = [
-    'tsp','tbsp','cup','ml','l','g','kg','pinch','dash','slice','piece'
+    'tsp','tbsp','cup','ml','l','g','kg','pinch','dash','slice','piece','clove','stalk',' sprig','oz','lb','pint','quart','gallon','large','medium','small','stick','head','bunch'
   ];
   String? _unit;
 

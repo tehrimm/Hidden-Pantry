@@ -47,7 +47,7 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
   }
 
   void _scrollToBottom() {
-    if (_scrollController.hasClients) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       Future.delayed(const Duration(milliseconds: 100), () {
         if (_scrollController.hasClients) {
           _scrollController.animateTo(
@@ -57,7 +57,7 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
           );
         }
       });
-    }
+    });
   }
 
   @override
@@ -66,6 +66,10 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
     
     return Scaffold(
       backgroundColor: _bg,
+      bottomNavigationBar: SafeArea(
+        top: false,
+        child: _buildFooter(context),
+      ),
       body: Stack(
         children: [
           const PatternBackground(),
@@ -83,13 +87,13 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
           ),
 
           SafeArea(
+            bottom: false,
             child: Column(
               children: [
                 _buildHeader(context),
                 Expanded(
                   child: SingleChildScrollView(
                     controller: _scrollController,
-                    physics: const BouncingScrollPhysics(),
                     padding: EdgeInsets.symmetric(horizontal: 24.sw),
                     child: Column(
                       children: [
@@ -108,7 +112,6 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
                     ),
                   ),
                 ),
-                _buildFooter(context),
               ],
             ),
           ),
