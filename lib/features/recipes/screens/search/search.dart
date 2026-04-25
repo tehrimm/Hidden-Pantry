@@ -603,17 +603,17 @@ class _SearchScreenState extends State<SearchScreen> {
               curve: Curves.easeOutCubic,
               height: 54,
               decoration: BoxDecoration(
-                color: isFocused ? Colors.white : const Color(0xFFFDECE4),
+                color: isFocused ? Colors.white : Colors.white.withValues(alpha: 0.6),
                 borderRadius: BorderRadius.circular(27),
                 boxShadow: [
                   BoxShadow(
-                    color: purple.withValues(alpha: isFocused ? 0.12 : 0.0),
-                    blurRadius: 15,
-                    offset: const Offset(0, 4),
+                    color: purple.withValues(alpha: 0.08),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
                   ),
                 ],
                 border: Border.all(
-                  color: isFocused ? orange.withValues(alpha: 0.3) : Colors.transparent,
+                  color: isFocused ? orange.withValues(alpha: 0.4) : Colors.white,
                   width: 1.5,
                 ),
               ),
@@ -690,9 +690,15 @@ class _SearchScreenState extends State<SearchScreen> {
                     child: Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF9E3D5),
+                        color: Colors.white.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: Colors.white, width: 1.5),
                         boxShadow: [
+                          BoxShadow(
+                            color: purple.withValues(alpha: 0.08),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
                           if (_filterTags.isNotEmpty || _filterMaxMinutes != null)
                             BoxShadow(
                               color: orange.withValues(alpha: 0.3),
@@ -725,8 +731,16 @@ class _SearchScreenState extends State<SearchScreen> {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             decoration: BoxDecoration(
-              color: const Color(0xFFF9E3D5),
+              color: Colors.white.withValues(alpha: 0.6),
               borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white, width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: purple.withValues(alpha: 0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,

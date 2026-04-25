@@ -561,19 +561,16 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
                   Positioned.fill(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: const Color(0xFFD9D9D9),
+                        color: isDefault ? Colors.redAccent.withValues(alpha: 0.1) : const Color(0xFFD9D9D9),
                         image: (imageUrl != null && imageUrl.trim().isNotEmpty)
                             ? DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover)
-                            : isDefault 
-                                ? const DecorationImage(
-                                    image: NetworkImage('https://firebasestorage.googleapis.com/v0/b/codeless-app.appspot.com/o/projects%2F0SFgeaWcBaf42xoFOlKx%2F30e754093184968999456bbb19bc604bae3ef8f7image%2037.png?alt=media&token=d46a734b-2eda-4f61-8278-aa825a23d4b4'),
-                                    fit: BoxFit.cover,
-                                  )
-                                : null,
+                            : null,
                       ),
-                      child: (imageUrl == null && !isDefault) 
-                        ? Icon(Icons.restaurant_menu, color: purple.withValues(alpha:0.5), size: 30.sp)
-                        : null,
+                      child: (imageUrl == null && isDefault)
+                        ? Icon(Icons.favorite_rounded, color: Colors.redAccent, size: 30.sp)
+                        : (imageUrl == null && !isDefault) 
+                          ? Icon(Icons.restaurant_menu, color: purple.withValues(alpha:0.5), size: 30.sp)
+                          : null,
                     ),
                   ),
                   if (isSelected)

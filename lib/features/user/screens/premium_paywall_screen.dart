@@ -21,6 +21,7 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
   bool _isAnnual = false;
   final IAPService _iapService = IAPService();
   bool _isLoadingProducts = true;
+  final ScrollController _scrollController = ScrollController();
 
   static const Color _purple = Color(0xFF462F4D);
   static const Color _orange = Color(0xFFEF8A54);
@@ -36,6 +37,26 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
     await _iapService.fetchProducts();
     if (mounted) {
       setState(() => _isLoadingProducts = false);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOutCubic,
+          );
+        }
+      });
     }
   }
 
@@ -67,6 +88,7 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
                 _buildHeader(context),
                 Expanded(
                   child: SingleChildScrollView(
+                    controller: _scrollController,
                     physics: const BouncingScrollPhysics(),
                     padding: EdgeInsets.symmetric(horizontal: 24.sw),
                     child: Column(
@@ -285,14 +307,23 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
             child: _ToggleItem(
               title: "Monthly",
               isSelected: !_isAnnual,
-              onTap: () => setState(() => _isAnnual = false),
+              onTap: () {
+                if (_isAnnual) {
+                  setState(() => _isAnnual = false);
+                  _scrollToBottom();
+                }
+              },
             ),
           ),
           Expanded(
             child: _ToggleItem(
               title: "Annual",
               isSelected: _isAnnual,
-              onTap: () => setState(() => _isAnnual = true),
+              onTap: () {
+                if (!_isAnnual) {
+                  setState(() => _isAnnual = true);
+                }
+              },
               badge: "Save 5%",
             ),
           ),

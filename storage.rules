@@ -16,8 +16,8 @@ service firebase.storage {
     
     // Certificates folder
     match /certificates/{nutritionistId}/{fileName} {
-      allow read: if isAdmin() || (isAuthenticated() && request.auth.uid == nutritionistId);
-      // REMOVED content type check to fix "unauthorized" error during testing
+      // Allow public read so the admin can open the unguessable token URL in their browser
+      allow read: if true;
       allow write: if isAuthenticated() && request.auth.uid == nutritionistId;
       allow delete: if isAdmin() || (isAuthenticated() && request.auth.uid == nutritionistId);
     }
