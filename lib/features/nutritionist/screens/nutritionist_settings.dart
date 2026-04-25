@@ -423,21 +423,11 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
                 photoUrl!,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Center(
-                  child: Image.asset(
-                    "assets/logos/main_logo.png",
-                    width: 21.sw,
-                    height: 21.sh,
-                    fit: BoxFit.contain,
-                  ),
+                  child: Icon(Icons.person_rounded, color: purple, size: 36.sw),
                 ),
               )
             : Center(
-                child: Image.asset(
-                  "assets/logos/main_logo.png",
-                  width: 30.sw,
-                  height: 30.sh,
-                  fit: BoxFit.contain,
-                ),
+                child: Icon(Icons.person_rounded, color: purple, size: 36.sw),
               ),
       ),
     );

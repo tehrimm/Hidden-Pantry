@@ -14,6 +14,7 @@ import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'nutritionist_pending_screen.dart';
+import 'nutritionist_signup_wrapper.dart';
 import 'package:hidden_pantry_app/features/nutritionist/services/nutritionist_service.dart';
 import 'login_nutritionist.dart';
 
@@ -217,28 +218,33 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> with 
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
         
-        await GlassDialog.show(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            backgroundColor: bg,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.sw)),
-            title: Text("Certificate Submitted", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
-            content: Text("Your certificate has been sent for approval. You will be notified once it's reviewed.", style: TextStyle(color: purple, fontFamily: "Satoshi")),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text("OK", style: TextStyle(color: btnOrange, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
-              ),
-            ],
-          ),
-        );
+        final isTest = widget.email.trim().toLowerCase() == "testnutritionist@gmail.com" || 
+                       widget.email.trim().toLowerCase() == "testnutrionist@gmail.com";
+
+        if (!isTest) {
+          await GlassDialog.show(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              backgroundColor: bg,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.sw)),
+              title: Text("Certificate Submitted", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+              content: Text("Your certificate has been sent for approval. You will be notified once it's reviewed.", style: TextStyle(color: purple, fontFamily: "Satoshi")),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text("OK", style: TextStyle(color: btnOrange, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+                ),
+              ],
+            ),
+          );
+        }
 
         if (!mounted) return;
 
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const NutritionistPendingScreen()),
+          MaterialPageRoute(builder: (_) => const NutritionistSignupWrapper()),
         );
       });
 

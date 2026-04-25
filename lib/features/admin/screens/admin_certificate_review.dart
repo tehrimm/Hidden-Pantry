@@ -51,17 +51,7 @@ class _AdminCertificateReviewScreenState extends State<AdminCertificateReviewScr
         children: [
           const PatternBackground(),
           
-          // Decorative Animated Background Elements
-          Positioned(
-            top: -100.sh,
-            right: -100.sw,
-            child: _AnimatedRing(delayMs: 0),
-          ),
-          Positioned(
-            bottom: 50.sh,
-            left: -150.sw,
-            child: _AnimatedRing(delayMs: 500, size: 300),
-          ),
+          // Decorative Animated Background Elements removed per user request
 
           SafeArea(
             child: Column(
@@ -633,62 +623,7 @@ class _StaggeredEntry extends StatelessWidget {
   }
 }
 
-class _AnimatedRing extends StatefulWidget {
-  final int delayMs;
-  final double size;
 
-  const _AnimatedRing({required this.delayMs, this.size = 400});
-
-  @override
-  State<_AnimatedRing> createState() => _AnimatedRingState();
-}
-
-class _AnimatedRingState extends State<_AnimatedRing> with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 10),
-    )..repeat();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return RotationTransition(
-      turns: _controller,
-      child: Container(
-        width: widget.size.sw,
-        height: widget.size.sw,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: const Color(0xFFF5DDCE).withValues(alpha: 0.5), width: 1),
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              left: 50.sw,
-              top: 50.sh,
-              child: Container(
-                width: 20.sw,
-                height: 20.sw,
-                decoration: const BoxDecoration(color: Color(0xFFF5DDCE), shape: BoxShape.circle),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _EmptyState extends StatelessWidget {
   @override

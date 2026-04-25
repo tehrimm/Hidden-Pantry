@@ -487,21 +487,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                 photoUrl!,
                 fit: BoxFit.cover,
                 errorBuilder: (_, __, ___) => Center(
-                  child: Image.asset(
-                    "assets/logos/profile_placeholder.png",
-                    width: 21.sw,
-                    height: 21.sh,
-                    fit: BoxFit.contain,
-                  ),
+                  child: Icon(Icons.person_rounded, color: purple, size: 36.sw),
                 ),
               )
             : Center(
-                child: Image.asset(
-                  "assets/logos/profile_placeholder.png",
-                  width: 21.sw,
-                  height: 21.sh,
-                  fit: BoxFit.contain,
-                ),
+                child: Icon(Icons.person_rounded, color: purple, size: 36.sw),
               ),
       ),
     );

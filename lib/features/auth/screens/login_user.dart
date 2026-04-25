@@ -630,7 +630,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                                         color: const Color(0xFFF9E3D5),
                                         borderRadius: BorderRadius.circular(15.sw),
                                         border: Border.all(
-                                          color: Colors.white.withValues(alpha: 0.4),
+                                          color: Colors.white,
                                           width: 1,
                                         ),
                                       ),

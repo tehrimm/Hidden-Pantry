@@ -613,8 +613,8 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with 
                                           color: const Color(0xFFF9E3D5),
                                           borderRadius: BorderRadius.circular(15.sw),
                                           border: Border.all(
-                                            color: Colors.white.withValues(alpha: 0.4),
-                                            width: 1,
+                                            color: Colors.white,
+                                            width: 1.5,
                                           ),
                                         ),
                                         alignment: Alignment.center,

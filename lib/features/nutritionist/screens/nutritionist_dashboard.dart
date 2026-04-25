@@ -742,8 +742,12 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                 height: 50.sw,
                 color: const Color(0xFFD9D9D9),
                 child: photoUrl != null && photoUrl!.startsWith("http")
-                    ? Image.network(photoUrl!, fit: BoxFit.cover)
-                    : Image.asset("assets/logos/main_logo.png", fit: BoxFit.cover),
+                    ? Image.network(
+                        photoUrl!, 
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => Center(child: Icon(Icons.person_rounded, color: purple, size: 28.sw)),
+                      )
+                    : Center(child: Icon(Icons.person_rounded, color: purple, size: 28.sw)),
               ),
             ),
           ),
