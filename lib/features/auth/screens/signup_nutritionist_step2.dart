@@ -310,33 +310,31 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> with 
       child: Scaffold(
         backgroundColor: bg,
         resizeToAvoidBottomInset: false,
-        body: Center(
-          child: SizedBox(
-            width: 393.sw,
-            height: 852.sh,
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(30.sw),
-              child: Stack(
-                clipBehavior: Clip.hardEdge,
-                children: [
-                  // Background Gradient
-                  Container(
-                    decoration: const BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [Color(0xFFFFF3EB), Color(0xFFF6DFD1)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        stops: [0.4, 1.0],
-                      ),
+        body: GestureDetector(
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Stack(
+            children: [
+              // 1. Background Gradient (Fixed)
+              Positioned.fill(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFFFFF3EB), Color(0xFFF6DFD1)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      stops: [0.4, 1.0],
                     ),
                   ),
+                ),
+              ),
 
-                  // Decorative Orbs
-                  const _AuthBackgroundPattern(),
+              // 2. Decorative Patterns (Fixed)
+              const Positioned.fill(child: _AuthBackgroundPattern()),
+              const Positioned.fill(child: PatternBackground()),
 
-                  const PatternBackground(),
-
-                  Column(
+              // 3. Scrollable Content
+              Column(
+                children: [
                     children: [
                       _AnimatedWrapper(
                         animation: _staggeredAnimations[0],

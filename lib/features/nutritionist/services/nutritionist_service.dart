@@ -383,6 +383,30 @@ class NutritionistService {
     await _nutritionists.doc(nutritionistId).collection("tips").add(postData);
   }
 
+  /// Share a meal plan as a community post
+  Future<void> shareMealPlanAsPost({
+    required String nutritionistId,
+    required String planId,
+    String? message,
+    required int minTier,
+    required String planTitle,
+  }) async {
+    final Map<String, dynamic> postData = {
+      "content": message ?? "New Meal Plan: $planTitle",
+      "timestamp": FieldValue.serverTimestamp(),
+      "minTier": minTier,
+      "likes": 0,
+      "commentCount": 0,
+      "likedBy": [],
+      "type": "unified_post",
+      "mealPlanId": planId,
+      "mealPlanTitle": planTitle,
+      "hasMealPlan": true,
+    };
+
+    await _nutritionists.doc(nutritionistId).collection("tips").add(postData);
+  }
+
   Future<void> submitRating({
     required String nutritionistId,
     required double rating,

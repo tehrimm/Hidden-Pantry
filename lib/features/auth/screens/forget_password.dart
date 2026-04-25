@@ -68,14 +68,13 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
 
     return Scaffold(
       backgroundColor: bg,
-      body: SafeArea(
-        top: false,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(30.sw),
-          child: Stack(
-            children: [
-              // Background Gradient
-              Container(
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Stack(
+          children: [
+            // 1. Background Gradient (Fixed)
+            Positioned.fill(
+              child: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     colors: [Color(0xFFFFF3EB), Color(0xFFF6DFD1)],
@@ -85,11 +84,14 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                   ),
                 ),
               ),
+            ),
 
-              // Decorative Orbs
-              const _AuthBackgroundPattern(),
+            // 2. Decorative Patterns (Fixed)
+            const Positioned.fill(child: _AuthBackgroundPattern()),
+            const Positioned.fill(child: PatternBackground()),
 
-              const PatternBackground(),
+            // 3. Scrollable Content
+            Padding(
 
               // Main content
               Padding(

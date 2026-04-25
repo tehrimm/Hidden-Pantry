@@ -608,7 +608,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
     String timeAgo = ts != null ? _timeAgo(ts.toDate()) : "Just now";
 
     return Container(
-      margin: EdgeInsets.only(bottom: 14.sh),
+      margin: EdgeInsets.only(bottom: 12.sh),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF9F5),
         borderRadius: BorderRadius.circular(22.sw),
@@ -624,7 +624,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(12.sw, 12.sh, 12.sw, 0),
+            padding: EdgeInsets.fromLTRB(12.sw, 10.sh, 12.sw, 0),
             child: Row(
               children: [
                 Container(
@@ -696,7 +696,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
             ),
           ),
           
-          SizedBox(height: 14.sh),
+          SizedBox(height: 10.sh),
 
           // ── Content ──
           if (isLocked)
@@ -1008,80 +1008,82 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
   }
 
   Widget _mealPlanInteractionCard(String? planId, String fallbackTitle) {
-     if (planId == null) return Container();
-     
-     return StreamBuilder<DocumentSnapshot>(
-       stream: FirebaseFirestore.instance
-          .collection("nutritionists")
-          .doc(widget.nutritionistId)
-          .collection("meal_plans")
-          .doc(planId)
-          .snapshots(),
-       builder: (context, snap) {
-         if (!snap.hasData || !snap.data!.exists) {
-           return Text(fallbackTitle, style: TextStyle(color: purple, fontWeight: FontWeight.bold));
-         }
-         final plan = snap.data!.data() as Map<String, dynamic>;
-         final title = plan["title"] ?? "Expert Meal Plan";
-         final days = plan["duration"] ?? 0;
-         final cals = plan["targetCalories"] ?? 0;
+    if (planId == null) return Container();
+    
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+         .collection("nutritionists")
+         .doc(widget.nutritionistId)
+         .collection("meal_plans")
+         .doc(planId)
+         .snapshots(),
+      builder: (context, snap) {
+        if (!snap.hasData || !snap.data!.exists) {
+          return Text(fallbackTitle, style: TextStyle(color: purple, fontWeight: FontWeight.bold));
+        }
+        final plan = snap.data!.data() as Map<String, dynamic>;
+        final title = plan["title"] ?? "Expert Meal Plan";
+        final days = plan["duration"] ?? 0;
+        final cals = plan["targetCalories"] ?? 0;
 
-         return Container(
-           padding: const EdgeInsets.all(16),
-           decoration: BoxDecoration(
-             color: cardInner,
-             borderRadius: BorderRadius.circular(16),
-             border: Border.all(color: orange.withValues(alpha:0.1)),
-           ),
-           child: Row(
-             children: [
-               Container(
-                 padding: const EdgeInsets.all(10),
-                 decoration: BoxDecoration(color: orange.withValues(alpha:0.1), shape: BoxShape.circle),
-                 child: Icon(Icons.restaurant_menu_rounded, color: orange, size: 24),
-               ),
-               const SizedBox(width: 16),
-               Expanded(
-                 child: Column(
-                   crossAxisAlignment: CrossAxisAlignment.start,
-                   children: [
-                     Text(title, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16)),
-                     const SizedBox(height: 4),
-                     Text("$days Days • $cals kcal", style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 13)),
-                   ],
-                 ),
-               ),
-               ElevatedButton(
-                 onPressed: () {
-                    final Map<String, dynamic> fullPlan = Map<String, dynamic>.from(plan);
-                    fullPlan["planId"] = planId;
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => MealPlanViewScreen(planData: fullPlan)),
-                    );
-                 },
-                 style: ElevatedButton.styleFrom(
-                   backgroundColor: orange,
-                   foregroundColor: Colors.white,
-                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                   minimumSize: Size.zero,
-                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                   elevation: 0,
-                 ),
-                 child: const Text("View & Save", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-               ),
-             ],
-           ),
-         );
-       },
-     );
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 14.sw, vertical: 12.sh),
+          decoration: BoxDecoration(
+            color: cardInner,
+            borderRadius: BorderRadius.circular(16.sw),
+            border: Border.all(color: orange.withValues(alpha:0.1)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(8.sw),
+                decoration: BoxDecoration(color: orange.withValues(alpha:0.1), shape: BoxShape.circle),
+                child: Icon(Icons.restaurant_menu_rounded, color: orange, size: 20.sw),
+              ),
+              SizedBox(width: 12.sw),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(title, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14.sp)),
+                    const SizedBox(height: 2),
+                    Text("$days Days • $cals kcal", style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 11.sp)),
+                  ],
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                   final Map<String, dynamic> fullPlan = Map<String, dynamic>.from(plan);
+                   fullPlan["planId"] = planId;
+                   Navigator.push(
+                     context,
+                     MaterialPageRoute(builder: (_) => MealPlanViewScreen(planData: fullPlan)),
+                   );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: orange,
+                  foregroundColor: Colors.white,
+                  padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 6.sh),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.sw)),
+                  elevation: 0,
+                ),
+                child: Text("View & Save", style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _recipeInteractionCard(String recipeId, String? recipeName, String? imageUrl) {
     if (recipeId.isEmpty) return Container();
     final title = (recipeName == null || recipeName.isEmpty) ? "Shared Recipe" : recipeName;
     return Container(
-      padding: EdgeInsets.all(16.sw),
+      padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 10.sh),
       decoration: BoxDecoration(
         color: cardInner,
         borderRadius: BorderRadius.circular(16.sw),
@@ -1090,27 +1092,27 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
       child: Row(
         children: [
           Container(
-            width: 50.sw,
-            height: 50.sh,
+            width: 44.sw,
+            height: 44.sw,
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               color: orange.withValues(alpha:0.08),
-              borderRadius: BorderRadius.circular(12.sw),
+              borderRadius: BorderRadius.circular(10.sw),
             ),
             child: (imageUrl != null && imageUrl.startsWith("http"))
                 ? Image.network(imageUrl, fit: BoxFit.cover)
                 : _recipeCardIconPlaceholder(),
           ),
-          SizedBox(width: 16.sw),
+          SizedBox(width: 12.sw),
           Expanded(
             child: Text(
               title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 15),
+              style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14.sp),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           ElevatedButton(
             onPressed: () => _navigateToRecipe(recipeId),
             style: ElevatedButton.styleFrom(
@@ -1118,10 +1120,11 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
               foregroundColor: Colors.white,
               padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 8.sh),
               minimumSize: Size.zero,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.sw)),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.sw)),
               elevation: 0,
             ),
-            child: Text("View", style: TextStyle(fontSize: 12.sp, fontWeight: FontWeight.bold)),
+            child: Text("View", style: TextStyle(fontSize: 11.sp, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -1186,8 +1189,8 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
     final String? org = data["organizationName"];
     
     // Initial data fallback to prevent showing 0 during loading
-    final int displaySubs = _subscriberCount > 0 ? _subscriberCount : (data['subscriberCount'] ?? 0);
-    final int displayPosts = _postCount > 0 ? _postCount : (data['recipeCount'] ?? 0);
+    final int displaySubs = _subscriberCount;
+    final int displayPosts = _postCount;
 
     return Padding(
       padding: EdgeInsets.fromLTRB(22.sw, 16.sh, 22.sw, 0),
@@ -1240,12 +1243,12 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
                 FutureBuilder<Map<String, int>>(
                   future: _countsFuture,
                   builder: (context, snapshot) {
-                    int finalSubs = displaySubs > 0 ? displaySubs : (data['subscriberCount'] ?? 0);
-                    int finalPosts = displayPosts > 0 ? displayPosts : (data['recipeCount'] ?? 0);
+                    int finalSubs = displaySubs;
+                    int finalPosts = displayPosts;
                     if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
                       final dataMap = snapshot.data!;
                       if (dataMap["subs"]! >= 0) finalSubs = dataMap["subs"]!;
-                      if (dataMap["posts"]! > 0) finalPosts = dataMap["posts"]!;
+                      if (dataMap["posts"]! >= 0) finalPosts = dataMap["posts"]!;
                     }
 
                     // Compute avg rating live from StreamBuilder data

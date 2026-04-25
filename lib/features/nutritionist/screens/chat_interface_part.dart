@@ -199,11 +199,28 @@ class _ChatInterfaceState extends State<ChatInterface> {
 
     try {
       final chatRef = FirebaseFirestore.instance.collection("chats").doc(_chatId);
+      final uid = user.uid;
+      
+      // We must ensure participants are set so security rules allow reading messages
+      // participants should include both the user and the nutritionist
+      final List<String> participants = [uid];
       if (_isNutritionist) {
-        await chatRef.update({"nutritionistUnread": 0});
+        if (widget.clientId != null) participants.add(widget.clientId!);
       } else {
-        await chatRef.update({"userUnread": 0});
+        participants.add(widget.nutritionistId);
       }
+
+      final Map<String, dynamic> initialData = {
+        "participants": FieldValue.arrayUnion(participants),
+      };
+
+      if (_isNutritionist) {
+        initialData["nutritionistUnread"] = 0;
+      } else {
+        initialData["userUnread"] = 0;
+      }
+
+      await chatRef.set(initialData, SetOptions(merge: true));
     } catch (e) {
       debugPrint("Error resetting unread count: $e");
     }

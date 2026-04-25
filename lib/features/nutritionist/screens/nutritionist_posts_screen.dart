@@ -8,6 +8,7 @@ import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
+import 'package:hidden_pantry_app/features/user/screens/meal_plan_view.dart';
 
 class NutritionistPostsScreen extends StatefulWidget {
   const NutritionistPostsScreen({super.key});
@@ -648,15 +649,30 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
                   ],
                 ),
               ),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 8.sh),
-                decoration: BoxDecoration(
-                  color: orange,
-                  borderRadius: BorderRadius.circular(10.sw),
-                ),
-                child: Text(
-                  "View",
-                  style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.bold),
+              GestureDetector(
+                onTap: () {
+                    final Map<String, dynamic> fullPlan = Map<String, dynamic>.from(plan);
+                    fullPlan["planId"] = planId;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => MealPlanViewScreen(
+                          planData: fullPlan,
+                          isViewingSavedPlan: true, // Use this to hide 'Save' button since nutritionist already owns it
+                        ),
+                      ),
+                    );
+                },
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 8.sh),
+                  decoration: BoxDecoration(
+                    color: orange,
+                    borderRadius: BorderRadius.circular(10.sw),
+                  ),
+                  child: Text(
+                    "View",
+                    style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
             ],

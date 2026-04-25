@@ -122,14 +122,13 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> w
     return Scaffold(
       backgroundColor: bg,
       resizeToAvoidBottomInset: false,
-      body: SafeArea(
-        top: false,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(30.sw),
-          child: Stack(
-            children: [
-              // Background Gradient
-              Container(
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Stack(
+          children: [
+            // 1. Background Gradient (Fixed)
+            Positioned.fill(
+              child: Container(
                 decoration: const BoxDecoration(
                   gradient: LinearGradient(
                     colors: [Color(0xFFFFF3EB), Color(0xFFF6DFD1)],
@@ -139,13 +138,14 @@ class _ForgetPasswordEmailScreenState extends State<ForgetPasswordEmailScreen> w
                   ),
                 ),
               ),
+            ),
 
-              // Decorative Orbs
-              const _AuthBackgroundPattern(),
+            // 2. Decorative Patterns (Fixed)
+            const Positioned.fill(child: _AuthBackgroundPattern()),
+            const Positioned.fill(child: PatternBackground()),
 
-              const PatternBackground(),
-
-              SingleChildScrollView(
+            // 3. Scrollable Content
+            SingleChildScrollView(
                 padding: EdgeInsets.only(
                   left: 30.sw,
                   right: 30.sw,

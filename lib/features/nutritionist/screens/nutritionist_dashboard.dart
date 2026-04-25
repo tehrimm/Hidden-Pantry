@@ -254,19 +254,19 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
 
   void _showMakePostDialog({File? initialImage, File? initialDoc, String? initialRecipeId, String? initialRecipeTitle, String? initialRecipeImageUrl}) {
     final TextEditingController tipController = TextEditingController();
+    String? selectedPlanId;
+    String? selectedPlanTitle;
+    String? selectedRecipeId = initialRecipeId;
+    String? selectedRecipeTitle = initialRecipeTitle;
+    String? selectedRecipeImageUrl = initialRecipeImageUrl;
+    File? attachedImage = initialImage;
+    File? attachedDoc = initialDoc;
+    bool isPosting = false;
+    int selectedTier = 0; // 0: Free, 1: Silver, 2: Gold, 3: Platinum
     
     GlassDialog.show(
       context: context,
       builder: (context) {
-        String? selectedPlanId;
-        String? selectedPlanTitle;
-        String? selectedRecipeId = initialRecipeId;
-        String? selectedRecipeTitle = initialRecipeTitle;
-        String? selectedRecipeImageUrl = initialRecipeImageUrl;
-        File? attachedImage = initialImage;
-        File? attachedDoc = initialDoc;
-        bool isPosting = false;
-        int selectedTier = 0; // 0: Free, 1: Silver, 2: Gold, 3: Platinum
 
         return StatefulBuilder(
           builder: (context, setState) {
@@ -421,7 +421,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                       ),
                       const SizedBox(height: 8),
                       DropdownButtonFormField<int>(
-                        initialValue: selectedTier,
+                        value: selectedTier,
                         isExpanded: true,
                         decoration: InputDecoration(
                           isDense: true,
@@ -485,6 +485,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                             if (selectedPlanId != null) {
                               postData["mealPlanId"] = selectedPlanId;
                               postData["hasMealPlan"] = true;
+                              postData["mealPlanTitle"] = selectedPlanTitle;
                             }
                             if (selectedRecipeId != null) {
                               postData["recipeId"] = selectedRecipeId;

@@ -246,30 +246,29 @@ class _ForgetPasswordPhoneOtpScreenState
       resizeToAvoidBottomInset: false,
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),
-        child: SafeArea(
-          top: false,
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(30.sw),
-            child: Stack(
-              children: [
-                // Background Gradient
-                Container(
-                  decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Color(0xFFFFF3EB), Color(0xFFF6DFD1)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      stops: [0.4, 1.0],
-                    ),
+        child: Stack(
+          children: [
+            // 1. Background Gradient (Fixed)
+            Positioned.fill(
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFFFFF3EB), Color(0xFFF6DFD1)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    stops: [0.4, 1.0],
                   ),
                 ),
+              ),
+            ),
 
-                // Decorative Orbs
-                const _AuthBackgroundPattern(),
+            // 2. Decorative Patterns (Fixed)
+            const Positioned.fill(child: _AuthBackgroundPattern()),
+            const Positioned.fill(child: PatternBackground()),
 
-                const PatternBackground(),
-
-                SingleChildScrollView(
+            // 3. Scrollable Content
+            SafeArea(
+              child: SingleChildScrollView(
                   padding: EdgeInsets.only(
                     left: 30.sw,
                     right: 30.sw,

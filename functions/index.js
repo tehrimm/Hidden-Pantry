@@ -1077,17 +1077,11 @@ exports.getNutritionistStats = onCall(async (request) => {
     const db = admin.firestore();
 
     try {
-        let totalPosts = 0;
-
-        // 1. Get Tips Count
+        // 1. Get Community Posts (Tips) Count - This matches the "Feed" tab
         const tipsCountSnap = await db.collection('nutritionists').doc(nutritionistId).collection('tips').count().get();
-        totalPosts += tipsCountSnap.data().count || 0;
+        const totalPosts = tipsCountSnap.data().count || 0;
 
-        // 2. Get Meal Plans Count
-        const plansCountSnap = await db.collection('nutritionists').doc(nutritionistId).collection('meal_plans').count().get();
-        totalPosts += plansCountSnap.data().count || 0;
-
-        // 3. Get Unique Subscribers (including trialing)
+        // 2. Get Unique Subscribers (including trialing)
         const subsSnap = await db.collection('subscriptions')
             .where('nutritionistId', '==', nutritionistId)
             .where('status', 'in', ['active', 'trialing'])
@@ -1102,10 +1096,6 @@ exports.getNutritionistStats = onCall(async (request) => {
                 uniqueUserIds.add(doc.id);
             }
         });
-
-        // 4. Get Recipes Count
-        const recipesCountSnap = await db.collection('recipes').where('author_id', '==', nutritionistId).get();
-        totalPosts += recipesCountSnap.size;
 
         const totalSubs = uniqueUserIds.size;
 
