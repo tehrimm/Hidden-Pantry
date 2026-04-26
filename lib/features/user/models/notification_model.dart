@@ -69,7 +69,10 @@ class AppNotification {
     };
   }
 
-  static NotificationType _parseType(String? type) {
+  static NotificationType _parseType(String? type) => parseTypePublic(type);
+
+  /// Public wrapper used for testing.
+  static NotificationType parseTypePublic(String? type) {
     switch (type) {
       case 'like': return NotificationType.like;
       case 'comment': return NotificationType.comment;
