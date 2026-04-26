@@ -126,5 +126,45 @@ void main() {
       // prepMinutes should default to 15 if minutes >= 20
       expect(recipe.prepMinutes, 15);
     });
+
+    test('should handle null ingredients and directions', () {
+      final json = {
+        'id': 'null_1',
+        'title': 'Null Recipe',
+        'minutes': 10,
+        'avg_rating': 4.0,
+        'ingredients': null,
+        'directions': null
+      };
+      final recipe = Recipe.fromJson(json);
+      expect(recipe.ingredients, isEmpty);
+      expect(recipe.directions, isEmpty);
+    });
+  });
+
+  group('Recipe Model Utilities', () {
+    test('copyWith should update specific fields while preserving others', () {
+      final recipe = Recipe(
+        id: '1',
+        name: 'Original',
+        minutes: 10,
+        avgRating: 4.5,
+      );
+      final updated = recipe.copyWith(name: 'Updated', difficulty: 'Easy');
+      expect(updated.id, '1');
+      expect(updated.name, 'Updated');
+      expect(updated.difficulty, 'Easy');
+      expect(updated.avgRating, 4.5);
+    });
+
+    test('calculatedTotalCalories should return 0.0 if ingredients list is null', () {
+      final recipe = Recipe(
+        id: '1',
+        name: 'No Ingredients',
+        minutes: 10,
+        avgRating: 0.0,
+      );
+      expect(recipe.calculatedTotalCalories, 0.0);
+    });
   });
 }

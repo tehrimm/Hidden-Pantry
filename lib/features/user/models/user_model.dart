@@ -42,4 +42,24 @@ class UserModel {
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
     };
   }
+
+  UserModel copyWith({
+    String? uid,
+    String? email,
+    String? fullName,
+    String? photoUrl,
+    String? role,
+    List<String>? allergies,
+    DateTime? createdAt,
+  }) {
+    return UserModel(
+      uid: uid ?? this.uid,
+      email: email ?? this.email,
+      fullName: fullName ?? this.fullName,
+      photoUrl: photoUrl ?? this.photoUrl,
+      role: role ?? this.role,
+      allergies: allergies ?? this.allergies,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }

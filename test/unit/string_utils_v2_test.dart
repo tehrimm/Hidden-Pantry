@@ -11,6 +11,8 @@ void main() {
       75: '1h 15m',
       120: '2h',
       185: '3h 5m',
+      1: '1m',
+      59: '59m',
     };
     cases.forEach((mins, out) {
       test('[Unit][StringUtils][formatTotalTime] $mins -> $out', () {
@@ -28,6 +30,15 @@ void main() {
     });
     test('[Unit][StringUtils][truncateWithMore] over limit appends +more', () {
       expect(StringUtils.truncateWithMore('hello world', 5), 'hello+more');
+    });
+    test('[Unit][StringUtils][truncateWithMore] empty string', () {
+      expect(StringUtils.truncateWithMore('', 5), '');
+    });
+    test('[Unit][StringUtils][truncateWithMore] whitespace only', () {
+      expect(StringUtils.truncateWithMore('   ', 2), '+more');
+    });
+    test('[Unit][StringUtils][truncateWithMore] limit zero', () {
+      expect(StringUtils.truncateWithMore('abc', 0), '+more');
     });
   });
 }

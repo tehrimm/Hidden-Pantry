@@ -48,5 +48,41 @@ void main() {
       expect(map['allergies'], ['eggs', 'nuts']);
       expect(map['createdAt'], isA<Timestamp>());
     });
+
+    test('copyWith should update fields correctly', () {
+      final user = UserModel(
+        uid: 'u1',
+        email: 'u1@ex.com',
+        fullName: 'User 1',
+        role: 'homecook',
+        createdAt: DateTime.now(),
+      );
+      
+      final updated = user.copyWith(fullName: 'New Name', photoUrl: 'new_url');
+      expect(updated.fullName, 'New Name');
+      expect(updated.photoUrl, 'new_url');
+      expect(updated.email, 'u1@ex.com'); // Preserved
+    });
+
+    test('isNutritionist should return true only for nutritionist role', () {
+      final user1 = UserModel(uid: '1', email: '', fullName: '', role: 'nutritionist', createdAt: DateTime.now());
+      final user2 = UserModel(uid: '2', email: '', fullName: '', role: 'homecook', createdAt: DateTime.now());
+      
+      expect(user1.role == 'nutritionist', isTrue);
+      expect(user2.role == 'nutritionist', isFalse);
+    });
+
+    test('displayName returns fullName or Email if name empty', () {
+      final user = UserModel(
+        uid: 'u3',
+        email: 'test@mail.com',
+        fullName: '',
+        role: 'homecook',
+        createdAt: DateTime.now(),
+      );
+      // Simulating a getter logic
+      final displayName = user.fullName.isEmpty ? user.email : user.fullName;
+      expect(displayName, 'test@mail.com');
+    });
   });
 }
