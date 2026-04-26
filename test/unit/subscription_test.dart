@@ -33,5 +33,47 @@ void main() {
 
       expect(sub.daysRemaining, 0);
     });
+
+    test('isActive true for active status with future expiry', () {
+      final sub = SubscriptionModel(
+        id: 'sub_active',
+        planName: 'Premium',
+        price: 250.0,
+        interval: 'month',
+        expiryDate: DateTime.now().add(const Duration(days: 5)),
+        nutritionistId: 'nut_1',
+        status: 'active',
+      );
+
+      expect(sub.isActive, isTrue);
+    });
+
+    test('isActive true for trialing status with future expiry', () {
+      final sub = SubscriptionModel(
+        id: 'sub_trial',
+        planName: 'Trial',
+        price: 0,
+        interval: 'month',
+        expiryDate: DateTime.now().add(const Duration(days: 2)),
+        nutritionistId: 'nut_1',
+        status: 'trialing',
+      );
+
+      expect(sub.isActive, isTrue);
+    });
+
+    test('isActive false for canceled status even when not expired', () {
+      final sub = SubscriptionModel(
+        id: 'sub_canceled',
+        planName: 'Premium',
+        price: 250.0,
+        interval: 'month',
+        expiryDate: DateTime.now().add(const Duration(days: 10)),
+        nutritionistId: 'nut_1',
+        status: 'canceled',
+      );
+
+      expect(sub.isActive, isFalse);
+    });
   });
 }

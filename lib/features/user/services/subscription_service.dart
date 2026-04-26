@@ -4,12 +4,43 @@ import 'package:flutter/material.dart';
 
 /// Centralized service to manage app-level subscriptions and feature gating.
 class SubscriptionService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore? _firestore;
+  final FirebaseAuth? _auth;
+  final DateTime Function() _now;
+  final Future<Map<String, dynamic>?> Function(String uid)? _loadUserDataOverride;
+  final Future<List<Map<String, dynamic>>> Function(String uid)? _loadPlatformSubscriptionsOverride;
+  final Future<List<Map<String, dynamic>>> Function(String uid, String nutritionistId)?
+      _loadNutritionistSubscriptionsOverride;
+  final Future<void> Function(String uid, String recipeId)? _appendDownloadedRecipeIdOverride;
 
   static final SubscriptionService _instance = SubscriptionService._internal();
   factory SubscriptionService() => _instance;
-  SubscriptionService._internal();
+  SubscriptionService._internal()
+      : _firestore = FirebaseFirestore.instance,
+        _auth = FirebaseAuth.instance,
+        _now = DateTime.now,
+        _loadUserDataOverride = null,
+        _loadPlatformSubscriptionsOverride = null,
+        _loadNutritionistSubscriptionsOverride = null,
+        _appendDownloadedRecipeIdOverride = null;
+
+  // Injectable constructor for deterministic unit tests.
+  SubscriptionService.injectable({
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+    DateTime Function()? now,
+    Future<Map<String, dynamic>?> Function(String uid)? loadUserData,
+    Future<List<Map<String, dynamic>>> Function(String uid)? loadPlatformSubscriptions,
+    Future<List<Map<String, dynamic>>> Function(String uid, String nutritionistId)?
+        loadNutritionistSubscriptions,
+    Future<void> Function(String uid, String recipeId)? appendDownloadedRecipeId,
+  })  : _firestore = firestore,
+        _auth = auth,
+        _now = now ?? DateTime.now,
+        _loadUserDataOverride = loadUserData,
+        _loadPlatformSubscriptionsOverride = loadPlatformSubscriptions,
+        _loadNutritionistSubscriptionsOverride = loadNutritionistSubscriptions,
+        _appendDownloadedRecipeIdOverride = appendDownloadedRecipeId;
 
   // Constants
   static const int maxFreeDownloads = 5;
@@ -17,30 +48,28 @@ class SubscriptionService {
 
   /// Returns true if the current user has an active premium subscription.
   Future<bool> isPremiumUser() async {
-    final user = _auth.currentUser;
+    final user = _auth?.currentUser;
     if (user == null) return false;
 
     try {
-      // Check for a platform subscription in the 'subscriptions' collection
-      final snap = await _firestore
-          .collection('subscriptions')
-          .where('userId', isEqualTo: user.uid)
-          .where('planId', isEqualTo: 'platform_premium')
-          .where('status', isEqualTo: 'active')
-          .get();
+      final rows = _loadPlatformSubscriptionsOverride != null
+          ? await _loadPlatformSubscriptionsOverride!(user.uid)
+          : await _loadPlatformSubscriptions(user.uid);
 
-      if (snap.docs.isNotEmpty) {
-        // Verify expiry date
-        final data = snap.docs.first.data();
-        final expiry = data['expiryDate'];
+      if (rows.isNotEmpty) {
+        final expiry = rows.first['expiryDate'];
         if (expiry is Timestamp) {
-          return expiry.toDate().isAfter(DateTime.now());
+          return expiry.toDate().isAfter(_now());
+        }
+        if (expiry is DateTime) {
+          return expiry.isAfter(_now());
         }
       }
-      
-      // Fallback: Check user document for manual override/legacy flags
-      final userDoc = await _firestore.collection('users').doc(user.uid).get();
-      return userDoc.data()?['isPremium'] == true;
+
+      final userData = _loadUserDataOverride != null
+          ? await _loadUserDataOverride!(user.uid)
+          : await _loadUserData(user.uid);
+      return userData?['isPremium'] == true;
     } catch (e) {
       debugPrint("Error checking premium status: $e");
       return false;
@@ -49,19 +78,20 @@ class SubscriptionService {
 
   /// Returns true if the user's 7-day trial is currently active.
   Future<bool> isTrialActive() async {
-    final user = _auth.currentUser;
+    final user = _auth?.currentUser;
     if (user == null) return false;
 
     try {
-      final userDoc = await _firestore.collection('users').doc(user.uid).get();
-      final data = userDoc.data();
+      final data = _loadUserDataOverride != null
+          ? await _loadUserDataOverride!(user.uid)
+          : await _loadUserData(user.uid);
       if (data == null) return false;
 
       final createdAt = data['createdAt'] as Timestamp?;
       if (createdAt == null) return false;
 
       final trialExpiry = createdAt.toDate().add(const Duration(days: 7));
-      return DateTime.now().isBefore(trialExpiry);
+      return _now().isBefore(trialExpiry);
     } catch (e) {
       return false;
     }
@@ -76,12 +106,14 @@ class SubscriptionService {
 
   /// Returns the number of remaining free downloads.
   Future<int> getRemainingDownloads() async {
-    final user = _auth.currentUser;
+    final user = _auth?.currentUser;
     if (user == null) return 0;
 
     try {
-      final userDoc = await _firestore.collection('users').doc(user.uid).get();
-      final downloadedIds = List<String>.from(userDoc.data()?['downloadedRecipeIds'] ?? []);
+      final data = _loadUserDataOverride != null
+          ? await _loadUserDataOverride!(user.uid)
+          : await _loadUserData(user.uid);
+      final downloadedIds = List<String>.from(data?['downloadedRecipeIds'] ?? []);
       return (maxFreeDownloads - downloadedIds.length).clamp(0, maxFreeDownloads);
     } catch (e) {
       return 0;
@@ -92,12 +124,13 @@ class SubscriptionService {
   Future<bool> trackDownload(String recipeId) async {
     if (await isPremiumUser() || await isTrialActive()) return true;
 
-    final user = _auth.currentUser;
+    final user = _auth?.currentUser;
     if (user == null) return false;
 
-    final userDocRef = _firestore.collection('users').doc(user.uid);
-    final userDoc = await userDocRef.get();
-    final downloadedIds = List<String>.from(userDoc.data()?['downloadedRecipeIds'] ?? []);
+    final userData = _loadUserDataOverride != null
+        ? await _loadUserDataOverride!(user.uid)
+        : await _loadUserData(user.uid);
+    final downloadedIds = List<String>.from(userData?['downloadedRecipeIds'] ?? []);
 
     if (downloadedIds.contains(recipeId)) return true; // Already counted
 
@@ -105,10 +138,14 @@ class SubscriptionService {
       return false; // Limit reached
     }
 
-    // Add to list
-    await userDocRef.update({
-      'downloadedRecipeIds': FieldValue.arrayUnion([recipeId]),
-    });
+    if (_appendDownloadedRecipeIdOverride != null) {
+      await _appendDownloadedRecipeIdOverride!(user.uid, recipeId);
+    } else {
+      final firestore = _firestore ?? FirebaseFirestore.instance;
+      await firestore.collection('users').doc(user.uid).update({
+        'downloadedRecipeIds': FieldValue.arrayUnion([recipeId]),
+      });
+    }
     return true;
   }
 
@@ -129,25 +166,25 @@ class SubscriptionService {
 
   /// Checks if a user has an active subscription to a specific nutritionist.
   Future<bool> hasNutritionistAccess(String nutritionistId) async {
-    final user = _auth.currentUser;
+    final user = _auth?.currentUser;
     if (user == null) return false;
 
     // Nutritionists can always see their own recipes
     if (user.uid == nutritionistId) return true;
 
     try {
-      final snap = await _firestore
-          .collection('subscriptions')
-          .where('userId', isEqualTo: user.uid)
-          .where('nutritionistId', isEqualTo: nutritionistId)
-          .where('status', isEqualTo: 'active')
-          .get();
+      final rows = _loadNutritionistSubscriptionsOverride != null
+          ? await _loadNutritionistSubscriptionsOverride!(user.uid, nutritionistId)
+          : await _loadNutritionistSubscriptions(user.uid, nutritionistId);
 
-      if (snap.docs.isNotEmpty) {
-        final data = snap.docs.first.data();
+      if (rows.isNotEmpty) {
+        final data = rows.first;
         final expiry = data['expiryDate'];
         if (expiry is Timestamp) {
-          return expiry.toDate().isAfter(DateTime.now());
+          return expiry.toDate().isAfter(_now());
+        }
+        if (expiry is DateTime) {
+          return expiry.isAfter(_now());
         }
       }
       return false;
@@ -155,5 +192,36 @@ class SubscriptionService {
       debugPrint("Error checking nutritionist access: $e");
       return false;
     }
+  }
+
+  Future<Map<String, dynamic>?> _loadUserData(String uid) async {
+    final firestore = _firestore ?? FirebaseFirestore.instance;
+    final userDoc = await firestore.collection('users').doc(uid).get();
+    return userDoc.data();
+  }
+
+  Future<List<Map<String, dynamic>>> _loadPlatformSubscriptions(String uid) async {
+    final firestore = _firestore ?? FirebaseFirestore.instance;
+    final snap = await firestore
+        .collection('subscriptions')
+        .where('userId', isEqualTo: uid)
+        .where('planId', isEqualTo: 'platform_premium')
+        .where('status', isEqualTo: 'active')
+        .get();
+    return snap.docs.map((d) => d.data()).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> _loadNutritionistSubscriptions(
+    String uid,
+    String nutritionistId,
+  ) async {
+    final firestore = _firestore ?? FirebaseFirestore.instance;
+    final snap = await firestore
+        .collection('subscriptions')
+        .where('userId', isEqualTo: uid)
+        .where('nutritionistId', isEqualTo: nutritionistId)
+        .where('status', isEqualTo: 'active')
+        .get();
+    return snap.docs.map((d) => d.data()).toList();
   }
 }

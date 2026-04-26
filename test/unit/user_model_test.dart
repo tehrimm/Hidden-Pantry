@@ -31,5 +31,22 @@ void main() {
       expect(user.fullName, 'Test User');
       expect(user.allergies, contains('peanuts'));
     });
+    test('toMap serializes values and timestamp', () {
+      final user = UserModel(
+        uid: 'uid_1',
+        email: 'a@b.com',
+        fullName: 'Alice',
+        photoUrl: 'https://example.com/a.jpg',
+        role: 'homecook',
+        allergies: const ['eggs', 'nuts'],
+        createdAt: DateTime(2026, 1, 2),
+      );
+
+      final map = user.toMap();
+      expect(map['email'], 'a@b.com');
+      expect(map['fullName'], 'Alice');
+      expect(map['allergies'], ['eggs', 'nuts']);
+      expect(map['createdAt'], isA<Timestamp>());
+    });
   });
 }

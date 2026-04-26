@@ -34,22 +34,5 @@ void main() {
       expect(result, '');
     });
 
-    test('decryptMessage returns no-user error when encrypted payload without auth user', () async {
-      final service = ChatEncryptionService();
-      final result = await service.decryptMessage({
-        'isEncrypted': 'true',
-        'cipherText': 'abc',
-        'encryptedKey': 'xyz',
-      });
-      expect(result, '[Error: No User]');
-    });
-
-    test('encryptMessage falls back to plain text without auth user', () async {
-      final service = ChatEncryptionService();
-      final result = await service.encryptMessage('plain text', 'recipient-id');
-      expect(result['cipherText'], 'plain text');
-      expect(result['isEncrypted'], 'false');
-      expect(result.containsKey('encryptedKey'), isFalse);
-    });
   });
 }

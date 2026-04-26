@@ -352,39 +352,43 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (_isAnnual) ...[
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_isAnnual) ...[
+                  Text(
+                    _getOriginalPriceLabel(),
+                    style: TextStyle(
+                      fontSize: 18.sp,
+                      decoration: TextDecoration.lineThrough,
+                      color: _purple.withValues(alpha: 0.3),
+                      fontFamily: 'Satoshi',
+                    ),
+                  ),
+                  SizedBox(width: 10.sw),
+                ],
                 Text(
-                  _getOriginalPriceLabel(),
+                  _getPriceLabel(),
                   style: TextStyle(
-                    fontSize: 18.sp,
-                    decoration: TextDecoration.lineThrough,
-                    color: _purple.withValues(alpha: 0.3),
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.w900,
+                    color: _purple,
                     fontFamily: 'Satoshi',
                   ),
                 ),
-                SizedBox(width: 10.sw),
+                Text(
+                  _isAnnual ? " / year" : " / month",
+                  style: TextStyle(
+                    fontSize: 16.sp,
+                    color: _purple.withValues(alpha: 0.5),
+                    fontFamily: 'Satoshi',
+                  ),
+                ),
               ],
-              Text(
-                _getPriceLabel(),
-                style: TextStyle(
-                  fontSize: 24.sp,
-                  fontWeight: FontWeight.w900,
-                  color: _purple,
-                  fontFamily: 'Satoshi',
-                ),
-              ),
-              Text(
-                _isAnnual ? " / year" : " / month",
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  color: _purple.withValues(alpha: 0.5),
-                  fontFamily: 'Satoshi',
-                ),
-              ),
-            ],
+            ),
           ),
           SizedBox(height: 20.sh),
           _PrimaryButton(
@@ -694,37 +698,41 @@ class _ToggleItem extends StatelessWidget {
                 ]
               : [],
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 14.sp,
-                fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
-                color: const Color(0xFF462F4D).withValues(alpha: isSelected ? 1.0 : 0.4),
-                fontFamily: 'Satoshi',
-              ),
-            ),
-            if (badge != null) ...[
-              SizedBox(width: 6.sw),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 6.sw, vertical: 2.sh),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEF8A54).withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(6.sw),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 14.sp,
+                  fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                  color: const Color(0xFF462F4D).withValues(alpha: isSelected ? 1.0 : 0.4),
+                  fontFamily: 'Satoshi',
                 ),
-                child: Text(
-                  badge!,
-                  style: TextStyle(
-                    fontSize: 10.sp,
-                    fontWeight: FontWeight.w900,
-                    color: const Color(0xFFEF8A54),
+              ),
+              if (badge != null) ...[
+                SizedBox(width: 6.sw),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 6.sw, vertical: 2.sh),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF8A54).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6.sw),
+                  ),
+                  child: Text(
+                    badge!,
+                    style: TextStyle(
+                      fontSize: 10.sp,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFFEF8A54),
+                    ),
                   ),
                 ),
-              ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

@@ -821,11 +821,9 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
                   top: 40.sh,
                   child: SafeArea(
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        // Left placeholder to balance the right side
                         SizedBox(
-                          width: 110.sw,
+                          width: 56.sw,
                           child: Align(
                             alignment: Alignment.centerLeft,
                             child: GestureDetector(
@@ -881,12 +879,13 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
                         ),
 
                          // Right placeholder - Ingredients & Privacy Info
-                        SizedBox(
-                          width: 110.sw,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              GestureDetector(
+                        ConstrainedBox(
+                          constraints: BoxConstraints(maxWidth: 120.sw),
+                          child: Align(
+                            alignment: Alignment.centerRight,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: GestureDetector(
                                 onTap: () => _scaffoldKey.currentState?.openEndDrawer(),
                                 child: Text(
                                   'Ingredients',
@@ -899,7 +898,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
                                   ),
                                 ),
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ],

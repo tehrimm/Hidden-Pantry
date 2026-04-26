@@ -25,5 +25,24 @@ void main() {
       expect(NotificationType.comment.name, 'comment');
       expect(NotificationType.nutritionist_post.name, 'nutritionist_post');
     });
+    test('toMap stores expected shape', () {
+      final notif = AppNotification(
+        id: 'n2',
+        recipientId: 'r2',
+        senderId: 's2',
+        senderName: 'Sam',
+        title: 'Hello',
+        body: 'Body',
+        type: NotificationType.subscription_alert,
+        timestamp: DateTime.now(),
+        isRead: true,
+      );
+
+      final map = notif.toMap();
+      expect(map['recipientId'], 'r2');
+      expect(map['senderName'], 'Sam');
+      expect(map['type'], 'subscription_alert');
+      expect(map['read'], true);
+    });
   });
 }

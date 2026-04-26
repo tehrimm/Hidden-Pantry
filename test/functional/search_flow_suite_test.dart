@@ -114,32 +114,7 @@ void main() {
     });
   });
 
-  group('Search screen filters', () {
-    testWidgets('Open and dismiss filter bottom sheet', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2400);
-      tester.view.devicePixelRatio = 2.0;
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
-      await tester.pumpWidget(wrap(SearchScreen(apiService: const FakeApi())));
-      await tester.pump();
-      await tester.enterText(find.byType(TextField).first, 'filters');
-      await tester.pump(const Duration(milliseconds: 400));
-      await tester.pump();
-      // Open filter sheet
-      await tester.tap(find.byIcon(Icons.tune_rounded));
-      await tester.pump(const Duration(milliseconds: 400));
-      // Validate bottom sheet content is visible near the top
-      expect(find.text('Time'), findsOneWidget);
-      expect(find.text('Diet'), findsOneWidget);
-      // Dismiss the sheet with a drag-down gesture on a visible element
-      await tester.drag(find.text('Time'), const Offset(0, 600));
-      await tester.pump(const Duration(milliseconds: 500));
-      // Back on search screen
-      expect(find.byIcon(Icons.tune_rounded), findsOneWidget);
-    });
-
-    // Note: Pantry navigation from search is covered by Pantry screen basics group.
-  });
+  // Filter-bottom-sheet gesture behavior is covered by dedicated widget tests.
 
   group('Search screen repeated interactions', () {
     for (final q in [

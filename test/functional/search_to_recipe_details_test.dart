@@ -57,21 +57,22 @@ void main() {
 
   testWidgets('Search results tap navigates to Recipe Details', (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
-    tester.view.devicePixelRatio = 2.0;
+    tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(wrap(SearchScreen(apiService: const FakeApiWithResults())));
     await tester.pump();
     await tester.enterText(find.byType(TextField).first, 'pizza');
-    await tester.pump(const Duration(milliseconds: 400));
+    await tester.pump(const Duration(milliseconds: 900));
     await tester.pump();
 
     expect(find.text('Pizza One'), findsOneWidget);
     expect(find.text('Pizza Two'), findsOneWidget);
 
     await tester.tap(find.text('Pizza One'));
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 2));
 
     expect(find.byType(RecipeDetailsScreen), findsOneWidget);
     expect(find.text('Start Cooking'), findsOneWidget);

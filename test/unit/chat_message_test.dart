@@ -23,5 +23,19 @@ void main() {
       expect(msgFromMe.isFromMe(currentUserId), isTrue);
       expect(msgFromOther.isFromMe(currentUserId), isFalse);
     });
+    test('ChatMessage stores constructor fields as expected', () {
+      final ts = DateTime(2026, 1, 1, 12, 0);
+      final msg = ChatMessage(
+        id: 'm3',
+        senderId: 'u3',
+        text: 'Sample',
+        timestamp: ts,
+      );
+
+      expect(msg.id, 'm3');
+      expect(msg.senderId, 'u3');
+      expect(msg.text, 'Sample');
+      expect(msg.timestamp, ts);
+    });
   });
 }

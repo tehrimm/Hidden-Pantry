@@ -23,5 +23,25 @@ void main() {
       final friendly = StripeService.friendlyError('something_weird');
       expect(friendly, contains('Payment could not be completed'));
     });
+
+    test('Should map incorrect_cvc to friendly message', () {
+      final friendly = StripeService.friendlyError('incorrect_cvc');
+      expect(friendly, contains('CVC code is incorrect'));
+    });
+
+    test('Should map processing_error to retry-friendly message', () {
+      final friendly = StripeService.friendlyError('processing_error');
+      expect(friendly, contains('processing error occurred'));
+    });
+
+    test('Should map transfers/capabilities setup error', () {
+      final friendly = StripeService.friendlyError('capabilities missing for transfers');
+      expect(friendly, contains('not fully set up their payments'));
+    });
+
+    test('Should map network/connection issues', () {
+      final friendly = StripeService.friendlyError('network connection lost');
+      expect(friendly, contains('Network error'));
+    });
   });
 }
