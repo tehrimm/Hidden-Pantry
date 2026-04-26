@@ -22,7 +22,11 @@ class _SkeletonBoxState extends State<SkeletonBox> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))..repeat();
+    bool isTest = WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding');
+    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200));
+    if (!isTest) {
+      _c.repeat();
+    }
   }
 
   @override

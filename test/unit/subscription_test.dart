@@ -16,7 +16,7 @@ void main() {
         nutritionistId: 'nut_1',
       );
 
-      expect(sub.daysRemaining, 10);
+      expect(sub.daysRemaining(), 10);
     });
 
     test('daysRemaining should return 0 if subscription has expired', () {
@@ -31,7 +31,7 @@ void main() {
         nutritionistId: 'nut_1',
       );
 
-      expect(sub.daysRemaining, 0);
+      expect(sub.daysRemaining(), 0);
     });
 
     test('isActive true for active status with future expiry', () {
@@ -45,7 +45,7 @@ void main() {
         status: 'active',
       );
 
-      expect(sub.isActive, isTrue);
+      expect(sub.isActive(), isTrue);
     });
 
     test('isActive true for trialing status with future expiry', () {
@@ -59,7 +59,7 @@ void main() {
         status: 'trialing',
       );
 
-      expect(sub.isActive, isTrue);
+      expect(sub.isActive(), isTrue);
     });
 
     test('isActive false for canceled status even when not expired', () {
@@ -73,7 +73,7 @@ void main() {
         status: 'canceled',
       );
 
-      expect(sub.isActive, isFalse);
+      expect(sub.isActive(), isFalse);
     });
   });
 }

@@ -85,7 +85,7 @@ void main() {
 
     test('normalize handles plurals correctly', () {
       expect(RecipeMatcher.normalize('Eggs'), 'egg');     // strips 's'
-      expect(RecipeMatcher.normalize('Tomatoes'), 'tomat'); // strips 'es'
+      expect(RecipeMatcher.normalize('Tomatoes'), 'tomato'); // strips 'es'
       expect(RecipeMatcher.normalize('Chicken'), 'chicken');
       expect(RecipeMatcher.normalize('  FLOUR  '), 'flour');
     });

@@ -796,7 +796,13 @@ class _AuthFloatingOrbState extends State<_AuthFloatingOrb> with SingleTickerPro
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: widget.duration)..repeat();
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+
+    // Disable repeat in tests to prevent pumpAndSettle timeouts
+    bool isTest = WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding');
+    if (!isTest) {
+      _controller.repeat();
+    }
   }
 
   @override

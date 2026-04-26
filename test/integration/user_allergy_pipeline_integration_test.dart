@@ -17,7 +17,7 @@ void main() {
 
     const veganSalad = Recipe(
       id: 'ap_2', name: 'Vegan Salad',
-      minutes: 10, avgRating: 4.1,
+      minutes: 10, avgRating: 4.8,
       ingredients: [
         IngredientItem(name: 'spinach', quantity: 100, unit: 'g'),
         IngredientItem(name: 'tomato', quantity: 2, unit: 'pcs'),

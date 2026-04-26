@@ -6,30 +6,34 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 void main() {
   group('Real Business Tests: Major Features (Chat & Notifications)', () {
     test('NotificationModel converts string type to enum correctly', () {
-      final chatNotif = NotificationModel(
+      final chatNotif = AppNotification(
         id: '1',
-        userId: 'u1',
+        recipientId: 'u1',
+        senderId: 'u2',
+        senderName: 'Sender',
         title: 'New Message',
         body: 'Hello',
-        createdAt: DateTime.now(),
-        type: NotificationModel.parseType('chat_message'),
+        timestamp: DateTime.now(),
+        type: AppNotification.parseTypePublic('chat_message'),
         targetId: 'chat_123',
       );
       
       expect(chatNotif.type, NotificationType.chat_message);
       expect(chatNotif.targetId, 'chat_123');
       
-      final postNotif = NotificationModel(
+      final postNotif = AppNotification(
         id: '2',
-        userId: 'u1',
+        recipientId: 'u1',
+        senderId: 'u3',
+        senderName: 'Nutri',
         title: 'New Post',
         body: 'Look at this',
-        createdAt: DateTime.now(),
-        type: NotificationModel.parseType('new_post'),
+        timestamp: DateTime.now(),
+        type: AppNotification.parseTypePublic('nutritionist_post'),
         targetId: 'post_123',
       );
       
-      expect(postNotif.type, NotificationType.new_post);
+      expect(postNotif.type, NotificationType.nutritionist_post);
     });
 
     test('ChatMessage initializes correctly from raw data', () {

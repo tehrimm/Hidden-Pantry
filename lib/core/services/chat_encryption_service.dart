@@ -10,13 +10,35 @@ import 'package:pointycastle/export.dart' as pc;
 import 'package:pointycastle/asn1.dart';
 
 class ChatEncryptionService {
-  static final ChatEncryptionService _instance = ChatEncryptionService._internal();
-  factory ChatEncryptionService() => _instance;
-  ChatEncryptionService._internal();
+  static ChatEncryptionService? _instance;
+  
+  final FlutterSecureStorage _storage;
+  final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
 
-  final _storage = const FlutterSecureStorage();
-  final _firestore = FirebaseFirestore.instance;
-  final _auth = FirebaseAuth.instance;
+  ChatEncryptionService._internal({
+    FlutterSecureStorage? storage,
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+  })  : _storage = storage ?? const FlutterSecureStorage(),
+        _firestore = firestore ?? FirebaseFirestore.instance,
+        _auth = auth ?? FirebaseAuth.instance;
+
+  factory ChatEncryptionService({
+    FlutterSecureStorage? storage,
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+  }) {
+    if (storage == null && firestore == null && auth == null) {
+      _instance ??= ChatEncryptionService._internal();
+      return _instance!;
+    }
+    return ChatEncryptionService._internal(
+      storage: storage,
+      firestore: firestore,
+      auth: auth,
+    );
+  }
 
   // Constants
   static const String _privateKeyPrefix = 'chat_private_key_';

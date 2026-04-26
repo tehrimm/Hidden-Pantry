@@ -24,7 +24,9 @@ import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/features/user/screens/user_help_support.dart';
 
 class UserProfileScreen extends StatefulWidget {
-  const UserProfileScreen({super.key});
+  final FirebaseAuth? auth;
+  final FirebaseFirestore? firestore;
+  const UserProfileScreen({super.key, this.auth, this.firestore});
 
   @override
   State<UserProfileScreen> createState() => _UserProfileScreenState();
@@ -36,6 +38,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   final Color brown = const Color(0xFF433020);
   final Color tileBg = const Color(0xFFF9E3D5);
   final Color orange = const Color(0xFFEF8A54);
+  late final FirebaseAuth _auth;
 
 
   String? name;
@@ -46,6 +49,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   @override
   void initState() {
     super.initState();
+    _auth = widget.auth ?? FirebaseAuth.instance;
     _loadProfile();
   }
 
@@ -58,7 +62,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       _hasError = false;
     });
 
-    final user = FirebaseAuth.instance.currentUser;
+    final user = _auth.currentUser;
     if (user == null) {
       if (mounted) {
         setState(() {
@@ -72,11 +76,12 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     }
 
     try {
-      final doc = await FirebaseFirestore.instance
+      final firestore = widget.firestore ?? FirebaseFirestore.instance;
+      final doc = await firestore
           .collection("users")
           .doc(user.uid)
           .get()
-          .timeout(const Duration(seconds: 10));
+          .timeout(const Duration(seconds: 2));
 
       final data = doc.data();
 
@@ -134,7 +139,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       ),
     );
     try {
-      await FirebaseAuth.instance.signOut()
+      await _auth.signOut()
           .timeout(const Duration(seconds: 3));
     } catch (e) {
       debugPrint('[UserProfileScreen] signOut error: $e');

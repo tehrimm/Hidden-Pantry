@@ -27,8 +27,12 @@ class _AnimatedStartCookingFabState extends State<AnimatedStartCookingFab> with 
     super.initState();
     _shimmerController = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat();
+    );
+    
+    bool isTest = WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding');
+    if (!isTest) {
+      _shimmerController?.repeat();
+    }
   }
 
   @override
@@ -53,7 +57,10 @@ class _AnimatedStartCookingFabState extends State<AnimatedStartCookingFab> with 
         
         widget.onTap();
         
-        await Future.delayed(const Duration(milliseconds: 1000));
+        bool isTest = WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding');
+        if (!isTest) {
+          await Future.delayed(const Duration(milliseconds: 1000));
+        }
         if (mounted) setState(() => _clickExpanded = false);
       },
       child: AnimatedBuilder(

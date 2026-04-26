@@ -39,15 +39,6 @@ void main() {
     test('signOut should clear the current user', () async {
       // Sign in first
       await mockAuth.signInWithEmailAndPassword(email: 'test@ex.com', password: 'pw');
-
-      expect(userCredential?.user, isNotNull);
-      expect(userCredential?.user!.email, email);
-      expect(authService.currentUser, isNotNull);
-    });
-
-    test('signOut should clear the current user', () async {
-      // Sign in first
-      await mockAuth.signInWithEmailAndPassword(email: 'test@ex.com', password: 'pw');
       expect(authService.currentUser, isNotNull);
 
       await authService.signOut();

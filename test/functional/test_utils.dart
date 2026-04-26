@@ -5,10 +5,20 @@ import 'dart:typed_data';
 import 'package:hidden_pantry_app/core/services/auth_service.dart';
 import 'package:hidden_pantry_app/features/user/services/user_service.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_api_service.dart';
+import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mockito/mockito.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hidden_pantry_app/features/nutritionist/services/nutritionist_service.dart';
+
+Future<File> createDummyImage() async {
+  final directory = Directory.systemTemp;
+  final file = File('${directory.path}/dummy.png');
+  await file.writeAsBytes(_transparentImage);
+  return file;
+}
 
 /// A utility to mock all network image requests during tests.
 class MockHttpOverrides extends HttpOverrides {
@@ -20,9 +30,10 @@ class MockHttpOverrides extends HttpOverrides {
 
 class _MockHttpClient extends Mock implements HttpClient {
   @override
-  Future<HttpClientRequest> getUrl(Uri url) async {
-    return _MockHttpClientRequest();
-  }
+  Future<HttpClientRequest> getUrl(Uri url) async => _MockHttpClientRequest();
+
+  @override
+  Future<HttpClientRequest> openUrl(String method, Uri url) async => _MockHttpClientRequest();
 }
 
 class _MockHttpClientRequest extends Mock implements HttpClientRequest {
@@ -144,7 +155,13 @@ class MockUserService extends Mock implements UserService {
       );
 }
 
-class MockRecipeApiService extends Mock implements RecipeApiService {
+class MockRecipeApiService implements RecipeApiService {
+  @override
+  String get baseUrl => "mock_url";
+
+  @override
+  Future<List<String>> fetchTags({int limit = 15}) async => ["All", "Sushi", "Seafood", "Dessert"];
+
   @override
   Future<List<Recipe>> searchRecipes(
     String query, {
@@ -153,48 +170,144 @@ class MockRecipeApiService extends Mock implements RecipeApiService {
     int? maxMinutes,
     List<String>? tags,
     List<String>? allergies,
-  }) =>
-      super.noSuchMethod(
-        Invocation.method(#searchRecipes, [
-          query
-        ], {
-          #limit: limit,
-          #ingredients: ingredients,
-          #maxMinutes: maxMinutes,
-          #tags: tags,
-          #allergies: allergies,
-        }),
-        returnValue: Future.value(<Recipe>[]),
-      );
+  }) async => [];
 
   @override
-  Future<Recipe> getRecipeById(String id) => super.noSuchMethod(
-        Invocation.method(#getRecipeById, [id]),
-        returnValue: Future.value(Recipe(
+  Future<Recipe> getRecipeById(String id) async => Recipe(
           id: id,
-          name: '',
-          description: '',
+          name: 'Mock Recipe',
+          description: 'Description',
           imageUrl: '',
-          minutes: 0,
+          minutes: 30,
           ingredients: [],
           directions: [],
           tags: [],
-          avgRating: 0.0,
-          authorId: '',
-          authorName: '',
-        )),
-      );
+          avgRating: 4.5,
+          authorId: 'a1',
+          authorName: 'Author',
+        );
 
   @override
-  Future<int> countRecipesByAuthor(String authorId) => super.noSuchMethod(
-        Invocation.method(#countRecipesByAuthor, [authorId]),
-        returnValue: Future.value(0),
-      );
+  Future<int> countRecipesByAuthor(String authorId) async => 0;
 
   @override
-  Future<List<Recipe>> fetchRecipesByAuthor(String authorId, {int limit = 10, DocumentSnapshot? startAfter}) =>
-      super.noSuchMethod(
-        Invocation.method(#fetchRecipesByAuthor, [authorId], {#limit: limit, #startAfter: startAfter}),
-        returnValue: Future.value(<Recipe>[]),
-      );
+  Future<List<Recipe>> fetchRecipesByAuthor(String authorId, {int limit = 10}) async => [];
+
+  @override
+  Future<List<Recipe>> recommend({
+    String? query,
+    List<String> ingredients = const [],
+    String? tag,
+    List<String> allergies = const [],
+    List<String> likedRecipeIds = const [],
+    int? maxMinutes,
+    double? minRating,
+    int topK = 10,
+  }) async => [];
+
+  @override
+  Future<List<Recipe>> fetchFollowingFeed(List<String> authorIds, {int limit = 20}) async => [];
+
+  @override
+  Future<Map<String, dynamic>> getAuthorStats(String authorId) async => {};
+  
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class MockRecipeService extends Mock implements RecipeService {
+  @override
+  Stream<QuerySnapshot> getReviews(String recipeId) => Stream.value(_MockQuerySnapshot([]));
+  
+  @override
+  Future<List<Recipe>> getRecipesByIds(List<String> ids) async => [];
+
+  @override
+  Future<bool> hasUserReviewed(String recipeId, String userId) async => false;
+}
+
+class MockNutritionistService extends Mock implements NutritionistService {
+  @override
+  Stream<List<Map<String, dynamic>>> getPendingNutritionists() => Stream.value([
+    {
+      'uid': 'n1',
+      'fullName': 'Expert Jiro',
+      'email': 'jiro@example.com',
+      'licenseNumber': 'L12345',
+      'certificateUrl': 'https://example.com/cert.pdf',
+    }
+  ]);
+
+  @override
+  Future<void> approveNutritionist(String uid) async {}
+  @override
+  Future<void> rejectNutritionist(String uid, String reason) async {}
+}
+
+class _MockQuerySnapshot extends Mock implements QuerySnapshot {
+  final List<QueryDocumentSnapshot> _docs;
+  _MockQuerySnapshot(this._docs);
+
+  @override
+  List<QueryDocumentSnapshot> get docs => _docs;
+}
+
+class _MockQueryDocumentSnapshot extends Mock implements QueryDocumentSnapshot {
+  final Map<String, dynamic> _data;
+  final String _id;
+  _MockQueryDocumentSnapshot(this._id, this._data);
+
+  @override
+  String get id => _id;
+
+  @override
+  Map<String, dynamic> data() => _data;
+
+  @override
+  dynamic operator [](Object field) => _data[field];
+}
+
+class MockFirebaseFirestore extends Mock implements FirebaseFirestore {
+  @override
+  CollectionReference<Map<String, dynamic>> collection(String collectionPath) {
+    return _MockCollectionReference(collectionPath);
+  }
+}
+
+class _MockCollectionReference extends Mock implements CollectionReference<Map<String, dynamic>> {
+  final String path;
+  _MockCollectionReference(this.path);
+
+  @override
+  DocumentReference<Map<String, dynamic>> doc([String? path]) {
+    return _MockDocumentReference(path ?? 'default');
+  }
+}
+
+class _MockDocumentReference extends Mock implements DocumentReference<Map<String, dynamic>> {
+  final String id;
+  _MockDocumentReference(this.id);
+
+  @override
+  Future<DocumentSnapshot<Map<String, dynamic>>> get([GetOptions? options]) async {
+    return _MockDocumentSnapshot(id, {
+      'fullName': 'Test User',
+      'email': 'test@gmail.com',
+    });
+  }
+}
+
+class _MockDocumentSnapshot extends Mock implements DocumentSnapshot<Map<String, dynamic>> {
+  final String _id;
+  final Map<String, dynamic>? _data;
+  _MockDocumentSnapshot(this._id, this._data);
+
+  @override
+  String get id => _id;
+  @override
+  Map<String, dynamic>? data() => _data;
+  @override
+  bool get exists => _data != null;
+  @override
+  dynamic operator [](Object field) => _data?[field];
 }

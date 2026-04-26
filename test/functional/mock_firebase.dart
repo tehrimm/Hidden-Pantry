@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MockFirebasePlatform extends FirebasePlatform {
   @override
@@ -42,5 +43,6 @@ class MockFirebaseAppPlatform extends FirebaseAppPlatform {
 
 void setupFirebaseAuthMocks() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
   FirebasePlatform.instance = MockFirebasePlatform();
 }

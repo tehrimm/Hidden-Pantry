@@ -21,6 +21,7 @@ class CategoriesScreen extends StatefulWidget {
   final String? query; // Added query parameter
   final List<String> allergies;
   final List<String>? authorIds; // Added authorIds for following feed
+  final RecipeApiService? apiService;
 
   const CategoriesScreen({
     super.key,
@@ -29,6 +30,7 @@ class CategoriesScreen extends StatefulWidget {
     this.query,
     this.allergies = const [],
     this.authorIds,
+    this.apiService,
   });
 
   @override
@@ -36,7 +38,7 @@ class CategoriesScreen extends StatefulWidget {
 }
 
 class _CategoriesScreenState extends State<CategoriesScreen> {
-  final RecipeApiService api = const RecipeApiService(baseUrl: ApiConstants.baseUrl);
+  late final RecipeApiService api;
 
   bool loading = true;
   List<Recipe> recipes = [];
@@ -53,6 +55,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
   @override
   void initState() {
     super.initState();
+    api = widget.apiService ?? const RecipeApiService(baseUrl: ApiConstants.baseUrl);
     _loadRecipes();
   }
 

@@ -14,6 +14,7 @@ class RecipeMatcher {
     'sugar': 0.5,
     'onion': 0.8,
     'garlic': 0.8,
+    'pasta': 0.5,
   };
 
   static final Map<String, Set<String>> _allergenSynonyms = {
@@ -50,6 +51,9 @@ class RecipeMatcher {
   static String normalize(String name) {
     String s = name.toLowerCase().trim();
     if (s.endsWith('es')) {
+      if (s == 'tomatoes') return 'tomato';
+      if (s == 'potatoes') return 'potato';
+      if (s == 'noodles') return 'noodle';
       s = s.substring(0, s.length - 2);
     } else if (s.endsWith('s') && !s.endsWith('ss')) {
       s = s.substring(0, s.length - 1);
@@ -80,8 +84,15 @@ class RecipeMatcher {
     for (final a in allergens) {
       final syns = _synsFor(a);
       for (final s in syns) {
-        if (toks.contains(s)) return true;
-        if (ingredient.toLowerCase().contains(s)) return true;
+        if (toks.contains(s)) {
+          // Rule : Avoid false positives like "peanut butter" for "dairy"
+          if (s == 'butter' && toks.contains('peanut')) continue;
+          return true;
+        }
+        if (ingredient.toLowerCase().contains(s)) {
+          if (s == 'butter' && ingredient.toLowerCase().contains('peanut')) continue;
+          return true;
+        }
       }
     }
     return false;

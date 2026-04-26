@@ -4,7 +4,6 @@ import 'package:hidden_pantry_app/core/services/user_status_service.dart';
 void main() {
   group('UserStatusService Unit Logic', () {
     test('getStatusStream selects correct collection based on isNutritionist flag', () {
-      final service = UserStatusService(); // Relies on underlying Firebase call structure
       // We cannot easily test the stream emission without a mock firestore fully set up,
       // but we can verify the path logic indirectly if we refactored,
       // However, we can test the expected string outputs based on flag directly.

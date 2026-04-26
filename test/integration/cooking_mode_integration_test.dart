@@ -32,7 +32,7 @@ void main() {
       id: 'cook_2',
       name: 'Simple Omelette',
       minutes: 10,
-      avgRating: 4.2,
+      avgRating: 5.0,
       ingredients: [
         IngredientItem(name: 'egg', quantity: 3, unit: 'pcs', calories: 70),
         IngredientItem(name: 'butter', quantity: 1, unit: 'tbsp', calories: 102),

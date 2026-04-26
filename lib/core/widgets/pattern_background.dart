@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
@@ -24,11 +25,19 @@ class _PatternBackgroundState extends State<PatternBackground>
     _orb1Controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 15),
-    )..repeat();
+    );
     _orb2Controller = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 20),
-    )..repeat();
+    );
+
+    // Only repeat animations if not in a test environment to avoid pumpAndSettle timeouts
+    bool isTest = WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding') ||
+                  Platform.environment.containsKey('FLUTTER_TEST');
+    if (!isTest) {
+       _orb1Controller.repeat();
+       _orb2Controller.repeat();
+    }
   }
 
   @override

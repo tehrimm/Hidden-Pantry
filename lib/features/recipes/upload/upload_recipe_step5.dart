@@ -336,8 +336,8 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
                 keyboardType: TextInputType.number,
                 style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.bold, fontFamily: 'Satoshi'),
                 decoration: InputDecoration(
-                  hintText: label,
-                  hintStyle: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 16.sp, fontFamily: 'Satoshi'),
+                  labelText: label,
+                  labelStyle: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 16.sp, fontFamily: 'Satoshi'),
                   border: InputBorder.none,
                 ),
               ),

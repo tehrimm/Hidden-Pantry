@@ -13,7 +13,7 @@ void main() {
         nutritionistId: 'nut1',
       );
       
-      expect(pastSub.daysRemaining, 0);
+      expect(pastSub.daysRemaining(), 0);
     });
 
     test('daysRemaining returns correct positive number for future expiry', () {
@@ -27,7 +27,7 @@ void main() {
         nutritionistId: 'nut1',
       );
       
-      expect(futureSub.daysRemaining, 5);
+      expect(futureSub.daysRemaining(), 5);
     });
 
     test('isActive returns false if status is cancelled', () {
@@ -41,7 +41,7 @@ void main() {
         status: 'cancelled', // Explicitly cancelled
       );
       
-      expect(cancelledSub.isActive, false);
+      expect(cancelledSub.isActive(), false);
     });
 
     test('isActive returns false if daysRemaining is 0 despite active status', () {
@@ -55,7 +55,7 @@ void main() {
         status: 'active', // Status is active but date is expired
       );
       
-      expect(expiredSub.isActive, false);
+      expect(expiredSub.isActive(), false);
     });
 
     test('isActive returns true for active status with remaining days', () {
@@ -69,7 +69,7 @@ void main() {
         status: 'active',
       );
       
-      expect(goodSub.isActive, true);
+      expect(goodSub.isActive(), true);
     });
 
     test('isActive returns true for trialing status with remaining days', () {
@@ -83,7 +83,7 @@ void main() {
         status: 'trialing',
       );
       
-      expect(trialSub.isActive, true);
+      expect(trialSub.isActive(), true);
     });
   });
 }

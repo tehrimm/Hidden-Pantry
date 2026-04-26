@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 
 class FoodLoader extends StatefulWidget {
@@ -16,6 +17,7 @@ class FoodLoader extends StatefulWidget {
 
 class _FoodLoaderState extends State<FoodLoader>
     with SingleTickerProviderStateMixin {
+  Timer? _pauseTimer;
   late AnimationController _controller;
   int _index = 0;
 
@@ -29,18 +31,24 @@ class _FoodLoaderState extends State<FoodLoader>
   void initState() {
     super.initState();
 
+    // Disable infinite animation in tests to prevent pumpAndSettle timeouts
+    bool isTest = WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding');
+    
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 900),
-    )..addStatusListener((status) async {
-        if (status == AnimationStatus.completed) {
-          await Future.delayed(const Duration(milliseconds: 200)); // pause
-
-          _controller.reset();
-          setState(() {
-            _index = (_index + 1) % shapes.length;
+    )..addStatusListener((status) {
+        if (status == AnimationStatus.completed && !isTest) {
+          _pauseTimer?.cancel();
+          _pauseTimer = Timer(const Duration(milliseconds: 200), () {
+            if (mounted) {
+              _controller.reset();
+              setState(() {
+                _index = (_index + 1) % shapes.length;
+              });
+              _controller.forward();
+            }
           });
-          _controller.forward();
         }
       });
 
@@ -49,6 +57,7 @@ class _FoodLoaderState extends State<FoodLoader>
 
   @override
   void dispose() {
+    _pauseTimer?.cancel();
     _controller.dispose();
     super.dispose();
   }

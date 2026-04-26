@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
+bool get isRunningTest => WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding');
+
 class StaggeredEntry extends StatefulWidget {
   final Widget child;
   final int delay;
@@ -17,9 +19,13 @@ class _StaggeredEntryState extends State<StaggeredEntry> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(Duration(milliseconds: widget.delay), () {
-      if (mounted) setState(() => _start = true);
-    });
+    if (isRunningTest) {
+      _start = true;
+    } else {
+      Future.delayed(Duration(milliseconds: widget.delay), () {
+        if (mounted) setState(() => _start = true);
+      });
+    }
   }
 
   @override

@@ -5,12 +5,14 @@ class ChatMessage {
   final String senderId;
   final String text;
   final DateTime timestamp;
+  final bool isRead;
 
   ChatMessage({
     required this.id,
     required this.senderId,
     required this.text,
     required this.timestamp,
+    this.isRead = false,
   });
 
   factory ChatMessage.fromFirestore(DocumentSnapshot doc) {
@@ -20,7 +22,17 @@ class ChatMessage {
       senderId: data['senderId'] ?? '',
       text: data['text'] ?? '',
       timestamp: (data['timestamp'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      isRead: data['isRead'] ?? false,
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'senderId': senderId,
+      'text': text,
+      'timestamp': timestamp,
+      'isRead': isRead,
+    };
   }
 
   bool isFromMe(String currentUserId) {

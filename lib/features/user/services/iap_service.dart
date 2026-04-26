@@ -21,6 +21,8 @@ class IAPService {
     return user?.email == 'hiddenpantry50@gmail.com';
   }
 
+  bool get _isTest => WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding');
+
   // Product IDs (Must match Google Play Console)
   static const String monthlyID = 'platform_premium_monthly';
   static const String annualID = 'platform_premium_annual';
@@ -32,6 +34,7 @@ class IAPService {
 
   /// Initialize listeners
   void initialize() {
+    if (_isTest) return;
     final purchaseUpdated = _iap.purchaseStream;
     _subscription = purchaseUpdated.listen(
       _onPurchaseUpdate,
@@ -47,6 +50,10 @@ class IAPService {
 
   /// Fetch products from store
   Future<void> fetchProducts() async {
+    if (_isTest) {
+      debugPrint("IAP: Skipping fetchProducts in test environment.");
+      return;
+    }
     try {
       final bool available = await _iap.isAvailable();
       if (!available) {

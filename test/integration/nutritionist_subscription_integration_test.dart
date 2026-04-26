@@ -41,8 +41,8 @@ void main() {
           nutritionistId: 'nut_01',
           status: 'active',
         );
-        expect(sub.isActive, true);
-        expect(sub.daysRemaining, 25);
+        expect(sub.isActive(mockNow), true);
+        expect(sub.daysRemaining(mockNow), 25);
       });
 
       test('Expired subscription reports 0 days and isActive false', () {
@@ -54,8 +54,8 @@ void main() {
           expiryDate: mockNow.subtract(const Duration(days: 1)),
           nutritionistId: 'nut_01',
         );
-        expect(sub.isActive, false);
-        expect(sub.daysRemaining, 0);
+        expect(sub.isActive(mockNow), false);
+        expect(sub.daysRemaining(mockNow), 0);
       });
 
       test('Cancelled status blocks even with future expiry', () {
@@ -68,7 +68,7 @@ void main() {
           nutritionistId: 'nut_01',
           status: 'cancelled',
         );
-        expect(sub.isActive, false);
+        expect(sub.isActive(mockNow), false);
       });
 
       test('Trialing status + future expiry = active', () {
@@ -81,7 +81,7 @@ void main() {
           nutritionistId: 'nut_01',
           status: 'trialing',
         );
-        expect(sub.isActive, true);
+        expect(sub.isActive(mockNow), true);
       });
     });
 

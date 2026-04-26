@@ -128,17 +128,18 @@ class NotificationsScreen extends StatelessWidget {
                       color: purple,
                       onPressed: () => Navigator.pop(context),
                     ),
-                    const Spacer(),
-                    Text(
-                      "Notifications",
-                      style: TextStyle(
-                        color: purple,
-                        fontSize: 24.sp,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: "Satoshi",
+                    Expanded(
+                      child: Text(
+                        "Notifications",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: purple,
+                          fontSize: 24.sp,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: "Satoshi",
+                        ),
                       ),
                     ),
-                    const Spacer(flex: 2),
                   ],
                 ),
               ),

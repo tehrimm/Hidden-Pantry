@@ -228,14 +228,17 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                                             borderRadius: BorderRadius.circular(23.sw),
                                             child: Image.network(widget.editingRecipe!.imageUrl!, fit: BoxFit.cover),
                                           )
-                                        : Column(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Icon(Icons.add_photo_alternate_rounded, size: 48.sw, color: purple.withValues(alpha: 0.4)),
-                                              SizedBox(height: 12.sh),
-                                              Text('Add Recipe Photo', style: TextStyle(color: purple.withValues(alpha: 0.4), fontSize: 16.sp, fontWeight: FontWeight.w900, fontFamily: 'Satoshi')),
-                                              Text('High quality photos get more likes', style: TextStyle(color: purple.withValues(alpha: 0.25), fontSize: 12.sp, fontFamily: 'Satoshi')),
-                                            ],
+                                        : FittedBox(
+                                            fit: BoxFit.scaleDown,
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Icon(Icons.add_photo_alternate_rounded, size: 48.sw, color: purple.withValues(alpha: 0.4)),
+                                                SizedBox(height: 12.sh),
+                                                Text('Add Recipe Photo', style: TextStyle(color: purple.withValues(alpha: 0.4), fontSize: 16.sp, fontWeight: FontWeight.w900, fontFamily: 'Satoshi')),
+                                                Text('High quality photos get more likes', style: TextStyle(color: purple.withValues(alpha: 0.25), fontSize: 12.sp, fontFamily: 'Satoshi')),
+                                              ],
+                                            ),
                                           )),
                               ),
                             ),

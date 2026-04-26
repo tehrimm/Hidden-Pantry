@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
@@ -204,7 +205,7 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
     return _FadeSlideEntry(
       delayMs: 200,
       child: SizedBox(
-        height: 60.sh,
+        height: 80.sh,
         child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: _durationDays,
@@ -221,26 +222,29 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
                 borderRadius: BorderRadius.circular(16.sw),
                 border: Border.all(color: isSelected ? orange : purple.withValues(alpha:0.1)),
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    "DAY",
-                    style: TextStyle(
-                      color: isSelected ? Colors.white.withValues(alpha:0.8) : purple.withValues(alpha:0.4),
-                      fontSize: 10.sp,
-                      fontWeight: FontWeight.bold,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      "DAY",
+                      style: TextStyle(
+                        color: isSelected ? Colors.white.withValues(alpha:0.8) : purple.withValues(alpha:0.4),
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  Text(
-                    "$dayNum",
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : purple,
-                      fontSize: 18.sp,
-                      fontWeight: FontWeight.w900,
+                    Text(
+                      "$dayNum",
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : purple,
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           );
@@ -743,12 +747,14 @@ class _FadeSlideEntryState extends State<_FadeSlideEntry> with SingleTickerProvi
     _fade = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
     _slide = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
 
-    if (widget.delayMs > 0) {
+    bool isTest = WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding') ||
+                  Platform.environment.containsKey('FLUTTER_TEST');
+    if (isTest) {
+      _ctrl.forward();
+    } else {
       Future.delayed(Duration(milliseconds: widget.delayMs), () {
         if (mounted) _ctrl.forward();
       });
-    } else {
-      _ctrl.forward();
     }
   }
 

@@ -4,14 +4,26 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/home/home_screen.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/search/search.dart';
 import 'package:hidden_pantry_app/features/user/screens/notifications_screen.dart';
+import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'mock_firebase.dart';
 import 'test_utils.dart';
 
 void main() {
+  late MockFirebaseAuth mockAuth;
+
   setUpAll(() async {
     setupFirebaseAuthMocks();
     await Firebase.initializeApp();
     setUpNetworkImageMock();
+    
+    mockAuth = MockFirebaseAuth(
+      signedIn: true,
+      mockUser: MockUser(
+        uid: 'test-uid',
+        email: 'test@gmail.com',
+        displayName: 'Test User',
+      ),
+    );
   });
 
   Widget wrap(Widget child) => MaterialApp(home: child);
@@ -22,7 +34,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(wrap(const HomeScreen(inShell: true)));
+    await tester.pumpWidget(wrap(HomeScreen(inShell: true, apiService: MockRecipeApiService(), auth: mockAuth)));
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(Scaffold), findsOneWidget);
@@ -34,7 +46,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(wrap(const HomeScreen(inShell: true)));
+    await tester.pumpWidget(wrap(HomeScreen(inShell: true, apiService: MockRecipeApiService())));
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.byIcon(Icons.mic_rounded), findsWidgets);
@@ -46,7 +58,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(wrap(const HomeScreen(inShell: true)));
+    await tester.pumpWidget(wrap(HomeScreen(inShell: true, apiService: MockRecipeApiService())));
     await tester.pump(const Duration(milliseconds: 500));
 
     await tester.tap(find.byIcon(Icons.mic_rounded).first);
@@ -62,7 +74,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(wrap(const HomeScreen(inShell: true)));
+    await tester.pumpWidget(wrap(HomeScreen(inShell: true, apiService: MockRecipeApiService())));
     await tester.pump(const Duration(milliseconds: 500));
 
     await tester.tap(find.text('Search recipes, ingredients...'));
@@ -78,7 +90,7 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(wrap(const HomeScreen(inShell: true)));
+    await tester.pumpWidget(wrap(HomeScreen(inShell: true, apiService: MockRecipeApiService())));
     await tester.pump(const Duration(milliseconds: 600));
 
     final bellIcon = find.byWidgetPredicate((w) {

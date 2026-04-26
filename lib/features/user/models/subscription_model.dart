@@ -32,11 +32,14 @@ class SubscriptionModel {
     );
   }
 
-  int get daysRemaining {
-    final now = DateTime.now();
-    if (expiryDate.isBefore(now)) return 0;
-    return expiryDate.difference(now).inDays;
+  int daysRemaining([DateTime? now]) {
+    final reference = now ?? DateTime.now();
+    if (expiryDate.isBefore(reference)) return 0;
+    return expiryDate.difference(reference).inDays;
   }
 
-  bool get isActive => (status == 'active' || status == 'trialing') && daysRemaining > 0;
+  bool isActive([DateTime? now]) {
+    final reference = now ?? DateTime.now();
+    return (status == 'active' || status == 'trialing') && daysRemaining(reference) > 0;
+  }
 }

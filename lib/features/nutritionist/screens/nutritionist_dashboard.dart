@@ -51,7 +51,10 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
 
   Future<void> _loadProfile() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      if (mounted) setState(() => loadingProfile = false);
+      return;
+    }
 
     try {
       final doc = await FirebaseFirestore.instance
@@ -1769,13 +1772,16 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              "Subscription Plans",
-              style: TextStyle(
-                color: purple,
-                fontSize: 22.sp,
-                fontWeight: FontWeight.w900,
-                fontFamily: "Satoshi",
+            Expanded(
+              child: Text(
+                "Subscription Plans",
+                style: TextStyle(
+                  color: purple,
+                  fontSize: 22.sp,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: "Satoshi",
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
             GestureDetector(

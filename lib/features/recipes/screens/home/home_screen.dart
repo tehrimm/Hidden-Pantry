@@ -37,7 +37,9 @@ import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 
 class HomeScreen extends StatefulWidget {
   final bool inShell;
-  const HomeScreen({super.key, this.inShell = false});
+  final RecipeApiService? apiService;
+  final FirebaseAuth? auth;
+  const HomeScreen({super.key, this.inShell = false, this.apiService, this.auth});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -46,8 +48,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
 
   final RecipeService _recipeService = RecipeService();
-  final RecipeApiService api =
-      const RecipeApiService(baseUrl: ApiConstants.baseUrl);
+  late final RecipeApiService api;
+  late final FirebaseAuth _auth;
 
   final Color bg = const Color(0xFFFFF3EB);
   final Color chipBg = const Color(0xFFF9E3D5);
@@ -91,6 +93,8 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _auth = widget.auth ?? FirebaseAuth.instance;
+    api = widget.apiService ?? const RecipeApiService(baseUrl: ApiConstants.baseUrl);
     _checkNutritionistStatus();
     _loadHome();
     _initSpeech();
@@ -173,7 +177,7 @@ class _HomeScreenState extends State<HomeScreen> {
       List<String> likedIds = [];
       List<String> followedIds = [];
       
-      final user = FirebaseAuth.instance.currentUser;
+      final user = _auth.currentUser;
       final initialFutures = <Future>[
         api.fetchTags(limit: 50).then((v) => fetchedTags = v).catchError((_) => <String>[]),
       ];
@@ -427,7 +431,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final isAll = tag == "All";
       
-      final user = FirebaseAuth.instance.currentUser;
+      final user = _auth.currentUser;
       List<String> likedIds = [];
       if (user != null) {
          likedIds = await _recipeService.getLikedRecipeIds(user.uid);

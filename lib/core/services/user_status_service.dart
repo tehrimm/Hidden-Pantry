@@ -3,16 +3,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 
 class UserStatusService {
-  static final UserStatusService _instance = UserStatusService._internal();
-  factory UserStatusService() => _instance;
-  UserStatusService._internal();
-
+  static UserStatusService? _instance;
+  
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
 
   UserStatusService({FirebaseFirestore? firestore, FirebaseAuth? auth})
       : _firestore = firestore ?? FirebaseFirestore.instance,
         _auth = auth ?? FirebaseAuth.instance;
+
+  factory UserStatusService.instance() {
+    _instance ??= UserStatusService();
+    return _instance!;
+  }
 
   Future<void> updateStatus(bool isOnline) async {
     final user = _auth.currentUser;

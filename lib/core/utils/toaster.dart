@@ -78,8 +78,8 @@ class Toaster {
     final bindingType = WidgetsBinding.instance.runtimeType.toString();
     final isTestEnv = bindingType.contains('TestWidgetsFlutterBinding');
     if (isTestEnv) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        entry.remove();
+      Future.delayed(const Duration(milliseconds: 500)).then((_) {
+        if (entry.mounted) entry.remove();
       });
     } else {
       Future.delayed(const Duration(seconds: 3)).then((_) {

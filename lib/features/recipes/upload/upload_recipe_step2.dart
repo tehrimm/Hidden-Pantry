@@ -374,13 +374,16 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                                       leading: Icon(icon, color: purple, size: 22.sw),
                                       title: Row(
                                         children: [
-                                          Text(
-                                            categoryName,
-                                            style: TextStyle(
-                                              color: purple,
-                                              fontSize: 15.sp,
-                                              fontWeight: FontWeight.bold,
-                                              fontFamily: 'Satoshi',
+                                          Expanded(
+                                            child: Text(
+                                              categoryName,
+                                              style: TextStyle(
+                                                color: purple,
+                                                fontSize: 15.sp,
+                                                fontWeight: FontWeight.bold,
+                                                fontFamily: 'Satoshi',
+                                              ),
+                                              overflow: TextOverflow.ellipsis,
                                             ),
                                           ),
                                           if (selectedInCategory > 0) ...[

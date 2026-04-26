@@ -115,9 +115,26 @@ class Recipe {
     };
     
     if (aliases.containsKey(keyLower)) {
+      // Searching for a primary group (e.g. "protein") -> check all its aliases in nutrition map
       for (final alias in aliases[keyLower]!) {
         for (final entry in nutrition!.entries) {
           if (entry.key.toLowerCase() == alias) return entry.value;
+        }
+      }
+    } else {
+      // Searching for an alias (e.g. "carbohydrates") -> find which group it belongs to
+      for (final group in aliases.entries) {
+        if (group.value.contains(keyLower)) {
+          // It belongs to this group. Check if nutrition has the group name itself
+          for (final entry in nutrition!.entries) {
+            if (entry.key.toLowerCase() == group.key) return entry.value;
+          }
+          // OR if nutrition has any OTHER alias from this same group
+          for (final otherAlias in group.value) {
+            for (final entry in nutrition!.entries) {
+              if (entry.key.toLowerCase() == otherAlias) return entry.value;
+            }
+          }
         }
       }
     }
@@ -553,6 +570,7 @@ class Recipe {
       'directions': directions,
       'nutrition': nutrition,
       'tags': tags,
+      'allergens': allergens,
       'steps_detailed': stepsDetailed,
       'n_steps': nSteps,
       'is_nutritionist_recipe': isNutritionistRecipe,
@@ -710,6 +728,3 @@ class IngredientItem {
     };
   }
 }
-
-
-

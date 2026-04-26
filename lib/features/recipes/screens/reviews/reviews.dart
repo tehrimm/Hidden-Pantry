@@ -13,13 +13,14 @@ import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 class ReviewsScreen extends StatelessWidget {
   final Recipe recipe;
+  final RecipeService? recipeService;
 
-  const ReviewsScreen({super.key, required this.recipe});
+  const ReviewsScreen({super.key, required this.recipe, this.recipeService});
 
   @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
-    final RecipeService recipeService = RecipeService();
+    final rs = recipeService ?? RecipeService();
     const Color bg = Color(0xFFFFF3EB);
     const Color purple = Color(0xFF462F4D);
     const Color orange = Color(0xFFEF8A54);
@@ -67,7 +68,7 @@ class ReviewsScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: StreamBuilder<QuerySnapshot>(
-                      stream: recipeService.getReviews(recipe.id),
+                      stream: rs.getReviews(recipe.id),
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting) {
                           return const Center(child: CircularProgressIndicator());
@@ -105,7 +106,7 @@ class ReviewsScreen extends StatelessWidget {
                                   data: data,
                                   purple: purple,
                                   orange: orange,
-                                  recipeService: recipeService,
+                                  recipeService: rs,
                                 ),
                               ),
                             );
@@ -421,6 +422,9 @@ class _ReviewCardState extends State<_ReviewCard> {
     final likes = (widget.data['likes'] as num?)?.toInt() ?? 0;
     final likedBy = List<String>.from(widget.data['likedBy'] ?? []);
     final isLiked = user != null && likedBy.contains(user.uid);
+    final hasImage = userImageUrl != null && 
+                    userImageUrl.toString().trim().isNotEmpty && 
+                    userImageUrl.toString().startsWith("http");
 
     return Container(
       padding: EdgeInsets.all(16.sw),
@@ -444,10 +448,8 @@ class _ReviewCardState extends State<_ReviewCard> {
               CircleAvatar(
                 radius: 18.sw,
                 backgroundColor: widget.purple.withValues(alpha:0.1),
-                backgroundImage: (userImageUrl != null && userImageUrl.toString().trim().isNotEmpty && userImageUrl.toString().startsWith("http"))
-                    ? NetworkImage(userImageUrl.toString())
-                    : null,
-                onBackgroundImageError: (_, __) {},
+                backgroundImage: hasImage ? NetworkImage(userImageUrl.toString()) : null,
+                onBackgroundImageError: hasImage ? (_, __) {} : null,
                 child: Icon(Icons.person_rounded, color: widget.purple, size: 18.sp),
               ),
               SizedBox(width: 12.sw),

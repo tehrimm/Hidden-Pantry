@@ -87,7 +87,7 @@ void main() {
       // Tap register with empty fields
       expect(find.text('Register'), findsWidgets);
       await tester.tap(find.text('Register').last);
-      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(seconds: 1)); // Wait for Toaster timer
 
       expect(find.text('*field is required'), findsNWidgets(2)); // Name and Email
       expect(find.text('*phone number is required'), findsOneWidget);
@@ -141,7 +141,7 @@ void main() {
 
       await tester.enterText(find.byType(TextField), '123'); // Too short
       await tester.tap(find.text('Next'));
-      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(seconds: 1)); // Wait for Toaster timer
 
       expect(find.text('*enter valid number'), findsOneWidget);
     });

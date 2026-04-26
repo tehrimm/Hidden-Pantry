@@ -926,28 +926,30 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Ingredients",
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 24.sp,
-                        fontWeight: FontWeight.w800,
-                        fontFamily: "Satoshi",
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Ingredients",
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 24.sp,
+                          fontWeight: FontWeight.w800,
+                          fontFamily: "Satoshi",
+                        ),
                       ),
-                    ),
-                    SizedBox(height: 4.sh),
-                    Container(
-                      width: 60.sw,
-                      height: 4.sh,
-                      decoration: BoxDecoration(
-                        color: orange,
-                        borderRadius: BorderRadius.circular(2.sw),
+                      SizedBox(height: 4.sh),
+                      Container(
+                        width: 60.sw,
+                        height: 4.sh,
+                        decoration: BoxDecoration(
+                          color: orange,
+                          borderRadius: BorderRadius.circular(2.sw),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 _servingControl(),
               ],

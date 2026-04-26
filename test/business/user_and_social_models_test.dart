@@ -92,18 +92,18 @@ void main() {
     });
 
     test('parseType maps all known notification strings to enums', () {
-      expect(AppNotification._parseTypePublic('like'), NotificationType.like);
-      expect(AppNotification._parseTypePublic('comment'), NotificationType.comment);
-      expect(AppNotification._parseTypePublic('reply'), NotificationType.reply);
-      expect(AppNotification._parseTypePublic('follow'), NotificationType.follow);
-      expect(AppNotification._parseTypePublic('chat_message'), NotificationType.chat_message);
-      expect(AppNotification._parseTypePublic('nutritionist_post'), NotificationType.nutritionist_post);
-      expect(AppNotification._parseTypePublic('subscription_alert'), NotificationType.subscription_alert);
+      expect(AppNotification.parseTypePublic('like'), NotificationType.like);
+      expect(AppNotification.parseTypePublic('comment'), NotificationType.comment);
+      expect(AppNotification.parseTypePublic('reply'), NotificationType.reply);
+      expect(AppNotification.parseTypePublic('follow'), NotificationType.follow);
+      expect(AppNotification.parseTypePublic('chat_message'), NotificationType.chat_message);
+      expect(AppNotification.parseTypePublic('nutritionist_post'), NotificationType.nutritionist_post);
+      expect(AppNotification.parseTypePublic('subscription_alert'), NotificationType.subscription_alert);
     });
 
     test('parseType falls back to like for unknown string', () {
-      expect(AppNotification._parseTypePublic('unknown_type'), NotificationType.like);
-      expect(AppNotification._parseTypePublic(null), NotificationType.like);
+      expect(AppNotification.parseTypePublic('unknown_type'), NotificationType.like);
+      expect(AppNotification.parseTypePublic(null), NotificationType.like);
     });
   });
 

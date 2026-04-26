@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -274,9 +275,15 @@ class _FadeSlideEntryState extends State<_FadeSlideEntry> with SingleTickerProvi
     _fade = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
     _slide = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
         .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
-    Future.delayed(Duration(milliseconds: widget.delayMs), () {
-      if (mounted) _ctrl.forward();
-    });
+    bool isTest = WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding') ||
+                  Platform.environment.containsKey('FLUTTER_TEST');
+    if (isTest) {
+      _ctrl.forward();
+    } else {
+      Future.delayed(Duration(milliseconds: widget.delayMs), () {
+        if (mounted) _ctrl.forward();
+      });
+    }
   }
 
   @override
@@ -338,7 +345,12 @@ class _MyPlansFloatingOrbState extends State<_MyPlansFloatingOrb> with SingleTic
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: widget.duration)..repeat();
+    bool isTest = WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding') ||
+                  Platform.environment.containsKey('FLUTTER_TEST');
+    _controller = AnimationController(vsync: this, duration: widget.duration);
+    if (!isTest) {
+      _controller.repeat();
+    }
   }
 
   @override

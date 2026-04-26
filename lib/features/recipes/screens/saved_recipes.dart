@@ -19,10 +19,17 @@ import 'package:hidden_pantry_app/core/services/view_mode_service.dart';
 import 'recipe_details.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
-
 class SavedRecipesScreen extends StatefulWidget {
   final bool inShell;
-  const SavedRecipesScreen({super.key, this.inShell = false});
+  final FirebaseAuth? auth;
+  final RecipeService? recipeService;
+
+  const SavedRecipesScreen({
+    super.key, 
+    this.inShell = false,
+    this.auth,
+    this.recipeService,
+  });
 
   @override
   State<SavedRecipesScreen> createState() => _SavedRecipesScreenState();
@@ -34,7 +41,8 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
   final Color cardColor = const Color(0xFFFDECE4);
   final Color orange = const Color(0xFFEF8A54);
 
-  final RecipeService _recipeService = RecipeService();
+  late final RecipeService _recipeService;
+  late final FirebaseAuth _auth;
   final LocalRecipeService _localService = LocalRecipeService();
   
   String? _name;
@@ -47,6 +55,8 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
   @override
   void initState() {
     super.initState();
+    _auth = widget.auth ?? FirebaseAuth.instance;
+    _recipeService = widget.recipeService ?? RecipeService();
     debugPrint('[SavedRecipesScreen] Initialized (inShell: ${widget.inShell})');
     _loadProfile();
     _checkNutritionistStatus();
@@ -166,7 +176,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
   @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
-    final user = FirebaseAuth.instance.currentUser;
+    final user = _auth.currentUser;
     if (user == null) return const Scaffold(body: Center(child: Text("Please login")));
 
     Widget content = Container(
@@ -711,7 +721,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
   Widget _headerText() {
     return Container(
       width: double.infinity,
-      height: 220.sh,
+      height: 280.sh,
       decoration: const BoxDecoration(
         color: Colors.transparent,
       ),

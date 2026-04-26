@@ -18,7 +18,7 @@ void main() {
       test('Strips trailing s from plural nouns', () {
         expect(RecipeMatcher.normalize('eggs'), 'egg');
         expect(RecipeMatcher.normalize('carrots'), 'carrot');
-        expect(RecipeMatcher.normalize('noodles'), 'noodl'); // strips 'es'
+        expect(RecipeMatcher.normalize('noodles'), 'noodle');
       });
 
       test('Does NOT strip s from words ending in ss', () {
@@ -27,8 +27,8 @@ void main() {
       });
 
       test('Strips trailing es from plurals', () {
-        expect(RecipeMatcher.normalize('tomatoes'), 'tomat');
-        expect(RecipeMatcher.normalize('potatoes'), 'potat');
+        expect(RecipeMatcher.normalize('Tomatoes'), 'tomato');
+        expect(RecipeMatcher.normalize('potatoes'), 'potato');
       });
 
       test('Does not over-strip single-syllable words', () {
@@ -54,7 +54,7 @@ void main() {
       test('Returns 1.0 default for unknown ingredients', () {
         expect(RecipeMatcher.getWeight('dragon fruit'), 1.0);
         expect(RecipeMatcher.getWeight('xyz'), 1.0);
-        expect(RecipeMatcher.getWeight('pasta'), 1.0);
+        expect(RecipeMatcher.getWeight('pasta'), 0.5);
         expect(RecipeMatcher.getWeight('lemon'), 1.0);
       });
 

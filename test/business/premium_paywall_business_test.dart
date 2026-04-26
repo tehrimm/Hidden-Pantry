@@ -73,7 +73,7 @@ void main() {
           expiryDate: DateTime.now().add(const Duration(days: 10, hours: 12)),
           nutritionistId: 'nut_1',
         );
-        expect(sub.daysRemaining, 10);
+        expect(sub.daysRemaining(), 10);
       });
 
       test('Expired subscription shows 0 days remaining', () {
@@ -83,7 +83,7 @@ void main() {
           expiryDate: DateTime.now().subtract(const Duration(days: 1)),
           nutritionistId: 'nut_1',
         );
-        expect(sub.daysRemaining, 0);
+        expect(sub.daysRemaining(), 0);
       });
 
       test('Cancelled status always returns isActive false', () {
@@ -94,7 +94,7 @@ void main() {
           nutritionistId: 'nut_1',
           status: 'cancelled',
         );
-        expect(sub.isActive, false);
+        expect(sub.isActive(), false);
       });
 
       test('Trialing status with remaining days returns isActive true', () {
@@ -105,7 +105,7 @@ void main() {
           nutritionistId: 'nut_1',
           status: 'trialing',
         );
-        expect(sub.isActive, true);
+        expect(sub.isActive(), true);
       });
     });
 

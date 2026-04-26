@@ -18,7 +18,9 @@ import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 
 class MyRecipesScreen extends StatefulWidget {
-  const MyRecipesScreen({super.key});
+  final FirebaseAuth? auth;
+  final RecipeService? recipeService;
+  const MyRecipesScreen({super.key, this.auth, this.recipeService});
 
   @override
   State<MyRecipesScreen> createState() => _MyRecipesScreenState();
@@ -30,7 +32,8 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
   final Color cardColor = const Color(0xFFF9E3D5);
   final Color orange = const Color(0xFFEF8A54);
 
-  final RecipeService _recipeService = RecipeService();
+  late final RecipeService _recipeService;
+  late final FirebaseAuth _auth;
   bool _isNutritionist = false;
   
   String? _name;
@@ -40,12 +43,14 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
   @override
   void initState() {
     super.initState();
+    _auth = widget.auth ?? FirebaseAuth.instance;
+    _recipeService = widget.recipeService ?? RecipeService();
     _loadProfile();
     _checkRole();
   }
 
   Future<void> _loadProfile() async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = _auth.currentUser;
     if (user == null) return;
 
     try {
@@ -271,7 +276,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
   @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
-    final user = FirebaseAuth.instance.currentUser;
+    final user = _auth.currentUser;
     if (user == null) return const Scaffold(body: Center(child: Text("Please login")));
     final double topPad = MediaQuery.of(context).padding.top;
 
@@ -352,7 +357,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
 
 
   void _showSelectClientSheet(Recipe recipe) {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = _auth.currentUser;
     if (user == null) return;
 
     showModalBottomSheet(
@@ -560,7 +565,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
   }
 
   Future<void> _shareToWall(Recipe recipe) async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = _auth.currentUser;
     if (user == null) return;
 
     try {
