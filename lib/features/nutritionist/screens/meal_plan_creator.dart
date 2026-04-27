@@ -207,6 +207,7 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
       child: SizedBox(
         height: 80.sh,
         child: ListView.builder(
+        key: const Key('day_selector_list'),
         scrollDirection: Axis.horizontal,
         itemCount: _durationDays,
         itemBuilder: (context, index) {

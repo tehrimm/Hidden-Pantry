@@ -53,5 +53,18 @@ void main() {
       
       expect(authService.currentUser, isNotNull);
     });
+
+    test('registerWithEmail returns credential with matching email', () async {
+      final email = 'verify@example.com';
+      final password = 'password123';
+      final credential = await authService.registerWithEmail(email, password);
+      expect(credential?.user?.email, email);
+    });
+
+    test('currentUser is null before any auth action', () {
+      final freshAuth = MockFirebaseAuth();
+      final freshService = AuthService(auth: freshAuth);
+      expect(freshService.currentUser, isNull);
+    });
   });
 }

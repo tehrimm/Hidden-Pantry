@@ -375,11 +375,10 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
               ],
             ),
           ),
-          if (!widget.isViewingSavedPlan && !_isUnderTest)
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
               child: _FadeSlideEntry(
                 delayMs: 400,
                 child: Container(
@@ -410,9 +409,12 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                                 children: [
                                   Icon(Icons.bookmark_remove_rounded, color: Colors.red, size: 24.sp),
                                   SizedBox(width: 12.sw),
-                                  Text(
-                                    "Remove from My Plans",
-                                    style: TextStyle(color: Colors.red, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+                                  Flexible(
+                                    child: Text(
+                                      "Remove from My Plans",
+                                      style: TextStyle(color: Colors.red, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
                                 ],
                               ),
@@ -433,9 +435,12 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                                 children: [
                                   Icon(Icons.bookmark_add_rounded, color: Colors.white, size: 24.sp),
                                   SizedBox(width: 12.sw),
-                                  Text(
-                                    "Save to My Plans",
-                                    style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+                                  Flexible(
+                                    child: Text(
+                                      "Save to My Plans",
+                                      style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   ),
                                 ],
                               ),

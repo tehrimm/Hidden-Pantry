@@ -66,10 +66,17 @@ void main() {
       // Toggle a tag (Cuisine -> Italian)
       await tester.tap(find.text('Cuisine'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Italian'));
+      
+      // Tap Italian
+      final italianFinder = find.text('Italian');
+      await tester.ensureVisible(italianFinder);
+      await tester.tap(italianFinder);
       await tester.pumpAndSettle();
 
-      expect(find.text('Next Step'), findsOneWidget);
+      // Scroll to find Next Step
+      final nextStepFinder = find.text('Next Step');
+      await tester.scrollUntilVisible(nextStepFinder, 500.0, scrollable: find.byType(Scrollable).first);
+      expect(nextStepFinder, findsOneWidget);
     });
 
     testWidgets('Upload Journey: Step 3 Ingredients Entry', (tester) async {
@@ -79,14 +86,12 @@ void main() {
         prepTime: 15,
         cookTime: 30,
         servings: 4,
-        tags: ['italian'],
+        tags: const ['italian'],
       )));
       await tester.pumpAndSettle();
 
       expect(find.text('Ingredients'), findsOneWidget);
       expect(find.text('Add Ingredients'), findsOneWidget);
-      
-      // Navigation is manual here, assuming it shows the list.
     });
 
     testWidgets('Upload Journey: Step 4 Directions Entry', (tester) async {
@@ -96,8 +101,8 @@ void main() {
         prepTime: 15,
         cookTime: 30,
         servings: 4,
-        tags: ['italian'],
-        ingredients: [{'name': 'Rice', 'quantity': '2 cups'}],
+        tags: const ['italian'],
+        ingredients: const [{'name': 'Rice', 'quantity': '2 cups'}],
       )));
       await tester.pumpAndSettle();
 
@@ -106,23 +111,31 @@ void main() {
     });
 
     testWidgets('Upload Journey: Step 5 Nutrition & Submit', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(wrap(UploadRecipeStep5(
         title: 'Rice Pilaf',
         image: null,
         prepTime: 15,
         cookTime: 30,
         servings: 4,
-        tags: ['italian'],
+        tags: const ['italian'],
         ingredients: const [{'name': 'Rice', 'quantity': '2 cups'}],
         steps: [DirectionStep(id: '1', text: 'Boil it')],
       )));
       await tester.pumpAndSettle();
 
       expect(find.text('Nutrition'), findsOneWidget);
-      expect(find.text('Calories'), findsOneWidget);
+      
+      // The Calories field is now mounted thanks to the large viewport
+      final calField = find.widgetWithText(TextField, 'Calories');
+      await tester.ensureVisible(calField);
+      expect(calField, findsOneWidget);
       
       // Enter calories
-      final calField = find.ancestor(of: find.text('Calories'), matching: find.byType(TextField));
       await tester.enterText(calField, '300');
       await tester.pump();
 

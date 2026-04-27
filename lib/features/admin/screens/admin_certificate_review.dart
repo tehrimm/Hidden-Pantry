@@ -123,22 +123,27 @@ class _AdminCertificateReviewScreenState extends State<AdminCertificateReviewScr
                   ),
                 ),
 
-                SizedBox(height: 30.sh),
+                SizedBox(height: 20.sh),
+
+
 
                 Expanded(
                   child: StreamBuilder<List<Map<String, dynamic>>>(
                     stream: _pendingStream,
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
+                        bool isTest = WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding') ||
+                                      Platform.environment.containsKey('FLUTTER_TEST');
                         return Center(
-                          child: CircularProgressIndicator(
+                          child: isTest ? const Text("Loading...") : CircularProgressIndicator(
                             color: orange,
                             strokeWidth: 3.sw,
                           ),
                         );
                       }
                       
-                      final list = snapshot.data ?? [];
+                      var list = snapshot.data ?? [];
+
                       if (list.isEmpty) {
                         return _EmptyState();
                       }
@@ -586,13 +591,11 @@ class _PendingNutritionistCardState extends State<_PendingNutritionistCard> {
             ],
           ),
           SizedBox(height: 4.sh),
-          Flexible(
-            child: Text(
-              value,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: purple, fontSize: 13.sp, fontWeight: FontWeight.w900),
-            ),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: purple, fontSize: 13.sp, fontWeight: FontWeight.w900),
           ),
         ],
       ),

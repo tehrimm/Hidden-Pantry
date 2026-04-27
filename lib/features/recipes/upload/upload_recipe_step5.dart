@@ -392,7 +392,7 @@ class _AnimatedSubmitButtonState extends State<_AnimatedSubmitButton> with Singl
       child: ScaleTransition(
         scale: _scale,
         child: Container(
-          width: 184.sw,
+          padding: EdgeInsets.symmetric(horizontal: 24.sw),
           height: 62.sh,
           decoration: BoxDecoration(
             color: orange,

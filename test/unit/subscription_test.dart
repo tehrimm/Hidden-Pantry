@@ -75,5 +75,42 @@ void main() {
 
       expect(sub.isActive(), isFalse);
     });
+
+    test('SubscriptionModel stores planName and price correctly', () {
+      final sub = SubscriptionModel(
+        id: 'sub_gold',
+        planName: 'Gold Plan',
+        price: 199.99,
+        interval: 'month',
+        expiryDate: DateTime.now().add(const Duration(days: 30)),
+        nutritionistId: 'nut_1',
+      );
+      expect(sub.planName, 'Gold Plan');
+      expect(sub.price, 199.99);
+    });
+
+    test('SubscriptionModel interval is stored correctly', () {
+      final sub = SubscriptionModel(
+        id: 'sub_yr',
+        planName: 'Annual Plan',
+        price: 999.0,
+        interval: 'year',
+        expiryDate: DateTime.now().add(const Duration(days: 365)),
+        nutritionistId: 'nut_2',
+      );
+      expect(sub.interval, 'year');
+    });
+
+    test('SubscriptionModel nutritionistId is stored correctly', () {
+      final sub = SubscriptionModel(
+        id: 'sub_nt',
+        planName: 'Basic',
+        price: 50.0,
+        interval: 'month',
+        expiryDate: DateTime.now().add(const Duration(days: 15)),
+        nutritionistId: 'nut_special_99',
+      );
+      expect(sub.nutritionistId, 'nut_special_99');
+    });
   });
 }

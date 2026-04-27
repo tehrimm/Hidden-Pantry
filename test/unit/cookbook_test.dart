@@ -48,5 +48,16 @@ void main() {
       expect(updated.title, 'New Title');
       expect(updated.description, 'New Desc');
     });
+
+    test('recipeIds defaults to empty list when not provided', () {
+      final cookbook = Cookbook(id: 'cb2', title: 'Empty Book');
+      expect(cookbook.recipeIds, isEmpty);
+    });
+
+    test('Cookbook title cannot be overwritten incorrectly via copyWith', () {
+      final cookbook = Cookbook(id: 'cb3', title: 'Original');
+      final copy = cookbook.copyWith();
+      expect(copy.title, 'Original');
+    });
   });
 }

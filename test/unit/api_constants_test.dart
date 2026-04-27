@@ -9,5 +9,18 @@ void main() {
       expect(ApiConstants.baseUrl, isNotEmpty);
       expect(ApiConstants.baseUrl, contains('http'));
     });
+
+    test('baseUrl should not have trailing slash', () {
+      // It's a common standard that base URLs shouldn't end with / to avoid double slashes
+      expect(ApiConstants.baseUrl.endsWith('/'), isFalse);
+    });
+
+    test('baseUrl should use a secure or standard protocol', () {
+      expect(
+        ApiConstants.baseUrl.startsWith('http://') || ApiConstants.baseUrl.startsWith('https://'), 
+        isTrue,
+        reason: 'Base URL must start with http:// or https://'
+      );
+    });
   });
 }

@@ -166,5 +166,41 @@ void main() {
       expect(exportedJson['is_public'], false);
       expect(exportedJson['is_nutritionist_recipe'], true);
     });
+
+    test('Tags list is stored and accessible', () {
+      final recipe = Recipe(
+        id: '10',
+        name: 'Tagged Recipe',
+        minutes: 20,
+        avgRating: 4.0,
+        tags: ['Italian', 'Quick', 'Healthy'],
+      );
+      expect(recipe.tags, contains('Italian'));
+      expect(recipe.tags.length, 3);
+    });
+
+    test('Allergens list is populated from fromJson', () {
+      final json = {
+        'id': 'a1',
+        'name': 'Nut Roast',
+        'minutes': 40,
+        'avg_rating': 4.2,
+        'ingredients': [],
+        'allergens': ['Nuts', 'Soy'],
+      };
+      final recipe = Recipe.fromJson(json);
+      expect(recipe.allergens, contains('Nuts'));
+      expect(recipe.allergens.length, 2);
+    });
+
+    test('totalSteps is null when not provided', () {
+      final recipe = Recipe(id: '11', name: 'Simple', minutes: 10, avgRating: 3.0);
+      expect(recipe.totalSteps, isNull);
+    });
+
+    test('baseServings defaults correctly', () {
+      final recipe = Recipe(id: '12', name: 'Default Servings', minutes: 15, avgRating: 3.5);
+      expect(recipe.getServingMultiplier(recipe.baseServings ?? 1), 1.0);
+    });
   });
 }

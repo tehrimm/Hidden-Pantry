@@ -240,6 +240,7 @@ class RecipeApiService {
         }
       }).catchError((e) {
         print("[API] HTTP searchRecipes failed: $e");
+        return [];
       })
     );
 

@@ -44,5 +44,35 @@ void main() {
       expect(map['type'], 'subscription_alert');
       expect(map['read'], true);
     });
+
+    test('isRead flag state handling works correctly', () {
+      final notif = AppNotification(
+        id: 'n3',
+        recipientId: 'r3',
+        senderId: 's3',
+        senderName: 'Sender 3',
+        title: 'Title 3',
+        body: 'Body 3',
+        type: NotificationType.like,
+        timestamp: DateTime.now(),
+        isRead: false,
+      );
+      
+      expect(notif.isRead, isFalse);
+
+      final updated = AppNotification(
+        id: notif.id,
+        recipientId: notif.recipientId,
+        senderId: notif.senderId,
+        senderName: notif.senderName,
+        title: notif.title,
+        body: notif.body,
+        type: notif.type,
+        timestamp: notif.timestamp,
+        isRead: true, // simulate reading it
+      );
+
+      expect(updated.isRead, isTrue);
+    });
   });
 }

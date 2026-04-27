@@ -369,8 +369,8 @@ class Recipe {
             if (name.endsWith("'") || name.endsWith('"')) name = name.substring(0, name.length - 1);
             name = name.trim();
 
-            String qtyStr = qtyMatch?.group(1)?.trim() ?? "0";
-            double qty = double.tryParse(qtyStr) ?? 0.0;
+            String qtyStr = qtyMatch?.group(1)?.trim() ?? "1";
+            double qty = double.tryParse(qtyStr) ?? 1.0;
 
             String unit = unitMatch?.group(1)?.trim() ?? "";
             if (unit.startsWith("'") || unit.startsWith('"')) unit = unit.substring(1);

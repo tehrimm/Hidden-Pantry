@@ -21,7 +21,12 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(const PayoutManagementScreen()));
+      await tester.pumpWidget(wrap(PayoutManagementScreen(
+        mockData: {
+          'totalEarnings': 1000.0,
+          'stripeAccountId': null,
+        },
+      )));
       await tester.pumpAndSettle();
 
       // Check title
@@ -42,11 +47,15 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
 
-      await tester.pumpWidget(wrap(const PayoutManagementScreen()));
+      await tester.pumpWidget(wrap(PayoutManagementScreen(
+        mockData: {
+          'totalEarnings': 1500.0,
+          'stripeAccountId': 'acct_123',
+        },
+      )));
       await tester.pumpAndSettle();
 
       expect(find.text('Earnings History'), findsOneWidget);
-      // It should show a loading state or empty state if no history is provided in mock
     });
   });
 }

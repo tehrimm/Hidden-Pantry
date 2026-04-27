@@ -176,7 +176,7 @@ class ChatEncryptionService {
   }
 
   Future<String> decryptMessage(Map<String, dynamic> data) async {
-    if (data['isEncrypted'] != 'true') return data['text'] ?? "";
+    if (data['isEncrypted'] != 'true') return data['cipherText'] ?? data['text'] ?? "";
     final user = _auth.currentUser;
     if (user == null) return "[Error: No User]";
 

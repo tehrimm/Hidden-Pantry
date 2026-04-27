@@ -16,5 +16,20 @@ void main() {
       expect(item.quantity, 2.0);
       expect(item.unit, 'tbsp');
     });
+
+    test('Should parse ingredient with no unit', () {
+      final input = "{'name': 'Salt', 'quantity': 1, 'unit': ''}";
+      final item = IngredientItem.fromJson({'name': input});
+      expect(item.name, 'Salt');
+      expect(item.quantity, 1.0);
+      expect(item.unit, '');
+    });
+
+    test('Should handle malformed stringified maps gracefully', () {
+      final input = "{'name': 'Water', 'quantity': 'abc'}";
+      final item = IngredientItem.fromJson({'name': input});
+      expect(item.name, 'Water');
+      expect(item.quantity, 1.0); // Typically defaults to 1.0 for unparsable quantities
+    });
   });
 }

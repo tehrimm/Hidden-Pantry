@@ -31,5 +31,19 @@ void main() {
       expect(encrypted['cipherText'], 'secret');
       expect(encrypted['isEncrypted'], 'false');
     });
+
+    test('decryptMessage handling gracefully returns original text if not encrypted', () async {
+      final mockAuth = MockFirebaseAuth();
+      final service = ChatEncryptionService(auth: mockAuth);
+      
+      // Simulating the decryption of an unencrypted message
+      // A typical implementation will return the cipherText if isEncrypted is false
+      final decrypted = await service.decryptMessage({
+        'cipherText': 'plain_text',
+        'isEncrypted': 'false',
+      });
+      
+      expect(decrypted, 'plain_text');
+    });
   });
 }

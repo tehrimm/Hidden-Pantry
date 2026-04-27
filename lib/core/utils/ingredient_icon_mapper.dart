@@ -53,11 +53,12 @@ class IngredientIconMapper {
     }
 
     // ============ SPICES, SALT & SEASONINGS ============
+    // Note: 'clove' removed to avoid matching 'garlic cloves'; 'whole clove' used instead.
     if (_containsAny(name, [
       'spice', 'salt', 'pepper', 'cinnamon', 'ginger', 'herb', 'parsley',
       'basil', 'thyme', 'oregano', 'rosemary', 'mint', 'cilantro', 'dill',
       'sage', 'bay leaf', 'paprika', 'cumin', 'coriander', 'turmeric',
-      'cardamom', 'clove', 'nutmeg', 'star anise', 'fennel seed', 'mustard seed',
+      'cardamom', 'whole clove', 'nutmeg', 'star anise', 'fennel seed', 'mustard seed',
       'vanilla', 'anise', 'caraway', 'juniper', 'wasabi', 'horseradish',
       'chili powder', 'garlic powder', 'onion powder', 'furikake', 'togarashi',
       'msg', 'seasoning', 'rub'
@@ -97,11 +98,11 @@ class IngredientIconMapper {
 
     // ============ FRUITS ============
     if (_containsAny(name, [
-      'apple', 'banana', 'berry', 'strawberry', 'blueberry', 'grape',
+      'apple', 'banana', 'berry', 'berries', 'strawberr', 'blueberr', 'grape',
       'orange', 'lemon', 'lime', 'fruit', 'mango', 'peach', 'pineapple',
-      'cherry', 'pear', 'watermelon', 'melon', 'apricot', 'plum', 'nectarine',
-      'kiwi', 'papaya', 'guava', 'fig', 'date', 'raisin', 'prune', 'cranberry',
-      'raspberry', 'blackberry', 'avocado', 'olive', 'coconut', 'pomegranate',
+      'cherry', 'cherri', 'pear', 'watermelon', 'melon', 'apricot', 'plum', 'nectarine',
+      'kiwi', 'papaya', 'guava', 'fig', 'date', 'raisin', 'prune', 'cranberr',
+      'raspberr', 'blackberr', 'avocado', 'olive', 'coconut', 'pomegranate',
       'grapefruit', 'tangerine', 'clementine', 'persimmon', 'plantain'
     ])) {
       return material.Icons.forest_outlined;
@@ -153,7 +154,81 @@ class IngredientIconMapper {
     ])) {
       return material.Icons.grass_outlined;
     }
-    
+
+    // ============ LEGUMES & PLANT PROTEINS ============
+    if (_containsAny(name, [
+      'bean', 'lentil', 'chickpea', 'legume', 'pea', 'edamame', 'soybean',
+      'tofu', 'tempeh', 'seitan', 'black bean', 'kidney bean', 'pinto bean',
+      'navy bean', 'lima bean', 'fava bean', 'split pea', 'dal', 'dhal'
+    ])) {
+      return material.Icons.grain_outlined;
+    }
+
+    // ============ DESSERTS & BAKED GOODS ============
+    if (_containsAny(name, [
+      'cake', 'brownie', 'cookie', 'dessert', 'muffin', 'pastry', 'tart',
+      'pudding', 'custard', 'fudge', 'candy', 'candy bar', 'confection',
+      'frosting', 'icing', 'ganache', 'tiramisu', 'cheesecake'
+    ])) {
+      return material.Icons.cake_outlined;
+    }
+
+    // ============ FROZEN FOODS ============
+    if (_containsAny(name, [
+      'frozen', 'ice cream', 'gelato', 'sorbet', 'popsicle', 'frozen yogurt'
+    ])) {
+      return material.Icons.ac_unit_outlined;
+    }
+
+    // ============ SEA VEGETABLES & ALGAE ============
+    if (_containsAny(name, [
+      'seaweed', 'kelp', 'nori', 'dulse', 'wakame', 'kombu', 'arame', 'hijiki'
+    ])) {
+      return material.Icons.waves_outlined;
+    }
+
+    // ============ SNACKS & PROCESSED FOODS ============
+    if (_containsAny(name, [
+      'chip', 'crisp', 'pretzel', 'popcorn', 'cracker', 'snack', 'jerky',
+      'granola bar', 'trail mix', 'rice cake', 'pork rind'
+    ])) {
+      return material.Icons.fastfood_outlined;
+    }
+
+    // ============ PLANT-BASED / VEGAN MEAT ============
+    if (_containsAny(name, [
+      'vegan', 'veggie burger', 'plant-based', 'impossible', 'beyond meat',
+      'meatless', 'meat substitute', 'soy protein', 'textured vegetable'
+    ])) {
+      return material.Icons.spa_outlined;
+    }
+
+    // ============ HEALTH SUPPLEMENTS ============
+    if (_containsAny(name, [
+      'supplement', 'protein powder', 'superfood', 'collagen', 'probiotic',
+      'vitamin', 'mineral', 'omega', 'spirulina', 'wheatgrass', 'reishi',
+      'ashwagandha', 'turmeric supplement', 'elderberry', 'prebiotic',
+      'electrolyte', 'creatine', 'bcaa', 'multivitamin',
+      'formula', 'infant formula', 'baby food', 'baby formula'
+    ])) {
+      return material.Icons.medication_outlined;
+    }
+
+    // ============ PICKLED & PRESERVED ============
+    if (_containsAny(name, [
+      'pickled', 'pickle', 'fermented', 'kimchi', 'sauerkraut',
+      'preserved', 'marinated', 'cured'
+    ])) {
+      return material.Icons.science_outlined;
+    }
+
+    // ============ DRIED / DEHYDRATED ============
+    if (_containsAny(name, [
+      'dried', 'dehydrated', 'sun-dried'
+    ])) {
+      return material.Icons.wb_sunny_outlined;
+    }
+
     // ============ DEFAULT - PANTRY ============
     return material.Icons.kitchen_outlined;
   }

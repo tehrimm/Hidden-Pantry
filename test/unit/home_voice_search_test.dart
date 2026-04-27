@@ -21,7 +21,10 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(wrap(const HomeScreen(inShell: true)));
+    await tester.pumpWidget(wrap(HomeScreen(
+      inShell: true,
+      apiService: MockRecipeApiService(),
+    )));
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byIcon(Icons.mic_rounded), findsOneWidget);

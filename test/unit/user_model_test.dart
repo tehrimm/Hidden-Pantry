@@ -84,5 +84,28 @@ void main() {
       final displayName = user.fullName.isEmpty ? user.email : user.fullName;
       expect(displayName, 'test@mail.com');
     });
+
+    test('User allergies list is empty by default', () {
+      final user = UserModel(
+        uid: 'u4',
+        email: 'noallergy@mail.com',
+        fullName: 'Clean Eater',
+        role: 'homecook',
+        createdAt: DateTime.now(),
+      );
+      expect(user.allergies, isEmpty);
+    });
+
+    test('User uid is preserved after copyWith', () {
+      final user = UserModel(
+        uid: 'fixed_uid',
+        email: 'a@b.com',
+        fullName: 'Alice',
+        role: 'homecook',
+        createdAt: DateTime.now(),
+      );
+      final copy = user.copyWith(fullName: 'Alice Updated');
+      expect(copy.uid, 'fixed_uid');
+    });
   });
 }
