@@ -12,6 +12,7 @@ class MockFirebasePlatform extends FirebasePlatform {
         appId: '123',
         messagingSenderId: '123',
         projectId: '123',
+        storageBucket: '123',
       ),
     );
   }
@@ -32,6 +33,7 @@ class MockFirebasePlatform extends FirebasePlatform {
             appId: '123',
             messagingSenderId: '123',
             projectId: '123',
+            storageBucket: '123',
           ),
     );
   }

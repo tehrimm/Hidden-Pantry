@@ -161,4 +161,24 @@ void main() {
     expect(res.isNotEmpty, true);
     expect(res.first.name.isNotEmpty, true);
   });
+
+  test('searchRecipes by keyword only', () async {
+    final api = RecipeApiService(baseUrl: baseUrl);
+    final res = await api.searchRecipes('alpha');
+    expect(res.isNotEmpty, true);
+    expect(res.first.name.toLowerCase(), contains('alpha'));
+  });
+
+  test('searchRecipes by ingredients only', () async {
+    final api = RecipeApiService(baseUrl: baseUrl);
+    final res = await api.searchRecipes('', ingredients: ['Tomato']);
+    expect(res.any((r) => r.id == 'rb'), isTrue);
+  });
+
+  test('searchRecipes with no matching results returns empty list', () async {
+    final api = RecipeApiService(baseUrl: baseUrl);
+    // Mock server returns ra and rb. Searching for something else with strict ingredients:
+    final res = await api.searchRecipes('nonexistent', ingredients: ['Plastic']);
+    expect(res, isEmpty);
+  });
 }

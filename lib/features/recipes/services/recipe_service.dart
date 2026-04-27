@@ -10,9 +10,23 @@ import 'package:hidden_pantry_app/features/recipes/services/recipe_api_service.d
 import 'package:hidden_pantry_app/core/constants/api_constants.dart';
 
 class RecipeService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final RecipeApiService _api = const RecipeApiService(baseUrl: ApiConstants.baseUrl);
+  final FirebaseFirestore _firestore;
+  final FirebaseAuth _auth;
+  final ViewModeService _viewMode;
+  final RecipeApiService _api;
+  final FirebaseStorage _storage;
+
+  RecipeService({
+    FirebaseFirestore? firestore,
+    FirebaseAuth? auth,
+    RecipeApiService? api,
+    ViewModeService? viewMode,
+    FirebaseStorage? storage,
+  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+        _auth = auth ?? FirebaseAuth.instance,
+        _api = api ?? const RecipeApiService(baseUrl: ApiConstants.baseUrl),
+        _viewMode = viewMode ?? ViewModeService(),
+        _storage = storage ?? FirebaseStorage.instance;
 
   /// Increments the view count for a specific recipe to track popularity.
   Future<void> incrementRecipeView(String recipeId) async {
@@ -43,7 +57,7 @@ class RecipeService {
     try {
       User? user;
       try {
-        user = FirebaseAuth.instance.currentUser;
+        user = _auth.currentUser;
       } catch (_) {
         return;
       }
@@ -74,7 +88,7 @@ class RecipeService {
   /// Uploads an image to Firebase Storage and returns the download URL
   Future<String?> _uploadFile(String path, File file) async {
     try {
-      final ref = FirebaseStorage.instance.ref().child(path);
+      final ref = _storage.ref().child(path);
       await ref.putFile(file);
       return await ref.getDownloadURL();
     } catch (e) {
@@ -99,7 +113,7 @@ class RecipeService {
     required Map<String, String> nutrition,
     bool isPublic = false,
   }) async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = _auth.currentUser;
     if (user == null) throw Exception("User must be logged in to upload");
 
     final bool isUpdate = recipeId != null;
@@ -175,7 +189,7 @@ class RecipeService {
       'avg_rating': existing?.avgRating ?? 0.0,
       'review_count': existing?.reviewCount ?? 0,
       'n_steps': steps.length,
-      'is_nutritionist_recipe': await ViewModeService().isNutritionist(),
+      'is_nutritionist_recipe': await _viewMode.isNutritionist(),
       'is_public': isPublic,
       if (!isUpdate) 'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
@@ -426,7 +440,7 @@ class RecipeService {
       if (!reviewDoc.exists) return;
       
       final authorId = reviewDoc.data()?['userId'];
-      final user = FirebaseAuth.instance.currentUser;
+      final user = _auth.currentUser;
 
       if (authorId != null && authorId != user?.uid) {
         NotificationService().sendNotification(
@@ -641,7 +655,7 @@ class RecipeService {
       final authorId = recipeDoc.data()?['authorId'] ?? recipeDoc.data()?['author_id'];
       final recipeName = recipeDoc.data()?['name'] ?? recipeDoc.data()?['title'] ?? 'your recipe';
 
-      final user = FirebaseAuth.instance.currentUser;
+      final user = _auth.currentUser;
       if (authorId != null && authorId.isNotEmpty && authorId != user?.uid) {
         NotificationService().sendNotification(
           recipientId: authorId,
@@ -880,7 +894,7 @@ class RecipeService {
       }
 
       // 2. Delete images from Storage
-      final storageRef = FirebaseStorage.instance.ref().child('recipe_photos/$recipeId');
+      final storageRef = _storage.ref().child('recipe_photos/$recipeId');
       final listResult = await storageRef.listAll();
       
       // Delete main image and any other files at the root of the recipe folder

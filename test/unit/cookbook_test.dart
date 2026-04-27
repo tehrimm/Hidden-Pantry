@@ -59,5 +59,19 @@ void main() {
       final copy = cookbook.copyWith();
       expect(copy.title, 'Original');
     });
+
+    test('Adding recipe ID to cookbook list', () {
+      final cookbook = Cookbook(id: 'cb4', title: 'Test', recipeIds: ['r1']);
+      final updated = cookbook.copyWith(recipeIds: [...cookbook.recipeIds, 'r2']);
+      expect(updated.recipeIds, containsAll(['r1', 'r2']));
+    });
+
+    test('Removing recipe ID from cookbook list', () {
+      final cookbook = Cookbook(id: 'cb5', title: 'Test', recipeIds: ['r1', 'r2']);
+      final newList = List<String>.from(cookbook.recipeIds)..remove('r1');
+      final updated = cookbook.copyWith(recipeIds: newList);
+      expect(updated.recipeIds, isNot(contains('r1')));
+      expect(updated.recipeIds, contains('r2'));
+    });
   });
 }
