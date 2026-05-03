@@ -16,19 +16,25 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Environment variables for production
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONPATH="/app/deps" \
+    PORT=8080
+
 # Copy installed dependencies from builder
 COPY --from=builder /app/deps /app/deps
-ENV PYTHONPATH="/app/deps"
 
 # Copy application code and model files
 COPY main.py .
 COPY trained_model/ ./trained_model/
-COPY food_dataset_fast.json .
 
-# Cloud Run sets PORT env variable (default 8080)
-ENV PORT=8080
+# Note: raw food_dataset_fast.json is NOT needed for inference, 
+# saving ~50MB in image size.
 
 EXPOSE ${PORT}
 
-# Use uvicorn with the PORT env variable
-CMD ["sh", "-c", "python -m uvicorn main:app --host 0.0.0.0 --port ${PORT}"]
+# Use gunicorn with uvicorn workers for production stability
+# -w 1: Use 1 worker (Cloud Run scales via instances, not workers)
+# -k uvicorn.workers.UvicornWorker: Use the uvicorn worker class
+CMD ["sh", "-c", "gunicorn main:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT} --timeout 120"]
