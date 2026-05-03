@@ -12,7 +12,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 # =========================
 # PATHS
 # =========================
-BASE_DIR = Path(r"E:\University\FYP\backend")
+BASE_DIR = Path(__file__).resolve().parent
 MODEL_DIR = BASE_DIR / "trained_model"
 
 # =========================

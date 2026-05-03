@@ -1,5 +1,0 @@
-__pycache__/
-.venv/
-.env
-food_dataset_fast.json
-*.pyc
