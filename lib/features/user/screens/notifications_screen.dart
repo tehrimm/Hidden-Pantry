@@ -102,6 +102,7 @@ class NotificationsScreen extends StatelessWidget {
                                     int itemIndex = entry.key;
                                     AppNotification notif = entry.value;
                                     return _FadeSlideEntry(
+                                      key: ValueKey(notif.id),
                                       delayMs: 100 + (index * 50) + (itemIndex * 50),
                                       child: _buildNotificationItem(context, notif, purple, orange),
                                     );
@@ -226,6 +227,7 @@ class _NotificationItemWidget extends StatefulWidget {
   final Color orange;
 
   const _NotificationItemWidget({
+    super.key,
     required this.notif,
     required this.purple,
     required this.orange,
@@ -242,6 +244,14 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
   void initState() {
     super.initState();
     _resolveTitle();
+  }
+
+  @override
+  void didUpdateWidget(covariant _NotificationItemWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.notif.id != widget.notif.id || oldWidget.notif.title != widget.notif.title) {
+      _resolveTitle();
+    }
   }
 
   Future<void> _resolveTitle() async {
@@ -427,7 +437,7 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
 class _FadeSlideEntry extends StatefulWidget {
   final Widget child;
   final int delayMs;
-  const _FadeSlideEntry({required this.child, this.delayMs = 0});
+  const _FadeSlideEntry({super.key, required this.child, this.delayMs = 0});
   @override
   State<_FadeSlideEntry> createState() => _FadeSlideEntryState();
 }

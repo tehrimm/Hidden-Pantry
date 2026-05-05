@@ -7,8 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
-import 'package:hidden_pantry_app/features/user/services/stripe_service.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:hidden_pantry_app/core/widgets/app_dialog.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/features/user/screens/premium_paywall_screen.dart';
 
@@ -27,7 +27,7 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   static const Color _green = Color(0xFF4CAF50);
   static const Color _red = Color(0xFFE53935);
 
-  final _stripeService = StripeService();
+
 
   @override
   Widget build(BuildContext context) {
@@ -873,81 +873,33 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   }
 
   Future<void> _confirmCancel(String docId, DateTime? expiry) async {
-    final confirm = await GlassDialog.show<bool>(
+    await AppDialog.show(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: _bg,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.sw)),
-        title: Text('Cancel Subscription?', style: TextStyle(color: _purple, fontWeight: FontWeight.bold, fontSize: 18.sp)),
-        content: Text(
-          expiry != null
-              ? 'You will still have access until ${_formatDate(expiry)}. You will not be charged again.'
-              : 'Are you sure you want to cancel?',
-          style: TextStyle(color: _purple.withValues(alpha: 0.7)),
+      title: "Cancel Subscription",
+      contentText: "To cancel your subscription, please open the Google Play Store, go to 'Subscriptions' in your account menu, and select Hidden Pantry.",
+      actions: [
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context),
+          style: ElevatedButton.styleFrom(backgroundColor: _orange, foregroundColor: Colors.white),
+          child: const Text("Got it"),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('Keep', style: TextStyle(color: _purple, fontSize: 14.sp)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('Cancel', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14.sp)),
-          ),
-        ],
-      ),
+      ],
     );
-
-    if (confirm != true) return;
-
-    try {
-      await _stripeService.cancelSubscription(subscriptionDocId: docId);
-      if (mounted) {
-        Toaster.show(context, 'Subscription cancelled. You retain access until the end of the billing period.');
-      }
-    } catch (e) {
-      if (mounted) {
-        Toaster.show(context, StripeService.friendlyError(e), isError: true);
-      }
-    }
   }
 
   Future<void> _confirmRenew(String docId) async {
-    final confirm = await GlassDialog.show<bool>(
+    await AppDialog.show(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: _bg,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.sw)),
-        title: Text('Renew Subscription?', style: TextStyle(color: _purple, fontWeight: FontWeight.bold, fontSize: 18.sp)),
-        content: Text(
-          'This will resume your recurring billing and ensure uninterrupted access.',
-          style: TextStyle(color: _purple.withValues(alpha: 0.7)),
+      title: "Renew Subscription",
+      contentText: "To resume your subscription, please visit the Google Play Store 'Subscriptions' section.",
+      actions: [
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context),
+          style: ElevatedButton.styleFrom(backgroundColor: _orange, foregroundColor: Colors.white),
+          child: const Text("Got it"),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text('Not Now', style: TextStyle(color: _purple, fontSize: 14.sp)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text('Renew Now', style: TextStyle(color: _orange, fontWeight: FontWeight.bold, fontSize: 14.sp)),
-          ),
-        ],
-      ),
+      ],
     );
-
-    if (confirm != true) return;
-
-    try {
-      await _stripeService.reactivateSubscription(subscriptionDocId: docId);
-      if (mounted) {
-        Toaster.show(context, 'Subscription renewed successfully! Recurring billing resumed.');
-      }
-    } catch (e) {
-      if (mounted) {
-        Toaster.show(context, StripeService.friendlyError(e), isError: true);
-      }
-    }
   }
 
   void _showSubscriptionDetails(QueryDocumentSnapshot doc) {

@@ -5,10 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
-import 'package:hidden_pantry_app/features/user/services/stripe_service.dart';
 import 'package:hidden_pantry_app/features/user/services/iap_service.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:hidden_pantry_app/core/widgets/app_dialog.dart';
 
 class PremiumPaywallScreen extends StatefulWidget {
   const PremiumPaywallScreen({super.key});
@@ -456,65 +456,50 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
   }
 
   void _showPrivacyInfo() {
-    GlassDialog.show(
+    AppDialog.show(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: _bg.withValues(alpha: 0.9),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(22.sw),
-          side: BorderSide(color: Colors.white.withValues(alpha: 0.8), width: 1.5),
-        ),
-        title: Text(
-          "Your Privacy Matters",
-          style: TextStyle(
-            color: _purple,
-            fontSize: 18.sp,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Satoshi',
+      title: "Your Privacy Matters",
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: EdgeInsets.all(12.sw),
+            decoration: BoxDecoration(
+              color: _purple.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.privacy_tip_rounded, color: _purple, size: 28.sw),
           ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.all(12.sw),
-              decoration: BoxDecoration(
-                color: _purple.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(Icons.privacy_tip_rounded, color: _purple, size: 28.sw),
-            ),
-            SizedBox(height: 20.sh),
-            Text(
-              "Voice Mode and Smart Scanning do not record or store your data. All processing happens in real-time on your device for your privacy and safety.",
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: _purple.withValues(alpha: 0.7),
-                fontSize: 14.sp,
-                fontFamily: 'Satoshi',
-                height: 1.5,
-              ),
-            ),
-            SizedBox(height: 24.sh),
-            _privacyBadge(Icons.cloud_off_rounded, "No audio/image storage"),
-            _privacyBadge(Icons.mic_off_rounded, "No background processing"),
-            _privacyBadge(Icons.security_rounded, "No external sharing"),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              "Got it",
-              style: TextStyle(
-                color: _purple.withValues(alpha: 0.6),
-                fontWeight: FontWeight.w600,
-                fontSize: 14.sp,
-              ),
+          SizedBox(height: 20.sh),
+          Text(
+            "Voice Mode and Smart Scanning do not record or store your data. All processing happens in real-time on your device for your privacy and safety.",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: _purple.withValues(alpha: 0.7),
+              fontSize: 14.sp,
+              fontFamily: 'Satoshi',
+              height: 1.5,
             ),
           ),
+          SizedBox(height: 24.sh),
+          _privacyBadge(Icons.cloud_off_rounded, "No audio/image storage"),
+          _privacyBadge(Icons.mic_off_rounded, "No background processing"),
+          _privacyBadge(Icons.security_rounded, "No external sharing"),
         ],
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(
+            "Got it",
+            style: TextStyle(
+              color: _purple.withValues(alpha: 0.6),
+              fontWeight: FontWeight.w600,
+              fontSize: 14.sp,
+            ),
+          ),
+        ),
+      ],
     );
   }
 

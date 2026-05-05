@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:hidden_pantry_app/features/onboarding/screens/starting_screen.dart';
-import 'package:flutter_stripe/flutter_stripe.dart';
 import 'firebase_options.dart';
 
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -54,10 +53,8 @@ Future<void> main() async {
     print("AppCheck Init Non-fatal Error: $e");
   }
 
-  // Initialize Stripe with test publishable key
-  // Replace with your real Stripe test publishable key from dashboard.stripe.com
-  Stripe.publishableKey = 'pk_test_51T2Ds7ENiugjDkbs5TG3vrHBS0TGhrAKFdEBOOoa7kI1lIQyaI2IqEuFj7rDpp4V1MiiBbVKnVaCKa6gKdZ3lyGQ00IbY2azku';
-
+  // Initialize In-App Purchases is handled in initState of HiddenPantryApp
+  
   runApp(const HiddenPantryApp());
 }
 

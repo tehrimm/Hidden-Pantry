@@ -6,8 +6,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
-import 'package:hidden_pantry_app/features/user/services/stripe_service.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+import 'package:hidden_pantry_app/core/widgets/app_dialog.dart';
 
 class TierComparisonScreen extends StatefulWidget {
   final String nutritionistId;
@@ -135,77 +135,18 @@ class _TierComparisonScreenState extends State<TierComparisonScreen> {
   }
 
   Future<void> _cancelSubscription() async {
-    final confirmed = await GlassDialog.show<bool>(
+    await AppDialog.show(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: bg,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.sw)),
-        title: Text("Cancel Subscription?", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 18.sp)),
-        content: const Text("You will keep your access until the end of the current billing period."),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text("No", style: TextStyle(color: purple, fontSize: 14.sp))),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true), 
-            child: Text("Yes, Cancel", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 14.sp))
-          ),
-        ],
-      ),
+      title: "Manage Subscription",
+      contentText: "To cancel or change your subscription, please visit the Google Play Store 'Subscriptions' section in your account settings.",
+      actions: [
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context),
+          style: ElevatedButton.styleFrom(backgroundColor: orange, foregroundColor: Colors.white),
+          child: const Text("Got it"),
+        ),
+      ],
     );
-
-    if (confirmed != true) return;
-
-    setState(() => _isCancelling = true);
-    try {
-      // Find the subscription doc for this user and nutritionist
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) return;
-
-      final snap = await FirebaseFirestore.instance
-          .collection("subscriptions")
-          .where("userId", isEqualTo: user.uid)
-          .where("nutritionistId", isEqualTo: widget.nutritionistId)
-          .where("status", isEqualTo: "active")
-          .get();
-
-      if (snap.docs.isEmpty) {
-        throw Exception("No active subscription found to cancel.");
-      }
-
-      // Find the one with highest tierLevel
-      QueryDocumentSnapshot? bestDoc;
-      int highestTier = -1;
-
-      for (var doc in snap.docs) {
-        final data = doc.data();
-        int tier = 0;
-        dynamic rawTier = data["tierLevel"];
-        if (rawTier is num) tier = rawTier.toInt();
-        else if (rawTier is String) tier = int.tryParse(rawTier) ?? 0;
-        
-        if (tier >= highestTier) {
-          highestTier = tier;
-          bestDoc = doc;
-        }
-      }
-
-      final subDocId = bestDoc!.id;
-      await StripeService().cancelSubscription(subscriptionDocId: subDocId);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Subscription cancelled successfully.")),
-        );
-        Navigator.pop(context, "refresh");
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Cancellation failed: $e")),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isCancelling = false);
-    }
   }
 
   @override
@@ -299,17 +240,9 @@ class _TierComparisonScreenState extends State<TierComparisonScreen> {
                                 );
                               }),
                             
-                            SizedBox(height: 20.sh),
-                            Center(
-                              child: Text(
-                                "Secure Payment Processing via Stripe Connect",
-                                style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 11.sp, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                            SizedBox(height: 10.sh),
-                            Image.asset('assets/icons/stripe_badge.png', height: 20.sh, errorBuilder: (_, __, ___) => Container()), // Hidden if not exists
-                          ],
-                        ),
+                             SizedBox(height: 20.sh),
+                           ],
+                         ),
                 ),
               ],
             ),

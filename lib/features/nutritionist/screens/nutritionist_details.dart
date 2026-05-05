@@ -12,7 +12,6 @@ import 'package:hidden_pantry_app/core/services/notification_service.dart';
 import 'package:hidden_pantry_app/features/user/models/notification_model.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
-import 'package:hidden_pantry_app/features/user/services/stripe_service.dart';
 import 'package:hidden_pantry_app/features/user/screens/tier_comparison_screen.dart';
 import 'package:hidden_pantry_app/features/user/screens/meal_plan_view.dart';
 import 'package:hidden_pantry_app/core/services/view_mode_service.dart';
@@ -23,6 +22,8 @@ import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'chat_interface_part.dart';
 import 'package:hidden_pantry_app/core/services/user_status_service.dart';
+import 'package:hidden_pantry_app/features/user/services/iap_service.dart';
+import 'package:hidden_pantry_app/core/widgets/app_dialog.dart';
 
 class NutritionistDetailsScreen extends StatefulWidget {
   final String nutritionistId;
@@ -1631,14 +1632,7 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
 
 
   Future<void> _checkPaymentMethodsAndSubscribe(Map<String, dynamic> plan) async {
-    final bool isStripeLinked = widget.nutritionistData['stripeId'] != null || 
-                               widget.nutritionistData['stripeAccountId'] != null;
-    
-    if (!isStripeLinked) {
-      Toaster.show(context, "This nutritionist is not yet set up to receive payments.", isError: true);
-      return;
-    }
-    _startStripeCheckout(plan);
+    _startIAPCheckout(plan);
   }
 
   void _showRatingDialog() async {
@@ -1742,53 +1736,32 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
     );
   }
 
-  Future<void> _startStripeCheckout(Map<String, dynamic> plan) async {
+
+  Future<void> _startIAPCheckout(Map<String, dynamic> plan) async {
      setState(() => _isLoadingSubscription = true);
      try {
-       final rawPrice = plan['price'];
-       double price = 0.0;
-       
-       if (rawPrice is num) {
-         price = rawPrice.toDouble();
-       } else if (rawPrice is String) {
-         price = double.tryParse(rawPrice.replaceAll(',', '')) ?? 0.0;
-       }
+       final iap = IAPService();
+       await iap.fetchProducts();
 
-       if (price <= 0) {
-         throw Exception("Invalid plan price: $rawPrice");
-       }
+       final int tier = plan['tierLevel'] ?? 1;
+       String productId = IAPService.nutritionistSubSilver;
+       if (tier == 2) productId = IAPService.nutritionistSubGold;
+       if (tier == 3) productId = IAPService.nutritionistSubPlatinum;
 
-       final rawTier = plan['tierLevel'];
-       int tierLevel = 1;
-       if (rawTier is num) {
-         tierLevel = rawTier.toInt();
-       } else if (rawTier is String) {
-         tierLevel = int.tryParse(rawTier) ?? 1;
-       }
-
-       final stripe = StripeService();
-       final url = await stripe.createNutritionistCheckout(
-         planId: plan['id'] ?? '',
-         planTitle: plan['title'] ?? 'Plan',
-         price: price,
-         interval: plan['interval'] ?? 'month',
-         nutritionistId: widget.nutritionistId,
-         nutritionistName: widget.nutritionistData['fullName'] ?? 'Nutritionist',
-         existingSubscriptionId: _subscriptionDocId,
-         tierLevel: tierLevel,
+       final product = iap.products.firstWhere(
+         (p) => p.id == productId,
+         orElse: () => throw Exception("Product $productId not found in store"),
        );
 
+       await iap.buyProduct(product, nutritionistId: widget.nutritionistId, context: context);
+       
        if (mounted) {
          setState(() => _isLoadingSubscription = false);
-         await stripe.launchStripeUrl(url);
-         _checkSubscription();
        }
      } catch (e) {
        if (mounted) {
          setState(() => _isLoadingSubscription = false);
-         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text(StripeService.friendlyError(e))),
-         );
+         Toaster.show(context, "Billing Error: $e", isError: true);
        }
      }
   }

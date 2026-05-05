@@ -23,11 +23,25 @@ class IAPService {
 
   bool get _isTest => WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding');
 
+
   // Product IDs (Must match Google Play Console)
   static const String monthlyID = 'platform_premium_monthly';
   static const String annualID = 'platform_premium_annual';
   static const String nutritionistMembershipID = 'nutritionist_platform_membership';
-  static const Set<String> _productIds = {monthlyID, annualID, nutritionistMembershipID};
+  
+  // Generic Nutritionist Tiers (For users to subscribe to nutritionists)
+  static const String nutritionistSubSilver = 'nutritionist_sub_silver';
+  static const String nutritionistSubGold = 'nutritionist_sub_gold';
+  static const String nutritionistSubPlatinum = 'nutritionist_sub_platinum';
+
+  static const Set<String> _productIds = {
+    monthlyID, 
+    annualID, 
+    nutritionistMembershipID,
+    nutritionistSubSilver,
+    nutritionistSubGold,
+    nutritionistSubPlatinum,
+  };
 
   List<ProductDetails> _products = [];
   List<ProductDetails> get products => _products;
@@ -78,17 +92,40 @@ class IAPService {
   }
 
   /// Start purchase flow
-  Future<void> buyProduct(ProductDetails product, {BuildContext? context}) async {
+  Future<void> buyProduct(ProductDetails product, {String? nutritionistId, BuildContext? context}) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    // If paying a nutritionist, record the target ID so we know who to credit later
+    if (nutritionistId != null) {
+      await FirebaseFirestore.instance.collection('pending_purchases').doc(user.uid).set({
+        'nutritionistId': nutritionistId,
+        'productId': product.id,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    }
+
     final PurchaseParam purchaseParam = PurchaseParam(productDetails: product);
-    // For subscriptions, we use buyNonConsumable
     await _iap.buyNonConsumable(purchaseParam: purchaseParam);
   }
 
   /// Development-only bypass for testing premium flow
-  Future<void> buyTesterProduct({String? productId, BuildContext? context}) async {
+  Future<void> buyTesterProduct({String? productId, String? nutritionistId, BuildContext? context}) async {
     final id = productId ?? nutritionistMembershipID;
     debugPrint("Tester account detected: Bypassing payment for $id");
     
+    // Simulate recording pending purchase for tester
+    if (nutritionistId != null) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        await FirebaseFirestore.instance.collection('pending_purchases').doc(user.uid).set({
+          'nutritionistId': nutritionistId,
+          'productId': id,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+      }
+    }
+
     await _verifyAndEnablePremium(PurchaseDetails(
       productID: id,
       purchaseID: 'tester_${DateTime.now().millisecondsSinceEpoch}',
@@ -128,29 +165,77 @@ class IAPService {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
+    final isNutritionistTier = purchase.productID.startsWith('nutritionist_sub_');
     final isNutritionistMembership = purchase.productID == nutritionistMembershipID;
-    final isMonthly = purchase.productID == monthlyID || isNutritionistMembership;
+    final isMonthly = purchase.productID == monthlyID || isNutritionistMembership || isNutritionistTier;
     final now = DateTime.now();
     final expiry = isMonthly ? now.add(const Duration(days: 30)) : now.add(const Duration(days: 365));
 
-    if (isNutritionistMembership) {
-      // Nutritionist Platform Membership
+    if (isNutritionistTier) {
+      // 🟢 USER SUBSCRIBING TO NUTRITIONIST
+      final pendingDoc = await FirebaseFirestore.instance.collection('pending_purchases').doc(user.uid).get();
+      final nutritionistId = pendingDoc.data()?['nutritionistId'];
+      
+      if (nutritionistId != null) {
+        // Find price for fee calculation (fallback if product not loaded)
+        double amount = 500; // Silver default
+        if (purchase.productID == nutritionistSubGold) amount = 1500;
+        if (purchase.productID == nutritionistSubPlatinum) amount = 3000;
+        
+        try {
+          final p = _products.firstWhere((element) => element.id == purchase.productID);
+          // Parse price string (e.g. "Rs. 500") to double
+          amount = double.tryParse(p.price.replaceAll(RegExp(r'[^0-9.]'), '')) ?? amount;
+        } catch (_) {}
+
+        final googleFee = amount * 0.15;
+        final platformFee = amount * 0.10;
+        final nutritionistEarnings = amount - googleFee - platformFee;
+
+        final batch = FirebaseFirestore.instance.batch();
+
+        // 1. Add subscription for user
+        batch.set(FirebaseFirestore.instance.collection('subscriptions').doc(), {
+          'userId': user.uid,
+          'nutritionistId': nutritionistId,
+          'planId': purchase.productID,
+          'productId': purchase.productID,
+          'status': 'active',
+          'startDate': FieldValue.serverTimestamp(),
+          'expiryDate': Timestamp.fromDate(expiry),
+          'billingSource': 'google_play',
+        });
+
+        // 2. Credit Nutritionist's Wallet
+        batch.update(FirebaseFirestore.instance.collection('nutritionists').doc(nutritionistId), {
+          'totalEarnings': FieldValue.increment(nutritionistEarnings),
+        });
+
+        // 3. Add to Earnings History
+        batch.set(FirebaseFirestore.instance.collection('nutritionists').doc(nutritionistId).collection('earnings_history').doc(), {
+          'amount': amount,
+          'netEarnings': nutritionistEarnings,
+          'platformFee': platformFee,
+          'googleFee': googleFee,
+          'userName': user.displayName ?? "Subscriber",
+          'planTitle': purchase.productID.split('_').last.toUpperCase(),
+          'timestamp': FieldValue.serverTimestamp(),
+        });
+
+        // 4. Clear pending
+        batch.delete(pendingDoc.reference);
+
+        await batch.commit();
+      }
+    } else if (isNutritionistMembership) {
+      // 🟠 NUTRITIONIST JOINING PLATFORM
       await FirebaseFirestore.instance.collection('nutritionists').doc(user.uid).update({
         'isActive': true,
         'membershipExpiry': Timestamp.fromDate(expiry),
         'lastPaymentDate': FieldValue.serverTimestamp(),
       });
-
-      await FirebaseFirestore.instance.collection('nutritionists').doc(user.uid).collection('payments').add({
-        'amount': 500, // Platform fee amount
-        'currency': 'PKR',
-        'status': 'success',
-        'purchaseId': purchase.purchaseID,
-        'timestamp': FieldValue.serverTimestamp(),
-        'source': purchase.verificationData.source,
-      });
     } else {
-      // User Premium
+      // 🔵 USER BUYING PLATFORM PREMIUM
       await FirebaseFirestore.instance.collection('subscriptions').add({
         'userId': user.uid,
         'planId': 'platform_premium',
@@ -161,7 +246,7 @@ class IAPService {
         'startDate': FieldValue.serverTimestamp(),
         'expiryDate': Timestamp.fromDate(expiry),
         'interval': isMonthly ? 'month' : 'year',
-        'billingSource': purchase.verificationData.source.isEmpty ? 'native_store' : purchase.verificationData.source,
+        'billingSource': 'google_play',
         'createdAt': FieldValue.serverTimestamp(),
       });
       

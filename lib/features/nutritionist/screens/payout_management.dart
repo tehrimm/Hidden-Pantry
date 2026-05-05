@@ -5,13 +5,13 @@ import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:hidden_pantry_app/features/user/services/stripe_service.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:hidden_pantry_app/features/user/services/iap_service.dart';
+import 'package:hidden_pantry_app/core/widgets/app_dialog.dart';
 
 class PayoutManagementScreen extends StatefulWidget {
   final Map<String, dynamic>? mockData;
@@ -169,7 +169,7 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
                           
                           _FadeSlideEntry(
                             delayMs: 300,
-                            child: _stripeConnectSection(data),
+                            child: _payoutSettingsSection(data),
                           ),
 
                           _FadeSlideEntry(
@@ -205,7 +205,7 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
       ),
       child: Column(
         children: [
-          Text("TOTAL EARNINGS", style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12.sp, fontWeight: FontWeight.w900, letterSpacing: 1.2, fontFamily: "Satoshi")),
+          Text("AVAILABLE BALANCE", style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12.sp, fontWeight: FontWeight.w900, letterSpacing: 1.2, fontFamily: "Satoshi")),
           SizedBox(height: 8.sh),
           Text("Rs. ${total.toInt()}", style: TextStyle(color: Colors.white, fontSize: 40.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
           if (projected > 0) ...[
@@ -254,6 +254,26 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
               ],
             ),
           ),
+          if (total > 0) ...[
+            SizedBox(height: 24.sh),
+            GestureDetector(
+              onTap: () => _requestWithdrawal(total, data),
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 14.sh),
+                decoration: BoxDecoration(
+                  color: orange,
+                  borderRadius: BorderRadius.circular(16.sw),
+                  boxShadow: [BoxShadow(color: orange.withValues(alpha: 0.3), blurRadius: 10, offset: const Offset(0, 5))],
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  "Withdraw Balance",
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15.sp, fontFamily: "Satoshi"),
+                ),
+              ),
+            ),
+          ],
           SizedBox(height: 16.sh),
           Container(
             padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 8.sh),
@@ -353,12 +373,14 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
   }
 
 
-  Widget _stripeConnectSection(Map<String, dynamic> data) {
-    final String? stripeId = data["stripeAccountId"];
-    final bool isLinked = stripeId != null && stripeId.isNotEmpty;
+
+  Widget _payoutSettingsSection(Map<String, dynamic> data) {
+    final Map<String, dynamic>? payoutMethod = data["payoutMethod"] as Map<String, dynamic>?;
+    final bool isConfigured = payoutMethod != null && payoutMethod.isNotEmpty;
 
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 18.sh),
+      margin: EdgeInsets.only(bottom: 24.sh),
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(22.sw),
@@ -380,29 +402,21 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  isLinked ? "Stripe Connected" : "Link Stripe Account",
+                  isConfigured ? "Payout Method Set" : "Setup Payout Method",
                   style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
                 ),
                 SizedBox(height: 4.sh),
                 Text(
-                  isLinked 
-                    ? "Direct payments enabled" 
-                    : "Payments go directly to your bank",
+                  isConfigured 
+                    ? "${payoutMethod['method']} - ${payoutMethod['accountNumber']}" 
+                    : "Add bank or wallet details for payouts",
                   style: TextStyle(color: purple.withValues(alpha: 0.6), fontSize: 12.sp, fontFamily: "Satoshi"),
                 ),
               ],
             ),
           ),
           GestureDetector(
-            onTap: () async {
-              HapticFeedback.lightImpact();
-              try {
-                final url = await StripeService().onboardNutritionist();
-                await StripeService().launchStripeUrl(url);
-              } catch (e) {
-                if (context.mounted) Toaster.show(context, StripeService.friendlyError(e), isError: true);
-              }
-            },
+            onTap: () => _showPayoutForm(data),
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 10.sh),
               decoration: BoxDecoration(
@@ -410,12 +424,246 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
                 borderRadius: BorderRadius.circular(12.sw),
                 boxShadow: [BoxShadow(color: orange.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3))],
               ),
-              child: Text(isLinked ? "Manage" : "Setup", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.sp)),
+              child: Text(isConfigured ? "Edit" : "Setup", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.sp)),
             ),
           ),
         ],
       ),
     );
+  }
+
+  void _showPayoutForm(Map<String, dynamic> data) {
+    final Map<String, dynamic>? current = data["payoutMethod"] as Map<String, dynamic>?;
+    
+    final nameCtrl = TextEditingController(text: current?['accountHolderName'] ?? '');
+    final bankNameCtrl = TextEditingController(text: current?['bankName'] ?? '');
+    final accountNumCtrl = TextEditingController(text: current?['accountNumber'] ?? '');
+    String selectedMethod = current?['method'] ?? 'Bank Transfer';
+    
+    final List<String> methods = ['Bank Transfer', 'EasyPaisa', 'JazzCash'];
+    final List<String> banks = ['Habib Bank (HBL)', 'United Bank (UBL)', 'Meezan Bank', 'Alfalah Bank', 'Standard Chartered', 'Other'];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Container(
+          padding: EdgeInsets.fromLTRB(24.sw, 24.sh, 24.sw, MediaQuery.of(context).viewInsets.bottom + 24.sh),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32.sw)),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(child: Container(width: 40.sw, height: 4.sh, decoration: BoxDecoration(color: purple.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(2.sw)))),
+                SizedBox(height: 24.sh),
+                Text("Payout Details", style: TextStyle(color: purple, fontSize: 20.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
+                SizedBox(height: 8.sh),
+                Text("Where should we send your earnings?", style: TextStyle(color: purple.withValues(alpha: 0.5), fontSize: 13.sp)),
+                SizedBox(height: 16.sh),
+
+                // New Fee Info Section
+                Container(
+                  padding: EdgeInsets.all(12.sw),
+                  decoration: BoxDecoration(
+                    color: orange.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(12.sw),
+                    border: Border.all(color: orange.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.info_outline_rounded, color: orange, size: 20.sw),
+                      SizedBox(width: 12.sw),
+                      Expanded(
+                        child: Text(
+                          "Fee Structure: Google takes 15%, Hidden Pantry takes 10%. You receive 75% of every subscription.",
+                          style: TextStyle(color: purple.withValues(alpha: 0.8), fontSize: 11.sp, fontWeight: FontWeight.w600, height: 1.4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 24.sh),
+                
+                _formLabel("Payment Method"),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16.sw),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14.sw)),
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<String>(
+                      value: selectedMethod,
+                      isExpanded: true,
+                      onChanged: (v) => setModalState(() => selectedMethod = v!),
+                      items: methods.map((m) => DropdownMenuItem(value: m, child: Text(m, style: TextStyle(color: purple, fontSize: 14.sp)))).toList(),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 16.sh),
+
+                _formLabel("Account Holder Name"),
+                _formField(nameCtrl, "e.g. Dr. Sarah Khan"),
+                SizedBox(height: 16.sh),
+
+                if (selectedMethod == 'Bank Transfer') ...[
+                  _formLabel("Bank Name"),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16.sw),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14.sw)),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        hint: Text("Select Bank", style: TextStyle(fontSize: 14.sp)),
+                        value: banks.contains(bankNameCtrl.text) ? bankNameCtrl.text : (bankNameCtrl.text.isEmpty ? null : 'Other'),
+                        isExpanded: true,
+                        onChanged: (v) => setModalState(() => bankNameCtrl.text = v == 'Other' ? '' : v!),
+                        items: banks.map((b) => DropdownMenuItem(value: b, child: Text(b, style: TextStyle(color: purple, fontSize: 14.sp)))).toList(),
+                      ),
+                    ),
+                  ),
+                  if (bankNameCtrl.text.isEmpty || !banks.contains(bankNameCtrl.text)) ...[
+                    SizedBox(height: 8.sh),
+                    _formField(bankNameCtrl, "Enter Bank Name"),
+                  ],
+                  SizedBox(height: 16.sh),
+                ],
+
+                _formLabel(selectedMethod == 'Bank Transfer' ? "IBAN or Account Number" : "Mobile Number"),
+                _formField(accountNumCtrl, selectedMethod == 'Bank Transfer' ? "PK00XXXX..." : "03xx-xxxxxxx", keyboardType: TextInputType.text),
+                
+                SizedBox(height: 32.sh),
+                GestureDetector(
+                  onTap: () async {
+                    if (nameCtrl.text.isEmpty || accountNumCtrl.text.isEmpty || (selectedMethod == 'Bank Transfer' && bankNameCtrl.text.isEmpty)) {
+                      Toaster.show(context, "Please fill all fields", isError: true);
+                      return;
+                    }
+                    
+                    try {
+                      await FirebaseFirestore.instance.collection("nutritionists").doc(_lastUid).update({
+                        "payoutMethod": {
+                          "accountHolderName": nameCtrl.text.trim(),
+                          "bankName": selectedMethod == 'Bank Transfer' ? bankNameCtrl.text.trim() : selectedMethod,
+                          "accountNumber": accountNumCtrl.text.trim(),
+                          "method": selectedMethod,
+                          "updatedAt": FieldValue.serverTimestamp(),
+                        }
+                      });
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        Toaster.show(context, "Payout method updated!");
+                      }
+                    } catch (e) {
+                      Toaster.show(context, "Error saving: $e", isError: true);
+                    }
+                  },
+                  child: Container(
+                    width: double.infinity,
+                    height: 56.sh,
+                    decoration: BoxDecoration(
+                      color: purple,
+                      borderRadius: BorderRadius.circular(16.sw),
+                      boxShadow: [BoxShadow(color: purple.withValues(alpha: 0.2), blurRadius: 12, offset: Offset(0, 6))],
+                    ),
+                    alignment: Alignment.center,
+                    child: Text("Save Details", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16.sp)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _formLabel(String label) {
+    return Padding(
+      padding: EdgeInsets.only(left: 4.sw, bottom: 8.sh),
+      child: Text(label, style: TextStyle(color: purple, fontSize: 13.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+    );
+  }
+
+  Widget _formField(TextEditingController ctrl, String hint, {TextInputType keyboardType = TextInputType.name}) {
+    return TextField(
+      controller: ctrl,
+      keyboardType: keyboardType,
+      style: TextStyle(color: purple, fontSize: 14.sp),
+      decoration: InputDecoration(
+        hintText: hint,
+        hintStyle: TextStyle(color: purple.withValues(alpha: 0.3)),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.sw), borderSide: BorderSide.none),
+        contentPadding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 16.sh),
+      ),
+    );
+  }
+
+  void _requestWithdrawal(double balance, Map<String, dynamic> data) async {
+    final Map<String, dynamic>? method = data["payoutMethod"] as Map<String, dynamic>?;
+    
+    if (method == null || method.isEmpty) {
+      Toaster.show(context, "Please setup your payout method first", isError: true);
+      _showPayoutForm(data);
+      return;
+    }
+
+    if (balance < 500) {
+      Toaster.show(context, "Minimum withdrawal amount is Rs. 500", isError: true);
+      return;
+    }
+
+    final bool? confirm = await AppDialog.show<bool>(
+      context: context,
+      title: "Confirm Withdrawal",
+      contentText: "Request Rs. ${balance.toInt()} to be sent to your ${method['method']} account?",
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false), 
+          child: Text("Cancel", style: TextStyle(color: purple.withValues(alpha: 0.5), fontWeight: FontWeight.bold))
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, true),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: orange, 
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.sw)),
+          ),
+          child: const Text("Request Now", style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+      ],
+    );
+
+    if (confirm == true) {
+      try {
+        final batch = FirebaseFirestore.instance.batch();
+        final nutritionistRef = FirebaseFirestore.instance.collection("nutritionists").doc(_lastUid);
+        final requestRef = FirebaseFirestore.instance.collection("withdrawal_requests").doc();
+        
+        batch.set(requestRef, {
+          "nutritionistId": _lastUid,
+          "nutritionistName": data["fullName"] ?? "Nutritionist",
+          "amount": balance,
+          "payoutMethod": method,
+          "status": "pending",
+          "timestamp": FieldValue.serverTimestamp(),
+        });
+        
+        batch.update(nutritionistRef, {
+          "totalEarnings": 0.0, // Reset balance after request
+          "pendingPayout": FieldValue.increment(balance),
+        });
+
+        await batch.commit();
+        if (context.mounted) Toaster.show(context, "Withdrawal request sent!");
+      } catch (e) {
+        Toaster.show(context, "Request failed: $e", isError: true);
+      }
+    }
   }
 }
 
