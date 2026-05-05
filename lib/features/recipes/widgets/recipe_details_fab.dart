@@ -27,6 +27,7 @@ class _AnimatedStartCookingFabState extends State<AnimatedStartCookingFab> with 
     super.initState();
     _shimmerController = AnimationController(
       vsync: this,
+      duration: const Duration(seconds: 2),
     );
     
     bool isTest = WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding');

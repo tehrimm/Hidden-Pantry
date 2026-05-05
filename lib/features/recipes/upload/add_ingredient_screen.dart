@@ -25,7 +25,9 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
   final Color cardBg = const Color(0xFFF9E3D5);
   final Color bg = const Color(0xFFFFF3EB);
   final List<String> _units = [
-    'tsp','tbsp','cup','ml','l','g','kg','pinch','dash','slice','piece','clove','stalk',' sprig','oz','lb','pint','quart','gallon','large','medium','small','stick','head','bunch'
+    'tsp', 'teaspoon', 'teaspoons', 'tbsp', 'tablespoon', 'tablespoons', 'cup', 'cups', 
+    'ml', 'l', 'g', 'kg', 'pinch', 'dash', 'slice', 'piece', 'clove', 'stalk', 'sprig', 
+    'oz', 'lb', 'pint', 'quart', 'gallon', 'large', 'medium', 'small', 'stick', 'head', 'bunch'
   ];
   String? _unit;
 
@@ -129,11 +131,15 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
       combined = '$quantity $_unit';
     } else if (quantity.isNotEmpty) {
       combined = quantity;
+    } else if (_unit != null) {
+      combined = _unit!;
     }
+
     Navigator.pop(context, {
       'name': name,
       'quantity': combined,
     });
+
   }
 
   @override

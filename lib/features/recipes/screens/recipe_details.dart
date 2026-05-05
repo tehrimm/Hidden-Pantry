@@ -86,7 +86,9 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
     _scrollController.addListener(_scrollListener);
     _authorPageController = PageController(viewportFraction: 0.6);
     _authorPageController.addListener(() {
-      if (mounted) setState(() => _authorPage = _authorPageController.page ?? 0.0);
+      if (mounted && _authorPageController.hasClients) {
+        setState(() => _authorPage = _authorPageController.page ?? 0.0);
+      }
     });
     _loadFullDetails();
     _checkBookmarkStatus();
@@ -518,9 +520,9 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
             child: ClipRRect(
               borderRadius: BorderRadius.circular(30.sw),
               child: Stack(
-                children: const [
+                children: [
                   Positioned.fill(child: ColoredBox(color: bgColor)),
-                  Positioned.fill(child: PatternBackground()),
+                  const Positioned.fill(child: PatternBackground()),
                 ],
               ),
             ),
@@ -1779,7 +1781,11 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
             ),
           ),
         );
-        if (result == "refresh" && mounted) _loadFullDetails();
+        if (result != null && mounted) {
+           // If a subscription was purchased or tier changed, refresh everything
+           _loadFullDetails();
+           _loadSubscriptionInfo();
+        }
       }
     } catch (e) {
       if (mounted) setState(() { _loading = false; _error = "Failed to verify access permissions."; });

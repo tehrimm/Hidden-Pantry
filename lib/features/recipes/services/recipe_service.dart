@@ -174,14 +174,19 @@ class RecipeService {
       'author_name': user.displayName ?? "User",
       'author_profile_image_url': user.photoURL,
       'ingredients_parsed': ingredients.map((ing) {
-        final rawQty = ing['quantity'] ?? '0';
-        final numericOnly = RegExp(r'[\d.]+').firstMatch(rawQty.toString())?.group(0) ?? '0';
-        return {
-          'name': ing['name'],
-          'quantity': double.tryParse(numericOnly) ?? 0.0,
-          'unit': rawQty.toString().replaceAll(numericOnly, '').trim(),
+        final rawQty = (ing['quantity'] ?? '').toString().trim();
+        final name = (ing['name'] ?? '').toString().trim();
+        
+        final combined = rawQty.isEmpty ? name : "$rawQty $name";
+        final parsed = Recipe.parseIngredient(combined);
+        
+        return parsed?.toJson() ?? {
+          'name': name,
+          'quantity': 1.0,
+          'unit': '',
         };
       }).toList(),
+
       'ingredients': ingredients.map((e) => "${e['quantity'] ?? ''} ${e['name'] ?? ''}".trim()).toList(),
       'directions': directionsFlattened,
       'steps_detailed': stepsData,
