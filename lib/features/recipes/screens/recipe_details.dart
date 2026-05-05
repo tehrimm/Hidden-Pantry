@@ -529,12 +529,15 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
           ),
 
           // Main Layout: Header + Content
-          SafeArea(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(30.sw),
-              child: _buildBodyState(context),
+          Positioned.fill(
+            child: SafeArea(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(30.sw),
+                child: _buildBodyState(context),
+              ),
             ),
           ),
+
         ],
       ),
 

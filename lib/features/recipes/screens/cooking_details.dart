@@ -1014,7 +1014,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
                                             children: [
                                               Text(
                                                 ing.name,
-                                                maxLines: 1,
+                                                maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: TextStyle(
                                                   color: const Color(0xFF462F4D),
@@ -1026,7 +1026,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
                                               SizedBox(height: 2.sh),
                                               Text(
                                                 "${_fmtQty(ing.quantity)} ${ing.unit}",
-                                                maxLines: 1,
+                                                maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: TextStyle(
                                                   color: const Color(0xFFEF8A54),
@@ -1035,6 +1035,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
                                                   fontFamily: 'Satoshi',
                                                 ),
                                               ),
+
                                             ],
                                           ),
                                         ),

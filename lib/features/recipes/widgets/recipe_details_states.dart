@@ -7,10 +7,12 @@ class RecipeSkeletonLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: EdgeInsets.fromLTRB(18.sw, 18.sh, 18.sw, 90.sh),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return SizedBox.expand(
+      child: SingleChildScrollView(
+        padding: EdgeInsets.fromLTRB(18.sw, 18.sh, 18.sw, 90.sh),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+
         children: [
            Center(child: Text("Loading Recipe...", style: TextStyle(color: Colors.grey, fontSize: 12.sp))),
            SizedBox(height: 10.sh),
@@ -66,8 +68,10 @@ class RecipeSkeletonLoader extends StatelessWidget {
            )
         ],
       ),
-    );
-  }
+    ),
+  );
+}
+
 }
 
 class RecipeErrorState extends StatelessWidget {
