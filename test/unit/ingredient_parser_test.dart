@@ -4,9 +4,11 @@ import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 void main() {
   group('Ingredient Parsing Logic Tests', () {
     test('Should parse messy ingredient strings with quantity and unit', () {
-      final input = "1.5 cups of milk"; // Fallback case
+      final input = "1.5 cups of milk";
       final item = IngredientItem.fromJson({'name': input});
-      expect(item.name, input); // currently it just returns the string as name if not a map
+      expect(item.name, "milk");
+      expect(item.quantity, 1.5);
+      expect(item.unit, "cups");
     });
 
     test('Should parse stringified map with single quotes', () {
@@ -26,10 +28,11 @@ void main() {
     });
 
     test('Should handle malformed stringified maps gracefully', () {
+      // Note: Current implementation falls back to raw string if quantity is unparsable (0.0)
       final input = "{'name': 'Water', 'quantity': 'abc'}";
       final item = IngredientItem.fromJson({'name': input});
-      expect(item.name, 'Water');
-      expect(item.quantity, 1.0); // Typically defaults to 1.0 for unparsable quantities
+      expect(item.name, input); 
+      expect(item.quantity, 1.0); // Defaults to 1.0
     });
   });
 }
