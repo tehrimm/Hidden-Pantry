@@ -253,7 +253,7 @@ class _LoadingFiveState extends State<LoadingFive> {
                   left: 130.sw,
                   top: 771.sh,
                   child: Text(
-                    'Have an Account?',
+                    'Have an Account? ',
                     style: TextStyle(
                       color: const Color(0xFF462F4D),
                       fontSize: 12.sp,

@@ -823,7 +823,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
                     child: Row(
                       children: [
                         SizedBox(
-                          width: 56.sw,
+                          width: 70.sw,
                           child: Align(
                             alignment: Alignment.centerLeft,
                             child: GestureDetector(
@@ -852,13 +852,16 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
-                                'Step ${_currentIndex + 1} of ${widget.recipe.directions.length}',
-                                style: TextStyle(
-                                  color: const Color(0xFF462F4D),
-                                  fontSize: 15.sp,
-                                  fontWeight: FontWeight.w900,
-                                  fontFamily: 'Satoshi',
+                              FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  'Step ${_currentIndex + 1} of ${widget.recipe.directions.length}',
+                                  style: TextStyle(
+                                    color: const Color(0xFF462F4D),
+                                    fontSize: 15.sp,
+                                    fontWeight: FontWeight.w900,
+                                    fontFamily: 'Satoshi',
+                                  ),
                                 ),
                               ),
                               SizedBox(height: 10.sh),
@@ -879,8 +882,8 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
                         ),
 
                          // Right placeholder - Ingredients & Privacy Info
-                        ConstrainedBox(
-                          constraints: BoxConstraints(maxWidth: 120.sw),
+                        SizedBox(
+                          width: 70.sw,
                           child: Align(
                             alignment: Alignment.centerRight,
                             child: FittedBox(
