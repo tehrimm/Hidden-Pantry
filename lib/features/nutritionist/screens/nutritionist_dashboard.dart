@@ -1012,35 +1012,6 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                       ],
                     ),
                     SizedBox(height: 16.sh),
-                    Container(
-                        padding: EdgeInsets.all(16.sw),
-                        decoration: BoxDecoration(
-                          color: orange.withValues(alpha:0.1),
-                          borderRadius: BorderRadius.circular(20.sw),
-                          border: Border.all(color: orange.withValues(alpha:0.2)),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(Icons.info_outline_rounded, color: orange, size: 20.sw),
-                            SizedBox(width: 12.sw),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Direct Payments Active",
-                                    style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13.sp),
-                                  ),
-                                  Text(
-                                    "Client payments are processed directly to your Stripe account.",
-                                    style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 11.sp),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
                   ],
                 );
               },

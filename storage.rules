@@ -42,8 +42,8 @@ service firebase.storage {
     // Profile Pictures (user-specific)
     // =========================
     match /profile_pictures/{uid} {
-      allow read, write: if request.auth != null
-                          && request.auth.uid == uid;
+      allow read: if true;
+      allow write: if isAuthenticated() && request.auth.uid == uid;
     }
     
     // TEMPORARY: Allow all writes for testing other paths if authenticated

@@ -14,6 +14,7 @@ import 'package:hidden_pantry_app/features/onboarding/screens/loading_five.dart'
 import 'package:hidden_pantry_app/features/onboarding/screens/starting_screen.dart' show StartingScreen;
 import 'profile_setting.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/my_recipes.dart';
+import 'package:hidden_pantry_app/features/admin/screens/admin_payout_requests.dart';
 import 'package:hidden_pantry_app/features/admin/screens/admin_certificate_review.dart';
 import 'package:hidden_pantry_app/features/user/services/user_service.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
@@ -292,13 +293,19 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           onTap: () => _go(const UserHelpSupportScreen()),
                         ),
                         
-                        // Admin button (conditional)
-                        if (email == "hiddenpantry50@gmail.com")
+                        // Admin buttons (conditional)
+                        if (email == "hiddenpantry50@gmail.com") ...[
+                          _tile(
+                            iconData: Icons.payments_outlined,
+                            title: "Payment Requests",
+                            onTap: () => _go(const AdminPayoutRequestsScreen()),
+                          ),
                           _tile(
                             icon: "assets/icons/setting.png",
                             title: "Certificates Pending Approval",
                             onTap: () => _go(const AdminCertificateReviewScreen()),
                           ),
+                        ],
 
                         SizedBox(height: 26.sh),
 

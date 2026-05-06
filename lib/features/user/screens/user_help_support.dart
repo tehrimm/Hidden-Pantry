@@ -46,6 +46,10 @@ class _UserHelpSupportScreenState extends State<UserHelpSupportScreen> {
       "q": "How do I write a review?",
       "a": "Visit the profile of a nutritionist you've interacted with, switch to the 'Reviews' tab, and tap 'Write a Review'."
     },
+    {
+      "q": "Can I edit recipes that are taking long to process?",
+      "a": "Yes, any recipe you've uploaded can be edited at any time, even if it's still processing. Go to 'My Recipes', select your recipe, and tap the Edit icon to make changes."
+    },
   ];
 
   int? _expandedIndex;

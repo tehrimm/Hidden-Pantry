@@ -173,14 +173,26 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
                           ),
 
                           _FadeSlideEntry(
-                            delayMs: 300,
-                            child: Text("Earnings History", style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
+                            delayMs: 320,
+                            child: Text("Pending Withdrawals", style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
+                          ),
+                          SizedBox(height: 16.sh),
+
+                          _FadeSlideEntry(
+                            delayMs: 330,
+                            child: _withdrawalRequestsList(user?.uid),
+                          ),
+                          SizedBox(height: 24.sh),
+
+                          _FadeSlideEntry(
+                            delayMs: 350,
+                            child: Text("Payout History", style: TextStyle(color: purple, fontSize: 18.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi")),
                           ),
                           SizedBox(height: 16.sh),
                           
                           _FadeSlideEntry(
                             delayMs: 400,
-                            child: _earningsHistoryList(user?.uid),
+                            child: _payoutHistoryList(user?.uid),
                           ),
                           SizedBox(height: 100.sh), // Bottom padding
                         ],
@@ -223,37 +235,7 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
             ),
           ],
           SizedBox(height: 28.sh),
-          Container(
-            padding: EdgeInsets.all(12.sw),
-            decoration: BoxDecoration(
-              color: isLinked ? Colors.green.withValues(alpha: 0.2) : orange.withValues(alpha: 0.2),
-              borderRadius: BorderRadius.circular(12.sw),
-              border: Border.all(color: isLinked ? Colors.green.withValues(alpha: 0.3) : orange.withValues(alpha: 0.3)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  isLinked ? Icons.check_circle_rounded : Icons.warning_amber_rounded,
-                  color: isLinked ? Colors.greenAccent : orange,
-                  size: 16.sw,
-                ),
-                SizedBox(width: 8.sw),
-                Flexible(
-                  child: Text(
-                    isLinked ? "Stripe Connected - Direct Payments Active" : "Connect Stripe to receive payments",
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: "Satoshi",
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // Stripe references removed as per user request
           if (total > 0) ...[
             SizedBox(height: 24.sh),
             GestureDetector(
@@ -300,9 +282,64 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
     );
   }
 
-  Widget _earningsHistoryList(String? uid) {
+  Widget _withdrawalRequestsList(String? uid) {
     return StreamBuilder<QuerySnapshot>(
-      stream: _historyStream,
+      stream: FirebaseFirestore.instance
+          .collection("withdrawal_requests")
+          .where("nutritionistId", isEqualTo: uid)
+          .where("status", whereIn: ["pending", "processing", "rejected"])
+          .orderBy("timestamp", descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) return _emptyMinorState("Error loading: ${snapshot.error}");
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Padding(
+            padding: EdgeInsets.all(20.sw),
+            child: Center(child: Text("Loading...", style: TextStyle(color: purple, fontSize: 13.sp, fontFamily: "Satoshi"))),
+          );
+        }
+        final docs = snapshot.data!.docs;
+        if (docs.isEmpty) return _emptyMinorState("No pending requests.");
+
+        return Column(
+          children: docs.map((doc) {
+            final data = doc.data() as Map<String, dynamic>;
+            final date = (data["timestamp"] as Timestamp?)?.toDate() ?? DateTime.now();
+            final String status = data["status"] ?? "pending";
+            
+            String label = "Status: Received";
+            Color color = orange;
+            
+            if (status == "processing") {
+              label = "Status: Processing";
+              color = Colors.blue;
+            } else if (status == "rejected") {
+              label = "Status: Rejected";
+              color = Colors.red;
+            }
+
+            return _historyTile(
+              title: "Withdrawal Request",
+              subtitle: label,
+              amount: "Rs. ${data["amount"]}",
+              date: DateFormat('MMM d, yyyy').format(date),
+              isPositive: false,
+              statusColor: color,
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+
+  Widget _payoutHistoryList(String? uid) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection("payout_history")
+          .where("nutritionistId", isEqualTo: uid)
+          .orderBy("timestamp", descending: true)
+          .limit(10)
+          .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) return _emptyMinorState("Error loading: ${snapshot.error}");
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -312,18 +349,21 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
           );
         }
         final docs = snapshot.data!.docs;
-        if (docs.isEmpty) return _emptyMinorState("No earnings recorded yet.");
+        if (docs.isEmpty) return _emptyMinorState("No payout history yet.");
 
         return Column(
           children: docs.map((doc) {
             final data = doc.data() as Map<String, dynamic>;
             final date = (data["timestamp"] as Timestamp?)?.toDate() ?? DateTime.now();
+            final String proof = data["proof"] ?? "Bank Transfer";
+            
             return _historyTile(
-              title: data["userName"] ?? "Subscriber",
-              subtitle: "${data["planTitle"]} subscription",
-              amount: "+Rs. ${data["amount"]}",
+              title: "Bank Payout",
+              subtitle: "Ref: $proof",
+              amount: "Rs. ${data["amount"]}",
               date: DateFormat('MMM d, yyyy').format(date),
-              isPositive: true,
+              isPositive: false, 
+              statusColor: Colors.green,
             );
           }).toList(),
         );
@@ -348,18 +388,22 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
           Container(
             padding: EdgeInsets.all(12.sw),
             decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14.sw)),
-            child: Icon(isPositive ? Icons.add_rounded : Icons.south_west_rounded, color: isPositive ? Colors.green : orange, size: 20.sw),
+            child: Icon(
+              isPositive ? Icons.add_rounded : Icons.account_balance_wallet_rounded, 
+              color: isPositive ? Colors.green : orange, 
+              size: 20.sw
+            ),
           ),
           SizedBox(width: 16.sw),
           Expanded(
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(title, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 14.sp, fontFamily: "Satoshi")),
               SizedBox(height: 2.sh),
-              Text(subtitle, style: TextStyle(color: statusColor ?? purple.withValues(alpha: 0.5), fontSize: 12.sp, fontFamily: "Satoshi")),
+              Text(subtitle, style: TextStyle(color: statusColor ?? purple.withValues(alpha: 0.5), fontSize: 12.sp, fontFamily: "Satoshi", fontWeight: FontWeight.bold)),
             ]),
           ),
           Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Text(amount, style: TextStyle(color: isPositive ? Colors.green : purple, fontWeight: FontWeight.w900, fontSize: 14.sp, fontFamily: "Satoshi")),
+            Text(amount, style: TextStyle(color: purple, fontWeight: FontWeight.w900, fontSize: 14.sp, fontFamily: "Satoshi")),
             SizedBox(height: 2.sh),
             Text(date, style: TextStyle(color: purple.withValues(alpha: 0.3), fontSize: 11.sp, fontFamily: "Satoshi")),
           ]),
@@ -489,16 +533,23 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
                 ),
                 SizedBox(height: 24.sh),
                 
-                _formLabel("Payment Method"),
+                 _formLabel("Payment Method"),
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 16.sw),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14.sw)),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFDECE4).withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(14.sw),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+                  ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: selectedMethod,
                       isExpanded: true,
+                      borderRadius: BorderRadius.circular(14.sw),
+                      dropdownColor: Colors.white,
+                      style: TextStyle(color: purple, fontSize: 14.sp, fontFamily: "Satoshi"),
                       onChanged: (v) => setModalState(() => selectedMethod = v!),
-                      items: methods.map((m) => DropdownMenuItem(value: m, child: Text(m, style: TextStyle(color: purple, fontSize: 14.sp)))).toList(),
+                      items: methods.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),
                     ),
                   ),
                 ),
@@ -508,25 +559,9 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
                 _formField(nameCtrl, "e.g. Dr. Sarah Khan"),
                 SizedBox(height: 16.sh),
 
-                if (selectedMethod == 'Bank Transfer') ...[
+                 if (selectedMethod == 'Bank Transfer') ...[
                   _formLabel("Bank Name"),
-                  Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16.sw),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14.sw)),
-                    child: DropdownButtonHideUnderline(
-                      child: DropdownButton<String>(
-                        hint: Text("Select Bank", style: TextStyle(fontSize: 14.sp)),
-                        value: banks.contains(bankNameCtrl.text) ? bankNameCtrl.text : (bankNameCtrl.text.isEmpty ? null : 'Other'),
-                        isExpanded: true,
-                        onChanged: (v) => setModalState(() => bankNameCtrl.text = v == 'Other' ? '' : v!),
-                        items: banks.map((b) => DropdownMenuItem(value: b, child: Text(b, style: TextStyle(color: purple, fontSize: 14.sp)))).toList(),
-                      ),
-                    ),
-                  ),
-                  if (bankNameCtrl.text.isEmpty || !banks.contains(bankNameCtrl.text)) ...[
-                    SizedBox(height: 8.sh),
-                    _formField(bankNameCtrl, "Enter Bank Name"),
-                  ],
+                  _formField(bankNameCtrl, "e.g. Meezan Bank"),
                   SizedBox(height: 16.sh),
                 ],
 
@@ -587,17 +622,23 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
   }
 
   Widget _formField(TextEditingController ctrl, String hint, {TextInputType keyboardType = TextInputType.name}) {
-    return TextField(
-      controller: ctrl,
-      keyboardType: keyboardType,
-      style: TextStyle(color: purple, fontSize: 14.sp),
-      decoration: InputDecoration(
-        hintText: hint,
-        hintStyle: TextStyle(color: purple.withValues(alpha: 0.3)),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(14.sw), borderSide: BorderSide.none),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 16.sh),
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFDECE4).withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(14.sw),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+      ),
+      child: TextField(
+        controller: ctrl,
+        keyboardType: keyboardType,
+        cursorColor: purple,
+        style: TextStyle(color: purple, fontSize: 14.sp, fontWeight: FontWeight.w600, fontFamily: "Satoshi"),
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          hintText: hint,
+          hintStyle: TextStyle(color: const Color(0xFFBFA89A), fontSize: 14.sp, fontWeight: FontWeight.w500),
+          contentPadding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 16.sh),
+        ),
       ),
     );
   }
@@ -606,8 +647,7 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
     final Map<String, dynamic>? method = data["payoutMethod"] as Map<String, dynamic>?;
     
     if (method == null || method.isEmpty) {
-      Toaster.show(context, "Please setup your payout method first", isError: true);
-      _showPayoutForm(data);
+      Toaster.show(context, "Please setup your payout method first using the Setup button below.", isError: true);
       return;
     }
 

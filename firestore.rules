@@ -31,7 +31,8 @@ service cloud.firestore {
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'fullName', 'phoneNumber', 'bio', 'organizationName', 'domain', 'photoUrl', 
           'updatedAt', 'lastLoginAt', 'hasLoggedInAfterRejection', 'fcmToken',
-          'licenseNumber', 'expiryDate', 'certificateUrl', 'notificationsEnabled', 'bankDetails',
+          'licenseNumber', 'expiryDate', 'certificateUrl', 'notificationsEnabled', 'bankDetails', 'payoutMethod',
+          'totalEarnings', 'pendingPayout',
           'total_review_count', 'total_rating_sum'
         ])
       ) || (
@@ -166,6 +167,18 @@ service cloud.firestore {
 
     // ==================== PLATFORM PAYMENT RULES ====================
     match /platform_payments/{paymentId} {
+      allow read: if request.auth != null && (resource.data.nutritionistId == request.auth.uid || isAdmin());
+      allow write: if isAdmin();
+    }
+
+    // ==================== WITHDRAWAL & PAYOUT HISTORY RULES ====================
+    match /withdrawal_requests/{requestId} {
+      allow read: if request.auth != null && (resource.data.nutritionistId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.nutritionistId == request.auth.uid;
+      allow update, delete: if isAdmin();
+    }
+
+    match /payout_history/{historyId} {
       allow read: if request.auth != null && (resource.data.nutritionistId == request.auth.uid || isAdmin());
       allow write: if isAdmin();
     }
