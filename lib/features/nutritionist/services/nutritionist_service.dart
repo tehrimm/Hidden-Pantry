@@ -63,9 +63,8 @@ class NutritionistService {
       });
     }
 
-    // Also update Auth profile
-    await user.updateDisplayName(fullName);
-    await user.reload();
+    // ⚡ Fire Auth profile update in background — do NOT block navigation
+    user.updateDisplayName(fullName).then((_) => user.reload()).catchError((_) {});
   }
 
   /// Update nutritionist profile data
@@ -93,10 +92,13 @@ class NutritionistService {
 
     await _nutritionists.doc(user.uid).update(updateData);
     
-    // Also update Auth profile for Name and Photo
-    if (fullName != null) await user.updateDisplayName(fullName);
-    if (photoUrl != null) await user.updatePhotoURL(photoUrl);
-    await user.reload();
+    // ⚡ Fire Auth profile update in background
+    if (fullName != null || photoUrl != null) {
+      Future.wait([
+        if (fullName != null) user.updateDisplayName(fullName),
+        if (photoUrl != null) user.updatePhotoURL(photoUrl),
+      ]).then((_) => user.reload()).catchError((_) {});
+    }
   }
 
   /// Update bank details for payouts

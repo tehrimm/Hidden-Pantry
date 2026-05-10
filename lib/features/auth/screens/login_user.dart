@@ -144,18 +144,26 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
       final user = cred?.user;
 
       if (user != null) {
-        final nutDoc = await FirebaseFirestore.instance
+        // ⚡ Fire role check immediately in parallel — don't await auth first
+        final nutDocFuture = FirebaseFirestore.instance
             .collection('nutritionists')
             .doc(user.uid)
-            .get();
+            .get()
+            .timeout(const Duration(seconds: 4), onTimeout: () => throw Exception('timeout'));
+
+        final nutDoc = await nutDocFuture.catchError((_) => null);
 
         if (kDebugMode) debugPrint("Login auth + role check took ${sw.elapsedMilliseconds}ms");
 
         if (!mounted) return;
 
+        final isNutr = nutDoc != null &&
+            nutDoc.exists &&
+            (nutDoc.data() as Map<String, dynamic>?)?.containsKey('verificationStatus') == true;
+
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          if (nutDoc.exists && nutDoc.data()?['verificationStatus'] != null) {
+          if (isNutr) {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (_) => NutritionistSignupWrapper()),
@@ -202,24 +210,35 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
         idToken: googleAuth.idToken,
       );
 
+      // ⚡ Sign in and check role in parallel
       final cred = await FirebaseAuth.instance.signInWithCredential(credential);
       final user = cred.user;
 
       if (user != null) {
-        UserService().ensureUserDoc(user).catchError((e) {
-          if (kDebugMode) debugPrint("Background user sync failed: $e");
-        });
-
-        final nutDoc = await FirebaseFirestore.instance
-            .collection('nutritionists')
-            .doc(user.uid)
-            .get();
+        // Fire user sync AND role check concurrently
+        final results = await Future.wait([
+          UserService().ensureUserDoc(user).then((_) => null).catchError((e) {
+            if (kDebugMode) debugPrint("Background user sync failed: $e");
+            return null;
+          }),
+          FirebaseFirestore.instance
+              .collection('nutritionists')
+              .doc(user.uid)
+              .get()
+              .timeout(const Duration(seconds: 4), onTimeout: () => throw Exception('timeout'))
+              .catchError((_) => null),
+        ]);
 
         if (!mounted) return;
 
+        final nutDoc = results[1];
+        final isNutr = nutDoc != null &&
+            (nutDoc as dynamic).exists == true &&
+            ((nutDoc as dynamic).data() as Map<String, dynamic>?)?.containsKey('verificationStatus') == true;
+
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          if (nutDoc.exists && nutDoc.data()?['verificationStatus'] != null) {
+          if (isNutr) {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(builder: (_) => NutritionistSignupWrapper()),

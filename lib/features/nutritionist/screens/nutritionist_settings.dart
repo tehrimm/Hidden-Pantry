@@ -97,19 +97,28 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
     final confirmed = await GlassDialog.show<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Delete Account'),
+        backgroundColor: const Color(0xFFFFF7F2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          'Delete Account',
+          style: TextStyle(
+            color: Color(0xFF462F4D),
+            fontFamily: 'Satoshi',
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         content: const Text(
           'Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be lost.',
-          style: TextStyle(fontFamily: 'Satoshi'),
+          style: TextStyle(fontFamily: 'Satoshi', color: Color(0xFF462F4D)),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: Text('Cancel', style: TextStyle(color: purple)),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontFamily: 'Satoshi', fontWeight: FontWeight.w600)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+            child: const Text('Delete', style: TextStyle(color: Colors.red, fontFamily: 'Satoshi', fontWeight: FontWeight.bold)),
           ),
         ],
       ),

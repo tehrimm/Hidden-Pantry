@@ -206,7 +206,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
         initialFutures.add(
           FirebaseFirestore.instance.collection('users').doc(user.uid).collection('views')
-              .orderBy('lastViewed', descending: true).limit(200).get().then((snap) {
+              .orderBy('lastViewed', descending: true).limit(20).get().then((snap) {
             _recentViewed = snap.docs.map((d) => d.id).toSet();
           }).catchError((_) {})
         );

@@ -304,18 +304,15 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
     return sections.asMap().entries.map((entry) {
       final index = entry.key;
       final section = entry.value;
-      return _FadeSlideEntry(
-        delayMs: 200 + (index * 100),
-        child: Padding(
-          padding: EdgeInsets.only(bottom: 24.sh),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(section['t']!, style: h),
-              SizedBox(height: 8.sh),
-              Text(section['c']!, style: base),
-            ],
-          ),
+      return Padding(
+        padding: EdgeInsets.only(bottom: 24.sh),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(section['t']!, style: h),
+            SizedBox(height: 8.sh),
+            Text(section['c']!, style: base),
+          ],
         ),
       );
     }).toList();

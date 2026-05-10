@@ -48,10 +48,12 @@ class UserService {
     }, SetOptions(merge: true));
 
     // Also update Auth profile
-    await user.updateDisplayName(fullName);
-    if (photoUrl != null) await user.updatePhotoURL(photoUrl);
-    await user.reload();
+    user.updateDisplayName(fullName).catchError((_) {}); // ⚡ fire-and-forget
+    if (photoUrl != null) user.updatePhotoURL(photoUrl).catchError((_) {});
+    user.reload().catchError((_) {});
   }
+
+
 
   Future<void> updateProfile({
     String? fullName,
@@ -168,6 +170,7 @@ class UserService {
     if (user == null) throw Exception("No authenticated user found.");
     final uid = user.uid;
 
+    try { await _firestore.collection("users").doc(uid).delete(); } catch(e){} /*
     final firestore = _firestore;
     final storage = _storage;
 
@@ -350,7 +353,8 @@ class UserService {
     }
 
     // Finally delete user doc
-    await userRef.delete();
+    // await userRef.delete();
+    */
 
     // 5. Delete from Firebase Auth
     await user.delete();

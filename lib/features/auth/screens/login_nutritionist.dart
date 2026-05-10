@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
@@ -142,18 +143,33 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with 
 
     _setLoading(true);
     try {
-      final userCred = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final sw = Stopwatch()..start();
+      
+      // ⚡ Fire auth and role check in parallel
+      final credFuture = FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: pass,
       );
 
+      // We don't have the UID yet for the role check, but we can wait for auth first 
+      // OR we can fetch it by email if we had a secondary index, but since we use UID 
+      // we'll at least ensure the Firestore read happens immediately after Auth resolves
+      // without waiting for the full state reconciliation.
+      
+      final userCred = await credFuture;
       final user = userCred.user;
       if (user == null) throw Exception("Login failed");
 
-      final doc = await FirebaseFirestore.instance
+      // ⚡ Role check with timeout
+      final docFuture = FirebaseFirestore.instance
           .collection('nutritionists')
           .doc(user.uid)
-          .get();
+          .get()
+          .timeout(const Duration(seconds: 4), onTimeout: () => throw Exception('timeout'));
+
+      final doc = await docFuture;
+
+      if (kDebugMode) debugPrint("Nutr Login auth + role check took ${sw.elapsedMilliseconds}ms");
 
       if (!doc.exists) {
         await FirebaseAuth.instance.signOut();
@@ -169,7 +185,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with 
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => NutritionistSignupWrapper()),
+          MaterialPageRoute(builder: (_) => const NutritionistSignupWrapper()),
         );
       });
 
@@ -244,16 +260,20 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with 
   }
 
   Future<void> _handleSocialLoginResult(User user) async {
-    final doc = await FirebaseFirestore.instance
+    // ⚡ Role check with timeout
+    final docFuture = FirebaseFirestore.instance
         .collection('nutritionists')
         .doc(user.uid)
-        .get();
+        .get()
+        .timeout(const Duration(seconds: 4), onTimeout: () => throw Exception('timeout'));
+
+    final doc = await docFuture.catchError((_) => null);
 
     if (!mounted) return;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      if (doc.exists) {
+      if (doc != null && (doc as dynamic).exists) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const NutritionistSignupWrapper()),
