@@ -8,6 +8,7 @@ class UserModel {
   final String role;
   final List<String> allergies;
   final DateTime? createdAt;
+  final DateTime? suspendedUntil;
 
   UserModel({
     required this.uid,
