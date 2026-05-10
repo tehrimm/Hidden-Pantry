@@ -53,8 +53,6 @@ class UserService {
     user.reload().catchError((_) {});
   }
 
-
-
   Future<void> updateProfile({
     String? fullName,
     String? bio,
@@ -170,9 +168,9 @@ class UserService {
     if (user == null) throw Exception("No authenticated user found.");
     final uid = user.uid;
 
-    try { await _firestore.collection("users").doc(uid).delete(); } catch(e){} /*
     final firestore = _firestore;
     final storage = _storage;
+    final userRef = firestore.collection("users").doc(uid);
 
     // 1. Delete user-created recipes and their images
     final recipesSnap = await firestore
@@ -226,7 +224,7 @@ class UserService {
       await doc.reference.delete();
     }
 
-    // NEW: Remove likes from others' tips
+    // 3. Remove likes from others' tips
     try {
       final likedTipsSnap = await firestore.collectionGroup('tips').where('likedBy', arrayContains: uid).get();
       for (var doc in likedTipsSnap.docs) {
@@ -239,7 +237,7 @@ class UserService {
       print("[UserService] Error cleaning up likes: $e");
     }
 
-    // NEW: Delete comments made by user
+    // 4. Delete comments made by user
     try {
       final commentsSnap = await firestore.collectionGroup('comments').where('userId', isEqualTo: uid).get();
       for (var doc in commentsSnap.docs) {
@@ -253,7 +251,7 @@ class UserService {
       print("[UserService] Error cleaning up comments: $e");
     }
 
-    // 3. Delete nutritionist profile and subcollections (if exists)
+    // 5. Delete nutritionist profile and subcollections (if exists)
     final nutrRef = firestore.collection('nutritionists').doc(uid);
     final nutrDoc = await nutrRef.get();
     if (nutrDoc.exists) {
@@ -292,10 +290,7 @@ class UserService {
       await nutrRef.delete();
     }
 
-    // 4. Delete user profile and its subcollections
-    final userRef = _users.doc(uid);
-
-    // NEW: Cleanup social network counts and docs on targets
+    // 6. Cleanup social network (followers/following)
     try {
       final followingSnap = await userRef.collection('following').get();
       for (var doc in followingSnap.docs) {
@@ -314,7 +309,7 @@ class UserService {
       print("[UserService] Error cleaning up social network: $e");
     }
 
-    // Delete internal subcollections
+    // 7. Delete internal subcollections
     final userSubColls = ['payment_methods', 'cookbooks', 'likes', 'following', 'followers', 'saved_meal_plans', 'notifications'];
     for (var coll in userSubColls) {
       final snap = await userRef.collection(coll).get();
@@ -323,7 +318,7 @@ class UserService {
       }
     }
 
-    // NEW: Delete top-level subscriptions
+    // 8. Delete top-level subscriptions
     try {
       final subsSnap = await firestore.collection('subscriptions').where('userId', isEqualTo: uid).get();
       for (var doc in subsSnap.docs) await doc.reference.delete();
@@ -331,7 +326,7 @@ class UserService {
       print("[UserService] Error deleting subscriptions: $e");
     }
     
-    // NEW: Delete Chats and messages
+    // 9. Delete Chats and messages
     try {
       final chatsSnap = await firestore.collection('chats').where('participants', arrayContains: uid).get();
       for (var chatDoc in chatsSnap.docs) {
@@ -345,21 +340,17 @@ class UserService {
       print("[UserService] Error deleting chats: $e");
     }
 
-    // Delete profile picture if exists
+    // 10. Delete profile picture if exists
     try {
       await storage.ref().child('profile_pictures/$uid').delete();
     } catch (e) {
       print("[UserService] No profile picture to delete: $e");
     }
 
-    // Finally delete user doc
-    // await userRef.delete();
-    */
+    // 11. Finally delete user doc
+    await userRef.delete();
 
-    // 5. Delete from Firebase Auth
+    // 12. Delete from Firebase Auth
     await user.delete();
   }
 }
-
-
-

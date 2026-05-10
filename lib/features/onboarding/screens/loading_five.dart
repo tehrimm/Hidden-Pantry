@@ -107,7 +107,7 @@ class _LoadingFiveState extends State<LoadingFive> {
                         child: Text(
                           '?',
                           style: TextStyle(
-                            color: const Color(0xFFF9E3D5),
+                            color: const Color(0xFF462F4D),
                             fontSize: 20.sp,
                             fontFamily: 'Satoshi',
                             fontWeight: FontWeight.w700,

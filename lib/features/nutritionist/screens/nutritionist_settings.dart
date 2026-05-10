@@ -108,7 +108,7 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
           ),
         ),
         content: const Text(
-          'Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be lost.',
+          'Are you sure you want to permanently delete your account? EVERYTHING related to your account (recipes, reviews, messages, and social data) will be permanently deleted. This action cannot be undone and there is no recovery option.',
           style: TextStyle(fontFamily: 'Satoshi', color: Color(0xFF462F4D)),
         ),
         actions: [

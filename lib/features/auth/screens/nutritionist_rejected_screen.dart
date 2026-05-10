@@ -69,7 +69,7 @@ class _NutritionistRejectedScreenState extends State<NutritionistRejectedScreen>
           ),
         ),
         content: Text(
-          "This action cannot be undone. Your account and all data will be permanently deleted.",
+          "Are you sure you want to permanently delete your account? EVERYTHING related to your account (recipes, reviews, messages, and social data) will be permanently deleted. This action cannot be undone and there is no recovery option.",
           style: TextStyle(
             color: purple,
             fontFamily: "Satoshi",
