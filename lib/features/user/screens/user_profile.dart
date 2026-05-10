@@ -294,7 +294,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         ),
                         
                         // Admin buttons (conditional)
-                        if (email == "hiddenpantry50@gmail.com") ...[
+                        if (email == "hiddenpantry.support@gmail.com") ...[
                           _tile(
                             iconData: Icons.payments_outlined,
                             title: "Payment Requests",

@@ -92,7 +92,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 300));
 
       expect(find.text('Contact Support'), findsOneWidget);
-      expect(find.text('support@hiddenpantry.app'), findsOneWidget);
+      expect(find.text('hiddenpantry.support@gmail.com'), findsOneWidget);
 
       // Dismiss via tapping outside the dialog
       await tester.tapAt(const Offset(10, 10));

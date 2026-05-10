@@ -5,7 +5,7 @@ service firebase.storage {
     // Helper function to check if user is admin
     function isAdmin() {
       return request.auth != null && 
-        (request.auth.token.email == 'hiddenpantry50@gmail.com' || 
+        (request.auth.token.email == 'hiddenpantry.support@gmail.com' || 
          request.auth.uid == 'K35k8MPFWSbmKo3CTe8Wz8waZAS2');
     }
     

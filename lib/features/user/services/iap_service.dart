@@ -18,7 +18,7 @@ class IAPService {
   /// Check if the current user is a designated tester account
   bool isTesterAccount() {
     final user = FirebaseAuth.instance.currentUser;
-    return user?.email == 'hiddenpantry50@gmail.com';
+    return user?.email == 'hiddenpantry.support@gmail.com';
   }
 
   bool get _isTest => WidgetsBinding.instance.runtimeType.toString().contains('TestWidgetsFlutterBinding');

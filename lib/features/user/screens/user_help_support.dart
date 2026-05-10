@@ -398,15 +398,15 @@ class _UserHelpSupportScreenState extends State<UserHelpSupportScreen> {
             _contactOption(
               icon: Icons.email_rounded,
               label: "Email",
-              value: "support@hiddenpantry.app",
-              onTap: () { Navigator.pop(context); _launchUrl("mailto:support@hiddenpantry.app"); },
+              value: "hiddenpantry.support@gmail.com",
+              onTap: () { Navigator.pop(context); _launchUrl("mailto:hiddenpantry.support@gmail.com"); },
             ),
             SizedBox(height: 10.sh),
             _contactOption(
               icon: Icons.language_rounded,
               label: "Website",
               value: "hiddenpantry.app",
-              onTap: () { Navigator.pop(context); _launchUrl("https://hiddenpantry.app"); },
+              onTap: () { Navigator.pop(context); _launchUrl("https://arched-sunbeam-478306-u3.web.app"); },
             ),
           ],
         ),

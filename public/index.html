@@ -1,18 +1,395 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>Hidden Pantry - Web Portal</title>
-    <style>
-        body { font-family: 'Satoshi', sans-serif; background-color: #FDF7F2; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; color: #462F4D; }
-        .card { background: white; padding: 40px; border-radius: 24px; box-shadow: 0 10px 30px rgba(70, 47, 77, 0.05); text-align: center; max-width: 400px; }
-        h1 { color: #FF8D4D; }
-        p { line-height: 1.6; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hidden Pantry – Your Smart Culinary Companion</title>
+  <meta name="description"
+    content="Discover recipes based on ingredients you already have. Connect with expert nutritionists and unlock a smarter way to cook.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
 </head>
+
 <body>
-    <div class="card">
-        <h1>Welcome to Hidden Pantry</h1>
-        <p>This is the portal for secure payments and account management. Please return to the mobile app to continue.</p>
+
+  <!-- ══════════════════════════════════════
+     MOBILE MENU (overlay)
+════════════════════════════════════════ -->
+  <nav class="mobile-menu" id="mobileMenu" role="navigation" aria-label="Mobile menu">
+    <button class="close-menu" id="closeMenu" aria-label="Close menu">✕</button>
+    <a href="#home">Home</a>
+    <a href="#features">Features</a>
+    <a href="#screenshots">Screenshots</a>
+    <a href="#about">About</a>
+    <a href="/privacy.html">Privacy Policy</a>
+    <a href="/terms.html">Terms</a>
+    <a href="#contact">Contact</a>
+    <!-- 🔗 Replace YOUR_APP_URL_HERE with your actual Play Store / App Store link -->
+    <a href="YOUR_APP_URL_HERE" class="btn btn-primary" style="border-radius:14px;margin-top:12px;">Download App</a>
+  </nav>
+
+  <!-- ══════════════════════════════════════
+     NAVBAR
+════════════════════════════════════════ -->
+  <header id="navbar" role="banner">
+    <div class="container nav-inner">
+      <a href="#home" class="nav-logo">
+        <!-- 🖼️ Replace /logo2.png with your actual logo file path -->
+        <img src="/assets/logos/logo2.png" alt="Hidden Pantry Logo" onerror="this.style.display='none'">
+        Hidden Pantry<span>.</span>
+      </a>
+
+      <nav class="nav-links" role="navigation" aria-label="Main navigation">
+        <a href="#home" class="active">Home</a>
+        <a href="#features">Features</a>
+        <a href="#screenshots">Screenshots</a>
+        <a href="#about">About</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html">Terms</a>
+        <a href="#contact">Contact</a>
+      </nav>
+
+      <!-- 🔗 Replace YOUR_APP_URL_HERE with your actual app link -->
+      <a href="YOUR_APP_URL_HERE" class="btn btn-primary nav-cta">Download App ↓</a>
+      <div class="hamburger" id="hamburger" role="button" aria-label="Open menu" tabindex="0">
+        <span></span><span></span><span></span>
+      </div>
     </div>
+  </header>
+
+  <!-- ══════════════════════════════════════
+     HERO SECTION
+════════════════════════════════════════ -->
+  <section class="hero" id="home">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="container">
+      <div class="hero-inner">
+        <div class="hero-text">
+          <div class="hero-badge" data-anim data-delay="0">
+            <span class="section-badge">🚀 Now Available on Android</span>
+          </div>
+          <h1 class="hero-title" data-anim data-delay="100">
+            Cook smarter with <span class="text-gradient">what you have.</span>
+          </h1>
+          <p class="hero-sub" data-anim data-delay="200">
+            Hidden Pantry is your ultimate health companion. Discover delicious recipes,
+            get personalized meal plans, and connect with expert nutritionists.
+          </p>
+          <div class="hero-actions" data-anim data-delay="300">
+            <!-- 🔗 Replace YOUR_APP_URL_HERE -->
+            <a href="YOUR_APP_URL_HERE" class="btn btn-primary">Get the App ↓</a>
+            <a href="#features" class="btn btn-outline">See Features →</a>
+          </div>
+          <div class="hero-stats" data-anim data-delay="400">
+            <div class="hero-stat"><span>500+</span>
+              <p>Recipes Available</p>
+            </div>
+            <div class="hero-stat"><span>50+</span>
+              <p>Expert Nutritionists</p>
+            </div>
+            <div class="hero-stat"><span>4.8★</span>
+              <p>App Rating</p>
+            </div>
+          </div>
+        </div>
+        <div class="hero-img-wrap" data-anim data-delay="200">
+          <div class="hero-phone-outer">
+            <div class="hero-phone-inner">
+              <!-- 🖼️ Replace screenshot1.png with your actual app screenshot -->
+              <img src="/screenshot1.png" alt="Hidden Pantry App Preview"
+                onerror="this.parentElement.innerHTML='<div class=\'hero-phone-placeholder\'><div class=\'icon\'>🥘</div><p>App Screenshot</p><p style=\'font-size:11px;color:#bbb;margin-top:4px;\'>screenshot1.png</p></div>'">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+     FEATURES SECTION
+════════════════════════════════════════ -->
+  <section class="section" id="features">
+    <div class="container">
+      <div class="text-center" data-anim>
+        <span class="section-badge">✨ What We Offer</span>
+        <h2 class="section-title">Everything you need to eat well</h2>
+        <div class="divider"></div>
+      </div>
+      <p class="section-sub text-center" data-anim data-delay="100">
+        From personalized meal plans to 1-on-1 nutrition coaching, Hidden Pantry is your all-in-one culinary companion.
+      </p>
+      <div class="features-grid">
+        <div class="feature-card" data-anim data-delay="0">
+          <div class="feature-icon">🔍</div>
+          <h3>Discover Recipes</h3>
+          <p>Explore a vast collection of delicious recipes. Find exactly what you're craving with smart categorization and search.</p>
+        </div>
+        <div class="feature-card" data-anim data-delay="80">
+          <div class="feature-icon">🥗</div>
+          <h3>Personalized Meal Plans</h3>
+          <p>Get custom meal plans tailored to your health goals. Subscribe to nutritionists for plans designed just for you.</p>
+        </div>
+        <div class="feature-card" data-anim data-delay="160">
+          <div class="feature-icon">👩‍⚕️</div>
+          <h3>Connect with Nutritionists</h3>
+          <p>Browse verified nutritionists, book consultations, and get 1-on-1 expert dietary advice directly through the app.</p>
+        </div>
+        <div class="feature-card" data-anim data-delay="240">
+          <div class="feature-icon">📊</div>
+          <h3>Nutritional Insights</h3>
+          <p>Every recipe comes with detailed nutritional breakdowns so you always know what you're eating and hit your macros.</p>
+        </div>
+        <div class="feature-card" data-anim data-delay="320">
+          <div class="feature-icon">⭐</div>
+          <h3>Save Your Favourites</h3>
+          <p>Bookmark recipes you love, build your personal collection, and easily access them anytime you're ready to cook.</p>
+        </div>
+        <div class="feature-card" data-anim data-delay="400">
+          <div class="feature-icon">📈</div>
+          <h3>Earn as a Nutritionist</h3>
+          <p>Are you a professional? Join the platform to create plans, connect with clients, and monetize your expertise.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+     SCREENSHOTS SECTION
+════════════════════════════════════════ -->
+  <section class="section screenshots" id="screenshots">
+    <div class="container">
+      <div class="text-center" data-anim>
+        <span class="section-badge">📱 App UI Showcase</span>
+        <h2 class="section-title">See it in action</h2>
+        <div class="divider" style="background:var(--orange-light)"></div>
+      </div>
+      <p class="section-sub" data-anim data-delay="100">
+        A clean, intuitive interface designed to make cooking effortless and enjoyable.
+      </p>
+
+      <!-- Scroll container -->
+      <div class="screenshots-scroll" id="screenshotsScroll" data-anim data-delay="200">
+        <!-- 🖼️ Replace each src with your real screenshot. Files: screenshot1.png … screenshot7.png -->
+        <div class="screenshot-card">
+          <img src="/screenshot1.png" alt="Home Screen"
+            onerror="this.parentElement.classList.add('placeholder');this.parentElement.innerHTML='<div class=\'ph-icon\'>🏠</div><p>Home Screen</p><span>screenshot1.png</span>'">
+        </div>
+        <div class="screenshot-card">
+          <img src="/screenshot2.png" alt="Recipe Discovery"
+            onerror="this.parentElement.classList.add('placeholder');this.parentElement.innerHTML='<div class=\'ph-icon\'>🥗</div><p>Recipe Discovery</p><span>screenshot2.png</span>'">
+        </div>
+        <div class="screenshot-card">
+          <img src="/screenshot3.png" alt="Cooking Assistant"
+            onerror="this.parentElement.classList.add('placeholder');this.parentElement.innerHTML='<div class=\'ph-icon\'>👨‍🍳</div><p>Cooking Mode</p><span>screenshot3.png</span>'">
+        </div>
+        <div class="screenshot-card">
+          <img src="/screenshot4.png" alt="Nutritionist Profile"
+            onerror="this.parentElement.classList.add('placeholder');this.parentElement.innerHTML='<div class=\'ph-icon\'>👩‍⚕️</div><p>Nutritionist Profile</p><span>screenshot4.png</span>'">
+        </div>
+        <div class="screenshot-card placeholder">
+          <div class="ph-icon">💬</div>
+          <p>Live Chat</p>
+          <span>screenshot5.png</span>
+        </div>
+        <div class="screenshot-card placeholder">
+          <div class="ph-icon">📅</div>
+          <p>Meal Planner</p>
+          <span>screenshot6.png</span>
+        </div>
+        <div class="screenshot-card placeholder">
+          <div class="ph-icon">⭐</div>
+          <p>Saved Recipes</p>
+          <span>screenshot7.png</span>
+        </div>
+      </div>
+
+      <div class="screenshots-nav">
+        <button id="scrollLeft" aria-label="Scroll left">←</button>
+        <button id="scrollRight" aria-label="Scroll right">→</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+     ABOUT SECTION
+════════════════════════════════════════ -->
+  <section class="section" id="about">
+    <div class="container">
+      <div class="about-inner">
+        <div class="about-img-wrap" data-anim>
+          <div class="about-card">
+            <!-- 🖼️ Replace with an actual about image if desired -->
+            <div class="ph-icon" style="font-size:56px">🥦</div>
+            <p style="font-size:14px;color:var(--text-muted)">Hidden Pantry App</p>
+          </div>
+          <div class="about-float">
+            <span>2026</span>
+            Founded with a mission
+          </div>
+        </div>
+        <div class="about-content" data-anim data-delay="150">
+          <span class="section-badge">🌿 Our Story</span>
+          <h2 class="section-title">Built for people who love real food</h2>
+          <p>Hidden Pantry was born out of a simple frustration — finding the right diet and recipes can be overwhelming. We built an app that solves this problem by bringing the experts directly to you.</p>
+          <p>By combining a growing library of personalized recipes with access to real nutrition professionals, we've created a platform that makes healthy, home-cooked eating accessible to everyone.</p>
+          <ul class="about-list">
+            <li>Discover and save your favourite recipes</li>
+            <li>Get expert nutrition guidance on demand</li>
+            <li>Receive personalized meal plans tailored to you</li>
+            <li>Detailed nutritional insights for every meal</li>
+          </ul>
+          <a href="#contact" class="btn btn-primary">Get in Touch →</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+     DOWNLOAD CTA
+════════════════════════════════════════ -->
+  <section class="section-sm" id="download">
+    <div class="download-cta">
+      <div class="blob blob-1"></div>
+      <div class="blob blob-2"></div>
+      <span class="section-badge" style="background:rgba(255,172,129,0.2);color:var(--orange-light);">📲 Available
+        Now</span>
+      <h2 data-anim>Ready to eat smarter?</h2>
+      <p data-anim data-delay="100">Download Hidden Pantry today and start discovering recipes you'll love — with
+        ingredients you already have.</p>
+      <div class="download-actions" data-anim data-delay="200">
+        <!-- 🔗 Replace YOUR_APP_URL_HERE with your real app URL -->
+        <a href="YOUR_APP_URL_HERE" class="btn btn-primary">Download on Play Store</a>
+        <a href="#contact" class="btn btn-outline">Contact Us</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+     CONTACT SECTION
+════════════════════════════════════════ -->
+  <section class="section" id="contact">
+    <div class="container">
+      <div class="text-center" data-anim>
+        <span class="section-badge">📬 Get In Touch</span>
+        <h2 class="section-title">We'd love to hear from you</h2>
+        <div class="divider"></div>
+      </div>
+      <p class="section-sub text-center" data-anim data-delay="100">
+        Have a question, partnership idea, or just want to say hello? Reach out and we'll get back to you.
+      </p>
+      <div class="contact-grid">
+        <div class="contact-info" data-anim>
+          <h3>Contact Information</h3>
+          <p>Whether you're a user, a nutritionist looking to join, or a press inquiry — we're here.</p>
+          <div class="contact-item">
+            <div class="contact-item-icon">✉️</div>
+            <div class="contact-item-text">
+              <strong>Email Support</strong>
+              <!-- 📧 Update email if needed -->
+              <span><a href="mailto:hiddenpantry.support@gmail.com">hiddenpantry.support@gmail.com</a></span>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-item-icon">🌐</div>
+            <div class="contact-item-text">
+              <strong>Website</strong>
+              <!-- 🔗 Replace YOUR_APP_URL_HERE -->
+              <span><a href="https://arched-sunbeam-478306-u3.web.app">hiddenpantry.app</a></span>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="contact-item-icon">📱</div>
+            <div class="contact-item-text">
+              <strong>App</strong>
+              <span><a href="YOUR_APP_URL_HERE">Download on Play Store</a></span>
+            </div>
+          </div>
+        </div>
+        <div class="glass-card contact-form" data-anim data-delay="150">
+          <h3>Send a Message</h3>
+          <form id="contactForm">
+            <div class="form-group">
+              <label for="name">Your Name</label>
+              <input type="text" id="name" name="name" placeholder="e.g. Sarah Ahmed" required>
+            </div>
+            <div class="form-group">
+              <label for="email">Email Address</label>
+              <input type="email" id="email" name="email" placeholder="you@example.com" required>
+            </div>
+            <div class="form-group">
+              <label for="message">Message</label>
+              <textarea id="message" name="message" placeholder="Tell us how we can help…" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">Send Message
+              →</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════
+     FOOTER
+════════════════════════════════════════ -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="nav-logo" style="margin-bottom:12px;">
+            <img src="/assets/logos/logo2.png" alt="Hidden Pantry Logo"
+              style="width:36px;height:36px;border-radius:10px;object-fit:contain;" onerror="this.style.display='none'">
+            Hidden Pantry<span>.</span>
+          </div>
+          <p>Your smart culinary companion. Discover recipes, track your pantry, and connect with nutrition experts —
+            all in one place.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Navigation</h4>
+          <a href="#home">Home</a>
+          <a href="#features">Features</a>
+          <a href="#screenshots">Screenshots</a>
+          <a href="#about">About</a>
+          <a href="#contact">Contact</a>
+        </div>
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <a href="/privacy.html">Privacy Policy</a>
+          <a href="/terms.html">Terms & Conditions</a>
+        </div>
+        <div class="footer-col">
+          <h4>Download</h4>
+          <!-- 🔗 Replace YOUR_APP_URL_HERE -->
+          <a href="YOUR_APP_URL_HERE">Play Store</a>
+          <a href="YOUR_APP_URL_HERE">App Store (Soon)</a>
+          <h4 style="margin-top:20px;">Follow Us</h4>
+          <div class="footer-social">
+            <a href="#" aria-label="Instagram">📸</a>
+            <a href="#" aria-label="Twitter">🐦</a>
+            <a href="#" aria-label="Facebook">👍</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 Hidden Pantry. All rights reserved.</span>
+        <span>Made with ❤️ for healthier kitchens</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Mobile menu close button wiring -->
+  <script>
+    document.getElementById('closeMenu')?.addEventListener('click', () => {
+      document.getElementById('hamburger').classList.remove('open');
+      document.getElementById('mobileMenu').classList.remove('open');
+      document.body.style.overflow = '';
+    });
+  </script>
+  <script src="/js/main.js"></script>
 </body>
+
 </html>

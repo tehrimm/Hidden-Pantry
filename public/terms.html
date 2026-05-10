@@ -1,172 +1,297 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Terms of Service - Hidden Pantry</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #FDF7F2;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            color: #462F4D;
-        }
-
-        .container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            flex: 1;
-            padding: 40px 24px;
-            max-width: 700px;
-            width: 100%;
-        }
-
-        .logo {
-            margin-bottom: 32px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .logo img {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-        }
-
-        .logo-text {
-            font-size: 22px;
-            font-weight: 800;
-            color: #462F4D;
-            letter-spacing: -0.5px;
-        }
-
-        .logo-dot {
-            color: #EF8A54;
-        }
-
-        .card {
-            background: white;
-            padding: 40px 36px;
-            border-radius: 24px;
-            box-shadow: 0 10px 40px rgba(70, 47, 77, 0.06);
-            max-width: 700px;
-            width: 100%;
-        }
-
-        .page-title {
-            text-align: center;
-            margin-bottom: 8px;
-        }
-
-        .page-title h1 {
-            color: #462F4D;
-            font-size: 24px;
-            font-weight: 800;
-        }
-
-        .updated {
-            text-align: center;
-            color: #b8a8be;
-            font-size: 12px;
-            font-weight: 600;
-            margin-bottom: 32px;
-        }
-
-        h2 {
-            color: #462F4D;
-            font-size: 16px;
-            font-weight: 700;
-            margin-top: 28px;
-            margin-bottom: 10px;
-        }
-
-        p {
-            color: #7a6b80;
-            line-height: 1.8;
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: 8px;
-        }
-
-        .footer {
-            padding: 24px;
-            text-align: center;
-            color: #b8a8be;
-            font-size: 12px;
-            font-weight: 500;
-            line-height: 1.8;
-        }
-
-        .powered {
-            font-weight: 600;
-            color: #9a8a9e;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terms & Conditions – Hidden Pantry</title>
+  <meta name="description"
+    content="Read the Hidden Pantry Terms and Conditions governing your use of our mobile application and services.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
 </head>
 
 <body>
+
+  <!-- Mobile Menu -->
+  <nav class="mobile-menu" id="mobileMenu">
+    <button class="close-menu" id="closeMenu">✕</button>
+    <a href="/">Home</a>
+    <a href="/#features">Features</a>
+    <a href="/#screenshots">Screenshots</a>
+    <a href="/#about">About</a>
+    <a href="/privacy.html">Privacy Policy</a>
+    <a href="/terms.html" class="active">Terms</a>
+    <a href="/#contact">Contact</a>
+    <a href="YOUR_APP_URL_HERE" class="btn btn-primary" style="border-radius:14px;margin-top:12px;">Download App</a>
+  </nav>
+
+  <!-- Navbar -->
+  <header id="navbar" class="scrolled">
+    <div class="container nav-inner">
+      <a href="/" class="nav-logo">
+        <img src="/assets/logos/logo2.png" alt="Hidden Pantry" onerror="this.style.display='none'">
+        Hidden Pantry<span>.</span>
+      </a>
+      <nav class="nav-links">
+        <a href="/">Home</a>
+        <a href="/#features">Features</a>
+        <a href="/#screenshots">Screenshots</a>
+        <a href="/#about">About</a>
+        <a href="/privacy.html">Privacy</a>
+        <a href="/terms.html" class="active">Terms</a>
+        <a href="/#contact">Contact</a>
+      </nav>
+      <a href="YOUR_APP_URL_HERE" class="btn btn-primary nav-cta">Download App ↓</a>
+      <div class="hamburger" id="hamburger"><span></span><span></span><span></span></div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <div class="policy-hero" style="position:relative;overflow:hidden;">
+    <div class="blob blob-1" style="opacity:0.15;top:-50px;right:-80px;width:350px;height:350px;"></div>
     <div class="container">
-        <div class="logo">
-            <img src="/logo.png" alt="Hidden Pantry Logo">
-            <span class="logo-text">Hidden Pantry<span class="logo-dot">.</span></span>
-        </div>
-
-        <div class="card">
-            <div class="page-title">
-                <h1>Terms of Service</h1>
-            </div>
-            <div class="updated">Last Updated: February 2026</div>
-
-            <h2>1. Acceptance of Terms</h2>
-            <p>By accessing and using Hidden Pantry ("the App"), you agree to be bound by these Terms of Service. If you do not agree, please do not use the App.</p>
-
-            <h2>2. User Accounts</h2>
-            <p>You must provide accurate and complete information when creating an account. You are responsible for maintaining the confidentiality of your account credentials.</p>
-
-            <h2>3. Nutritionist Accounts</h2>
-            <p>Nutritionists must provide valid professional credentials during the signup process. Hidden Pantry reserves the right to verify and approve nutritionist accounts before they become active.</p>
-
-            <h2>4. Subscriptions & Payments</h2>
-            <p>Subscription plans are billed as described at the time of purchase. Users may cancel at any time, retaining access until the end of the current billing period. A 7-day trial period is offered for new subscribers.</p>
-
-            <h2>5. Content Ownership</h2>
-            <p>Users retain ownership of content they upload (recipes, meal plans, etc.). By uploading content, you grant Hidden Pantry a non-exclusive license to display and distribute it within the App.</p>
-
-            <h2>6. Prohibited Conduct</h2>
-            <p>Users must not upload harmful, misleading, or inappropriate content. Any form of harassment or misuse of the Chat feature will result in account suspension.</p>
-
-            <h2>7. Privacy</h2>
-            <p>Your use of the App is also governed by our <a href="/privacy" style="color: #EF8A54; text-decoration: none; font-weight: 600;">Privacy Policy</a>. We are committed to protecting your personal data.</p>
-
-            <h2>8. Limitation of Liability</h2>
-            <p>Hidden Pantry is provided "as is" without warranties of any kind. We are not liable for any damages arising from the use of the App.</p>
-
-            <h2>9. Changes to Terms</h2>
-            <p>We reserve the right to update these Terms at any time. Continued use of the App constitutes acceptance of updated Terms.</p>
-
-            <h2>10. Contact</h2>
-            <p>For questions about these Terms, please contact <a href="mailto:support@hiddenpantry.app" style="color: #EF8A54; text-decoration: none; font-weight: 600;">support@hiddenpantry.app</a>.</p>
-        </div>
+      <span class="section-badge">📄 Legal</span>
+      <h1 style="margin-top:12px;">Terms &amp; Conditions</h1>
+      <p class="policy-updated" style="margin-top:12px;font-size:14px;">Last Updated: May 2026</p>
+      <p style="max-width:560px;margin:12px auto 0;font-size:15px;">
+        Please read these Terms carefully before using Hidden Pantry. By using the app, you agree to be bound by these
+        Terms.
+      </p>
     </div>
+  </div>
 
-    <div class="footer">
-        <span class="powered">Powered by Hidden Pantry</span><br>
+  <!-- Terms Body -->
+  <div class="policy-body">
+    <div class="container">
+      <div class="policy-card">
+
+        <h2>1. Acceptance of Terms</h2>
+        <p>These Terms and Conditions ("Terms") constitute a legally binding agreement between you ("User", "you") and
+          Hidden Pantry ("we", "us", "our"). By downloading, installing, accessing, or using the Hidden Pantry mobile
+          application ("the App") or our associated website, you confirm that you have read, understood, and agree to be
+          bound by these Terms.</p>
+        <p>If you do not agree to these Terms, you must not access or use our services. We reserve the right to update
+          these Terms at any time, and your continued use constitutes acceptance of any changes.</p>
+
+        <h2>2. Eligibility & Account Registration</h2>
+        <p>You must be at least <strong>13 years of age</strong> (or the minimum age required in your jurisdiction) to
+          use Hidden Pantry. By registering, you confirm that you meet this requirement.</p>
+        <p>When creating an account, you agree to:</p>
+        <ul>
+          <li>Provide accurate, current, and complete information</li>
+          <li>Maintain and promptly update your account information</li>
+          <li>Keep your password secure and confidential</li>
+          <li>Accept responsibility for all activity that occurs under your account</li>
+          <li>Notify us immediately of any unauthorised use of your account</li>
+        </ul>
+        <p>We reserve the right to refuse registration or cancel accounts at our sole discretion.</p>
+
+        <h2>3. User Responsibilities</h2>
+        <p>As a user of Hidden Pantry, you are responsible for:</p>
+        <ul>
+          <li>Using the app in compliance with all applicable laws and regulations</li>
+          <li>Ensuring that any content you post or upload is accurate and does not infringe any third-party rights</li>
+          <li>Respecting the rights and privacy of other users and nutritionists</li>
+          <li>Maintaining the security of your login credentials</li>
+          <li>Any consequences arising from your use of the app or reliance on its content</li>
+        </ul>
+        <p>You acknowledge that nutritional and dietary advice provided within the app is for informational purposes
+          only and does not constitute professional medical advice. Always consult a qualified healthcare professional
+          for medical concerns.</p>
+
+        <h2>4. Acceptable Use Policy</h2>
+        <p>You agree <strong>not</strong> to use Hidden Pantry to:</p>
+        <ul>
+          <li>Violate any local, national, or international law or regulation</li>
+          <li>Post, upload, or distribute any content that is unlawful, defamatory, harassing, abusive, fraudulent,
+            obscene, or otherwise objectionable</li>
+          <li>Impersonate any person or entity, or falsely state your affiliation with any person or organisation</li>
+          <li>Upload or transmit viruses, malware, or any other harmful software</li>
+          <li>Attempt to gain unauthorised access to any part of the app, servers, or related systems</li>
+          <li>Scrape, crawl, or harvest data from the app without prior written permission</li>
+          <li>Interfere with or disrupt the integrity or performance of the app or its underlying infrastructure</li>
+          <li>Engage in any commercial activity not expressly authorised by us</li>
+          <li>Use the app to send unsolicited communications or spam to other users</li>
+        </ul>
+        <p>Violation of this policy may result in immediate account suspension or termination without notice.</p>
+
+        <h2>5. Nutritionist Services</h2>
+        <p><strong>For Users:</strong> When you subscribe to a nutritionist through Hidden Pantry, you gain access to
+          their content, meal plans, and consultation services as offered. Subscriptions are managed through Google Play
+          Billing or Apple In-App Purchase. Fees, cancellation terms, and refund policies are governed by Google's and
+          Apple's respective platform policies.</p>
+        <p><strong>For Nutritionists:</strong> Nutritionists register as service providers on the platform. By joining,
+          they agree to provide accurate credential information, deliver services as advertised, and comply with
+          applicable professional and regulatory standards. Hidden Pantry does not employ nutritionists and acts solely
+          as a platform connecting them with users.</p>
+        <p>Hidden Pantry is not responsible for the quality, accuracy, or outcomes of nutritional advice or services
+          provided by independent nutritionists on the platform.</p>
+
+        <h2>6. Subscriptions & Payments</h2>
+        <p>Certain features of Hidden Pantry require a paid subscription. By subscribing, you agree to the following:
+        </p>
+        <ul>
+          <li>Subscription fees are charged in advance on a recurring basis (monthly or annually, as selected)</li>
+          <li>Payments are processed by Google Play Billing or Apple In-App Purchase — not directly by Hidden Pantry
+          </li>
+          <li>You may cancel your subscription at any time through your Google Play or Apple App Store account settings
+          </li>
+          <li>Cancellation takes effect at the end of the current billing period; no partial refunds are issued for
+            unused portions unless required by applicable law</li>
+          <li>We reserve the right to change subscription pricing with reasonable advance notice</li>
+        </ul>
+
+        <h2>7. Intellectual Property</h2>
+        <p>All content within Hidden Pantry — including but not limited to the app design, logos, graphics, text,
+          recipes (created by us), software code, and features — is the exclusive intellectual property of Hidden Pantry
+          and is protected by copyright, trademark, and other applicable laws.</p>
+        <p>You are granted a limited, non-exclusive, non-transferable, revocable licence to use the app for personal,
+          non-commercial purposes only. You may not:</p>
+        <ul>
+          <li>Copy, modify, or distribute our content without written permission</li>
+          <li>Reverse engineer or decompile the app</li>
+          <li>Remove any copyright, trademark, or other proprietary notices</li>
+          <li>Use our branding or logos without prior written consent</li>
+        </ul>
+        <p>Content created and uploaded by nutritionists remains their intellectual property. By uploading content to
+          the platform, they grant us a non-exclusive, royalty-free licence to display it within the app.</p>
+
+        <h2>8. User-Generated Content</h2>
+        <p>You may submit content such as reviews, comments, or profile information. By doing so, you grant Hidden
+          Pantry a worldwide, royalty-free licence to use, display, and distribute that content within the platform. You
+          represent that you own or have the necessary rights to all content you submit, and that it does not violate
+          any third-party rights.</p>
+        <p>We reserve the right to remove any user-generated content that violates these Terms or that we deem
+          inappropriate, without notice.</p>
+
+        <h2>9. Privacy</h2>
+        <p>Your use of Hidden Pantry is also governed by our <a href="/privacy.html">Privacy Policy</a>, which is
+          incorporated into these Terms by reference. By using the app, you consent to the collection and use of your
+          information as described therein.</p>
+
+        <h2>10. Disclaimers</h2>
+        <p>Hidden Pantry is provided on an <strong>"as is" and "as available"</strong> basis without warranties of any
+          kind, either express or implied. We do not warrant that:</p>
+        <ul>
+          <li>The app will be uninterrupted, error-free, or fully secure</li>
+          <li>Any nutritional information or recipe content is accurate, complete, or suitable for your specific health
+            conditions</li>
+          <li>Results obtained from using the app will meet your expectations</li>
+        </ul>
+        <p>Nutritional content in the app is for general informational purposes only. Hidden Pantry does not provide
+          medical advice. Always consult a licensed healthcare provider before making significant dietary changes.</p>
+
+        <h2>11. Limitation of Liability</h2>
+        <p>To the fullest extent permitted by applicable law, Hidden Pantry and its affiliates, officers, employees,
+          agents, and licensors shall not be liable for any:</p>
+        <ul>
+          <li>Indirect, incidental, special, consequential, or punitive damages</li>
+          <li>Loss of profits, revenue, data, or business opportunities</li>
+          <li>Damage arising from your reliance on nutritional or dietary advice provided in the app</li>
+          <li>Unauthorised access to or alteration of your data</li>
+          <li>Any matter beyond our reasonable control</li>
+        </ul>
+        <p>Our total liability to you for any claim arising out of these Terms shall not exceed the amount paid by you
+          to Hidden Pantry in the 12 months preceding the claim.</p>
+
+        <h2>12. Indemnification</h2>
+        <p>You agree to indemnify, defend, and hold harmless Hidden Pantry and its affiliates from and against any
+          claims, liabilities, damages, judgments, awards, losses, costs, or expenses (including legal fees) arising out
+          of your use of the app, your violation of these Terms, or your infringement of any third-party rights.</p>
+
+        <h2>13. Account Termination</h2>
+        <p><strong>By You:</strong> You may delete your account at any time through the Settings section of the app.
+          Upon deletion, your personal data will be removed within 30 days, subject to our data retention obligations.
+        </p>
+        <p><strong>By Us:</strong> We reserve the right to suspend or permanently terminate your account, without
+          notice, if you:</p>
+        <ul>
+          <li>Violate these Terms or our Acceptable Use Policy</li>
+          <li>Provide false or misleading information during registration</li>
+          <li>Engage in conduct we deem harmful to other users, nutritionists, or the platform</li>
+          <li>Engage in fraudulent activity or abuse of the subscription system</li>
+        </ul>
+        <p>Upon termination, your right to use the app ceases immediately. Provisions of these Terms that by their
+          nature should survive termination will remain in effect.</p>
+
+        <h2>14. Governing Law & Dispute Resolution</h2>
+        <p>These Terms are governed by and construed in accordance with applicable law. Any disputes arising under these
+          Terms shall first be attempted to be resolved through good-faith negotiation. If unresolved, disputes may be
+          submitted to binding arbitration or competent courts in the applicable jurisdiction.</p>
+
+        <h2>15. Updates to These Terms</h2>
+        <p>We reserve the right to update or modify these Terms at any time. When we make significant changes, we will
+          notify you via in-app notification or email. The "Last Updated" date at the top of this page will always
+          reflect the most recent version. Your continued use of the app after changes are posted constitutes your
+          acceptance of the revised Terms.</p>
+
+        <h2>16. Severability</h2>
+        <p>If any provision of these Terms is found to be unenforceable or invalid by a court of competent jurisdiction,
+          that provision will be limited or eliminated to the minimum extent necessary so that the remaining Terms will
+          otherwise remain in full force and effect.</p>
+
+        <h2>17. Entire Agreement</h2>
+        <p>These Terms, together with our Privacy Policy, constitute the entire agreement between you and Hidden Pantry
+          regarding your use of the app, and supersede all prior agreements or understandings.</p>
+
+        <h2>18. Contact Us</h2>
+        <p>If you have any questions or concerns about these Terms, please reach out:</p>
+        <ul>
+          <li>📧 Email: <a href="mailto:hiddenpantry.support@gmail.com">hiddenpantry.support@gmail.com</a></li>
+          <li>🌐 Website: <a href="https://arched-sunbeam-478306-u3.web.app">hiddenpantry.app</a></li>
+        </ul>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <div class="nav-logo" style="margin-bottom:12px;">
+            Hidden Pantry<span>.</span>
+          </div>
+          <p>Your smart culinary companion for smarter, healthier cooking.</p>
+        </div>
+        <div class="footer-col">
+          <h4>Navigation</h4>
+          <a href="/">Home</a>
+          <a href="/#features">Features</a>
+          <a href="/#about">About</a>
+          <a href="/#contact">Contact</a>
+        </div>
+        <div class="footer-col">
+          <h4>Legal</h4>
+          <a href="/privacy.html">Privacy Policy</a>
+          <a href="/terms.html">Terms & Conditions</a>
+        </div>
+        <div class="footer-col">
+          <h4>Download</h4>
+          <a href="YOUR_APP_URL_HERE">Play Store</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
         <span>© 2026 Hidden Pantry. All rights reserved.</span>
+        <span><a href="/privacy.html" style="color:rgba(255,255,255,0.4);">Privacy</a> · <a href="/terms.html"
+            style="color:rgba(255,255,255,0.4);">Terms</a></span>
+      </div>
     </div>
+  </footer>
+
+  <script>
+    document.getElementById('closeMenu')?.addEventListener('click', () => {
+      document.getElementById('hamburger').classList.remove('open');
+      document.getElementById('mobileMenu').classList.remove('open');
+      document.body.style.overflow = '';
+    });
+  </script>
+  <script src="/js/main.js"></script>
 </body>
 
 </html>

@@ -21,6 +21,7 @@ import 'package:hidden_pantry_app/core/utils/auth_validator.dart';
 
 import 'package:hidden_pantry_app/core/services/auth_service.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
+import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
 
 class SignupUserScreen extends StatefulWidget {
   final AuthService? authService;
@@ -70,6 +71,7 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
   final _gmailCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
+  final _googleSignIn = GoogleSignIn();
 
   // UI
   bool _obscurePassword = true;
@@ -222,11 +224,86 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
   }
 
   Future<void> _onGoogleRegister() async {
-    _snack("Google registration coming soon");
+    _setLoading(true);
+    try {
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        _setLoading(false);
+        return;
+      }
+
+      final googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final cred = await FirebaseAuth.instance.signInWithCredential(credential);
+      final user = cred.user;
+
+      if (user != null) {
+        await _userService.ensureUserDoc(user);
+        
+        if (!mounted) return;
+        
+        if (cred.additionalUserInfo?.isNewUser == true) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => AllergiesScreen(userService: _userService)),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const MainNavigationShell()),
+          );
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      _snack("${e.message ?? "Google registration failed"}", isError: true);
+    } catch (_) {
+      _snack("Google registration failed", isError: true);
+    } finally {
+      if (mounted) _setLoading(false);
+    }
   }
 
   Future<void> _onAppleRegister() async {
-    _snack("Apple registration coming soon");
+    _setLoading(true);
+    try {
+      final appleCred = await SignInWithApple.getAppleIDCredential(
+        scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName],
+      );
+
+      final oauthCred = OAuthProvider("apple.com").credential(
+        idToken: appleCred.identityToken,
+        accessToken: appleCred.authorizationCode,
+      );
+
+      final cred = await FirebaseAuth.instance.signInWithCredential(oauthCred);
+      final user = cred.user;
+
+      if (user != null) {
+        await _userService.ensureUserDoc(user);
+        
+        if (!mounted) return;
+        
+        if (cred.additionalUserInfo?.isNewUser == true) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => AllergiesScreen(userService: _userService)),
+          );
+        } else {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (_) => const MainNavigationShell()),
+          );
+        }
+      }
+    } catch (_) {
+      _snack("Apple registration failed");
+    } finally {
+      if (mounted) _setLoading(false);
+    }
   }
 
   @override
