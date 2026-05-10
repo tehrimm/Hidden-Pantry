@@ -24,6 +24,8 @@ import 'package:hidden_pantry_app/features/recipes/widgets/recipe_details_states
 import 'package:hidden_pantry_app/features/user/services/subscription_service.dart';
 import 'package:hidden_pantry_app/features/user/screens/premium_paywall_screen.dart';
 import 'package:hidden_pantry_app/features/user/screens/tier_comparison_screen.dart';
+import 'package:hidden_pantry_app/core/services/moderation_service.dart';
+
 
 class RecipeDetailsScreen extends StatefulWidget {
   final Recipe recipe;
@@ -702,12 +704,50 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                   ),
                 ),
               ),
+              SizedBox(width: 10.sw),
+              _iconTile(
+                onTap: () {},
+                child: PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert_rounded, color: textColor, size: 22.sw),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.sw)),
+                  onSelected: (value) {
+                    if (value == 'report') {
+                      _showReportDialog(context);
+                    } else if (value == 'block') {
+                      _showBlockConfirm(context);
+                    }
+                  },
+                  itemBuilder: (context) => [
+                    PopupMenuItem(
+                      value: 'report',
+                      child: Row(
+                        children: [
+                          Icon(Icons.report_problem_outlined, color: Colors.red, size: 20.sw),
+                          SizedBox(width: 10.sw),
+                          const Text("Report Recipe", style: TextStyle(fontFamily: "Satoshi")),
+                        ],
+                      ),
+                    ),
+                    PopupMenuItem(
+                      value: 'block',
+                      child: Row(
+                        children: [
+                          Icon(Icons.block_flipped, color: Colors.red, size: 20.sw),
+                          SizedBox(width: 10.sw),
+                          const Text("Block Author", style: TextStyle(fontFamily: "Satoshi")),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ],
       ),
     );
   }
+
 
 
 
@@ -1829,6 +1869,86 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showReportDialog(BuildContext context) {
+    String selectedReason = 'Spam';
+    final List<String> reasons = ['Spam', 'Inappropriate Content', 'Harassment', 'False Information', 'Other'];
+    final TextEditingController detailsController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: bgColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text("Report Recipe", style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButton<String>(
+                value: selectedReason,
+                isExpanded: true,
+                items: reasons.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                onChanged: (val) => setDialogState(() => selectedReason = val!),
+              ),
+              TextField(
+                controller: detailsController,
+                decoration: const InputDecoration(hintText: "Additional details (optional)"),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+            ElevatedButton(
+              onPressed: () async {
+                await ModerationService().reportContent(
+                  contentType: 'recipe',
+                  contentId: _recipe.id,
+                  authorId: _recipe.authorId,
+                  reason: selectedReason,
+                  additionalDetails: detailsController.text,
+                );
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  Toaster.show(context, "Thank you. We have received your report.");
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              child: const Text("Submit Report"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showBlockConfirm(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: bgColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Block Author?", style: TextStyle(color: Color(0xFF462F4D), fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+        content: const Text("You will no longer see recipes or content from this author. This action cannot be easily undone."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              await ModerationService().blockUser(_recipe.authorId);
+              if (context.mounted) {
+                Navigator.pop(context); // Close dialog
+                Navigator.pop(context); // Exit recipe details
+                Toaster.show(context, "Author blocked.");
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text("Block"),
+          ),
+        ],
       ),
     );
   }

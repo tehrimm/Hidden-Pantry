@@ -26,6 +26,8 @@ import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_das
 import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_settings.dart';
 import 'package:hidden_pantry_app/features/user/services/follow_service.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
+import 'package:hidden_pantry_app/core/services/moderation_service.dart';
+
 
 class HomeScreen extends StatefulWidget {
   final bool inShell;
@@ -65,6 +67,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Map<String, num> _tagWeights = {};
   Set<String> _recentViewed = {};
   Set<String> _followedAuthorIds = {};
+  Set<String> _blockedUserIds = {};
+
 
   int bottomIndex = 0; // 0 home, 1 search, 2 plus, 3 bookmark, 4 nutritionist
   bool isNutritionistInUserView = false;
@@ -132,7 +136,11 @@ class _HomeScreenState extends State<HomeScreen> {
           followedIds = await _followService.getFollowedAuthorIds();
           _followedAuthorIds = followedIds.toSet();
         } catch (_) {}
+        try {
+          _blockedUserIds = (await ModerationService().getBlockedUsers()).toSet();
+        } catch (_) {}
       }
+
 
       final rec = await api.recommend(
         query: "popular",
@@ -262,7 +270,10 @@ class _HomeScreenState extends State<HomeScreen> {
     if (_tagWeights.isEmpty || list.isEmpty) return list;
     final scored = <MapEntry<Recipe, double>>[];
     for (final r in list) {
+      if (_blockedUserIds.contains(r.authorId)) continue; // 🛡️ FILTER BLOCKED USERS
+      
       double s = 0;
+
       for (final t in r.tags) {
         final w = _tagWeights[t.toLowerCase()] ?? 0;
         s += w.toDouble();

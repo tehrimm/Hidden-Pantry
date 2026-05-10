@@ -201,5 +201,11 @@ service cloud.firestore {
           request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
       }
     }
+    // ==================== MODERATION RULES ====================
+    match /reports/{reportId} {
+      allow create: if isAuthenticated();
+      allow read, update, delete: if isAdmin();
+    }
   }
 }
+

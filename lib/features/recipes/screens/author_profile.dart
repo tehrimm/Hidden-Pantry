@@ -11,6 +11,9 @@ import 'package:hidden_pantry_app/features/user/services/follow_service.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
+import 'package:hidden_pantry_app/core/services/moderation_service.dart';
+import 'package:hidden_pantry_app/core/utils/toaster.dart';
+
 
 
 class AuthorProfileScreen extends StatefulWidget {
@@ -204,6 +207,46 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
                   top: 51.sh,
                   child: const BackButtonWidget(color: textColor),
                 ),
+                
+                // Block/More Button
+                Positioned(
+                  right: 30.sw,
+                  top: 51.sh,
+                  child: PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert_rounded, color: textColor),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.sw)),
+                    onSelected: (value) {
+                      if (value == 'block') {
+                        _showBlockConfirm(context);
+                      } else if (value == 'report') {
+                         _showReportDialog(context);
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      PopupMenuItem(
+                        value: 'report',
+                        child: Row(
+                          children: [
+                            Icon(Icons.report_problem_outlined, color: Colors.orange, size: 20.sw),
+                            SizedBox(width: 10.sw),
+                            const Text("Report User", style: TextStyle(fontFamily: "Satoshi")),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem(
+                        value: 'block',
+                        child: Row(
+                          children: [
+                            Icon(Icons.block_flipped, color: Colors.red, size: 20.sw),
+                            SizedBox(width: 10.sw),
+                            const Text("Block User", style: TextStyle(fontFamily: "Satoshi")),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
 
                 SafeArea(
                   child: Column(
@@ -450,6 +493,7 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
     );
   }
 
+
   Widget _fallbackAvatar() {
     return Container(
       color: cardColor,
@@ -457,8 +501,88 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
     );
   }
 
-  
+  void _showBlockConfirm(BuildContext context) {
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: bgColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Block User?", style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+        content: const Text("You will no longer see content from this user. This action cannot be easily undone from the app."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              await ModerationService().blockUser(widget.authorId);
+              if (context.mounted) {
+                Navigator.pop(context); // Close dialog
+                Navigator.pop(context); // Go back from profile
+                Toaster.show(context, "${widget.authorName} has been blocked.");
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text("Block"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReportDialog(BuildContext context) {
+    String selectedReason = 'Spam';
+    final List<String> reasons = ['Spam', 'Inappropriate Content', 'Harassment', 'False Information', 'Other'];
+    final TextEditingController detailsController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: bgColor,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text("Report User", style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButton<String>(
+                value: selectedReason,
+                isExpanded: true,
+                items: reasons.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                onChanged: (val) => setDialogState(() => selectedReason = val!),
+              ),
+              TextField(
+                controller: detailsController,
+                decoration: const InputDecoration(hintText: "Additional details (optional)"),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+            ElevatedButton(
+              onPressed: () async {
+                await ModerationService().reportContent(
+                  contentType: 'user',
+                  contentId: widget.authorId,
+                  authorId: widget.authorId,
+                  reason: selectedReason,
+                  additionalDetails: detailsController.text,
+                );
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  Toaster.show(context, "Thank you. We have received your report.");
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              child: const Text("Submit Report"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
+
 
 class _ProfileSkeleton extends StatelessWidget {
   const _ProfileSkeleton();

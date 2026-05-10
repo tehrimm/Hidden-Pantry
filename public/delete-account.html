@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Your Data | Hidden Pantry</title>
+    <style>
+        :root {
+            --bg-color: #FFF3EB;
+            --purple: #462F4D;
+            --orange: #EF8A54;
+            --card-bg: #FFFFFF;
+            --text-secondary: #6B5E6D;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--purple);
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 750px;
+            width: 90%;
+            background: var(--card-bg);
+            padding: 40px;
+            margin: 40px 0;
+            border-radius: 24px;
+            box-shadow: 0 10px 30px rgba(70, 47, 77, 0.08);
+            border: 1px solid rgba(239, 138, 84, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--orange);
+            margin-bottom: 10px;
+            letter-spacing: -0.5px;
+        }
+
+        h1 {
+            color: var(--purple);
+            font-size: 32px;
+            margin-bottom: 10px;
+            font-weight: 800;
+        }
+
+        p {
+            color: var(--text-secondary);
+            font-size: 16px;
+        }
+
+        .section {
+            margin-top: 30px;
+            padding: 24px;
+            background: #FFF9F5;
+            border-radius: 16px;
+            border: 1px solid rgba(239, 138, 84, 0.05);
+        }
+
+        h2 {
+            font-size: 20px;
+            margin-top: 0;
+            color: var(--purple);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h3 {
+            font-size: 18px;
+            color: var(--orange);
+            margin-bottom: 10px;
+        }
+
+        ul {
+            padding-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        li {
+            margin-bottom: 12px;
+            color: var(--text-secondary);
+        }
+
+        .contact-box {
+            background: var(--purple);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .btn {
+            display: inline-block;
+            background: var(--orange);
+            color: white;
+            padding: 14px 28px;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: bold;
+            margin-top: 25px;
+            transition: transform 0.2s, background 0.2s;
+            box-shadow: 0 4px 12px rgba(239, 138, 84, 0.3);
+        }
+
+        .btn:hover {
+            background: #e47c45;
+            transform: translateY(-2px);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 14px;
+            color: var(--text-secondary);
+            opacity: 0.7;
+        }
+
+        .highlight {
+            color: var(--orange);
+            font-weight: bold;
+        }
+
+        .alert {
+            background: #FFEBEB;
+            border: 1px solid #FFCDCD;
+            padding: 15px;
+            border-radius: 12px;
+            color: #D32F2F;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+                width: 95%;
+            }
+            h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Hidden Pantry</div>
+            <h1>Data & Account Management</h1>
+            <p>Control your personal information and content</p>
+        </div>
+        
+        <p>At <strong>Hidden Pantry</strong>, we believe you should have full control over your data. You can choose to delete specific content or your entire account and associated data.</p>
+        
+        <div class="section">
+            <h2>🗑️ Deleting Specific Data</h2>
+            <p>You can remove specific types of information without deleting your entire account:</p>
+            
+            <h3>1. Deleting Recipes (Posts)</h3>
+            <ul>
+                <li>Go to the <strong>My Recipes</strong> section in your profile.</li>
+                <li>Select the recipe you wish to remove.</li>
+                <li>Tap the <strong>Options</strong> (three dots) and select <span class="highlight">Delete Recipe</span>.</li>
+                <li>The recipe, its images, and all related nutritional data will be permanently removed.</li>
+            </ul>
+
+            <h3>2. Clearing Chat Messages</h3>
+            <ul>
+                <li>Open the chat conversation you wish to clear.</li>
+                <li>Tap the <strong>Menu</strong> icon in the top right corner.</li>
+                <li>Select <span class="highlight">Clear Chat</span> to remove all messages from your view and our active records.</li>
+            </ul>
+
+            <h3>3. Removing Saved Content</h3>
+            <ul>
+                <li>Go to your <strong>Bookmarks</strong> or <strong>Cookbooks</strong>.</li>
+                <li>Swipe left or tap the 'Unsave' icon on any recipe to remove it from your collection.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>⚠️ Permanent Account Deletion</h2>
+            <div class="alert">
+                <strong>Warning:</strong> Account deletion is permanent and cannot be reversed. All your data will be purged immediately.
+            </div>
+            <p>To delete your entire account and all associated data (Profile, Recipes, History, and Settings):</p>
+            <ul>
+                <li>Open the app and go to <strong>Profile Settings</strong>.</li>
+                <li>Scroll to the bottom and tap <span class="highlight">Delete Account</span>.</li>
+                <li>Confirm the prompt. Your data will be deleted on the first attempt with no recovery option.</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>📊 Data Policy</h2>
+            <p><strong>What we delete:</strong></p>
+            <ul>
+                <li><strong>Identity:</strong> Name, email, profile picture, and hashed password.</li>
+                <li><strong>Content:</strong> All recipes, posts, comments, and reviews you have created.</li>
+                <li><strong>Interaction:</strong> Chat messages, saved bookmarks, and nutrition plans.</li>
+            </ul>
+            <p><strong>What we may keep:</strong></p>
+            <ul>
+                <li><strong>Legal:</strong> Transaction records for billing (Google/Apple) are kept as required by tax laws.</li>
+                <li><strong>Security:</strong> Anonymized system logs for security and performance audits.</li>
+            </ul>
+            <p><strong>Retention Period:</strong> In-app deletions take effect <span class="highlight">immediately</span>. Manual email requests are processed within <span class="highlight">7 business days</span>.</p>
+        </div>
+
+        <div class="section">
+            <h2>📧 Manual Requests</h2>
+            <p>If you cannot access the app or wish to request deletion of specific data manually, please contact our support team:</p>
+            
+            <div class="contact-box">
+                <strong>Support Email</strong><br>
+                hiddenpantry.support@gmail.com
+            </div>
+        </div>
+
+        <center>
+            <a href="mailto:hiddenpantry.support@gmail.com?subject=Data Deletion Request" class="btn">Submit Deletion Request</a>
+        </center>
+
+        <div class="footer">
+            &copy; 2026 Hidden Pantry. All rights reserved.
+        </div>
+    </div>
+</body>
+</html>

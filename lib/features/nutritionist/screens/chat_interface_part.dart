@@ -16,6 +16,8 @@ import 'dart:async';
 import 'dart:ui' as ui;
 import 'package:hidden_pantry_app/core/services/chat_encryption_service.dart';
 import 'package:hidden_pantry_app/core/services/user_status_service.dart';
+import 'package:hidden_pantry_app/core/services/moderation_service.dart';
+
 
 class ChatInterface extends StatefulWidget {
   final String nutritionistId;
@@ -461,7 +463,12 @@ class _ChatInterfaceState extends State<ChatInterface> {
             onSelected: (value) {
               if (value == 'clear') {
                 _confirmClearChat();
+              } else if (value == 'report') {
+                _showReportDialog();
+              } else if (value == 'block') {
+                _showBlockConfirm();
               }
+
             },
             itemBuilder: (context) => [
               PopupMenuItem(
@@ -474,10 +481,31 @@ class _ChatInterfaceState extends State<ChatInterface> {
                   ],
                 ),
               ),
+              PopupMenuItem(
+                value: 'report',
+                child: Row(
+                  children: [
+                    Icon(Icons.report_problem_outlined, color: Colors.orange, size: 20.sw),
+                    SizedBox(width: 8.sw),
+                    Text("Report User", style: TextStyle(fontSize: 14.sp)),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'block',
+                child: Row(
+                  children: [
+                    Icon(Icons.block_flipped, color: Colors.red, size: 20.sw),
+                    SizedBox(width: 8.sw),
+                    Text("Block User", style: TextStyle(color: Colors.red, fontSize: 14.sp)),
+                  ],
+                ),
+              ),
             ],
           ),
         ],
       ),
+
       backgroundColor: const Color(0xFFFFF7F2),
       body: Stack(
         children: [
@@ -1802,6 +1830,86 @@ class _ChatInterfaceState extends State<ChatInterface> {
       ),
     );
   }
+
+  void _showReportDialog() {
+    String selectedReason = 'Spam';
+    final List<String> reasons = ['Spam', 'Inappropriate Content', 'Harassment', 'False Information', 'Other'];
+    final TextEditingController detailsController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFFFFF3EB),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text("Report User", style: TextStyle(fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButton<String>(
+                value: selectedReason,
+                isExpanded: true,
+                items: reasons.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                onChanged: (val) => setDialogState(() => selectedReason = val!),
+              ),
+              TextField(
+                controller: detailsController,
+                decoration: const InputDecoration(hintText: "Additional details (optional)"),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+            ElevatedButton(
+              onPressed: () async {
+                final String otherId = _isNutritionist ? (widget.clientId ?? "") : widget.nutritionistId;
+                await ModerationService().reportContent(
+                  contentType: 'user',
+                  contentId: otherId,
+                  authorId: otherId,
+                  reason: selectedReason,
+                  additionalDetails: detailsController.text,
+                );
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  Toaster.show(context, "Thank you. We have received your report.");
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              child: const Text("Submit Report"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showBlockConfirm() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Block User?"),
+        content: const Text("You will no longer receive messages from this user. This action cannot be easily undone."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              final String otherId = _isNutritionist ? (widget.clientId ?? "") : widget.nutritionistId;
+              await ModerationService().blockUser(otherId);
+              if (context.mounted) {
+                Navigator.pop(context); // Close dialog
+                Navigator.pop(context); // Exit chat
+                Toaster.show(context, "User blocked.");
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text("Block"),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _DecryptedMessage extends StatelessWidget {
@@ -2087,3 +2195,5 @@ class _DeleteMessageDialog extends StatelessWidget {
     );
   }
 }
+
+

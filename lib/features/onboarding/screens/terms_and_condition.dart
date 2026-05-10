@@ -276,8 +276,8 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
     'c': 'Users agree to provide accurate and up-to-date health, dietary, and personal information. Hidden Pantry is not responsible for any health issues, allergic reactions, or consequences resulting from inaccurate information or misuse of the platform’s recommendations.'
   },
   {
-    't': '8. Account Termination',
-    'c': 'Hidden Pantry reserves the right to suspend or terminate accounts that violate community guidelines, engage in fraudulent behavior, or compromise the safety and integrity of the platform or its users.'
+    't': '8. Account & Data Deletion',
+    'c': 'You may delete your account at any time through the Profile Settings. Account deletion is permanent and removes all personal data, recipes, and history. Additionally, you can delete specific content like uploaded recipes or clear chat history without deleting your entire account. For detailed instructions, visit hiddenpantry.app/delete-account.'
   },
   {
     't': '9. Limitation of Liability',

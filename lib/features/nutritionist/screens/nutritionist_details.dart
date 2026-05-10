@@ -24,6 +24,8 @@ import 'chat_interface_part.dart';
 import 'package:hidden_pantry_app/core/services/user_status_service.dart';
 import 'package:hidden_pantry_app/features/user/services/iap_service.dart';
 import 'package:hidden_pantry_app/core/widgets/app_dialog.dart';
+import 'package:hidden_pantry_app/core/services/moderation_service.dart';
+
 
 class NutritionistDetailsScreen extends StatefulWidget {
   final String nutritionistId;
@@ -384,10 +386,44 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
             )
           else
             const SizedBox(width: 40), // Balance back button
+          
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert_rounded, color: purple),
+            onSelected: (value) {
+              if (value == 'report') {
+                _showModerationReportDialog();
+              } else if (value == 'block') {
+                _showBlockConfirm();
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'report',
+                child: Row(
+                  children: [
+                    Icon(Icons.report_problem_outlined, color: Colors.orange, size: 20.sw),
+                    SizedBox(width: 8.sw),
+                    Text("Report Nutritionist", style: TextStyle(fontSize: 14.sp)),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'block',
+                child: Row(
+                  children: [
+                    Icon(Icons.block_flipped, color: Colors.red, size: 20.sw),
+                    SizedBox(width: 8.sw),
+                    Text("Block Nutritionist", style: TextStyle(color: Colors.red, fontSize: 14.sp)),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
+
   Widget _feedTab() {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
@@ -2008,7 +2044,87 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
   }
 
   // ... (keep _BackgroundPattern) ...
+  void _showBlockConfirm() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: bg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text("Block Nutritionist?", style: TextStyle(color: Color(0xFF462F4D), fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+        content: const Text("You will no longer see updates or content from this nutritionist."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+          ElevatedButton(
+            onPressed: () async {
+              await ModerationService().blockUser(widget.nutritionistId);
+              if (context.mounted) {
+                Navigator.pop(context); // Close dialog
+                Navigator.pop(context); // Go back from profile
+                Toaster.show(context, "Nutritionist has been blocked.");
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            child: const Text("Block"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showModerationReportDialog() {
+    String selectedReason = 'Spam';
+    final List<String> reasons = ['Spam', 'Inappropriate Content', 'Harassment', 'False Information', 'Other'];
+    final TextEditingController detailsController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: bg,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text("Report Nutritionist", style: TextStyle(color: Color(0xFF462F4D), fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButton<String>(
+                value: selectedReason,
+                isExpanded: true,
+                items: reasons.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                onChanged: (val) => setDialogState(() => selectedReason = val!),
+              ),
+              TextField(
+                controller: detailsController,
+                decoration: const InputDecoration(hintText: "Additional details (optional)"),
+                maxLines: 3,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
+            ElevatedButton(
+              onPressed: () async {
+                await ModerationService().reportContent(
+                  contentType: 'user',
+                  contentId: widget.nutritionistId,
+                  authorId: widget.nutritionistId,
+                  reason: selectedReason,
+                  additionalDetails: detailsController.text,
+                );
+                if (context.mounted) {
+                  Navigator.pop(context);
+                  Toaster.show(context, "Thank you. We have received your report.");
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+              child: const Text("Submit Report"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
+
 
 class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
   final TabBar _tabBar;
