@@ -324,7 +324,7 @@ footer {
 }
 .about-float span { display: block; font-size: 24px; font-weight: 900; }
 .about-content .section-badge { margin-bottom: 16px; }
-.about-content p { margin-bottom: 16px; font-size: 15px; line-height: 1.8; }
+.about-content p { margin-bottom: 16px; font-size: 15px; line-height: 1.8; text-align: justify; }
 .about-list { margin: 24px 0 32px; }
 .about-list li {
   display: flex; align-items: center; gap: 12px;
@@ -404,9 +404,9 @@ footer {
 }
 .policy-card h2 { font-size: 1.3rem; margin-top: 36px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--orange-pale); }
 .policy-card h2:first-child { margin-top: 0; }
-.policy-card p { font-size: 15px; line-height: 1.85; margin-bottom: 14px; }
+.policy-card p { font-size: 15px; line-height: 1.85; margin-bottom: 14px; text-align: justify; }
 .policy-card ul { padding-left: 20px; margin-bottom: 14px; }
-.policy-card ul li { font-size: 15px; color: var(--text-muted); margin-bottom: 6px; line-height: 1.6; }
+.policy-card ul li { font-size: 15px; color: var(--text-muted); margin-bottom: 6px; line-height: 1.6; text-align: justify; }
 .policy-card a { color: var(--orange); font-weight: 600; }
 .policy-updated { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
 

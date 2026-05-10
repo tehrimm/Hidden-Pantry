@@ -16,6 +16,7 @@ import 'profile_setting.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/my_recipes.dart';
 import 'package:hidden_pantry_app/features/admin/screens/admin_payout_requests.dart';
 import 'package:hidden_pantry_app/features/admin/screens/admin_certificate_review.dart';
+import 'package:hidden_pantry_app/features/user/screens/admin_moderation_screen.dart';
 import 'package:hidden_pantry_app/features/user/services/user_service.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
@@ -304,6 +305,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         
                         // Admin buttons (conditional)
                         if (email == "hiddenpantry.support@gmail.com") ...[
+                          _tile(
+                            iconData: Icons.gavel_rounded,
+                            title: "Moderation Dashboard",
+                            onTap: () => _go(const AdminModerationScreen()),
+                          ),
                           _tile(
                             iconData: Icons.payments_outlined,
                             title: "Payment Requests",

@@ -66,4 +66,70 @@ class ModerationService {
 
     return List<String>.from(data['blockedUsers']);
   }
+  /// Get all pending reports grouped by contentId with counts
+  Future<List<Map<String, dynamic>>> getReportSummary() async {
+    final snapshot = await _firestore
+        .collection('reports')
+        .where('status', isEqualTo: 'pending')
+        .orderBy('timestamp', descending: true)
+        .get();
+
+    final Map<String, Map<String, dynamic>> summary = {};
+
+    for (var doc in snapshot.docs) {
+      final data = doc.data();
+      final contentId = data['contentId'] as String;
+
+      if (!summary.containsKey(contentId)) {
+        summary[contentId] = {
+          'contentId': contentId,
+          'contentType': data['contentType'],
+          'authorId': data['authorId'],
+          'reason': data['reason'], // First reason
+          'reportCount': 0,
+          'reports': [],
+        };
+      }
+      summary[contentId]!['reportCount']++;
+      summary[contentId]!['reports'].add({'id': doc.id, ...data});
+    }
+
+    return summary.values.toList();
+  }
+
+  /// Suspend a user for a specific number of days
+  Future<void> suspendUser(String userId, int days) async {
+    final until = DateTime.now().add(Duration(days: days));
+    await _firestore.collection('users').doc(userId).update({
+      'suspendedUntil': Timestamp.fromDate(until),
+    });
+  }
+
+  /// Dismiss all reports for a contentId
+  Future<void> dismissReports(String contentId) async {
+    final snapshot = await _firestore
+        .collection('reports')
+        .where('contentId', isEqualTo: contentId)
+        .where('status', isEqualTo: 'pending')
+        .get();
+
+    final batch = _firestore.batch();
+    for (var doc in snapshot.docs) {
+      batch.update(doc.reference, {'status': 'reviewed'});
+    }
+    await batch.commit();
+  }
+
+  /// Delete content and mark reports as reviewed
+  Future<void> takeAction(String contentType, String contentId, String action) async {
+    if (action == 'delete') {
+      if (contentType == 'review') {
+        await _firestore.collection('reviews').doc(contentId).delete();
+      } else if (contentType == 'recipe') {
+        await _firestore.collection('recipes').doc(contentId).delete();
+      }
+      
+      await dismissReports(contentId);
+    }
+  }
 }

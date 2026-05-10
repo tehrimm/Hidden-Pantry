@@ -17,6 +17,7 @@ class UserModel {
     required this.role,
     this.allergies = const [],
     this.createdAt,
+    this.suspendedUntil,
   });
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
@@ -29,6 +30,7 @@ class UserModel {
       role: data['role'] ?? 'homecook',
       allergies: List<String>.from(data['allergies'] ?? []),
       createdAt: (data['createdAt'] as Timestamp?)?.toDate(),
+      suspendedUntil: (data['suspendedUntil'] as Timestamp?)?.toDate(),
     );
   }
 
@@ -40,6 +42,7 @@ class UserModel {
       'role': role,
       'allergies': allergies,
       'createdAt': createdAt != null ? Timestamp.fromDate(createdAt!) : null,
+      'suspendedUntil': suspendedUntil != null ? Timestamp.fromDate(suspendedUntil!) : null,
     };
   }
 
@@ -60,6 +63,12 @@ class UserModel {
       role: role ?? this.role,
       allergies: allergies ?? this.allergies,
       createdAt: createdAt ?? this.createdAt,
+      suspendedUntil: suspendedUntil ?? this.suspendedUntil,
     );
+  }
+
+  bool get isSuspended {
+    if (suspendedUntil == null) return false;
+    return suspendedUntil!.isAfter(DateTime.now());
   }
 }

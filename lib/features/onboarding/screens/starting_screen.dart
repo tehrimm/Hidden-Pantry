@@ -10,6 +10,7 @@ import 'package:hidden_pantry_app/features/auth/screens/nutritionist_signup_wrap
 import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'loading_five.dart';
+import 'package:hidden_pantry_app/features/auth/screens/suspended_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 
@@ -65,6 +66,28 @@ class _StartingScreenState extends State<StartingScreen>
 
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
+        // 🛑 Check for suspension first
+        try {
+          final userDoc = await (widget.firestore ?? FirebaseFirestore.instance)
+              .collection('users')
+              .doc(user.uid)
+              .get();
+          
+          if (userDoc.exists) {
+            final suspendedUntil = (userDoc.data()?['suspendedUntil'] as Timestamp?)?.toDate();
+            if (suspendedUntil != null && suspendedUntil.isAfter(DateTime.now())) {
+              if (mounted) {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (_) => SuspendedScreen(suspendedUntil: suspendedUntil)),
+                );
+                return;
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint("Error checking suspension status: $e");
+        }
+
         bool isNutritionist = false;
         try {
           final doc = await (widget.firestore ?? FirebaseFirestore.instance)
@@ -72,6 +95,19 @@ class _StartingScreenState extends State<StartingScreen>
               .doc(user.uid)
               .get();
           isNutritionist = doc.exists && doc.data()?['verificationStatus'] != null;
+          
+          // Check nutritionist suspension if they have a separate doc
+          if (isNutritionist) {
+             final suspendedUntil = (doc.data()?['suspendedUntil'] as Timestamp?)?.toDate();
+             if (suspendedUntil != null && suspendedUntil.isAfter(DateTime.now())) {
+               if (mounted) {
+                 Navigator.of(context).pushReplacement(
+                   MaterialPageRoute(builder: (_) => SuspendedScreen(suspendedUntil: suspendedUntil)),
+                 );
+                 return;
+               }
+             }
+          }
         } catch (e) {
           debugPrint("Error checking nutritionist status: $e");
         }
