@@ -1398,10 +1398,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
         recipientRole: _isNutritionist ? 'user' : 'nutritionist',
       );
     }
-  }
-
-
-  void _showSavedPlansSheet() {
+  }  void _showSavedPlansSheet() {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
     final actionOrange = const Color(0xFFE48E5B);
@@ -1411,20 +1408,52 @@ class _ChatInterfaceState extends State<ChatInterface> {
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (context) => Container(
-        height: MediaQuery.of(context).size.height * 0.7,
+        height: MediaQuery.of(context).size.height * 0.75,
+        padding: EdgeInsets.symmetric(horizontal: 20.sw),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF3EB),
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24.sw)),
+          color: const Color(0xFF321B3A).withValues(alpha: 0.98),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32.sw)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         ),
         child: Column(
           children: [
+            SizedBox(height: 12.sh),
             Container(
-              margin: const EdgeInsets.only(top: 10, bottom: 20),
-              width: 50, height: 5,
-              decoration: BoxDecoration(color: actionOrange, borderRadius: BorderRadius.circular(3)),
+              width: 50.sw,
+              height: 4.sh,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(2.sw),
+              ),
             ),
-            Text("Select Plan to Share", style: TextStyle(color: purple, fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
+            SizedBox(height: 24.sh),
+            Row(
+              children: [
+                Text(
+                  "Select Meal Plan",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: "Satoshi",
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8.sh),
+            Row(
+              children: [
+                Text(
+                  "Choose a plan to share with your client",
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.4),
+                    fontSize: 13.sp,
+                    fontFamily: "Satoshi",
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 24.sh),
             Expanded(
               child: StreamBuilder<QuerySnapshot>(
                 stream: FirebaseFirestore.instance
@@ -1434,23 +1463,37 @@ class _ChatInterfaceState extends State<ChatInterface> {
                     .orderBy("updatedAt", descending: true)
                     .snapshots(),
                 builder: (context, snapshot) {
-                  if (snapshot.hasError) return const Center(child: Text("Error loading plans"));
+                  if (snapshot.hasError) return const Center(child: Text("Error loading plans", style: TextStyle(color: Colors.white70)));
                   if (!snapshot.hasData) return Center(child: CircularProgressIndicator(color: actionOrange));
                   
                   final docs = snapshot.data!.docs;
-                  if (docs.isEmpty) return const Center(child: Text("No saved plans found"));
+                  if (docs.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.restaurant_menu_rounded, color: Colors.white.withValues(alpha: 0.1), size: 64.sw),
+                          SizedBox(height: 16.sh),
+                          Text(
+                            "No saved plans found",
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.4), fontSize: 16.sp, fontFamily: "Satoshi"),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
 
                   return ListView.separated(
-                    padding: const EdgeInsets.all(20),
+                    padding: EdgeInsets.only(bottom: 40.sh),
                     itemCount: docs.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (_, __) => SizedBox(height: 12.sh),
                     itemBuilder: (context, index) {
                       final data = docs[index].data() as Map<String, dynamic>;
                       final id = docs[index].id;
                       final title = data["title"] ?? "Untitled Plan";
                       final days = data["duration"] ?? 0;
 
-                      // Compute avg daily calories from actual days data
+                      // Compute avg daily calories
                       int avgCals = 0;
                       final List daysList = data["days"] is List ? data["days"] as List : [];
                       if (daysList.isNotEmpty) {
@@ -1462,7 +1505,6 @@ class _ChatInterfaceState extends State<ChatInterface> {
                             int dayCals = 0;
                             for (final meal in meals) {
                               if (meal is Map) {
-                                // Prefer nutrition['Calories'] string (per-serving, e.g. "250 kcal")
                                 int mealCal = 0;
                                 final nutrition = meal["nutrition"];
                                 if (nutrition is Map) {
@@ -1470,7 +1512,6 @@ class _ChatInterfaceState extends State<ChatInterface> {
                                   final match = RegExp(r'(\d+\.?\d*)').firstMatch(calStr);
                                   if (match != null) mealCal = double.tryParse(match.group(1)!)?.round() ?? 0;
                                 }
-                                // Fallback: raw calories field ÷ servings
                                 if (mealCal == 0) {
                                   final rawCal = ((meal["calories"] as num?) ?? 0).toDouble();
                                   final servings = ((meal["base_servings"] ?? meal["baseServings"] ?? meal["servings"] ?? 1) as num).toInt().clamp(1, 100);
@@ -1487,74 +1528,71 @@ class _ChatInterfaceState extends State<ChatInterface> {
                         }
                         if (dayCount > 0) avgCals = (totalCals / dayCount).round();
                       }
-                      // Fallback to targetCalories if no per-meal cal data
                       if (avgCals == 0) avgCals = (data["targetCalories"] as num?)?.toInt() ?? 0;
-                      final String calLabel = avgCals > 0 ? "~ $avgCals kcal/day avg" : "Calories not set";
+                      final String calLabel = avgCals > 0 ? "~ $avgCals kcal/day" : "Calories not set";
 
-
-                      return GestureDetector(
-                        onTap: () {
-                          Navigator.pop(context); // Close sheet
-                          _sendMealPlanMessage({...data, "planId": id});
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF9E3D5),
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [BoxShadow(color: purple.withValues(alpha:0.05), blurRadius: 4, offset:const Offset(0, 2))],
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(color: actionOrange.withValues(alpha:0.1), borderRadius: BorderRadius.circular(12)),
-
-                                child: Icon(Icons.restaurant_menu_rounded, color: actionOrange),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(title, style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 16)),
-                                    const SizedBox(height: 4),
-                                    Text("$days Days • $calLabel", style: TextStyle(color: purple.withValues(alpha:0.6), fontSize: 13)),
-                                  ],
-                                ),
-                              ),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
+                      return Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(20.sw),
+                          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(20.sw),
+                            onTap: () {
+                              Navigator.pop(context);
+                              _sendMealPlanMessage({...data, "planId": id});
+                            },
+                            child: Padding(
+                              padding: EdgeInsets.all(16.sw),
+                              child: Row(
                                 children: [
-                                  IconButton(
-                                    icon: Icon(Icons.edit_rounded, color: actionOrange, size: 20),
-                                    onPressed: () {
-                                      Navigator.pop(context); // Close sheet
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => MealPlanCreatorScreen(
-                                            existingPlanId: id,
-                                            initialData: data,
+                                  Container(
+                                    padding: EdgeInsets.all(12.sw),
+                                    decoration: BoxDecoration(
+                                      color: actionOrange.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(16.sw),
+                                    ),
+                                    child: Icon(Icons.restaurant_menu_rounded, color: actionOrange, size: 24.sw),
+                                  ),
+                                  SizedBox(width: 16.sw),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          title,
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16.sp,
+                                            fontFamily: "Satoshi",
                                           ),
                                         ),
-                                      );
-                                    },
-                                    constraints: const BoxConstraints(),
-                                    padding: const EdgeInsets.all(8),
+                                        SizedBox(height: 4.sh),
+                                        Text(
+                                          "$days Days • $calLabel",
+                                          style: TextStyle(
+                                            color: Colors.white.withValues(alpha: 0.4),
+                                            fontSize: 12.sp,
+                                            fontFamily: "Satoshi",
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
                                   IconButton(
-                                    icon: Icon(Icons.send_rounded, color: actionOrange, size: 20),
+                                    icon: Icon(Icons.send_rounded, color: actionOrange, size: 20.sw),
                                     onPressed: () {
-                                      Navigator.pop(context); // Close sheet
+                                      Navigator.pop(context);
                                       _sendMealPlanMessage({...data, "planId": id});
                                     },
-                                    constraints: const BoxConstraints(),
-                                    padding: const EdgeInsets.all(8),
                                   ),
                                 ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       );

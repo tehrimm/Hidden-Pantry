@@ -45,7 +45,9 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
 
   final RecipeService _recipeService = RecipeService();
   late final RecipeApiService api;
@@ -166,10 +168,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadHome() async {
-    setState(() {
-      loading = true;
-      loadError = null;
-    });
+    if (mounted) {
+      setState(() {
+        // Only show loading if we don't have data yet
+        if (recommendations.isEmpty && weekly.isEmpty) {
+          loading = true;
+        }
+        loadError = null;
+      });
+    }
 
     try {
       // 1. Fetch user data and tags concurrently
@@ -687,6 +694,7 @@ void _openUserProfile() {
   // ──────────────────── BUILD ────────────────────
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
     ResponsiveUtils.init(context);
     return Scaffold(
       backgroundColor: bg,

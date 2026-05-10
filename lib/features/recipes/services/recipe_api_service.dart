@@ -9,7 +9,27 @@ class RecipeApiService {
   final String baseUrl;
   const RecipeApiService({required this.baseUrl});
 
+  // --- Memory Cache ---
+  static final Map<String, dynamic> _cache = {};
+  static final Map<String, DateTime> _cacheTime = {};
+  static const _cacheDuration = Duration(minutes: 10);
+
+  bool _isCacheValid(String key) {
+    if (!_cache.containsKey(key)) return false;
+    final time = _cacheTime[key];
+    if (time == null) return false;
+    return DateTime.now().difference(time) < _cacheDuration;
+  }
+
+  void _setCache(String key, dynamic value) {
+    _cache[key] = value;
+    _cacheTime[key] = DateTime.now();
+  }
+
   Future<List<String>> fetchTags({int limit = 15}) async {
+    final cacheKey = "tags_$limit";
+    if (_isCacheValid(cacheKey)) return _cache[cacheKey] as List<String>;
+
     final uri = Uri.parse("$baseUrl/tags?limit=$limit");
     final res = await http.get(uri).timeout(const Duration(seconds: 30));
     if (res.statusCode != 200) return ["All", "Sushi", "Seafood", "Dessert"];
@@ -17,6 +37,8 @@ class RecipeApiService {
     final data = jsonDecode(res.body) as Map<String, dynamic>;
     final tags = (data["tags"] as List?)?.map((e) => e.toString()).toList() ?? [];
     if (tags.isEmpty) return ["All", "Sushi", "Seafood", "Dessert"];
+    
+    _setCache(cacheKey, tags);
     return tags;
   }
 
@@ -49,6 +71,9 @@ class RecipeApiService {
       "top_k": topK,
     };
 
+    final cacheKey = "rec_${jsonEncode(body)}";
+    if (_isCacheValid(cacheKey)) return _cache[cacheKey] as List<Recipe>;
+
     try {
       final res = await http.post(
         uri,
@@ -62,7 +87,10 @@ class RecipeApiService {
 
       final data = jsonDecode(res.body) as Map<String, dynamic>;
       final results = (data["results"] as List?) ?? [];
-      return results.map((e) => Recipe.fromJson(e as Map<String, dynamic>)).toList();
+      final recipes = results.map((e) => Recipe.fromJson(e as Map<String, dynamic>)).toList();
+      
+      _setCache(cacheKey, recipes);
+      return recipes;
     } catch (e) {
       print("Error in recommend: $e");
       rethrow;
