@@ -419,6 +419,8 @@ class RecipeService {
         'likes': FieldValue.increment(1),
         'likedBy': FieldValue.arrayUnion([userId]),
       });
+      // Send Notification to Review Author
+      _notifyReviewAuthor(reviewId, "liked your review");
     }
   }
 
@@ -463,14 +465,17 @@ class RecipeService {
 
 
 
-  /// Deletes a specific reply
+  /// Deletes a specific reply (Soft Delete to preserve context)
   Future<void> deleteReply(String reviewId, String replyId) async {
     await _firestore
         .collection('reviews')
         .doc(reviewId)
         .collection('replies')
         .doc(replyId)
-        .delete();
+        .update({
+      'comment': 'This comment was deleted',
+      'isDeleted': true,
+    });
   }
 
   /// Toggles a like on a reply
@@ -495,6 +500,35 @@ class RecipeService {
         'likes': FieldValue.increment(1),
         'likedBy': FieldValue.arrayUnion([userId]),
       });
+      // Send Notification to Reply Author
+      _notifyReplyAuthor(reviewId, replyId, "liked your reply");
+    }
+  }
+
+  Future<void> _notifyReplyAuthor(String reviewId, String replyId, String action) async {
+    try {
+      final replyDoc = await _firestore
+          .collection('reviews')
+          .doc(reviewId)
+          .collection('replies')
+          .doc(replyId)
+          .get();
+      if (!replyDoc.exists) return;
+      
+      final authorId = replyDoc.data()?['userId'];
+      final user = _auth.currentUser;
+
+      if (authorId != null && authorId != user?.uid) {
+        NotificationService().sendNotification(
+          recipientId: authorId,
+          title: "Like from ${user?.displayName ?? 'Someone'}",
+          body: "${user?.displayName ?? 'Someone'} $action",
+          type: NotificationType.reply,
+          targetId: reviewId,
+        );
+      }
+    } catch (e) {
+      print("Error notifying reply author: $e");
     }
   }
 

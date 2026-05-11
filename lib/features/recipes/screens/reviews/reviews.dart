@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
+import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 import 'post_review.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
@@ -11,16 +12,30 @@ import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 
-class ReviewsScreen extends StatelessWidget {
+class ReviewsScreen extends StatefulWidget {
   final Recipe recipe;
   final RecipeService? recipeService;
 
   const ReviewsScreen({super.key, required this.recipe, this.recipeService});
 
   @override
+  State<ReviewsScreen> createState() => _ReviewsScreenState();
+}
+
+class _ReviewsScreenState extends State<ReviewsScreen> {
+  late final RecipeService _rs;
+  late final Stream<QuerySnapshot> _reviewsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    _rs = widget.recipeService ?? RecipeService();
+    _reviewsStream = _rs.getReviews(widget.recipe.id);
+  }
+
+  @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
-    final rs = recipeService ?? RecipeService();
     const Color bg = Color(0xFFFFF3EB);
     const Color purple = Color(0xFF462F4D);
     const Color orange = Color(0xFFEF8A54);
@@ -52,7 +67,7 @@ class ReviewsScreen extends StatelessWidget {
                   style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 18.sp, fontFamily: "Satoshi"),
                 ),
                 Text(
-                  recipe.name,
+                  widget.recipe.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 12.sp, fontFamily: "Satoshi"),
@@ -68,10 +83,21 @@ class ReviewsScreen extends StatelessWidget {
                 children: [
                   Expanded(
                     child: StreamBuilder<QuerySnapshot>(
-                      stream: rs.getReviews(recipe.id),
+                      stream: _reviewsStream,
                       builder: (context, snapshot) {
                         if (snapshot.connectionState == ConnectionState.waiting) {
-                          return const Center(child: CircularProgressIndicator());
+                          return ListView.builder(
+                            padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 10.sh),
+                            itemCount: 5,
+                            itemBuilder: (context, index) => Padding(
+                              padding: EdgeInsets.only(bottom: 16.sh),
+                              child: SkeletonBox(
+                                width: double.infinity,
+                                height: 120.sh,
+                                glassy: true,
+                              ),
+                            ),
+                          );
                         }
                         if (snapshot.hasError) {
                           return Center(child: Text("Error: ${snapshot.error}"));
@@ -102,11 +128,12 @@ class ReviewsScreen extends StatelessWidget {
                               child: _StaggeredItem(
                                 index: index,
                                 child: _ReviewCard(
+                                  key: ValueKey(doc.id),
                                   reviewId: doc.id,
                                   data: data,
                                   purple: purple,
                                   orange: orange,
-                                  recipeService: rs,
+                                  recipeService: _rs,
                                 ),
                               ),
                             );
@@ -129,7 +156,7 @@ class ReviewsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    child: _buildAddReviewPrompt(context, recipe, purple, orange),
+                    child: _buildAddReviewPrompt(context, widget.recipe, purple, orange),
                   ),
                 ],
               ),
@@ -177,7 +204,7 @@ class ReviewsScreen extends StatelessWidget {
                     radius: 18.sw,
                     backgroundColor: purple.withValues(alpha:0.1),
                     backgroundImage: (userImageUrl.trim().isNotEmpty && userImageUrl.startsWith("http")) ? NetworkImage(userImageUrl) : null,
-                    onBackgroundImageError: (_, __) {},
+                    onBackgroundImageError: (userImageUrl.trim().isNotEmpty && userImageUrl.startsWith("http")) ? (_, __) {} : null,
                     child: Icon(Icons.person_rounded, color: purple, size: 18.sp),
                   ),
                   SizedBox(width: 12.sw),
@@ -243,6 +270,7 @@ class _ReviewCard extends StatefulWidget {
   final RecipeService recipeService;
 
   const _ReviewCard({
+    super.key,
     required this.reviewId,
     required this.data,
     required this.purple,
@@ -257,6 +285,7 @@ class _ReviewCard extends StatefulWidget {
 class _ReviewCardState extends State<_ReviewCard> {
   bool _showReplyInput = false;
   bool _showReplies = true;
+  bool _isSubmitting = false;
   final TextEditingController _replyController = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   
@@ -285,11 +314,15 @@ class _ReviewCardState extends State<_ReviewCard> {
           _fetchedUserImageUrl = data['photoUrl'];
         });
       }
-    } finally {
+    } catch (_) {
     }
   }
 
   void _replyToUser(String name) {
+    if (FirebaseAuth.instance.currentUser == null) {
+      Toaster.show(context, "Please login to reply.", isError: true);
+      return;
+    }
     setState(() {
       _showReplyInput = true;
       _showReplies = true; // Make sure they can see where it's going
@@ -297,12 +330,19 @@ class _ReviewCardState extends State<_ReviewCard> {
         _replyController.text = "@$name ${_replyController.text}".trim() + " ";
       }
     });
-    _focusNode.requestFocus();
+    
+    // Small delay to ensure TextField is rendered before requesting focus
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted && _focusNode.canRequestFocus) {
+        _focusNode.requestFocus();
+      }
+    });
   }
 
   @override
   void dispose() {
     _replyController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -387,24 +427,42 @@ class _ReviewCardState extends State<_ReviewCard> {
 
   Future<void> _submitReply() async {
     final text = _replyController.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _isSubmitting) return;
 
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    if (user == null) {
+      Toaster.show(context, "Please login to reply.", isError: true);
+      return;
+    }
 
-    // Fetch user profile
-    final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
-    final userData = userDoc.data() ?? {};
-    
-    await widget.recipeService.addReply(widget.reviewId, {
-      'userId': user.uid,
-      'userName': userData['fullName'] ?? user.displayName ?? "User",
-      'userImageUrl': userData['photoUrl'] ?? user.photoURL ?? "",
-      'comment': text,
-    });
+    setState(() => _isSubmitting = true);
 
-    _replyController.clear();
-    setState(() => _showReplyInput = false);
+    try {
+      // Fetch current user details for the reply
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final userData = userDoc.data() ?? {};
+      
+      await widget.recipeService.addReply(widget.reviewId, {
+        'userId': user.uid,
+        'userName': userData['fullName'] ?? user.displayName ?? "User",
+        'userImageUrl': userData['photoUrl'] ?? user.photoURL ?? "",
+        'comment': text,
+      });
+
+      if (mounted) {
+        _replyController.clear();
+        setState(() {
+          _showReplyInput = false;
+          _isSubmitting = false;
+        });
+        Toaster.show(context, "Reply posted!");
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        Toaster.show(context, "Error posting reply: $e", isError: true);
+      }
+    }
   }
 
   @override
@@ -532,7 +590,8 @@ class _ReviewCardState extends State<_ReviewCard> {
               ),
               SizedBox(width: 24.sw),
               GestureDetector(
-                onTap: () => setState(() => _showReplyInput = !_showReplyInput),
+                behavior: HitTestBehavior.opaque,
+                onTap: () => _replyToUser(userName),
                 child: Row(
                   children: [
                     Icon(Icons.chat_bubble_outline, size: 18.sp, color: widget.purple.withValues(alpha:0.6)),
@@ -582,6 +641,7 @@ class _ReviewCardState extends State<_ReviewCard> {
                   child: TextField(
                     controller: _replyController,
                     focusNode: _focusNode,
+                    enabled: !_isSubmitting,
                     decoration: InputDecoration(
                       hintText: "Write a reply...",
                       hintStyle: TextStyle(fontSize: 12.sp, color: widget.purple.withValues(alpha:0.4)),
@@ -592,10 +652,16 @@ class _ReviewCardState extends State<_ReviewCard> {
                     style: TextStyle(fontSize: 13.sp, fontFamily: "Satoshi"),
                   ),
                 ),
-                IconButton(
-                  onPressed: _submitReply,
-                  icon: Icon(Icons.send, color: widget.orange, size: 20.sp),
-                ),
+                if (_isSubmitting)
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12.sw),
+                    child: SizedBox(width: 20.sw, height: 20.sw, child: CircularProgressIndicator(strokeWidth: 2, color: widget.orange)),
+                  )
+                else
+                  IconButton(
+                    onPressed: _submitReply,
+                    icon: Icon(Icons.send, color: widget.orange, size: 20.sp),
+                  ),
               ],
             ),
           ],
@@ -688,83 +754,153 @@ class _ReplyItem extends StatelessWidget {
     final createdAt = data['createdAt'] as Timestamp?;
     final dateStr = createdAt != null ? _formatDate(createdAt.toDate()) : "";
     
+    final isDeleted = data['isDeleted'] == true;
+    final isOwner = user != null && data['userId'] == user.uid;
     final likes = (data['likes'] as num?)?.toInt() ?? 0;
     final likedBy = List<String>.from(data['likedBy'] ?? []);
     final isLiked = user != null && likedBy.contains(user.uid);
 
-    return Padding(
-      padding: EdgeInsets.only(top: 12.sh, left: 12.sw),
+    return IntrinsicHeight(
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          CircleAvatar(
-            radius: 12.sw,
-            backgroundColor: purple.withValues(alpha:0.1),
-            backgroundImage: (userImageUrl != null && userImageUrl.trim().isNotEmpty && userImageUrl.startsWith("http"))
-                ? NetworkImage(userImageUrl)
-                : null,
-            onBackgroundImageError: (_, __) {},
-            child: Icon(Icons.person_rounded, color: purple, size: 12.sp),
+          // Visual Thread Line
+          Padding(
+            padding: EdgeInsets.only(left: 6.sw, right: 14.sw, top: 4.sh, bottom: 4.sh),
+            child: Container(
+              width: 1.5.sw,
+              decoration: BoxDecoration(
+                color: purple.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(1),
+              ),
+            ),
           ),
-          SizedBox(width: 10.sw),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        userName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 13.sp, fontFamily: "Satoshi"),
-                      ),
-                    ),
-                    SizedBox(width: 8.sw),
-                    Text(
-                      dateStr,
-                      style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 10.sp, fontFamily: "Satoshi"),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 4.sh),
-                _buildCommentWithMentions(comment, purple, orange, 13.sp),
-                SizedBox(height: 6.sh),
-                Row(
-                  children: [
-                    _AnimatedLikeButton(
-                      isLiked: isLiked,
-                      likes: likes,
-                      purple: purple,
-                      orange: orange,
-                      size: 14.sp,
-                      onTap: user == null ? null : () => recipeService.toggleReplyLike(reviewId, replyId, user.uid),
-                    ),
-                    SizedBox(width: 24.sw),
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: onReply,
-                      child: Row(
-                        children: [
-                          Icon(Icons.chat_bubble_outline, size: 14.sp, color: purple.withValues(alpha:0.6)),
-                          SizedBox(width: 4.sw),
-                          Text(
-                            "Reply",
-                            style: TextStyle(
-                              color: purple.withValues(alpha:0.6),
-                              fontSize: 10.sp,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: "Satoshi",
+            child: Padding(
+              padding: EdgeInsets.only(top: 12.sh),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 12.sw,
+                    backgroundColor: purple.withValues(alpha:0.1),
+                    backgroundImage: (!isDeleted && userImageUrl != null && userImageUrl.trim().isNotEmpty && userImageUrl.startsWith("http"))
+                        ? NetworkImage(userImageUrl)
+                        : null,
+                    onBackgroundImageError: (!isDeleted && userImageUrl != null && userImageUrl.trim().isNotEmpty && userImageUrl.startsWith("http")) ? (_, __) {} : null,
+                    child: Icon(isDeleted ? Icons.delete_outline : Icons.person_rounded, color: purple, size: 12.sp),
+                  ),
+                  SizedBox(width: 10.sw),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Flexible(
+                              child: Text(
+                                isDeleted ? "[Deleted]" : userName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: isDeleted ? purple.withValues(alpha:0.4) : purple, 
+                                  fontWeight: FontWeight.bold, 
+                                  fontSize: 13.sp, 
+                                  fontFamily: "Satoshi"
+                                ),
+                              ),
                             ),
+                            if (!isDeleted) ...[
+                              SizedBox(width: 8.sw),
+                              Text(
+                                dateStr,
+                                style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 10.sp, fontFamily: "Satoshi"),
+                              ),
+                            ],
+                          ],
+                        ),
+                        SizedBox(height: 4.sh),
+                        isDeleted 
+                          ? Text(
+                              comment,
+                              style: TextStyle(
+                                color: purple.withValues(alpha:0.4),
+                                fontStyle: FontStyle.italic,
+                                fontSize: 13.sp,
+                                fontFamily: "Satoshi",
+                              ),
+                            )
+                          : _buildCommentWithMentions(comment, purple, orange, 13.sp),
+                        if (!isDeleted) ...[
+                          SizedBox(height: 6.sh),
+                          Row(
+                            children: [
+                              _AnimatedLikeButton(
+                                isLiked: isLiked,
+                                likes: likes,
+                                purple: purple,
+                                orange: orange,
+                                size: 14.sp,
+                                onTap: user == null ? null : () => recipeService.toggleReplyLike(reviewId, replyId, user.uid),
+                              ),
+                              SizedBox(width: 24.sw),
+                              GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: onReply,
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.chat_bubble_outline, size: 14.sp, color: purple.withValues(alpha:0.6)),
+                                    SizedBox(width: 4.sw),
+                                    Text(
+                                      "Reply",
+                                      style: TextStyle(
+                                        color: purple.withValues(alpha:0.6),
+                                        fontSize: 10.sp,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: "Satoshi",
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (isOwner) ...[
+                                const Spacer(),
+                                GestureDetector(
+                                  onTap: () => _confirmDeleteReply(context),
+                                  child: Icon(Icons.delete_outline, size: 16.sp, color: Colors.red.withValues(alpha: 0.5)),
+                                ),
+                              ],
+                            ],
                           ),
                         ],
-                      ),
+                        SizedBox(height: 4.sh),
+                      ],
                     ),
-                  ],
-                ),
-              ],
+                  ),
+                ],
+              ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteReply(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Delete Reply"),
+        content: const Text("Are you sure you want to delete this reply? This cannot be undone."),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text("Cancel")),
+          TextButton(
+            onPressed: () {
+              recipeService.deleteReply(reviewId, replyId);
+              Navigator.pop(ctx);
+              Toaster.show(context, "Reply deleted");
+            },
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
