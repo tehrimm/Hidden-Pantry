@@ -102,7 +102,17 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
           for (final r in [...apiRecipes, ...fsRecipes]) {
             if (r.id.isNotEmpty && (r.isPublic || widget.authorId == currentUid)) byId[r.id] = r;
           }
-          _recipes = byId.values.toList();
+          final combinedList = byId.values.toList();
+          if (isLoadMore) {
+            final existingIds = _recipes.map((r) => r.id).toSet();
+            final actuallyNew = combinedList.where((r) => !existingIds.contains(r.id)).toList();
+            _recipes.addAll(actuallyNew);
+            _loadingMore = false;
+          } else {
+            _recipes = combinedList;
+            _loading = false;
+          }
+
           // 🛡️ Ensure recipe count is accurate if metadata is missing or 0
           final dynamic rawCount = _stats['recipe_count'];
           bool countIsZero = rawCount == null || 
@@ -128,9 +138,6 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
           if (firestoreMetricStats.containsKey('avg_rating')) {
             _stats['avg_rating'] = firestoreMetricStats['avg_rating'];
           }
-
-          if (isLoadMore) _loadingMore = false;
-          else _loading = false;
           
           if (_recipes.length < _limit) _hasMore = false;
         });

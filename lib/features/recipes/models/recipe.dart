@@ -376,7 +376,7 @@ class Recipe {
         } catch (_) {}
       }
 
-      // 3. Parse Raw String: "3/4 cup milk", "1 1/2 cups warm water", "1 egg"
+      // 3. Robust Word-Based Parsing
       final commonUnits = {
         'tablespoon', 'tablespoons', 'teaspoon', 'teaspoons',
         'tbsp', 'tbsp.', 'tbsps.', 'tbs', 'tbs.', 
@@ -385,38 +385,77 @@ class Recipe {
         'pounds', 'g', 'gram', 'grams', 'kg', 'kilogram', 'kilograms', 
         'ml', 'milliliter', 'milliliters', 'l', 'liter', 'liters', 'pkg', 'package',
         'slice', 'slices', 'piece', 'pieces', 'clove', 'cloves', 'stick', 'sticks',
-        'pinch', 'pinches', 'dash', 'dashes', 'handful', 'handfuls'
+        'pinch', 'pinches', 'dash', 'dashes', 'handful', 'handfuls', 'head', 'heads',
+        'fluid ounce', 'fluid ounces', 'fl oz', 'fl. oz.'
       };
-
-      final sortedUnits = commonUnits.toList()..sort((a, b) => b.length.compareTo(a.length));
-      final unitPattern = sortedUnits.map((u) => RegExp.escape(u)).join('|');
 
       String qtyPart = "";
       String unitPart = "";
       String namePart = "";
 
-      final unitRegex = RegExp(r'(?<![a-zA-Z])(' + unitPattern + r')(?![a-zA-Z])', caseSensitive: false);
-      final unitMatch = unitRegex.firstMatch(s);
+      // 3.1. Extract leading quantity
+      final qtyRegex = RegExp(r'^([0-9\s\./¼½¾⅓⅔⅛⅜⅝⅞-]+(?:\s+to\s+[0-9\s\./¼½¾⅓⅔⅛⅜⅝⅞-]+)?)', caseSensitive: false);
+      final qtyMatch = qtyRegex.firstMatch(s);
+      String remaining = s;
+      
+      if (qtyMatch != null) {
+        qtyPart = qtyMatch.group(1)!.trim();
+        remaining = s.substring(qtyMatch.end).trim();
+      }
 
-      if (unitMatch != null) {
-        unitPart = unitMatch.group(1)!.toLowerCase();
-        final before = s.substring(0, unitMatch.start).trim();
-        final after = s.substring(unitMatch.end).trim();
+      if (remaining.isNotEmpty) {
+        // 3.2. Check for multi-word units first (e.g., "fluid ounce")
+        bool multiWordFound = false;
+        final multiWordUnits = commonUnits.where((u) => u.contains(' ')).toList()
+          ..sort((a, b) => b.length.compareTo(a.length));
+        
+        for (final unit in multiWordUnits) {
+          if (remaining.toLowerCase().startsWith("$unit ")) {
+            unitPart = unit;
+            namePart = remaining.substring(unit.length).trim();
+            multiWordFound = true;
+            break;
+          } else if (remaining.toLowerCase() == unit) {
+            unitPart = unit;
+            namePart = "";
+            multiWordFound = true;
+            break;
+          }
+        }
 
-        qtyPart = before.isEmpty ? "1" : before;
-        namePart = after;
-      } else {
-        // No unit found, try to find a leading quantity
-        final qtyRegex = RegExp(r'^([0-9\s\./¼½¾⅓⅔⅛⅜⅝⅞-]+(?:\s+to\s+[0-9\s\./¼½¾⅓⅔⅛⅜⅝⅞-]+)?)', caseSensitive: false);
-        final qtyMatch = qtyRegex.firstMatch(s);
-        if (qtyMatch != null) {
-          qtyPart = qtyMatch.group(1)!.trim();
-          namePart = s.substring(qtyMatch.end).trim();
-        } else {
-          qtyPart = "1";
-          namePart = s;
+        if (!multiWordFound) {
+          // 3.3. Check first word for unit
+          final words = remaining.split(RegExp(r'\s+'));
+          final firstWord = words.first.toLowerCase();
+          
+          // Clean first word of trailing punctuation for comparison
+          final cleanFirstWord = firstWord.replaceAll(RegExp(r'[.,;]$'), '');
+          
+          if (commonUnits.contains(firstWord) || commonUnits.contains(cleanFirstWord)) {
+            unitPart = firstWord;
+            namePart = words.skip(1).join(" ").trim();
+          } else {
+            // 3.4. Handle attached units like "10g" if qtyRegex missed them or they are mixed
+            // Check if firstWord starts with numbers and ends with a unit
+            final attachedMatch = RegExp(r'^(\d+)([a-zA-Z]+)$').firstMatch(firstWord);
+            if (attachedMatch != null) {
+              final potentialQty = attachedMatch.group(1)!;
+              final potentialUnit = attachedMatch.group(2)!.toLowerCase();
+              if (commonUnits.contains(potentialUnit)) {
+                qtyPart = qtyPart.isEmpty ? potentialQty : "$qtyPart $potentialQty";
+                unitPart = potentialUnit;
+                namePart = words.skip(1).join(" ").trim();
+              } else {
+                namePart = remaining;
+              }
+            } else {
+              namePart = remaining;
+            }
+          }
         }
       }
+
+      if (qtyPart.isEmpty) qtyPart = "1";
 
       String cleanName = namePart.trim();
       if (cleanName.toLowerCase().startsWith("of ")) cleanName = cleanName.substring(3).trim();
@@ -424,7 +463,6 @@ class Recipe {
       // Remove leading/trailing parentheses and noise
       final noise = RegExp(r'^[(),.\s]+|[(),.\s]+$');
       cleanName = cleanName.replaceAll(noise, '').trim();
-
 
       return IngredientItem(
         name: cleanName.isEmpty ? (unitPart.isEmpty ? qtyPart : unitPart) : cleanName,

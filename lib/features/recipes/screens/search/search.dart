@@ -341,9 +341,16 @@ class _SearchScreenState extends State<SearchScreen> {
       }
 
       setState(() {
-        _results = _applyAllergyFilter(combined);
-        if (isLoadMore) _loadingMore = false;
-        else _isSearching = false;
+        final filtered = _applyAllergyFilter(combined);
+        if (isLoadMore) {
+          final existingIds = _results.map((r) => r.id).toSet();
+          final actuallyNew = filtered.where((r) => !existingIds.contains(r.id)).toList();
+          _results.addAll(actuallyNew);
+          _loadingMore = false;
+        } else {
+          _results = filtered;
+          _isSearching = false;
+        }
 
         if (apiResults.length < _limit) _hasMore = false;
       });

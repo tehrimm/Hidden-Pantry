@@ -116,9 +116,16 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
       if (!mounted) return;
       setState(() {
-        recipes = _rerankByPreferences(res);
-        if (isLoadMore) _loadingMore = false;
-        else loading = false;
+        final reRanked = _rerankByPreferences(res);
+        if (isLoadMore) {
+          final existingIds = recipes.map((r) => r.id).toSet();
+          final actuallyNew = reRanked.where((r) => !existingIds.contains(r.id)).toList();
+          recipes.addAll(actuallyNew);
+          _loadingMore = false;
+        } else {
+          recipes = reRanked;
+          loading = false;
+        }
 
         if (res.length < _limit) _hasMore = false;
       });
