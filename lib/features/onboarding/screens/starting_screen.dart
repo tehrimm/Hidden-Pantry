@@ -12,6 +12,7 @@ import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'loading_five.dart';
 import 'package:hidden_pantry_app/features/auth/screens/suspended_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:hidden_pantry_app/core/services/view_mode_service.dart';
 
 
 
@@ -115,10 +116,20 @@ class _StartingScreenState extends State<StartingScreen>
         if (!mounted) return;
 
         if (isNutritionist) {
-          debugPrint('[StartingScreen] User is nutritionist - navigating to Wrapper');
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const NutritionistSignupWrapper()),
-          );
+          final inUserView = await ViewModeService().isInUserView();
+          if (mounted) {
+            if (inUserView) {
+              debugPrint('[StartingScreen] Nutritionist in User View - navigating to MainNavigationShell');
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => MainNavigationShell()),
+              );
+            } else {
+              debugPrint('[StartingScreen] Nutritionist in Dashboard View - navigating to Wrapper');
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => NutritionistSignupWrapper()),
+              );
+            }
+          }
         } else {
           debugPrint('[StartingScreen] Regular user - navigating to MainNavigationShell');
           Navigator.of(context).pushReplacement(

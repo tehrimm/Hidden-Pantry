@@ -49,12 +49,16 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   static const Color textColor = Color(0xFF462F4D);
   static const Color orange = Color(0xFFEF8A54);
   static const Color orange2 = Color(0xFFE48E5B);
+  
+  // 🚀 SESSION CACHE: Retains state of visited recipes for instant loading
+  static final Map<String, Recipe> _visitedRecipesCache = {};
 
   late final RecipeApiService api;
   late Recipe _recipe;
   bool _loading = true;
   String? _error;
   int _authorRecipeCount = 0;
+  bool _loadingAuthorRecipes = true;
   List<Recipe> _authorRecipes = [];
 
   bool _liked = false;
@@ -80,8 +84,13 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
     api = widget.apiService ?? const RecipeApiService(baseUrl: ApiConstants.baseUrl);
     _recipeService = widget.recipeService ?? RecipeService();
 
-    // Start with passed recipe
-    _recipe = widget.recipe;
+    // Start with passed recipe or cached version
+    final cached = _visitedRecipesCache[widget.recipe.id];
+    _recipe = cached ?? widget.recipe;
+
+    // Fast load: If we have ingredients/directions, don't show the skeleton
+    _loading = _recipe.directions.isEmpty && (_recipe.stepsDetailed == null || _recipe.stepsDetailed!.isEmpty);
+
     _servings = (_recipe.baseServings <= 0) ? 1 : _recipe.baseServings;
     
     // Immediately fetch full details
@@ -217,8 +226,13 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
 
   Future<void> _loadFullDetails() async {
     if (!mounted) return;
+    
+    // Only show loading if we really have no data
+    final hasData = _recipe.directions.isNotEmpty || (_recipe.stepsDetailed != null && _recipe.stepsDetailed!.isNotEmpty);
+    
     setState(() {
-      _loading = true;
+      _loading = !hasData; 
+      _loadingAuthorRecipes = true;
       _error = null;
     });
 
@@ -247,6 +261,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
             if (mounted) {
               setState(() {
                 _recipe = firestoreRecipe;
+                _visitedRecipesCache[_recipe.id] = firestoreRecipe; // Cache it!
                 _authorRecipeCount = count;
                 _servings = (firestoreRecipe.baseServings <= 0) ? 1 : firestoreRecipe.baseServings;
                 _loading = false;
@@ -257,6 +272,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                 if (mounted) {
                   setState(() {
                     _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || r.authorId == firestoreRecipe.authorId)).toList();
+                    _loadingAuthorRecipes = false;
                   });
                 }
               }
@@ -281,6 +297,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
         if (mounted) {
           setState(() {
             _recipe = fullRecipe;
+            _visitedRecipesCache[_recipe.id] = fullRecipe; // Cache it!
             _authorRecipeCount = count;
             _servings = (fullRecipe.baseServings <= 0) ? 1 : fullRecipe.baseServings;
             _loading = false;
@@ -311,6 +328,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
           if (mounted) {
             setState(() {
               _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || r.authorId == fullRecipe.authorId)).toList();
+              _loadingAuthorRecipes = false;
             });
             print("[RecipeDetails] Loaded ${_authorRecipes.length} recipes for authorId: ${fullRecipe.authorId}");
           }
@@ -319,13 +337,17 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
           if (mounted) {
             setState(() {
               _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || (fullRecipe.authorId.isNotEmpty && r.authorId == fullRecipe.authorId))).toList();
+              _loadingAuthorRecipes = false;
             });
             print("[RecipeDetails] Fallback: Loaded ${_authorRecipes.length} recipes for authorName: ${fullRecipe.authorName}");
           }
+        } else {
+          if (mounted) setState(() => _loadingAuthorRecipes = false);
         }
         return; // Success, exit
       } catch (apiError) {
         print("[RecipeDetails] API Fetch failed finally: $apiError.");
+        if (mounted) setState(() => _loadingAuthorRecipes = false);
       }
 
       // 3. Fallback to Local Storage (if both Firestore and API fail)
@@ -1280,7 +1302,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
               ),
             ),
 
-          if (_authorRecipes.isNotEmpty) ...[
+          if (_authorRecipes.isNotEmpty || _loadingAuthorRecipes) ...[
             SizedBox(height: 32.sh),
             StaggeredEntry(
               delay: 750,
@@ -1333,9 +1355,9 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                 child: PageView.builder(
                   controller: _authorPageController,
                   padEnds: false,
-                  itemCount: _authorRecipes.length,
+                  itemCount: _loadingAuthorRecipes ? 3 : _authorRecipes.length,
                   itemBuilder: (context, index) {
-                    final ar = _authorRecipes[index];
+                    final ar = _loadingAuthorRecipes ? null : _authorRecipes[index];
                     final double diff = (index - _authorPage).abs();
                     final double scale = (1.0 - (diff * 0.15)).clamp(0.85, 1.0);
                     final double opacity = (1.0 - (diff * 0.3)).clamp(0.5, 1.0);
@@ -1351,39 +1373,41 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => RecipeDetailsScreen(recipe: ar),
+                                  builder: (_) => RecipeDetailsScreen(recipe: ar!),
                                 ),
                               );
                             });
                           },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: cardColor,
-                              borderRadius: BorderRadius.circular(20.sw),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: textColor.withValues(alpha: 0.05),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
+                          child: _loadingAuthorRecipes 
+                            ? _authorRecipeSkeleton()
+                            : Container(
+                                decoration: BoxDecoration(
+                                  color: cardColor,
+                                  borderRadius: BorderRadius.circular(20.sw),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: textColor.withValues(alpha: 0.05),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Stack(
-                                    children: [
-                                      Positioned.fill(
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.vertical(top: Radius.circular(20.sw)),
-                                          child: _netImage(
-                                            url: ar.imageUrl,
-                                            fallback: Image.asset('assets/logos/recipe_placeholder.jpg', fit: BoxFit.cover),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Stack(
+                                        children: [
+                                          Positioned.fill(
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.vertical(top: Radius.circular(20.sw)),
+                                              child: _netImage(
+                                                url: ar!.imageUrl,
+                                                fallback: Image.asset('assets/logos/recipe_placeholder.jpg', fit: BoxFit.cover),
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                      Positioned(
+                                          Positioned(
                                         right: 8.sw,
                                         top: 8.sw,
                                         child: Container(
@@ -1397,7 +1421,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                                               Icon(Icons.schedule_rounded, color: Colors.white, size: 10.sw),
                                               SizedBox(width: 4.sw),
                                               Text(
-                                                "${ar.minutes} min",
+                                                "${ar!.minutes} min",
                                                 style: TextStyle(
                                                   color: Colors.white,
                                                   fontSize: 10.sp,
@@ -1417,7 +1441,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        ar.name,
+                                        ar!.name,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
@@ -1432,7 +1456,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                         children: [
                                           RecipeRatingWidget(
-                                            recipeId: ar.id,
+                                            recipeId: ar!.id,
                                             initialRating: ar.avgRating,
                                             style: TextStyle(
                                               color: textColor.withValues(alpha: 0.7),
@@ -1441,7 +1465,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                                             ),
                                           ),
                                           Text(
-                                            ar.difficulty ?? "Easy",
+                                            ar!.difficulty ?? "Easy",
                                             style: TextStyle(
                                               color: orange,
                                               fontSize: 10.sp,
@@ -1947,6 +1971,43 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
             },
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
             child: const Text("Block"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _authorRecipeSkeleton() {
+    return Container(
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(20.sw),
+      ),
+      child: Column(
+        children: [
+          Expanded(
+            child: SkeletonBox(
+              width: double.infinity,
+              height: double.infinity,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20.sw)),
+            ),
+          ),
+          Padding(
+            padding: EdgeInsets.all(12.sw),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SkeletonBox(width: 100.sw, height: 14.sh),
+                SizedBox(height: 8.sh),
+                Row(
+                  children: [
+                    SkeletonBox(width: 30.sw, height: 10.sh),
+                    const Spacer(),
+                    SkeletonBox(width: 30.sw, height: 10.sh),
+                  ],
+                ),
+              ],
+            ),
           ),
         ],
       ),

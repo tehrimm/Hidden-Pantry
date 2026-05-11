@@ -729,6 +729,7 @@ class IngredientItem {
     String? name,
     double? quantity,
     String? unit,
+    String? displayQuantity,
     double? calories,
   }) {
     return IngredientItem(
@@ -843,7 +844,7 @@ class IngredientItem {
     return IngredientItem(
       name: name,
       quantity: quantity == 0 ? 1.0 : quantity,
-      displayQuantity: isComplex ? rawQty : null, 
+      displayQuantity: json['displayQuantity'] ?? (isComplex ? rawQty : null), 
       unit: unit,
       calories: calories,
     );
@@ -855,6 +856,7 @@ class IngredientItem {
       'name': name,
       'quantity': quantity,
       'unit': unit,
+      'displayQuantity': displayQuantity,
       'calories': calories,
     };
   }

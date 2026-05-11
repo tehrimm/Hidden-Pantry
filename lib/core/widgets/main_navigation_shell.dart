@@ -66,43 +66,52 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
   Widget build(BuildContext context) {
     final Color orange = const Color(0xFFEF8A54);
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFFFF3EB),
-      extendBody: true,
-      body: Stack(
-        children: [
-          // Background Gradient
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFFFF3EB), Color(0xFFF6DFD1)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                stops: [0.4, 1.0],
+    return PopScope(
+      canPop: _currentIndex == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_currentIndex != 0) {
+          setState(() => _currentIndex = 0);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: const Color(0xFFFFF3EB),
+        extendBody: true,
+        body: Stack(
+          children: [
+            // Background Gradient
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFFFF3EB), Color(0xFFF6DFD1)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  stops: [0.4, 1.0],
+                ),
               ),
             ),
-          ),
-          
-          // Decorative Orbs for premium feel (Consistency with Nutritionist Dashboard)
-          const _ShellBackgroundPattern(),
-
-          IndexedStack(
-            index: _currentIndex,
-            children: const [
-              HomeScreen(inShell: true),
-              SearchScreen(inShell: true),
-              SizedBox.shrink(), // Placeholder for plus button slot (index 2)
-              SavedRecipesScreen(inShell: true),
-              NutritionistDiscoveryScreen(inShell: true),
-            ],
-          ),
-        ],
-      ),
-      bottomNavigationBar: HpBottomNav(
-        currentIndex: _currentIndex,
-        onTap: _onTap,
-        orange: orange,
-        isNutritionistInUserView: _isNutritionist,
+            
+            // Decorative Orbs for premium feel (Consistency with Nutritionist Dashboard)
+            const _ShellBackgroundPattern(),
+  
+            IndexedStack(
+              index: _currentIndex,
+              children: const [
+                HomeScreen(inShell: true),
+                SearchScreen(inShell: true),
+                SizedBox.shrink(), // Placeholder for plus button slot (index 2)
+                SavedRecipesScreen(inShell: true),
+                NutritionistDiscoveryScreen(inShell: true),
+              ],
+            ),
+          ],
+        ),
+        bottomNavigationBar: HpBottomNav(
+          currentIndex: _currentIndex,
+          onTap: _onTap,
+          orange: orange,
+          isNutritionistInUserView: _isNutritionist,
+        ),
       ),
     );
   }

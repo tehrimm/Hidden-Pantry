@@ -1077,10 +1077,35 @@ void _openUserProfile() {
     if (loading) {
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: 22.sw),
-        child: SkeletonBox(
-          width: double.infinity,
+        child: Container(
           height: 200.sh,
-          borderRadius: BorderRadius.circular(28.sw),
+          decoration: BoxDecoration(
+            color: purple.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(28.sw),
+          ),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: SkeletonBox(
+                  width: double.infinity,
+                  height: double.infinity,
+                  borderRadius: BorderRadius.circular(28.sw),
+                ),
+              ),
+              Positioned(
+                bottom: 20.sh,
+                left: 20.sw,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonBox(width: 150.sw, height: 20.sh),
+                    SizedBox(height: 10.sh),
+                    SkeletonBox(width: 100.sw, height: 14.sh),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -1484,10 +1509,40 @@ Widget _weeklySection() {
     if (loading) {
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: 22.sw),
-        child: SkeletonBox(
-          width: double.infinity,
+        child: Container(
           height: 220.sh,
-          borderRadius: BorderRadius.circular(28.sw),
+          decoration: BoxDecoration(
+            color: purple.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(28.sw),
+          ),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: SkeletonBox(
+                  width: double.infinity,
+                  height: double.infinity,
+                  borderRadius: BorderRadius.circular(28.sw),
+                ),
+              ),
+              Positioned(
+                top: 16.sh,
+                left: 16.sw,
+                child: SkeletonBox(width: 120.sw, height: 28.sh, borderRadius: BorderRadius.circular(12.sw)),
+              ),
+              Positioned(
+                bottom: 25.sh,
+                left: 20.sw,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SkeletonBox(width: 180.sw, height: 22.sh),
+                    SizedBox(height: 10.sh),
+                    SkeletonBox(width: 120.sw, height: 16.sh),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -1802,7 +1857,7 @@ Widget _weeklySection() {
         child: ListView.separated(
           padding: EdgeInsets.symmetric(horizontal: 22.sw),
           scrollDirection: Axis.horizontal,
-          itemBuilder: (_, __) => _recipeCardSkeleton(),
+          itemBuilder: (_, __) => RecipeCardSkeleton(width: 135.sw),
           separatorBuilder: (_, __) => SizedBox(width: 8.sw),
           itemCount: 3,
         ),
@@ -1835,34 +1890,6 @@ Widget _weeklySection() {
     );
   }
 
-  Widget _recipeCardSkeleton() {
-    return SizedBox(
-      width: 155.sw,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SkeletonBox(
-            width: 135.sw,
-            height: 150.sh,
-            borderRadius: BorderRadius.all(Radius.circular(18.sw)),
-          ),
-          SizedBox(height: 10.sh),
-          SkeletonBox(
-            width: 110.sw,
-            height: 14.sh,
-            borderRadius: BorderRadius.all(Radius.circular(10.sw)),
-          ),
-          SizedBox(height: 8.sh),
-          SkeletonBox(
-            width: 70.sw,
-            height: 10.sh,
-            borderRadius: BorderRadius.all(Radius.circular(10.sw)),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _recipeCard(Recipe r) {
     return SizedBox(
       width: 135.sw,
@@ -1871,6 +1898,15 @@ Widget _weeklySection() {
         width: 135.sw,
         aspectRatio: 135 / 190,
         onTap: () => _openRecipe(r),
+      ),
+    );
+  }
+
+  void _openRecipe(Recipe r) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => RecipeDetailsScreen(recipe: r),
       ),
     );
   }

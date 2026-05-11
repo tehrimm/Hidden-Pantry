@@ -8,6 +8,8 @@ import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/features/onboarding/screens/loading_five.dart';
 import 'package:hidden_pantry_app/features/nutritionist/services/nutritionist_service.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
+import 'package:hidden_pantry_app/core/services/view_mode_service.dart';
+import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
 
 class NutritionistRejectedScreen extends StatefulWidget {
   final String rejectionReason;
@@ -160,11 +162,20 @@ class _NutritionistRejectedScreenState extends State<NutritionistRejectedScreen>
 
                 const PatternBackground(),
 
-                // Back button
                 Positioned(
                   left: 30.sw,
                   top: 51.sh,
-                  child: const BackButtonWidget(),
+                  child: BackButtonWidget(
+                    onPressed: () async {
+                      await ViewModeService().setUserView(true);
+                      if (!context.mounted) return;
+                      Navigator.pushAndRemoveUntil(
+                        context,
+                        MaterialPageRoute(builder: (_) => MainNavigationShell()),
+                        (route) => false,
+                      );
+                    },
+                  ),
                 ),
 
                 // Content
@@ -241,6 +252,39 @@ class _NutritionistRejectedScreenState extends State<NutritionistRejectedScreen>
 
                         SizedBox(height: 40.sh),
 
+                        // Continue as Homecook button
+                        GestureDetector(
+                          onTap: () async {
+                            await ViewModeService().setUserView(true);
+                            if (!context.mounted) return;
+                            Navigator.pushAndRemoveUntil(
+                              context,
+                              MaterialPageRoute(builder: (_) => MainNavigationShell()),
+                              (route) => false,
+                            );
+                          },
+                          child: Container(
+                            width: 280.sw,
+                            height: 62.sh,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEF8A54),
+                              borderRadius: BorderRadius.circular(20.sw),
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(
+                              "Continue as Homecook",
+                              style: TextStyle(
+                                color: btnText,
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: "Satoshi",
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        SizedBox(height: 16.sh),
+
                         // Delete account button
                         GestureDetector(
                           onTap: _deleting ? null : _deleteAccount,
@@ -248,8 +292,9 @@ class _NutritionistRejectedScreenState extends State<NutritionistRejectedScreen>
                             width: 280.sw,
                             height: 62.sh,
                             decoration: BoxDecoration(
-                              color: btnRed,
+                              color: btnRed.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(20.sw),
+                              border: Border.all(color: btnRed, width: 1.5),
                             ),
                             alignment: Alignment.center,
                             child: _deleting
@@ -258,13 +303,13 @@ class _NutritionistRejectedScreenState extends State<NutritionistRejectedScreen>
                                     height: 18.sw,
                                     child: const CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      color: Colors.white,
+                                      color: btnRed,
                                     ),
                                   )
                                 : Text(
-                                    "Delete Account Now",
+                                    "Delete Account",
                                     style: TextStyle(
-                                      color: btnText,
+                                      color: btnRed,
                                       fontSize: 14.sp,
                                       fontWeight: FontWeight.w700,
                                       fontFamily: "Satoshi",

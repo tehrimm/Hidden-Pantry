@@ -279,11 +279,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
           mainAxisSpacing: 16.sh,
         ),
         itemCount: 6,
-        itemBuilder: (_, __) => SkeletonBox(
-          width: double.infinity,
-          height: double.infinity,
-          borderRadius: BorderRadius.all(Radius.circular(20.sw)),
-        ),
+        itemBuilder: (_, __) => const RecipeCardSkeleton(),
       );
     }
 

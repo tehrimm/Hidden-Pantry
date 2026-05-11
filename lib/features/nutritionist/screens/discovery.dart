@@ -10,6 +10,7 @@ import 'package:hidden_pantry_app/features/recipes/upload/upload_recipe_step1.da
 import 'package:hidden_pantry_app/features/recipes/screens/saved_recipes.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_details.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
+import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
 
 class NutritionistDiscoveryScreen extends StatefulWidget {
   final bool inShell;
@@ -188,7 +189,7 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
                 _domainFilters(),
                 Expanded(
                   child: _isLoadingSubs 
-                      ? const Center(child: CircularProgressIndicator())
+                      ? _discoverySkeleton()
                       : _contentList(),
                 ),
               ],
@@ -219,7 +220,7 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
       stream: FirebaseFirestore.instance.collection("nutritionists").snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return _discoverySkeleton();
         }
 
         final docs = snapshot.data?.docs ?? [];
@@ -755,6 +756,46 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _discoverySkeleton() {
+    return ListView.builder(
+      padding: const EdgeInsets.only(left: 22, right: 22, top: 10),
+      itemCount: 4,
+      itemBuilder: (_, __) => _nutritionistCardSkeleton(),
+    );
+  }
+
+  Widget _nutritionistCardSkeleton() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SkeletonBox(
+            width: 70.sw,
+            height: 70.sw,
+            borderRadius: BorderRadius.circular(20.sw),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SkeletonBox(width: 150.sw, height: 18.sh),
+                const SizedBox(height: 8),
+                SkeletonBox(width: 80.sw, height: 12.sh),
+                const SizedBox(height: 12),
+                SkeletonBox(width: double.infinity, height: 12.sh),
+                const SizedBox(height: 6),
+                SkeletonBox(width: 180.sw, height: 12.sh),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

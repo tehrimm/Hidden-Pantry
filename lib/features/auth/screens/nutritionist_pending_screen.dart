@@ -4,6 +4,8 @@ import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/features/onboarding/screens/loading_five.dart';
+import 'package:hidden_pantry_app/core/services/view_mode_service.dart';
+import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
 
 
 class NutritionistPendingScreen extends StatelessWidget {
@@ -104,15 +106,13 @@ class NutritionistPendingScreen extends StatelessWidget {
 
                             // Back to home button
                             GestureDetector(
-                              onTap: () {
-                                Navigator.pushReplacement(
+                              onTap: () async {
+                                await ViewModeService().setUserView(true);
+                                if (!context.mounted) return;
+                                Navigator.pushAndRemoveUntil(
                                   context,
-                                  PageRouteBuilder(
-                                    pageBuilder: (_, __, ___) => const LoadingFive(),
-                                    transitionDuration: const Duration(milliseconds: 400),
-                                    transitionsBuilder: (_, anim, __, child) =>
-                                      FadeTransition(opacity: anim, child: child),
-                                  ),
+                                  MaterialPageRoute(builder: (_) => MainNavigationShell()),
+                                  (route) => false,
                                 );
                               },
                               child: Container(
@@ -148,15 +148,13 @@ class NutritionistPendingScreen extends StatelessWidget {
               left: 30.sw,
               top: 51.sh,
               child: BackButtonWidget(
-                onPressed: () {
-                  Navigator.pushReplacement(
+                onPressed: () async {
+                  await ViewModeService().setUserView(true);
+                  if (!context.mounted) return;
+                  Navigator.pushAndRemoveUntil(
                     context,
-                    PageRouteBuilder(
-                      pageBuilder: (_, __, ___) => const LoadingFive(),
-                      transitionDuration: const Duration(milliseconds: 400),
-                      transitionsBuilder: (_, anim, __, child) =>
-                        FadeTransition(opacity: anim, child: child),
-                    ),
+                    MaterialPageRoute(builder: (_) => MainNavigationShell()),
+                    (route) => false,
                   );
                 },
                 color: brown,

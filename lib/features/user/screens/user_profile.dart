@@ -387,12 +387,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
               left: 30.sw,
               top: topPad + 36.sh,
               child: BackButtonWidget(
-                onPressed: () {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => MainNavigationShell()),
-                    (route) => false,
-                  );
-                },
+                onPressed: () => Navigator.of(context).pop(),
                 color: brown,
               ),
             ),

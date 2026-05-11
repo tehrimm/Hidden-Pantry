@@ -10,6 +10,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
+import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
+import 'package:hidden_pantry_app/features/auth/screens/nutritionist_signup_wrapper.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 
@@ -172,9 +174,16 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with 
       if (kDebugMode) debugPrint("Nutr Login auth + role check took ${sw.elapsedMilliseconds}ms");
 
       if (!doc.exists) {
-        await FirebaseAuth.instance.signOut();
+        // Not a nutritionist? Redirect to user view instead of signing out
         if (mounted) {
-             _snack("No nutritionist account found for this email.");
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (_) => MainNavigationShell()),
+            );
+            _snack("Logged in as a Homecook.");
+          });
         }
         return;
       }
@@ -185,7 +194,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with 
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const NutritionistSignupWrapper()),
+          MaterialPageRoute(builder: (_) => NutritionistSignupWrapper()),
         );
       });
 
@@ -413,6 +422,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with 
                               errorText: _emailErr,
                               child: TextField(
                                 controller: _emailCtrl,
+                                autofillHints: const [AutofillHints.email],
                                 cursorColor: purple,
                                 textAlignVertical: TextAlignVertical.center,
                                 style: TextStyle(
@@ -451,6 +461,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with 
                                   Expanded(
                                     child: TextField(
                                       controller: _passwordCtrl,
+                                      autofillHints: const [AutofillHints.password],
                                       obscureText: _obscurePassword,
                                       cursorColor: purple,
                                       textAlignVertical: TextAlignVertical.center,

@@ -212,3 +212,84 @@ class RecipeCard extends StatelessWidget {
     );
   }
 }
+
+class RecipeCardSkeleton extends StatelessWidget {
+  final double? width;
+  final double aspectRatio;
+
+  const RecipeCardSkeleton({
+    super.key,
+    this.width,
+    this.aspectRatio = 161 / 231,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const Color purple = Color(0xFF462F4D);
+
+    return Container(
+      width: width,
+      decoration: BoxDecoration(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // Image Skeleton
+            Positioned.fill(
+              bottom: 66,
+              child: Padding(
+                padding: const EdgeInsets.all(2.0),
+                child: SkeletonBox(
+                  width: double.infinity,
+                  height: double.infinity,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+            ),
+            // Glassy Bottom Skeleton
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 66,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF3EB).withValues(alpha: 0.45),
+                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 0.5,
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SkeletonBox(width: 100, height: 14),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: const [
+                            SkeletonBox(width: 40, height: 10),
+                            SizedBox(width: 10),
+                            SkeletonBox(width: 40, height: 10),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

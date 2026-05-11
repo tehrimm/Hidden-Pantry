@@ -687,45 +687,54 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
   @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
-    return Scaffold(
-      backgroundColor: Colors.white,
-      extendBody: true,
-      body: ClipRRect(
-        borderRadius: BorderRadius.circular(30.sw),
-        child: Container(
-          color: bg,
-          child: Stack(
-            children: [
-              const _DashboardBackgroundPattern(),
-              PatternBackground(opacity: 0.6),
-              SafeArea(
-                bottom: false,
-                child: Column(
-                  children: [
-                    if (bottomIndex != 4) _topRow(),
-                    Expanded(
-                      child: IndexedStack(
-                        index: bottomIndex > 2 ? bottomIndex - 1 : bottomIndex,
-                        children: [
-                          _dashboardHome(),
-                          const NutritionistPostsScreen(),
-                          // skip plus (index 2)
-                          const ClientPlansScreen(),
-                          const NutritionistChatListScreen(),
-                        ],
+    return PopScope(
+      canPop: bottomIndex == 0,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (bottomIndex != 0) {
+          setState(() => bottomIndex = 0);
+        }
+      },
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        extendBody: true,
+        body: ClipRRect(
+          borderRadius: BorderRadius.circular(30.sw),
+          child: Container(
+            color: bg,
+            child: Stack(
+              children: [
+                const _DashboardBackgroundPattern(),
+                PatternBackground(opacity: 0.6),
+                SafeArea(
+                  bottom: false,
+                  child: Column(
+                    children: [
+                      if (bottomIndex != 4) _topRow(),
+                      Expanded(
+                        child: IndexedStack(
+                          index: bottomIndex > 2 ? bottomIndex - 1 : bottomIndex,
+                          children: [
+                            _dashboardHome(),
+                            const NutritionistPostsScreen(),
+                            // skip plus (index 2)
+                            const ClientPlansScreen(),
+                            const NutritionistChatListScreen(),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-      bottomNavigationBar: NbBottomNav(
-        currentIndex: bottomIndex,
-        onTap: _onBottomTap,
-        orange: orange,
+        bottomNavigationBar: NbBottomNav(
+          currentIndex: bottomIndex,
+          onTap: _onBottomTap,
+          orange: orange,
+        ),
       ),
     );
   }

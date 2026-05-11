@@ -634,17 +634,13 @@ class _SearchScreenState extends State<SearchScreen> {
                       } else {
                         if (Navigator.canPop(context)) {
                           Navigator.pop(context);
-                        } else {
-                          Navigator.pushAndRemoveUntil(
-                            context,
-                            MaterialPageRoute(builder: (_) => MainNavigationShell()),
-                            (route) => false,
-                          );
                         }
                       }
                     },
                     child: Icon(
-                      isFocused ? Icons.close_rounded : Icons.arrow_back, 
+                      isFocused 
+                        ? Icons.close_rounded 
+                        : (widget.inShell ? Icons.search_rounded : Icons.arrow_back), 
                       size: 24, 
                       color: purple
                     ),
@@ -788,7 +784,7 @@ class _SearchScreenState extends State<SearchScreen> {
               mainAxisSpacing: 16,
             ),
             itemCount: 4,
-            itemBuilder: (_, i) => _StaggeredItem(index: i, child: _recipeCardSkeleton()),
+            itemBuilder: (_, i) => _StaggeredItem(index: i, child: const RecipeCardSkeleton()),
           ),
           const Center(
             child: FoodLoader(size: 60),
@@ -972,33 +968,7 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _recipeCardSkeleton() {
-    return SizedBox(
-      width: 160.sw,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SkeletonBox(
-            width: 160.sw,
-            height: 180.sh,
-            borderRadius: BorderRadius.all(Radius.circular(20.sw)),
-          ),
-          SizedBox(height: 10.sh),
-          SkeletonBox(
-            width: 110.sw,
-            height: 14.sh,
-            borderRadius: BorderRadius.all(Radius.circular(10.sw)),
-          ),
-          SizedBox(height: 8.sh),
-          SkeletonBox(
-            width: 70.sw,
-            height: 10.sh,
-            borderRadius: BorderRadius.all(Radius.circular(10.sw)),
-          ),
-        ],
-      ),
-    );
-  }
+
 
   String? _getSpellingSuggestion(String query) {
     if (query.isEmpty) return null;
