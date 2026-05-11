@@ -198,8 +198,11 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
   Future<void> _onGoogleLogin() async {
     _setLoading(true);
     try {
+      if (kDebugMode) debugPrint("[GoogleLogin] Attempting sign-in...");
       final googleUser = await _googleSignIn.signIn();
+      
       if (googleUser == null) {
+        if (kDebugMode) debugPrint("[GoogleLogin] User cancelled or sign-in failed without error.");
         _setLoading(false);
         return;
       }
@@ -251,9 +254,20 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
           }
         });
       }
+    } on PlatformException catch (e) {
+      debugPrint("---------------------------------------------------------");
+      debugPrint("❌ [GoogleLogin] PlatformException: ${e.code}");
+      debugPrint("Message: ${e.message}");
+      if (e.code == '10' || e.code == 'DEVELOPER_ERROR') {
+        debugPrint("⚠️ Likely Cause: Release SHA-1 fingerprint is missing in Firebase!");
+        debugPrint("Action: Run './gradlew signingReport' and add the Release SHA-1 to your Firebase Project Settings.");
+      }
+      debugPrint("---------------------------------------------------------");
+      _snack("Google login failed: ${e.message ?? e.code}", isError: true);
     } on FirebaseAuthException catch (e) {
       _snack("${e.message ?? "Google login failed"}", isError: true);
-    } catch (_) {
+    } catch (e) {
+      if (kDebugMode) debugPrint("[GoogleLogin] Unexpected error: $e");
       _snack("Google login failed", isError: true);
     } finally {
       if (mounted) _setLoading(false);

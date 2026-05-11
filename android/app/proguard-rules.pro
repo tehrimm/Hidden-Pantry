@@ -11,3 +11,10 @@
 # Also keep the Google Play Services TFLite if used
 -keep class com.google.android.gms.tflite.** { *; }
 -dontwarn com.google.android.gms.tflite.**
+
+# Google Sign-In & Firebase rules
+-keep class com.google.android.gms.auth.api.signin.** { *; }
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.android.gms.**
+-dontwarn com.google.firebase.**
