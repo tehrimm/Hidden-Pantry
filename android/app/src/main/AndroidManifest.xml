@@ -12,9 +12,10 @@
     <supports-screens
         android:smallScreens="true"
         android:normalScreens="true"
-        android:largeScreens="false"
+        android:largeScreens="true"
         android:xlargeScreens="false"
-        android:requiresSmallestWidthDp="320" />
+        android:requiresSmallestWidthDp="320"
+        android:largestWidthLimitDp="600" />
 
     <application
         android:label="Hidden Pantry"
