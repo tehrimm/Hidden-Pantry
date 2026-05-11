@@ -351,9 +351,13 @@ class Recipe {
       String s = e.trim();
       if (s.isEmpty) return null;
 
-      // 1. REPAIR LEGACY TRUNCATION: If it starts with "ablespoon" or "easpoon", re-attach "t"
-      if (s.toLowerCase().startsWith("ablespoon")) s = "t$s";
-      if (s.toLowerCase().startsWith("easpoon")) s = "t$s";
+      // 1. SMART REPAIR FOR TRUNCATED STRINGS
+      String low = s.toLowerCase();
+      if (low.startsWith("ablespoon")) s = "t$s";
+      else if (low.startsWith("easpoon")) s = "t$s";
+      else if (low.startsWith("unces")) s = "o$s";
+      else if (low.startsWith("arge ")) s = "l$s";
+      else if (low.startsWith("emon ")) s = "l$s";
 
       // 2. Check for stringified Map (messy backend data)
       if (s.contains('name') && (s.contains('{') || s.contains(':'))) {
@@ -586,8 +590,8 @@ class Recipe {
         if (servingSizeText != null && servingSizeText.isNotEmpty) {
            final match = RegExp(r'\d+').firstMatch(servingSizeText);
            if (match != null) {
-             final parsed = int.parse(match.group(0)!);
-             if (parsed > 0) return parsed;
+              final parsed = int.parse(match.group(0)!);
+              if (parsed > 0) return parsed;
            }
         }
         
@@ -606,7 +610,7 @@ class Recipe {
             } else if (val is String) {
                final match = RegExp(r'\d+').firstMatch(val);
                if (match != null) {
-                 parsed = int.parse(match.group(0)!);
+                  parsed = int.parse(match.group(0)!);
                }
             }
             if (parsed > 0) return parsed;
@@ -783,20 +787,34 @@ class IngredientItem {
   factory IngredientItem.fromJson(Map<String, dynamic> json) {
     String name = (json['name'] ?? json['ingredient'] ?? "").toString();
     double quantity = toDouble(json['quantity'] ?? json['quantiy'], fallback: 0.0);
-    String unit = (json['unit'] ?? "").toString();
+    String unit = (json['unit'] ?? "").toString().trim().toLowerCase();
     double? calories = json['calories'] != null ? toDouble(json['calories']) : null;
 
-    // SMART REPAIR: If quantity is 0, or if unit is empty but name starts with a unit/number
-    // this recovers data from mangled backend strings or legacy "ablespoon" bugs.
-    bool looksMangled = quantity == 0 || 
-                       (unit.isEmpty && (name.toLowerCase().startsWith("tablespoon") || 
-                                       name.toLowerCase().startsWith("teaspoon") ||
-                                       name.toLowerCase().startsWith("ablespoon") ||
-                                       name.toLowerCase().startsWith("easpoon") ||
-                                       RegExp(r'^\d').hasMatch(name)));
+    // SMART REPAIR:
+    // Pattern 1: Truncated "l" (large/lemon) or "g" or "c"
+    if ((unit == "l" || unit == "g" || unit == "c") && name.isNotEmpty) {
+      String lowName = name.toLowerCase();
+      // If name starts with "arge" and unit is "l" -> large
+      if (unit == "l" && lowName.startsWith("arge")) {
+         name = "large" + name.substring(4);
+         unit = "";
+      } else if (unit == "l" && lowName.startsWith("emon")) {
+         name = "lemon" + name.substring(4);
+         unit = "";
+      }
+    }
 
-    if (looksMangled) {
-      final combined = unit.isEmpty ? name : "$quantity $unit $name";
+    // Pattern 2: Missing first letter in common units/adjectives
+    String lowName = name.toLowerCase();
+    if (lowName.startsWith("ablespoon")) name = "t" + name;
+    else if (lowName.startsWith("easpoon")) name = "t" + name;
+    else if (lowName.startsWith("unces")) name = "o" + name;
+    else if (lowName.startsWith("arge ")) name = "l" + name;
+    else if (lowName.startsWith("emon ")) name = "l" + name;
+
+    // Pattern 3: If quantity is 0, try to re-parse the whole thing
+    if (quantity == 0) {
+      final combined = unit.isEmpty ? name : "$unit $name";
       final smartParsed = Recipe.parseIngredient(combined);
       if (smartParsed != null && smartParsed.quantity > 0) {
         return smartParsed;
