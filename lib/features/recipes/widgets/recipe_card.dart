@@ -247,6 +247,7 @@ class RecipeCardSkeleton extends StatelessWidget {
                   width: double.infinity,
                   height: double.infinity,
                   borderRadius: BorderRadius.circular(16),
+                  glassy: true,
                 ),
               ),
             ),
@@ -272,13 +273,13 @@ class RecipeCardSkeleton extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        SkeletonBox(width: 100, height: 14),
+                        SkeletonBox(width: 100, height: 14, glassy: true),
                         const SizedBox(height: 10),
                         Row(
                           children: const [
-                            SkeletonBox(width: 40, height: 10),
+                            SkeletonBox(width: 40, height: 10, glassy: true),
                             SizedBox(width: 10),
-                            SkeletonBox(width: 40, height: 10),
+                            SkeletonBox(width: 40, height: 10, glassy: true),
                           ],
                         ),
                       ],

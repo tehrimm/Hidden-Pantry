@@ -1409,99 +1409,16 @@ void _openUserProfile() {
   );
 }
 
-  // ──────────────────── WEEKLY FEATURE CARD ────────────────────
-Widget _weeklySection() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      _weeklyHeader(),
-      SizedBox(height: 12.sh),
-      _weeklyFeatureCard(),
-    ],
-  );
-}
-  // ──────────────────── SECTION HEADER ────────────────────
-  Widget _sectionHeader(String title, {required VoidCallback onSeeAll}) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 22.sw),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              title,
-              style: TextStyle(
-                color: purple,
-                fontSize: 22.sp,
-                fontWeight: FontWeight.bold,
-                fontFamily: "Satoshi",
-              ),
-            ),
-          ),
-          SizedBox(width: 8.sw),
-          GestureDetector(
-            onTap: onSeeAll,
-            child: Text(
-              "See all",
-              style: TextStyle(
-                color: purple,
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.2,
-                fontFamily: "Satoshi",
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ──────────────────── WEEKLY HEADER (RichText underline) ────────────────────
-  Widget _weeklyHeader() {
-     return Padding(
-    padding: EdgeInsets.symmetric(horizontal: 22.sw),
-    child: Row(
+  // ──────────────────── WEEKLY FEATURE SECTION ────────────────────
+  Widget _weeklySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Recipes of the Week",
-                style: TextStyle(
-                  color: purple,
-                  fontSize: 22.sp,
-                  fontWeight: FontWeight.w800,
-                  fontFamily: "Satoshi",
-                ),
-              ),
-              SizedBox(height: 4.sh),
-              Container(
-                height: 3.sh,
-                width: 60.sw,
-                decoration: BoxDecoration(
-                  color: orange,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-            ],
-          ),
-        ),
-        GestureDetector(
-          onTap: _openWeeklyRecipes,
-          child: Text(
-            "See all",
-            style: TextStyle(
-              color: purple,
-              fontSize: 12.sp,
-              fontWeight: FontWeight.w600,
-              fontFamily: "Satoshi",
-            ),
-          ),
-        ),
+        _sectionHeader("Weekly Trending", onSeeAll: _openWeeklyRecipes),
+        SizedBox(height: 12.sh),
+        _weeklyFeatureCard(),
       ],
-    ),
-  );
+    );
   }
 
   // ──────────────────── WEEKLY FEATURE CARD (single big card) ────────────────────
@@ -1569,282 +1486,136 @@ Widget _weeklySection() {
       padding: EdgeInsets.symmetric(horizontal: 22.sw),
       child: GestureDetector(
         onTap: () => _openRecipe(r),
-        child: TweenAnimationBuilder<double>(
-          duration: const Duration(milliseconds: 700),
-          tween: Tween(begin: 0.95, end: 1.0),
-          curve: Curves.easeOutCubic,
-          builder: (context, scale, child) {
-            return Transform.scale(scale: scale, child: child);
-          },
-          child: Container(
-            height: 220.sh,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28.sw),
-              boxShadow: [
-                BoxShadow(
-                  color: orange.withValues(alpha: 0.25),
-                  blurRadius: 35,
-                  offset: const Offset(0, 18),
+        child: Container(
+          height: 220.sh,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28.sw),
+            boxShadow: [
+              BoxShadow(
+                color: orange.withValues(alpha: 0.25),
+                blurRadius: 35,
+                offset: const Offset(0, 18),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28.sw),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: Image.network(
+                    r.imageUrl ?? "",
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(color: Colors.grey.shade900),
+                  ),
+                ),
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.8),
+                          Colors.black.withValues(alpha: 0.3),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 16.sh,
+                  left: 16.sw,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 6.sh),
+                    decoration: BoxDecoration(
+                      color: orange,
+                      borderRadius: BorderRadius.circular(12.sw),
+                    ),
+                    child: Text(
+                      "TRENDING",
+                      style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 20.sw,
+                  right: 20.sw,
+                  bottom: 20.sh,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        r.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 22.sp,
+                          fontWeight: FontWeight.bold,
+                          height: 1.2,
+                        ),
+                      ),
+                      SizedBox(height: 8.sh),
+                      Row(
+                        children: [
+                          Icon(Icons.star_rounded, color: orange, size: 14.sw),
+                          SizedBox(width: 4.sw),
+                          Text(
+                            r.avgRating.toStringAsFixed(1),
+                            style: TextStyle(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.bold),
+                          ),
+                          if (timeText.isNotEmpty) ...[
+                            SizedBox(width: 12.sw),
+                            Icon(Icons.schedule_rounded, color: Colors.white, size: 14.sw),
+                            SizedBox(width: 4.sw),
+                            Text(timeText, style: TextStyle(color: Colors.white, fontSize: 12.sp)),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(28.sw),
-              child: Stack(
-                children: [
-                  /// 🌄 Cinematic Background Image
-                  Positioned.fill(
-                    child: Transform.scale(
-                      scale: 1.15,
-                      child: Image.network(
-                        r.imageUrl ?? "",
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) =>
-                            Container(color: Colors.grey.shade900),
-                      ),
-                    ),
-                  ),
+          ),
+        ),
+      ),
+    );
+  }
 
-                  /// 🌑 Cinematic Gradient
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.bottomCenter,
-                          end: Alignment.topCenter,
-                          colors: [
-                            Colors.black.withValues(alpha: 0.9),
-                            Colors.black.withValues(alpha: 0.4),
-                            Colors.transparent,
-                          ],
-                          stops: const [0.0, 0.6, 1.0],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  /// 🔥 Breathing Glow
-                  Positioned(
-                    bottom: -30,
-                    right: -30,
-                    child: TweenAnimationBuilder<double>(
-                      duration: const Duration(seconds: 2),
-                      tween: Tween(begin: 0.15, end: 0.3),
-                      curve: Curves.easeInOut,
-                      builder: (context, value, child) {
-                        return Container(
-                          width: 150.sw,
-                          height: 150.sw,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: orange.withValues(alpha: value),
-                            boxShadow: [
-                              BoxShadow(
-                                color: orange.withValues(alpha: value),
-                                blurRadius: 60,
-                                spreadRadius: 20,
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-
-                  /// 💜 Subtle Mesh/Purple Gradient Overlay (More design)
-                  Positioned.fill(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          center: const Alignment(0.8, -0.6),
-                          radius: 1.2,
-                          colors: [
-                            purple.withValues(alpha: 0.15),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  /// 🔥 Premium Badge (Left)
-                  Positioned(
-                    top: 16.sh,
-                    left: 16.sw,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(12.sw),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: 4, sigmaY: 4),
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 12.sw, vertical: 6.sh),
-                          decoration: BoxDecoration(
-                            color: orange.withValues(alpha: 0.85),
-                            borderRadius: BorderRadius.circular(12.sw),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.3),
-                            ),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 14.sw),
-                              SizedBox(width: 4.sw),
-                              Text(
-                                "TRENDING WEEKLY",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10.sp,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-
-                  /// 🏷️ Category Badge (Right - More design)
-                  if (r.category != null)
-                    Positioned(
-                      top: 16.sh,
-                      right: 16.sw,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 6.sh),
-                        decoration: BoxDecoration(
-                          color: purple.withValues(alpha: 0.8),
-                          borderRadius: BorderRadius.circular(10.sw),
-                          border: Border.all(color: Colors.white24),
-                        ),
-                        child: Text(
-                          r.category!.toUpperCase(),
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 9.sp,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.0,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                  /// 🧊 Floating Content (No glass panel, just dark gradient)
-                  Positioned(
-                    left: 20.sw,
-                    right: 20.sw,
-                    bottom: 20.sh,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // TITLE
-                        Text(
-                          r.name,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 22.sp,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
-                            height: 1.2,
-                          ),
-                        ),
-
-                        SizedBox(height: 12.sh),
-
-                        // META INFO & CTA
-                        Row(
-                          children: [
-                            // RATING PILL
-                            Container(
-                              padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 6.sh),
-                              decoration: BoxDecoration(
-                                color: purple.withValues(alpha: 0.4),
-                                borderRadius: BorderRadius.circular(10.sw),
-                                border: Border.all(color: Colors.white24, width: 0.5),
-                              ),
-                              child: Row(
-                                children: [
-                                  Icon(Icons.star_rounded, color: orange, size: 12.sw),
-                                  SizedBox(width: 4.sw),
-                                  Text(
-                                    r.avgRating.toStringAsFixed(1),
-                                    style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(width: 8.sw),
-                            if (timeText.isNotEmpty) ...[
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 6.sh),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(10.sw),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.schedule_rounded, color: Colors.white, size: 12.sw),
-                                    SizedBox(width: 4.sw),
-                                    Text(
-                                      timeText,
-                                      style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                            if (timeText.isNotEmpty && diffText.isNotEmpty) SizedBox(width: 8.sw),
-                            if (diffText.isNotEmpty) ...[
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 6.sh),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(10.sw),
-                                ),
-                                child: Row(
-                                  children: [
-                                    Icon(Icons.bolt_rounded, color: Colors.white, size: 12.sw),
-                                    SizedBox(width: 4.sw),
-                                    Text(
-                                      diffText,
-                                      style: TextStyle(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                            const Spacer(),
-                            // CTA Button (Circular Arrow)
-                            Container(
-                              width: 44.sw,
-                              height: 44.sw,
-                              decoration: BoxDecoration(
-                                color: orange,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: orange.withValues(alpha: 0.4),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 4),
-                                  ),
-                                ],
-                              ),
-                              child: Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 20.sw),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+  // ──────────────────── SECTION HEADER ────────────────────
+  Widget _sectionHeader(String title, {required VoidCallback onSeeAll}) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 22.sw),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                color: purple,
+                fontSize: 22.sp,
+                fontWeight: FontWeight.bold,
+                fontFamily: "Satoshi",
               ),
             ),
           ),
-        ),
+          GestureDetector(
+            onTap: onSeeAll,
+            child: Text(
+              "See all",
+              style: TextStyle(
+                color: purple,
+                fontSize: 12.sp,
+                fontWeight: FontWeight.w600,
+                fontFamily: "Satoshi",
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1898,15 +1669,6 @@ Widget _weeklySection() {
         width: 135.sw,
         aspectRatio: 135 / 190,
         onTap: () => _openRecipe(r),
-      ),
-    );
-  }
-
-  void _openRecipe(Recipe r) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => RecipeDetailsScreen(recipe: r),
       ),
     );
   }

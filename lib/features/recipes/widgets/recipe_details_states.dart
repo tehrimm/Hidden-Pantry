@@ -18,51 +18,51 @@ class RecipeSkeletonLoader extends StatelessWidget {
            SizedBox(height: 10.sh),
 
            Row(children: [
-             SkeletonBox(width: 50.sw, height: 50.sw, borderRadius: BorderRadius.all(Radius.circular(15.sw))),
+             SkeletonBox(width: 50.sw, height: 50.sw, borderRadius: BorderRadius.all(Radius.circular(15.sw)), glassy: true),
              const Spacer(),
-             SkeletonBox(width: 50.sw, height: 50.sw, borderRadius: BorderRadius.all(Radius.circular(15.sw))),
+             SkeletonBox(width: 50.sw, height: 50.sw, borderRadius: BorderRadius.all(Radius.circular(15.sw)), glassy: true),
              SizedBox(width: 10.sw),
-             SkeletonBox(width: 50.sw, height: 50.sw, borderRadius: BorderRadius.all(Radius.circular(15.sw))),
+             SkeletonBox(width: 50.sw, height: 50.sw, borderRadius: BorderRadius.all(Radius.circular(15.sw)), glassy: true),
            ]),
            SizedBox(height: 18.sh),
            
            Row(children: [
-             SkeletonBox(width: 42.sw, height: 42.sw, borderRadius: BorderRadius.all(Radius.circular(50.sw))),
+             SkeletonBox(width: 42.sw, height: 42.sw, borderRadius: BorderRadius.all(Radius.circular(50.sw)), glassy: true),
              SizedBox(width: 12.sw),
              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-               SkeletonBox(width: 100.sw, height: 14.sh),
+               SkeletonBox(width: 100.sw, height: 14.sh, glassy: true),
                SizedBox(height: 6.sh),
-               SkeletonBox(width: 60.sw, height: 10.sh),
+               SkeletonBox(width: 60.sw, height: 10.sh, glassy: true),
              ]),
              const Spacer(),
-             SkeletonBox(width: 60.sw, height: 34.sh, borderRadius: BorderRadius.all(Radius.circular(10.sw))),
+             SkeletonBox(width: 60.sw, height: 34.sh, borderRadius: BorderRadius.all(Radius.circular(10.sw)), glassy: true),
            ]),
            SizedBox(height: 14.sh),
            
-           SkeletonBox(width: double.infinity, height: 210.sh),
+           SkeletonBox(width: double.infinity, height: 210.sh, glassy: true),
            SizedBox(height: 14.sh),
            
-           SkeletonBox(width: 200.sw, height: 28.sh),
+           SkeletonBox(width: 200.sw, height: 28.sh, glassy: true),
            SizedBox(height: 12.sh),
            
            Row(children: [
-             Expanded(child: SkeletonBox(width: double.infinity, height: 60.sh)),
+             Expanded(child: SkeletonBox(width: double.infinity, height: 60.sh, glassy: true)),
              SizedBox(width: 10.sw),
-             Expanded(child: SkeletonBox(width: double.infinity, height: 60.sh)),
+             Expanded(child: SkeletonBox(width: double.infinity, height: 60.sh, glassy: true)),
              SizedBox(width: 10.sw),
-             Expanded(child: SkeletonBox(width: double.infinity, height: 60.sh)),
+             Expanded(child: SkeletonBox(width: double.infinity, height: 60.sh, glassy: true)),
            ]),
            SizedBox(height: 20.sh),
            
-           SkeletonBox(width: 150.sw, height: 24.sh),
+           SkeletonBox(width: 150.sw, height: 24.sh, glassy: true),
            SizedBox(height: 10.sh),
            Column(
              children: List.generate(4, (i) => Padding(
                padding: EdgeInsets.only(bottom: 10.sh),
                child: Row(children: [
-                 Expanded(child: SkeletonBox(width: double.infinity, height: 16.sh)),
+                 Expanded(child: SkeletonBox(width: double.infinity, height: 16.sh, glassy: true)),
                  SizedBox(width: 20.sw),
-                 SkeletonBox(width: 40.sw, height: 16.sh),
+                 SkeletonBox(width: 40.sw, height: 16.sh, glassy: true),
                ]),
              )),
            )
