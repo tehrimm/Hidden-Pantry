@@ -654,6 +654,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     child: TextField(
                       controller: _controller,
                       focusNode: _searchFocus,
+                      cursorColor: purple,
                       onChanged: _onChanged,
                       onSubmitted: (_) => _goToFullSearch(),
                       textInputAction: TextInputAction.search,

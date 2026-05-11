@@ -443,6 +443,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                               errorText: _gmailErr,
                               child: TextField(
                                 controller: _gmailCtrl,
+                                autofillHints: const [AutofillHints.email],
                                 cursorColor: purple,
                                 textAlignVertical: TextAlignVertical.center,
                                 style: TextStyle(
@@ -481,6 +482,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                                   Expanded(
                                     child: TextField(
                                       controller: _passwordCtrl,
+                                      autofillHints: const [AutofillHints.password],
                                       obscureText: _obscurePassword,
                                       cursorColor: purple,
                                       textAlignVertical: TextAlignVertical.center,
@@ -666,7 +668,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                               ],
                             ),
                           ),
-                          SizedBox(height: 32.sh),
+                          SizedBox(height: 40.sh),
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[7],
                             child: Center(

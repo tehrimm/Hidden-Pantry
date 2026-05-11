@@ -115,6 +115,17 @@ class _HiddenPantryAppState extends State<HiddenPantryApp> with WidgetsBindingOb
       theme: ThemeData(
         useMaterial3: true,
         fontFamily: 'Satoshi',
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF462F4D),
+          primary: const Color(0xFF462F4D),
+          secondary: const Color(0xFFEF8A54),
+          surface: const Color(0xFFFFF3EB),
+        ),
+        textSelectionTheme: const TextSelectionThemeData(
+          cursorColor: Color(0xFF462F4D),
+          selectionColor: Color(0x33462F4D),
+          selectionHandleColor: Color(0xFF462F4D),
+        ),
         pageTransitionsTheme: const PageTransitionsTheme(
           builders: {
             TargetPlatform.android: ZoomPageTransitionsBuilder(),

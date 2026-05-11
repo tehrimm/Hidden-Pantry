@@ -412,6 +412,7 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
                             isError: _nameErr != null,
                             child: TextField(
                               controller: _fullNameCtrl,
+                              autofillHints: const [AutofillHints.name],
                               onChanged: (_) => setState(() {}),
                               cursorColor: purple,
                               style: TextStyle(
@@ -450,6 +451,7 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
                             isError: _gmailErr != null,
                             child: TextField(
                               controller: _gmailCtrl,
+                              autofillHints: const [AutofillHints.email],
                               onChanged: (_) => setState(() {}),
                               cursorColor: purple,
                               style: TextStyle(
@@ -512,6 +514,7 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
                                 Expanded(
                                   child: TextField(
                                     controller: _phoneCtrl,
+                                    autofillHints: const [AutofillHints.telephoneNumber],
                                     onChanged: (_) => setState(() {}),
                                     keyboardType: TextInputType.phone,
                                     cursorColor: purple,
@@ -558,6 +561,7 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
                                 Expanded(
                                   child: TextField(
                                     controller: _passwordCtrl,
+                                    autofillHints: const [AutofillHints.newPassword],
                                     onChanged: (_) => setState(() {}),
                                     obscureText: _obscurePassword,
                                     cursorColor: purple,

@@ -471,6 +471,7 @@ class Recipe {
       return IngredientItem(
         name: cleanName.isEmpty ? (unitPart.isEmpty ? qtyPart : unitPart) : cleanName,
         quantity: IngredientItem.toDouble(qtyPart),
+        displayQuantity: qtyPart, // Store the exact string
         unit: unitPart,
       );
     }
@@ -713,12 +714,14 @@ class IngredientItem {
   final String name;
   final double quantity;
   final String unit;
+  final String? displayQuantity; // Added this missing line
   final double? calories;
 
   const IngredientItem({
     required this.name,
     required this.quantity,
     required this.unit,
+    this.displayQuantity, // Added this
     this.calories,
   });
 
@@ -732,6 +735,7 @@ class IngredientItem {
       name: name ?? this.name,
       quantity: quantity ?? this.quantity,
       unit: unit ?? this.unit,
+      displayQuantity: displayQuantity ?? this.displayQuantity,
       calories: calories ?? this.calories,
     );
   }
@@ -758,14 +762,22 @@ class IngredientItem {
       }
     }
 
-    // 3. Mixed Fractions: "1 1/2"
-    final mixedMatch = RegExp(r'^(\d+)\s+(\d+)/(\d+)').firstMatch(s);
-    if (mixedMatch != null) {
-      final whole = double.tryParse(mixedMatch.group(1)!) ?? 0;
-      final num = double.tryParse(mixedMatch.group(2)!) ?? 0;
-      final den = double.tryParse(mixedMatch.group(3)!) ?? 1;
-      return whole + (num / den);
+    // 3. Range Handling: "1/4-1/2" or "1-2"
+    if (s.contains('-')) {
+      final parts = s.split('-');
+      if (parts.length == 2) {
+        final val1 = toDouble(parts[0], fallback: -1);
+        final val2 = toDouble(parts[1], fallback: -1);
+        if (val1 != -1 && val2 != -1) {
+          return (val1 + val2) / 2; // Return average for ranges
+        } else if (val1 != -1) {
+          return val1;
+        }
+      }
     }
+
+    // 4. Mixed Fractions: "1 1/2"
+    final mixedMatch = RegExp(r'^(\d+)\s+(\d+)/(\d+)').firstMatch(s);
 
     // 4. Simple Fractions: "3/4"
     final fracMatch = RegExp(r'(\d+)/(\d+)').firstMatch(s);
@@ -825,9 +837,13 @@ class IngredientItem {
     name = name.replaceAll(RegExp(r'<[^>]*>'), '').trim();
     unit = unit.replaceAll(RegExp(r'<[^>]*>'), '').trim();
 
+    final rawQty = (json['quantity'] ?? json['quantiy'])?.toString();
+    final bool isComplex = rawQty != null && (rawQty.contains('/') || rawQty.contains('-'));
+
     return IngredientItem(
       name: name,
       quantity: quantity == 0 ? 1.0 : quantity,
+      displayQuantity: isComplex ? rawQty : null, 
       unit: unit,
       calories: calories,
     );

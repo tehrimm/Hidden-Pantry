@@ -2,7 +2,7 @@ name: hidden_pantry_app
 description: "A new Flutter project."
 publish_to: "none"
 
-version: 1.0.2+5
+version: 1.0.3+6
 
 environment:
   sdk: ^3.9.2
@@ -58,8 +58,6 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: assets/logos/main_logo.png
-  adaptive_icon_background: "#FFF3EB"
-  adaptive_icon_foreground: assets/logos/main_logo.png
 
 flutter:
   uses-material-design: true  

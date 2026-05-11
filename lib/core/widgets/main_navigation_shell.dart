@@ -138,7 +138,7 @@ class _ShellBackgroundPattern extends StatelessWidget {
             top: 300.sh,
             right: -50.sw,
             child: _ShellFloatingOrb(
-              color: const Color(0xFF7B61FF).withValues(alpha: 0.05),
+              color: const Color(0xFFEF8A54).withValues(alpha: 0.05),
               size: 300,
               duration: const Duration(seconds: 18),
             ),

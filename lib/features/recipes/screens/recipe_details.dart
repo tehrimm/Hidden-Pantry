@@ -485,11 +485,11 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
       {'val': 0.666, 'str': "2/3"},
       {'val': 0.75, 'str': "3/4"},
       {'val': 0.875, 'str': "7/8"},
-      {'val': 1.0, 'str': "UP"}, // Special marker for rounding up
+      {'val': 1.0, 'str': "UP"},
     ];
 
-    double minDiff = 999.0;
-    Map<String, dynamic> bestMatch = fractions.first;
+    double minDiff = 0.025; // Tolerance for matching
+    Map<String, dynamic> bestMatch = {'val': 0.0, 'str': ""};
 
     for (var f in fractions) {
       double diff = (fractionPart - f['val']).abs();
@@ -503,7 +503,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
       return (wholePart + 1).toString();
     }
     
-    if (bestMatch['val'] == 0.0) {
+    if (bestMatch['str'] == "") {
       return wholePart > 0 ? wholePart.toString() : "0";
     }
 
@@ -1053,7 +1053,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                           ),
                         ),
                         Text(
-                          "${_fmtQty(ing.quantity)}${ing.unit.isEmpty ? "" : " ${ing.unit}"}",
+                          "${ing.displayQuantity ?? _fmtQty(ing.quantity)}${ing.unit.isEmpty ? "" : " ${ing.unit}"}",
                           style: TextStyle(
                             color: textColor,
                             fontSize: 14.sp,

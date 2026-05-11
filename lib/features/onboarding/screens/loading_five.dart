@@ -250,37 +250,39 @@ class _LoadingFiveState extends State<LoadingFive> {
 
                 // Login Text
                 Positioned(
-                  left: 130.sw,
+                  left: 0,
+                  right: 0,
                   top: 771.sh,
-                  child: Text(
-                    'Have an Account? ',
-                    style: TextStyle(
-                      color: const Color(0xFF462F4D),
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w500,
-                      fontFamily: 'Satoshi',
-                    ),
-                  ),
-                ),
-                Positioned(
-                  left: 229.sw,
-                  top: 771.sh,
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const UserLoginScreen()),
-                      );
-                    },
-                    child: Text(
-                      'Login',
-                      style: TextStyle(
-                        color: const Color(0xFF462F4D),
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w900,
-                        fontFamily: 'Satoshi',
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Have an Account? ',
+                        style: TextStyle(
+                          color: const Color(0xFF462F4D),
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: 'Satoshi',
+                        ),
                       ),
-                    ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const UserLoginScreen()),
+                          );
+                        },
+                        child: Text(
+                          'Login',
+                          style: TextStyle(
+                            color: const Color(0xFF462F4D),
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w900,
+                            fontFamily: 'Satoshi',
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
