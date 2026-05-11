@@ -464,6 +464,7 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                                     radius: 24.sw,
                                     backgroundColor: purple.withValues(alpha:0.05),
                                     backgroundImage: otherUserPhoto != null ? NetworkImage(otherUserPhoto) : null,
+                                    onBackgroundImageError: otherUserPhoto != null ? (_, __) {} : null,
                                     child: otherUserPhoto == null ? Icon(Icons.person, color: purple.withValues(alpha: 0.3), size: 24.sp) : null,
                                   ),
                                   SizedBox(width: 16.sw),

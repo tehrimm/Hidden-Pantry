@@ -667,7 +667,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                 ),
               ),
               SizedBox(width: 10.sw),
-               _iconTile(
+              _iconTile(
                 onTap: () async {
                   await _toggleDownload();
                   _loadSubscriptionInfo(); // Refresh quota
@@ -724,43 +724,6 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                     color: _bookmarked ? orange : textColor,
                     size: 22.sw,
                   ),
-                ),
-              ),
-              SizedBox(width: 10.sw),
-              _iconTile(
-                onTap: () {},
-                child: PopupMenuButton<String>(
-                  icon: Icon(Icons.more_vert_rounded, color: textColor, size: 22.sw),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.sw)),
-                  onSelected: (value) {
-                    if (value == 'report') {
-                      _showReportDialog(context);
-                    } else if (value == 'block') {
-                      _showBlockConfirm(context);
-                    }
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      value: 'report',
-                      child: Row(
-                        children: [
-                          Icon(Icons.report_problem_outlined, color: Colors.red, size: 20.sw),
-                          SizedBox(width: 10.sw),
-                          const Text("Report Recipe", style: TextStyle(fontFamily: "Satoshi")),
-                        ],
-                      ),
-                    ),
-                    PopupMenuItem(
-                      value: 'block',
-                      child: Row(
-                        children: [
-                          Icon(Icons.block_flipped, color: Colors.red, size: 20.sw),
-                          SizedBox(width: 10.sw),
-                          const Text("Block Author", style: TextStyle(fontFamily: "Satoshi")),
-                        ],
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ],
@@ -1488,6 +1451,47 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
               ),
             ),
           ],
+
+          SizedBox(height: 50.sh),
+
+          // Report & Block Footer
+          StaggeredEntry(
+            delay: 900,
+            child: Center(
+              child: Column(
+                children: [
+                  GestureDetector(
+                    onTap: () => _showReportDialog(context),
+                    child: Text(
+                      "Report this recipe",
+                      style: TextStyle(
+                        color: textColor.withValues(alpha: 0.3),
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: "Satoshi",
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 12.sh),
+                  GestureDetector(
+                    onTap: () => _showBlockConfirm(context),
+                    child: Text(
+                      "Block this author",
+                      style: TextStyle(
+                        color: textColor.withValues(alpha: 0.3),
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
+                        fontFamily: "Satoshi",
+                        decoration: TextDecoration.underline,
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 30.sh),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1902,77 +1906,180 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
     final List<String> reasons = ['Spam', 'Inappropriate Content', 'Harassment', 'False Information', 'Other'];
     final TextEditingController detailsController = TextEditingController();
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: bgColor,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text("Report Recipe", style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
-          content: Column(
+        builder: (context, setDialogState) => Container(
+          padding: EdgeInsets.fromLTRB(20.sw, 20.sh, 20.sw, MediaQuery.of(context).viewInsets.bottom + 30.sh),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(30.sw)),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20)],
+          ),
+          child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DropdownButton<String>(
-                value: selectedReason,
-                isExpanded: true,
-                items: reasons.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
-                onChanged: (val) => setDialogState(() => selectedReason = val!),
+              Center(
+                child: Container(
+                  width: 40.sw,
+                  height: 4.sh,
+                  decoration: BoxDecoration(color: textColor.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(2)),
+                ),
               ),
+              SizedBox(height: 20.sh),
+              Text(
+                "Report Recipe",
+                style: TextStyle(color: textColor, fontSize: 20.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+              ),
+              SizedBox(height: 8.sh),
+              Text(
+                "Why are you reporting this recipe?",
+                style: TextStyle(color: textColor.withValues(alpha: 0.6), fontSize: 14.sp, fontFamily: "Satoshi"),
+              ),
+              SizedBox(height: 20.sh),
+              Wrap(
+                spacing: 8.sw,
+                runSpacing: 8.sh,
+                children: reasons.map((r) {
+                  final isSelected = selectedReason == r;
+                  return GestureDetector(
+                    onTap: () => setDialogState(() => selectedReason = r),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 8.sh),
+                      decoration: BoxDecoration(
+                        color: isSelected ? orange : cardColor,
+                        borderRadius: BorderRadius.circular(20.sw),
+                        border: Border.all(color: isSelected ? orange : textColor.withValues(alpha: 0.1)),
+                      ),
+                      child: Text(
+                        r,
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : textColor,
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: "Satoshi",
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+              SizedBox(height: 20.sh),
               TextField(
                 controller: detailsController,
-                decoration: const InputDecoration(hintText: "Additional details (optional)"),
-                maxLines: 3,
+                maxLines: 4,
+                decoration: InputDecoration(
+                  hintText: "Additional details (optional)...",
+                  hintStyle: TextStyle(color: textColor.withValues(alpha: 0.3), fontSize: 13.sp),
+                  filled: true,
+                  fillColor: cardColor,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(15.sw), borderSide: BorderSide.none),
+                  contentPadding: EdgeInsets.all(16.sw),
+                ),
+                style: TextStyle(color: textColor, fontSize: 14.sp, fontFamily: "Satoshi"),
+              ),
+              SizedBox(height: 24.sh),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    await ModerationService().reportContent(
+                      contentType: 'recipe',
+                      contentId: _recipe.id,
+                      authorId: _recipe.authorId,
+                      reason: selectedReason,
+                      additionalDetails: detailsController.text,
+                    );
+                    if (context.mounted) {
+                      Navigator.pop(context);
+                      Toaster.show(context, "Report submitted. Thank you for helping our community.");
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    foregroundColor: Colors.white,
+                    padding: EdgeInsets.symmetric(vertical: 16.sh),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.sw)),
+                    elevation: 0,
+                  ),
+                  child: Text("Submit Report", style: TextStyle(fontSize: 16.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+                ),
               ),
             ],
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-            ElevatedButton(
-              onPressed: () async {
-                await ModerationService().reportContent(
-                  contentType: 'recipe',
-                  contentId: _recipe.id,
-                  authorId: _recipe.authorId,
-                  reason: selectedReason,
-                  additionalDetails: detailsController.text,
-                );
-                if (context.mounted) {
-                  Navigator.pop(context);
-                  Toaster.show(context, "Thank you. We have received your report.");
-                }
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-              child: const Text("Submit Report"),
-            ),
-          ],
         ),
       ),
     );
   }
 
   void _showBlockConfirm(BuildContext context) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: bgColor,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text("Block Author?", style: TextStyle(color: Color(0xFF462F4D), fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
-        content: const Text("You will no longer see recipes or content from this author. This action cannot be easily undone."),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-          ElevatedButton(
-            onPressed: () async {
-              await ModerationService().blockUser(_recipe.authorId);
-              if (context.mounted) {
-                Navigator.pop(context); // Close dialog
-                Navigator.pop(context); // Exit recipe details
-                Toaster.show(context, "Author blocked.");
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
-            child: const Text("Block"),
-          ),
-        ],
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: EdgeInsets.all(24.sw),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(30.sw)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 50.sw,
+              height: 50.sw,
+              decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), shape: BoxShape.circle),
+              child: Icon(Icons.block_flipped, color: Colors.red, size: 28.sp),
+            ),
+            SizedBox(height: 20.sh),
+            Text(
+              "Block Author?",
+              style: TextStyle(color: textColor, fontSize: 20.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+            ),
+            SizedBox(height: 12.sh),
+            Text(
+              "You will no longer see recipes or content from this author. This action can be undone in settings.",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: textColor.withValues(alpha: 0.6), fontSize: 14.sp, fontFamily: "Satoshi", height: 1.4),
+            ),
+            SizedBox(height: 30.sh),
+            Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text("Cancel", style: TextStyle(color: textColor.withValues(alpha: 0.5), fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                SizedBox(width: 16.sw),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      await ModerationService().blockUser(_recipe.authorId);
+                      if (context.mounted) {
+                        Navigator.pop(context); // Close bottomsheet
+                        Navigator.pop(context); // Exit recipe details
+                        Toaster.show(context, "Author blocked.");
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.sw)),
+                      padding: EdgeInsets.symmetric(vertical: 14.sh),
+                    ),
+                    child: const Text("Block", style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 10.sh),
+          ],
+        ),
       ),
     );
   }

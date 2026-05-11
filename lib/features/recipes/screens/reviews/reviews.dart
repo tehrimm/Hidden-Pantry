@@ -1081,6 +1081,16 @@ class _FullScreenGallery extends StatelessWidget {
                   fit: BoxFit.contain,
                   width: double.infinity,
                   height: double.infinity,
+                  errorBuilder: (context, error, stackTrace) => Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.broken_image_rounded, color: Colors.white54, size: 64),
+                        const SizedBox(height: 16),
+                        const Text("Failed to load image", style: TextStyle(color: Colors.white54)),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),

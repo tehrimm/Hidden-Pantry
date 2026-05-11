@@ -226,7 +226,13 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                                     : (widget.editingRecipe?.imageUrl != null
                                         ? ClipRRect(
                                             borderRadius: BorderRadius.circular(23.sw),
-                                            child: Image.network(widget.editingRecipe!.imageUrl!, fit: BoxFit.cover),
+                                            child: Image.network(
+                                              widget.editingRecipe!.imageUrl!, 
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (context, error, stackTrace) => Center(
+                                                child: Icon(Icons.broken_image_rounded, color: purple.withValues(alpha: 0.2), size: 48.sw),
+                                              ),
+                                            ),
                                           )
                                         : FittedBox(
                                             fit: BoxFit.scaleDown,
