@@ -109,6 +109,7 @@ void main() {
 
       // Tap Day 2
       final day2Finder = find.text('Day 2');
+      await tester.ensureVisible(day2Finder);
       await tester.tap(day2Finder);
       await tester.pumpAndSettle();
 
@@ -119,6 +120,7 @@ void main() {
 
       // Tap Day 3 (Rest day)
       final day3Finder = find.text('Day 3');
+      await tester.ensureVisible(day3Finder);
       await tester.tap(day3Finder);
       await tester.pumpAndSettle();
 

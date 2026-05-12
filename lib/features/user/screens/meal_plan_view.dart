@@ -204,12 +204,16 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                   ),
                 ),
                 
-                // Static content that doesn't scroll
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.sw),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 24.sw),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                       // Glass Plan Card
                       _FadeSlideEntry(
                         delayMs: 100,
@@ -361,99 +365,92 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                           ],
                         ),
                       ),
+                          ],
+                        ),
+                      ),
+                      
+                      // Only the vertical timeline scrolls now
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 24.sw),
+                        child: _buildSelectedDayTimeline(days),
+                      ),
+                      SizedBox(height: 20.sh),
                     ],
                   ),
                 ),
-                
-                // Only the vertical timeline scrolls now
-                Expanded(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.symmetric(horizontal: 24.sw),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildSelectedDayTimeline(days),
-                        SizedBox(height: 140.sh),
+                ),
+
+                _FadeSlideEntry(
+                  delayMs: 400,
+                  child: Container(
+                    padding: EdgeInsets.fromLTRB(24.sw, 16.sh, 24.sw, 32.sh),
+                    decoration: BoxDecoration(
+                      color: bg,
+                      boxShadow: [
+                        BoxShadow(color: purple.withValues(alpha:0.08), blurRadius: 20, offset: const Offset(0, -5))
                       ],
                     ),
+                    child: widget.isViewingSavedPlan 
+                      ? ElevatedButton(
+                          onPressed: _isSaving ? null : _removePlan,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFFF0F0),
+                            foregroundColor: Colors.red,
+                            padding: EdgeInsets.symmetric(vertical: 18.sh),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16.sw),
+                              side: BorderSide(color: Colors.red.withValues(alpha:0.3)),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: _isSaving
+                              ? SizedBox(width: 24.sw, height: 24.sw, child: const CircularProgressIndicator(color: Colors.red, strokeWidth: 3))
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.bookmark_remove_rounded, color: Colors.red, size: 24.sp),
+                                    SizedBox(width: 12.sw),
+                                    Flexible(
+                                      child: Text(
+                                        "Remove from My Plans",
+                                        style: TextStyle(color: Colors.red, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        )
+                      : ElevatedButton(
+                          onPressed: _isSaving ? null : _savePlan,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: orange,
+                            padding: EdgeInsets.symmetric(vertical: 18.sh),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.sw)),
+                            elevation: 4,
+                            shadowColor: orange.withValues(alpha:0.4),
+                          ),
+                          child: _isSaving
+                              ? SizedBox(width: 24.sw, height: 24.sw, child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
+                              : Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.bookmark_add_rounded, color: Colors.white, size: 24.sp),
+                                    SizedBox(width: 12.sw),
+                                    Flexible(
+                                      child: Text(
+                                        "Save to My Plans",
+                                        style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                        ),
                   ),
                 ),
               ],
             ),
           ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-              child: _FadeSlideEntry(
-                delayMs: 400,
-                child: Container(
-                  padding: EdgeInsets.fromLTRB(24.sw, 16.sh, 24.sw, 32.sh),
-                  decoration: BoxDecoration(
-                    color: bg,
-                    boxShadow: [
-                      BoxShadow(color: purple.withValues(alpha:0.08), blurRadius: 20, offset: const Offset(0, -5))
-                    ],
-                  ),
-                  child: widget.isViewingSavedPlan // This nested check is technically true/false but wrapped in an if
-                    ? ElevatedButton(
-                        onPressed: _isSaving ? null : _removePlan,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFFFF0F0),
-                          foregroundColor: Colors.red,
-                          padding: EdgeInsets.symmetric(vertical: 18.sh),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16.sw),
-                            side: BorderSide(color: Colors.red.withValues(alpha:0.3)),
-                          ),
-                          elevation: 0,
-                        ),
-                        child: _isSaving
-                            ? SizedBox(width: 24.sw, height: 24.sw, child: const CircularProgressIndicator(color: Colors.red, strokeWidth: 3))
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.bookmark_remove_rounded, color: Colors.red, size: 24.sp),
-                                  SizedBox(width: 12.sw),
-                                  Flexible(
-                                    child: Text(
-                                      "Remove from My Plans",
-                                      style: TextStyle(color: Colors.red, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      )
-                    : ElevatedButton(
-                        onPressed: _isSaving ? null : _savePlan,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: orange,
-                          padding: EdgeInsets.symmetric(vertical: 18.sh),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.sw)),
-                          elevation: 4,
-                          shadowColor: orange.withValues(alpha:0.4),
-                        ),
-                        child: _isSaving
-                            ? SizedBox(width: 24.sw, height: 24.sw, child: const CircularProgressIndicator(color: Colors.white, strokeWidth: 3))
-                            : Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.bookmark_add_rounded, color: Colors.white, size: 24.sp),
-                                  SizedBox(width: 12.sw),
-                                  Flexible(
-                                    child: Text(
-                                      "Save to My Plans",
-                                      style: TextStyle(color: Colors.white, fontSize: 18.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                      ),
-                ),
-              ),
-            ),
         ],
       ),
     );
