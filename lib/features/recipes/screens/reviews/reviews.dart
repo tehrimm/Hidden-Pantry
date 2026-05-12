@@ -369,8 +369,28 @@ class _ReviewCardState extends State<_ReviewCard> {
     super.dispose();
   }
 
-  void _reportReview(BuildContext context) {
-    Toaster.show(context, "Review reported. Thank you for keeping the community safe.");
+  void _reportReview(BuildContext context) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      Toaster.show(context, "Please login to report content.", isError: true);
+      return;
+    }
+
+    try {
+      await ModerationService().reportContent(
+        contentType: 'review',
+        contentId: widget.reviewId,
+        authorId: widget.data['userId'] ?? '',
+        reason: 'Community Guideline Violation',
+      );
+      if (context.mounted) {
+        Toaster.show(context, "Review reported. Thank you for keeping the community safe.");
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Toaster.show(context, "Error reporting review: $e", isError: true);
+      }
+    }
   }
 
   Future<void> _confirmDelete(BuildContext context) async {
@@ -946,9 +966,29 @@ class _ReplyItem extends StatelessWidget {
     );
   }
 
-  void _reportReply(BuildContext context) {
-    // In a real app, this would send a report to the backend.
-    Toaster.show(context, "Reply reported. Thank you for keeping the community safe.");
+  void _reportReply(BuildContext context) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      Toaster.show(context, "Please login to report content.", isError: true);
+      return;
+    }
+
+    try {
+      await ModerationService().reportContent(
+        contentType: 'reply',
+        contentId: replyId,
+        authorId: data['userId'] ?? '',
+        reason: 'Inappropriate Content',
+        metadata: {'parentReviewId': reviewId}, // Essential for deletion later
+      );
+      if (context.mounted) {
+        Toaster.show(context, "Reply reported. Thank you for keeping the community safe.");
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Toaster.show(context, "Error reporting reply: $e", isError: true);
+      }
+    }
   }
 
   void _confirmDeleteReply(BuildContext context) {

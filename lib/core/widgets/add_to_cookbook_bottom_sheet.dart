@@ -143,6 +143,7 @@ class _AddToCookbookBottomSheetState extends State<AddToCookbookBottomSheet> {
                       final item = list[index];
                       final id = item['id'];
                       final isSelected = _selectedCookbookId == id;
+                      final isFav = id == 'favorite_internal' || (item['title']?.toString() ?? '').toLowerCase() == 'favorite';
 
                       return TweenAnimationBuilder<double>(
                         duration: Duration(milliseconds: 300 + (index * 50)),
@@ -195,16 +196,23 @@ class _AddToCookbookBottomSheetState extends State<AddToCookbookBottomSheet> {
                                   width: isSelected ? 48 : 44,
                                   height: isSelected ? 42 : 38,
                                   child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(10),
+                                    borderRadius: BorderRadius.circular(25), // High enough for circle
                                     child: Container(
                                       decoration: BoxDecoration(
-                                        color: Colors.grey[300],
-                                        image: item['imageUrl'] != null 
+                                        color: isFav 
+                                          ? Colors.redAccent.withValues(alpha: 0.1) 
+                                          : const Color(0xFF74503C).withValues(alpha: 0.05),
+                                        shape: BoxShape.circle,
+                                        image: (!isFav && item['imageUrl'] != null) 
                                           ? DecorationImage(image: NetworkImage(item['imageUrl']), fit: BoxFit.cover)
                                           : null,
                                       ),
-                                      child: item['imageUrl'] == null 
-                                        ? const Icon(Icons.restaurant, size: 20)
+                                      child: (isFav || item['imageUrl'] == null) 
+                                        ? Icon(
+                                            isFav ? Icons.favorite_rounded : Icons.menu_book_rounded, 
+                                            size: 20, 
+                                            color: isFav ? Colors.redAccent : const Color(0xFF74503C)
+                                          )
                                         : null,
                                     ),
                                   ),

@@ -118,6 +118,29 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
               report['contentTitle'] = 'Content deleted';
               report['contentPreview'] = 'This content has already been removed.';
             }
+          } else if (contentType == 'reply') {
+            final metadata = report['metadata'] as Map<String, dynamic>?;
+            final reviewId = metadata?['parentReviewId'] as String?;
+            if (reviewId != null) {
+              final doc = await FirebaseFirestore.instance
+                  .collection('reviews')
+                  .doc(reviewId)
+                  .collection('replies')
+                  .doc(contentId)
+                  .get();
+              if (doc.exists) {
+                final data = doc.data()!;
+                report['contentTitle'] = 'Reply by ${data['userName'] ?? 'Unknown'}';
+                report['contentPreview'] = data['comment'] ?? '';
+                report['authorName'] = data['userName'] ?? 'Unknown';
+              } else {
+                report['contentTitle'] = 'Reply deleted';
+                report['contentPreview'] = 'This reply has already been removed.';
+              }
+            } else {
+              report['contentTitle'] = 'Orphaned reply';
+              report['contentPreview'] = 'Missing parent review data.';
+            }
           }
         } catch (_) {
           report['contentTitle'] = report['contentId'];

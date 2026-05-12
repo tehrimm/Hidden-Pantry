@@ -18,6 +18,7 @@ class ModerationService {
     required String authorId,
     required String reason,
     String? additionalDetails,
+    Map<String, dynamic>? metadata, // Added metadata for extra IDs (e.g., parentReviewId)
   }) async {
     final user = _auth.currentUser;
     if (user == null) return;
@@ -30,6 +31,7 @@ class ModerationService {
       'authorId': authorId,
       'reason': reason,
       'details': additionalDetails,
+      'metadata': metadata, // Store metadata
       'status': 'pending', // pending, reviewed, dismissed
       'timestamp': FieldValue.serverTimestamp(),
     });
@@ -119,6 +121,10 @@ class ModerationService {
       }
       summary[contentId]!['reportCount']++;
       summary[contentId]!['reports'].add({'id': doc.id, ...data});
+      // Carry over metadata to summary
+      if (data['metadata'] != null) {
+        summary[contentId]!['metadata'] = data['metadata'];
+      }
     }
 
     return summary.values.toList();
@@ -149,11 +155,31 @@ class ModerationService {
 
   /// Delete content, mark reports as reviewed, and send warning notification
   Future<void> takeAction(String contentType, String contentId, String action, String authorId) async {
-    if (action == 'delete') {
       if (contentType == 'review') {
         await _firestore.collection('reviews').doc(contentId).delete();
       } else if (contentType == 'recipe') {
         await _firestore.collection('recipes').doc(contentId).delete();
+      } else if (contentType == 'reply') {
+        // Find the report to get parentReviewId from metadata
+        final reportSnap = await _firestore
+            .collection('reports')
+            .where('contentId', isEqualTo: contentId)
+            .where('status', isEqualTo: 'pending')
+            .limit(1)
+            .get();
+        
+        if (reportSnap.docs.isNotEmpty) {
+          final metadata = reportSnap.docs.first.data()['metadata'] as Map<String, dynamic>?;
+          final reviewId = metadata?['parentReviewId'] as String?;
+          if (reviewId != null) {
+            await _firestore
+                .collection('reviews')
+                .doc(reviewId)
+                .collection('replies')
+                .doc(contentId)
+                .delete();
+          }
+        }
       }
       
       await dismissReports(contentId);

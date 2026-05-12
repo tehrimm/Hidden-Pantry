@@ -450,15 +450,16 @@ class RecipeService {
       if (!reviewDoc.exists) return;
       
       final authorId = reviewDoc.data()?['userId'];
+      final recipeId = reviewDoc.data()?['recipeId']; // Get the recipeId
       final user = _auth.currentUser;
 
-      if (authorId != null && authorId != user?.uid) {
+      if (authorId != null && authorId != user?.uid && recipeId != null) {
         NotificationService().sendNotification(
           recipientId: authorId,
           title: "Reply from ${user?.displayName ?? 'Someone'}",
           body: "${user?.displayName ?? 'Someone'} $action",
           type: NotificationType.reply,
-          targetId: reviewId,
+          targetId: recipeId, // Pass recipeId instead of reviewId
         );
       }
     } catch (e) {
@@ -522,13 +523,19 @@ class RecipeService {
       final user = _auth.currentUser;
 
       if (authorId != null && authorId != user?.uid) {
-        NotificationService().sendNotification(
-          recipientId: authorId,
-          title: "Like from ${user?.displayName ?? 'Someone'}",
-          body: "${user?.displayName ?? 'Someone'} $action",
-          type: NotificationType.reply,
-          targetId: reviewId,
-        );
+        // We need the recipeId from the parent review to navigate correctly
+        final reviewDoc = await _firestore.collection('reviews').doc(reviewId).get();
+        final recipeId = reviewDoc.data()?['recipeId'];
+
+        if (recipeId != null) {
+          NotificationService().sendNotification(
+            recipientId: authorId,
+            title: "Like from ${user?.displayName ?? 'Someone'}",
+            body: "${user?.displayName ?? 'Someone'} $action",
+            type: NotificationType.reply,
+            targetId: recipeId, // Pass recipeId instead of reviewId
+          );
+        }
       }
     } catch (e) {
       print("Error notifying reply author: $e");

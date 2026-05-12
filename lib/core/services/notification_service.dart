@@ -305,8 +305,22 @@ class NotificationService {
       case NotificationType.comment:
       case NotificationType.reply:
         // Fetch full recipe to navigate
-        final recipe = await RecipeService().getRecipeById(notif.targetId!);
-        if (recipe != null) {
+        Recipe? recipe = await RecipeService().getRecipeById(notif.targetId!);
+        
+        // Robust Fallback: If not found, targetId might be a reviewId (older notifications)
+        if (recipe == null) {
+          try {
+            final reviewDoc = await FirebaseFirestore.instance.collection('reviews').doc(notif.targetId).get();
+            if (reviewDoc.exists) {
+              final recipeId = reviewDoc.data()?['recipeId'];
+              if (recipeId != null) {
+                recipe = await RecipeService().getRecipeById(recipeId);
+              }
+            }
+          } catch (_) {}
+        }
+
+        if (recipe != null && context.mounted) {
           Navigator.push(context, MaterialPageRoute(builder: (context) => RecipeDetailsScreen(recipe: recipe)));
         }
         break;

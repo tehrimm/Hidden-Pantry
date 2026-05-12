@@ -557,8 +557,10 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
               height: 75.sw,
               clipBehavior: Clip.hardEdge,
               decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: BorderRadius.circular(38.sw),
+                color: isDefault 
+                    ? Colors.redAccent.withValues(alpha: 0.1) 
+                    : const Color(0xFF74503C).withValues(alpha: 0.05), // Warm themed bg
+                shape: BoxShape.circle, // Force perfect circle
                 boxShadow: isSelected ? [
                   BoxShadow(
                     color: purple.withValues(alpha: 0.3),
@@ -576,22 +578,24 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
                   Positioned.fill(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: isDefault ? Colors.redAccent.withValues(alpha: 0.1) : const Color(0xFFD9D9D9),
                         image: (!isDefault && imageUrl != null && imageUrl.trim().isNotEmpty)
                             ? DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover)
                             : null,
                       ),
                       child: isDefault
                         ? Icon(Icons.favorite_rounded, color: Colors.redAccent, size: 30.sp)
-                        : (imageUrl == null || imageUrl.trim().isEmpty) 
-                          ? Icon(Icons.restaurant_menu, color: purple.withValues(alpha:0.5), size: 30.sp)
+                        : (imageUrl == null || imageUrl.trim().isEmpty)
+                          ? Icon(Icons.menu_book_rounded, color: const Color(0xFF74503C), size: 30.sp) // Brown icon
                           : null,
                     ),
                   ),
                   if (isSelected)
                     Positioned.fill(
                       child: Container(
-                        color: purple.withValues(alpha:0.2),
+                        decoration: BoxDecoration(
+                          color: purple.withValues(alpha:0.25),
+                          shape: BoxShape.circle,
+                        ),
                         child: Center(
                           child: Icon(Icons.check, color: Colors.white, size: 24.sp),
                         ),
