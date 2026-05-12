@@ -1049,53 +1049,69 @@ class RecipeService {
 
   /// Calculates and fetches trending recipes based on recent engagement
   Future<List<Recipe>> getTrendingRecipes({int limit = 10, int days = 7}) async {
+    List<Recipe> results = [];
+    
+    // 1. Try to get trending from recent events (engagement score)
     try {
-      // 1. Get events from the last X days
       final cutoff = DateTime.now().subtract(Duration(days: days));
       final eventsSnap = await _firestore
           .collection('trending_events')
           .where('timestamp', isGreaterThanOrEqualTo: cutoff)
           .get();
 
-      if (eventsSnap.docs.isEmpty) {
-        print("[RecipeService] No trending events found, falling back to popular recipes.");
-        // Fallback: Fetch top-rated recipes with most reviews
-        final popularSnap = await _firestore
-            .collection('recipes')
-            .where('is_public', isEqualTo: true)
-            .orderBy('review_count', descending: true)
-            .orderBy('avg_rating', descending: true)
-            .limit(limit)
-            .get();
-        
-        return popularSnap.docs.map((d) => Recipe.fromJson(d.data())).toList();
+      if (eventsSnap.docs.isNotEmpty) {
+        final Map<String, int> scores = {};
+        for (final doc in eventsSnap.docs) {
+          final data = doc.data();
+          final recipeId = data['recipeId'] as String?;
+          final type = data['type'] as String?;
+          if (recipeId == null) continue;
+
+          // likes are worth more than views
+          final points = type == 'like' ? 5 : 1;
+          scores[recipeId] = (scores[recipeId] ?? 0) + points;
+        }
+
+        final sortedIds = scores.keys.toList()
+          ..sort((a, b) => scores[b]!.compareTo(scores[a]!));
+
+        final topIds = sortedIds.take(limit).toList();
+        results = await getRecipesByIds(topIds);
       }
-
-      // 2. Aggregate scores (e.g., view = 1 point, like = 5 points)
-      final Map<String, int> scores = {};
-      for (final doc in eventsSnap.docs) {
-        final data = doc.data();
-        final recipeId = data['recipeId'] as String?;
-        final type = data['type'] as String?;
-        if (recipeId == null) continue;
-
-        final points = type == 'like' ? 5 : 1;
-        scores[recipeId] = (scores[recipeId] ?? 0) + points;
-      }
-
-      // 3. Sort by score
-      final sortedIds = scores.keys.toList()
-        ..sort((a, b) => scores[b]!.compareTo(scores[a]!));
-
-      // 4. Fetch the top recipes
-      final topIds = sortedIds.take(limit).toList();
-      if (topIds.isEmpty) return [];
-
-      return await getRecipesByIds(topIds);
     } catch (e) {
-      print("[RecipeService] Error fetching trending recipes: $e");
-      return [];
+      print("[RecipeService] Trending events fetch failed: $e");
     }
+
+    if (results.isNotEmpty) return results;
+
+    // 2. Fallback: Fetch top-rated recipes from Firestore (Simple Popularity)
+    try {
+      print("[RecipeService] Falling back to popular recipes in Firestore.");
+      final popularSnap = await _firestore
+          .collection('recipes')
+          .where('is_public', isEqualTo: true)
+          .orderBy('review_count', descending: true)
+          .limit(limit)
+          .get();
+      
+      if (popularSnap.docs.isNotEmpty) {
+        results = popularSnap.docs.map((d) => Recipe.fromJson(d.data())).toList();
+      }
+    } catch (e) {
+      print("[RecipeService] Firestore popular fallback failed: $e");
+    }
+
+    if (results.isNotEmpty) return results;
+
+    // 3. Final Fallback: Fetch "popular" recommendations from API (Global Trending)
+    try {
+      print("[RecipeService] Final fallback: API popular recipes.");
+      results = await _api.recommend(query: "popular", topK: limit);
+    } catch (e) {
+      print("[RecipeService] API popular fallback failed: $e");
+    }
+
+    return results;
   }
 }
 

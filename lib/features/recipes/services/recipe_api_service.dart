@@ -103,57 +103,46 @@ class RecipeApiService {
   /// - GET /recipes/<id>
   /// - GET /recipe/<id>
   Future<Recipe> getRecipeById(String recipeId) async {
-  final id = recipeId.trim();
+    final id = recipeId.trim();
+    if (id.isEmpty) {
+      throw Exception("Recipe id is empty.");
+    }
 
-  if (id.isEmpty) {
-    throw Exception("Recipe id is empty. Check Recipe.fromJson mapping (id vs _id).");
-  }
+    // Candidate endpoints
+    final candidates = <Uri>[
+      Uri.parse("$baseUrl/recipes/$id"),
+      Uri.parse("$baseUrl/recipe/$id"),
+      Uri.parse("$baseUrl/recipes?id=$id"),
+      Uri.parse("$baseUrl/recipe?id=$id"),
+    ];
 
-  // Try multiple endpoint patterns (because backends differ)
-  final candidates = <Uri>[
-    Uri.parse("$baseUrl/recipes/$id"),
-    Uri.parse("$baseUrl/recipe/$id"),
-    Uri.parse("$baseUrl/recipes?id=$id"),
-    Uri.parse("$baseUrl/recipe?id=$id"),
-  ];
-
-  http.Response? lastRes;
-
-  for (final uri in candidates) {
     try {
-      final res = await http.get(uri).timeout(const Duration(seconds: 30));
-      lastRes = res;
+      // Try all candidates in parallel to avoid sequential timeout delays
+      final responses = await Future.wait(
+        candidates.map((uri) => http.get(uri).timeout(const Duration(seconds: 8)).catchError((e) {
+          return http.Response("Timeout or Error", 408);
+        })),
+      );
 
-      if (res.statusCode == 200) {
-        final decoded = jsonDecode(res.body);
-
-        // Case 1: direct map -> recipe
-        if (decoded is Map<String, dynamic>) {
-          // Some APIs wrap it
-          final maybeRecipe = decoded["recipe"] ?? decoded["data"] ?? decoded;
-          if (maybeRecipe is Map<String, dynamic>) {
-            return Recipe.fromJson(maybeRecipe);
+      for (var i = 0; i < responses.length; i++) {
+        final res = responses[i];
+        if (res.statusCode == 200) {
+          final decoded = jsonDecode(res.body);
+          if (decoded is Map<String, dynamic>) {
+            final maybeRecipe = decoded["recipe"] ?? decoded["data"] ?? decoded;
+            if (maybeRecipe is Map<String, dynamic>) {
+              return Recipe.fromJson(maybeRecipe);
+            }
           }
         }
-
-        // If 200 but wrong shape
-        throw Exception("Invalid recipe response shape from: ${uri.path}");
       }
-
-      // If it's 404, try next candidate
-      if (res.statusCode == 404) continue;
-
-      // Other error codes: stop early (likely auth/server issue)
-      throw Exception("Failed to load recipe (status ${res.statusCode}) from ${uri.path}");
-    } catch (_) {
-      // If request failed (network / json) try next candidate
-      continue;
+      
+      throw Exception("Recipe not found after trying multiple endpoints.");
+    } catch (e) {
+      print("[RecipeApiService] getRecipeById failed: $e");
+      rethrow;
     }
   }
-
-  final code = lastRes?.statusCode;
-  throw Exception("Failed to load recipe (status ${code ?? "no response"}). Tried: /recipes/<id>, /recipe/<id>, /recipes?id, /recipe?id");
-}
 
 
   /// NEW: author recipe count (if not included in author object)

@@ -253,119 +253,130 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
       return;
     }
 
-    // 1. Try Firestore first (handles user-uploaded recipes reliably)
     try {
-      final firestoreRecipe = await _recipeService.getRecipeById(_recipe.id).timeout(const Duration(seconds: 3));
-      
-      if (firestoreRecipe != null) {
-        // --- 🛡️ ACCESS CONTROL: Nutritionist Recipe Check ---
-        if (firestoreRecipe.isNutritionistRecipe) {
-          final hasAccess = await SubscriptionService().hasNutritionistAccess(firestoreRecipe.authorId);
-          if (!hasAccess && mounted) {
-            _showRestrictedAccess(firestoreRecipe.authorId);
-            return;
+      // 1. Try Firestore first (handles user-uploaded recipes reliably)
+      try {
+        final firestoreRecipe = await _recipeService.getRecipeById(_recipe.id).timeout(const Duration(seconds: 4));
+        
+        if (firestoreRecipe != null) {
+          // --- 🛡️ ACCESS CONTROL: Nutritionist Recipe Check ---
+          if (firestoreRecipe.isNutritionistRecipe) {
+            final hasAccess = await SubscriptionService().hasNutritionistAccess(firestoreRecipe.authorId);
+            if (!hasAccess && mounted) {
+              _showRestrictedAccess(firestoreRecipe.authorId);
+              return;
+            }
           }
-        }
 
-        // Fetch author recipes and count in parallel
+          // Fetch author recipes and count in parallel
+          final results = await Future.wait([
+            _recipeService.countRecipesByAuthor(firestoreRecipe.authorId).timeout(const Duration(seconds: 4)),
+            if (firestoreRecipe.authorName != null && firestoreRecipe.authorName!.isNotEmpty)
+              api.searchRecipes(firestoreRecipe.authorName!, limit: 12)
+            else
+              Future.value(<Recipe>[]),
+          ]);
+
+          int count = results[0] as int;
+          final otherRecipes = results[1] as List<Recipe>;
+          
+          if (count == 0 && otherRecipes.isNotEmpty) count = otherRecipes.length;
+            
+          if (mounted) {
+            setState(() {
+              _recipe = firestoreRecipe;
+              _visitedRecipesCache[_recipe.id] = firestoreRecipe;
+              _authorRecipeCount = count;
+              _servings = (firestoreRecipe.baseServings <= 0) ? 1 : firestoreRecipe.baseServings;
+              _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || r.authorId == firestoreRecipe.authorId)).toList();
+              _loadingAuthorRecipes = false;
+              _loading = false;
+            });
+          }
+          return;
+        }
+      } catch (fsErr) {
+        debugPrint("[RecipeDetails] Firestore fetch failed or timed out: $fsErr. Trying API...");
+      }
+
+      // 2. Try API next (official recipes)
+      try {
+        final fullRecipe = await api.getRecipeById(_recipe.id);
+        
+        // Parallel fetch for author count and author recipes
         final results = await Future.wait([
-          _recipeService.countRecipesByAuthor(firestoreRecipe.authorId).timeout(const Duration(seconds: 3)),
-          if (firestoreRecipe.authorName != null && firestoreRecipe.authorName!.isNotEmpty)
-            api.searchRecipes(firestoreRecipe.authorName!, limit: 12)
-          else
-            Future.value(<Recipe>[]),
+          fullRecipe.authorId.isNotEmpty ? api.countRecipesByAuthor(fullRecipe.authorId) : Future.value(0),
+          fullRecipe.authorId.isNotEmpty 
+            ? api.fetchRecipesByAuthor(fullRecipe.authorId, limit: 12)
+            : (fullRecipe.authorName != null && fullRecipe.authorName!.isNotEmpty 
+                ? api.searchRecipes(fullRecipe.authorName!, limit: 12) 
+                : Future.value(<Recipe>[])),
         ]);
 
-        final count = results[0] as int;
-        final otherRecipes = results[1] as List<Recipe>;
-          
+        int count = results[0] as int;
+        final List<Recipe> otherRecipes = results[1] as List<Recipe>;
+        
+        // Fallback: if count is 0 but we have search results, use search result count
+        if (count == 0 && otherRecipes.isNotEmpty) {
+          count = otherRecipes.length;
+        }
+
         if (mounted) {
           setState(() {
-            _recipe = firestoreRecipe;
-            _visitedRecipesCache[_recipe.id] = firestoreRecipe;
+            _recipe = fullRecipe;
+            _visitedRecipesCache[_recipe.id] = fullRecipe;
             _authorRecipeCount = count;
-            _servings = (firestoreRecipe.baseServings <= 0) ? 1 : firestoreRecipe.baseServings;
-            _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || r.authorId == firestoreRecipe.authorId)).toList();
+            _servings = (fullRecipe.baseServings <= 0) ? 1 : fullRecipe.baseServings;
+            _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || (fullRecipe.authorId.isNotEmpty && r.authorId == fullRecipe.authorId))).toList();
             _loadingAuthorRecipes = false;
             _loading = false;
           });
         }
+
+        // EXTRA: Firestore dynamic merge as non-blocking background update
+        if (!_isUnderTest) {
+          _recipeService.getRecipeById(_recipe.id).then((fsRecipe) {
+            if (fsRecipe != null && mounted) {
+              setState(() {
+                _recipe = _recipe.copyWith(
+                  avgRating: fsRecipe.avgRating,
+                  reviewCount: fsRecipe.reviewCount,
+                );
+              });
+            }
+          }).catchError((_) {});
+        }
         return;
+      } catch (apiError) {
+        debugPrint("[RecipeDetails] API Fetch failed: $apiError.");
       }
-    } catch (fsErr) {
-      debugPrint("[RecipeDetails] Firestore fetch failed: $fsErr. Trying API...");
-    }
 
-    // 2. Try API next (official recipes)
-    try {
-      final fullRecipe = await api.getRecipeById(_recipe.id);
-      
-      // Parallel fetch for author count and author recipes
-      final results = await Future.wait([
-        fullRecipe.authorId.isNotEmpty ? api.countRecipesByAuthor(fullRecipe.authorId) : Future.value(0),
-        fullRecipe.authorId.isNotEmpty 
-          ? api.fetchRecipesByAuthor(fullRecipe.authorId, limit: 12)
-          : (fullRecipe.authorName != null && fullRecipe.authorName!.isNotEmpty 
-              ? api.searchRecipes(fullRecipe.authorName!, limit: 12) 
-              : Future.value(<Recipe>[])),
-      ]);
-
-      final count = results[0] as int;
-      final otherRecipes = results[1] as List<Recipe>;
+      // 3. Fallback to Local Storage
+      try {
+        final isOffline = await _localService.isRecipeOffline(_recipe.id, user.uid);
+        if (isOffline) {
+          final offlineRecipes = await _localService.getRecipesByIds([_recipe.id], user.uid);
+          if (offlineRecipes.isNotEmpty && mounted) {
+            setState(() {
+              _recipe = offlineRecipes.first;
+              _authorRecipeCount = 0;
+              _servings = (_recipe.baseServings <= 0) ? 1 : _recipe.baseServings;
+              _loading = false;
+            });
+            return;
+          }
+        }
+      } catch (_) {}
 
       if (mounted) {
         setState(() {
-          _recipe = fullRecipe;
-          _visitedRecipesCache[_recipe.id] = fullRecipe;
-          _authorRecipeCount = count;
-          _servings = (fullRecipe.baseServings <= 0) ? 1 : fullRecipe.baseServings;
-          _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || (fullRecipe.authorId.isNotEmpty && r.authorId == fullRecipe.authorId))).toList();
-          _loadingAuthorRecipes = false;
           _loading = false;
+          _error = null; // Show what we have (even if skeleton/partial)
         });
       }
-
-      // EXTRA: Firestore dynamic merge as non-blocking background update
-      if (!_isUnderTest) {
-        _recipeService.getRecipeById(_recipe.id).then((fsRecipe) {
-          if (fsRecipe != null && mounted) {
-            setState(() {
-              _recipe = _recipe.copyWith(
-                avgRating: fsRecipe.avgRating,
-                reviewCount: fsRecipe.reviewCount,
-              );
-            });
-          }
-        }).catchError((_) {});
-      }
-      return;
-    } catch (apiError) {
-      debugPrint("[RecipeDetails] API Fetch failed finally: $apiError.");
-      if (mounted) setState(() => _loadingAuthorRecipes = false);
-    }
-
-    // 3. Fallback to Local Storage (if both Firestore and API fail)
-    try {
-      final isOffline = await _localService.isRecipeOffline(_recipe.id, user.uid);
-      if (isOffline) {
-        final offlineRecipes = await _localService.getRecipesByIds([_recipe.id], user.uid);
-        if (offlineRecipes.isNotEmpty && mounted) {
-          setState(() {
-            _recipe = offlineRecipes.first;
-            _authorRecipeCount = 0;
-            _servings = (_recipe.baseServings <= 0) ? 1 : _recipe.baseServings;
-            _loading = false;
-          });
-          return;
-        }
-      }
-    } catch (_) {}
-
-    if (mounted) {
-      setState(() {
-        _loading = false;
-        _error = null;
-      });
+    } catch (e) {
+      debugPrint("[RecipeDetails] General Error in _loadFullDetails: $e");
+      if (mounted) setState(() => _loading = false);
     }
   }
 
