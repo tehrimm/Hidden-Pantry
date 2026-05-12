@@ -9,6 +9,7 @@ import 'package:hidden_pantry_app/features/recipes/services/recipe_api_service.d
 import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
 import 'package:hidden_pantry_app/core/widgets/home_bottom_nav.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
+import 'package:hidden_pantry_app/core/services/moderation_service.dart';
 
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
@@ -51,6 +52,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
 
   final RecipeService _recipeService = RecipeService();
   late final RecipeApiService api;
+  Set<String> _blockedUserIds = {};
   late final FirebaseAuth _auth;
 
   final Color bg = const Color(0xFFFFF3EB);
@@ -208,6 +210,12 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
         );
 
         initialFutures.add(
+          ModerationService().getBlockedUsers().then((v) {
+            _blockedUserIds = v.toSet();
+          }).catchError((_) {})
+        );
+
+        initialFutures.add(
           _recipeService.getLikedRecipeIds(user.uid).then((v) => likedIds = v).catchError((_) => <String>[])
         );
 
@@ -245,7 +253,8 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
             final snap = await FirebaseFirestore.instance.collection('recipes')
                 .where('author_id', whereIn: chunk)
                 .where('is_public', isEqualTo: true).limit(30).get();
-            allDocs.addAll(snap.docs.map((d) => Recipe.fromJson(d.data())));
+            final fetched = snap.docs.map((d) => Recipe.fromJson(d.data()));
+            allDocs.addAll(fetched.where((r) => !_blockedUserIds.contains(r.authorId)));
           }
           final byId = <String, Recipe>{};
           for (final r in allDocs) if (r.id.isNotEmpty) byId[r.id] = r;
@@ -354,8 +363,11 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
   List<Recipe> _rerankByPreferences(List<Recipe> list) {
     if (list.isEmpty) return list;
 
-    // 1. STRICT LOCAL FILTER: Ensure no allergens slip through
+    // 1. STRICT LOCAL FILTER: Ensure no allergens slip through and block ignored authors
     final filtered = list.where((r) {
+      // Exclude blocked users
+      if (_blockedUserIds.contains(r.authorId)) return false;
+
       if (userAllergies.isEmpty) return true;
 
       final rName = r.name.toLowerCase();

@@ -13,6 +13,7 @@ import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
+import 'package:hidden_pantry_app/features/user/screens/blocked_authors.dart';
 
 
 class ProfileSettingScreen extends StatefulWidget {
@@ -215,6 +216,12 @@ Future<String?> _uploadToStorage(File file) async {
 void _openPreferences() {
   Navigator.of(context).push(
     MaterialPageRoute(builder: (_) => const AllergiesScreen(fromProfile: true)),
+  );
+}
+
+void _openBlockedAuthors() {
+  Navigator.of(context).push(
+    MaterialPageRoute(builder: (_) => const BlockedAuthorsScreen()),
   );
 }
 
@@ -569,6 +576,51 @@ void _openPreferences() {
                                                 SizedBox(height: 4.sh),
                                                 Text(
                                                   'Change your allergies and diet preferences',
+                                                  style: TextStyle(
+                                                    color: hint,
+                                                    fontSize: 12.sp,
+                                                    fontWeight: FontWeight.w500,
+                                                    fontFamily: 'Satoshi',
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Icon(Icons.arrow_forward_ios_rounded, color: text.withValues(alpha: 0.5), size: 16.sw),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 16.sh),
+
+                              // Blocked Authors card
+                              _FadeSlideEntry(
+                                delayMs: 650,
+                                child: GestureDetector(
+                                  onTap: _openBlockedAuthors,
+                                  child: _InputCard(
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 20.sh),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Blocked Authors',
+                                                  style: TextStyle(
+                                                    color: text,
+                                                    fontSize: 18.sp,
+                                                    fontWeight: FontWeight.w700,
+                                                    fontFamily: 'Satoshi',
+                                                  ),
+                                                ),
+                                                SizedBox(height: 4.sh),
+                                                Text(
+                                                  'Manage people you\'ve blocked',
                                                   style: TextStyle(
                                                     color: hint,
                                                     fontSize: 12.sp,

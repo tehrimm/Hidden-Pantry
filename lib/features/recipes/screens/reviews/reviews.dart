@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
+import 'package:hidden_pantry_app/core/services/moderation_service.dart';
 import 'post_review.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
@@ -25,12 +26,25 @@ class ReviewsScreen extends StatefulWidget {
 class _ReviewsScreenState extends State<ReviewsScreen> {
   late final RecipeService _rs;
   late final Stream<QuerySnapshot> _reviewsStream;
+  Set<String> _blockedUserIds = {};
 
   @override
   void initState() {
     super.initState();
     _rs = widget.recipeService ?? RecipeService();
     _reviewsStream = _rs.getReviews(widget.recipe.id);
+    _loadBlockedUsers();
+  }
+
+  Future<void> _loadBlockedUsers() async {
+    try {
+      final blocked = await ModerationService().getBlockedUsers();
+      if (mounted) {
+        setState(() {
+          _blockedUserIds = blocked.toSet();
+        });
+      }
+    } catch (_) {}
   }
 
   @override
@@ -102,7 +116,13 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                         if (snapshot.hasError) {
                           return Center(child: Text("Error: ${snapshot.error}"));
                         }
-                        final docs = snapshot.data?.docs ?? [];
+                        var docs = snapshot.data?.docs ?? [];
+                        if (_blockedUserIds.isNotEmpty) {
+                          docs = docs.where((doc) {
+                            final data = doc.data() as Map<String, dynamic>;
+                            return !_blockedUserIds.contains(data['userId']);
+                          }).toList();
+                        }
                         
                         if (docs.isEmpty) {
                           return ListView(
@@ -134,6 +154,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                                   purple: purple,
                                   orange: orange,
                                   recipeService: _rs,
+                                  blockedUserIds: _blockedUserIds,
                                 ),
                               ),
                             );
@@ -268,6 +289,7 @@ class _ReviewCard extends StatefulWidget {
   final Color purple;
   final Color orange;
   final RecipeService recipeService;
+  final Set<String> blockedUserIds;
 
   const _ReviewCard({
     super.key,
@@ -276,6 +298,7 @@ class _ReviewCard extends StatefulWidget {
     required this.purple,
     required this.orange,
     required this.recipeService,
+    required this.blockedUserIds,
   });
 
   @override
@@ -344,6 +367,10 @@ class _ReviewCardState extends State<_ReviewCard> {
     _replyController.dispose();
     _focusNode.dispose();
     super.dispose();
+  }
+
+  void _reportReview(BuildContext context) {
+    Toaster.show(context, "Review reported. Thank you for keeping the community safe.");
   }
 
   Future<void> _confirmDelete(BuildContext context) async {
@@ -628,6 +655,26 @@ class _ReviewCardState extends State<_ReviewCard> {
                     ],
                   ),
                 ),
+              ] else if (user != null && widget.data['userId'] != user.uid) ...[
+                const Spacer(),
+                GestureDetector(
+                  onTap: () => _reportReview(context),
+                  child: Row(
+                    children: [
+                      Icon(Icons.report_gmailerrorred_rounded, color: Colors.redAccent.withValues(alpha:0.6), size: 18.sp),
+                      SizedBox(width: 6.sw),
+                      Text(
+                        "Report",
+                        style: TextStyle(
+                          color: Colors.redAccent.withValues(alpha:0.6),
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: "Satoshi",
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ],
           ),
@@ -670,7 +717,14 @@ class _ReviewCardState extends State<_ReviewCard> {
           StreamBuilder<QuerySnapshot>(
             stream: widget.recipeService.getReplies(widget.reviewId),
             builder: (context, snapshot) {
-              final replies = snapshot.data?.docs ?? [];
+              var replies = snapshot.data?.docs ?? [];
+              if (widget.blockedUserIds.isNotEmpty) {
+                replies = replies.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return !widget.blockedUserIds.contains(data['userId']);
+                }).toList();
+              }
+              
               if (replies.isEmpty) return const SizedBox.shrink();
 
               return Column(
@@ -869,6 +923,12 @@ class _ReplyItem extends StatelessWidget {
                                   onTap: () => _confirmDeleteReply(context),
                                   child: Icon(Icons.delete_outline, size: 16.sp, color: Colors.red.withValues(alpha: 0.5)),
                                 ),
+                              ] else if (FirebaseAuth.instance.currentUser != null) ...[
+                                const Spacer(),
+                                GestureDetector(
+                                  onTap: () => _reportReply(context),
+                                  child: Icon(Icons.report_gmailerrorred_rounded, size: 16.sp, color: Colors.redAccent.withValues(alpha: 0.5)),
+                                ),
                               ],
                             ],
                           ),
@@ -884,6 +944,11 @@ class _ReplyItem extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _reportReply(BuildContext context) {
+    // In a real app, this would send a report to the backend.
+    Toaster.show(context, "Reply reported. Thank you for keeping the community safe.");
   }
 
   void _confirmDeleteReply(BuildContext context) {

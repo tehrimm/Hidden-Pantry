@@ -6,6 +6,7 @@ import 'cooking_details.dart';
 import 'package:hidden_pantry_app/core/constants/api_constants.dart';
 import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/reviews/reviews.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
@@ -1452,49 +1453,176 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
             ),
           ],
 
-          SizedBox(height: 50.sh),
+          SizedBox(height: 60.sh),
 
-          // Report & Block Footer
+          // Safety & Community Section
           StaggeredEntry(
-            delay: 900,
-            child: Center(
+            delay: 950,
+            child: Container(
+              margin: EdgeInsets.symmetric(horizontal: 20.sw),
+              padding: EdgeInsets.all(24.sw),
+              decoration: BoxDecoration(
+                color: cardColor.withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(30.sw),
+                boxShadow: [
+                  BoxShadow(
+                    color: textColor.withValues(alpha: 0.05),
+                    blurRadius: 20,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+                border: Border.all(color: textColor.withValues(alpha: 0.1)),
+              ),
               child: Column(
                 children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.shield_rounded, size: 18.sp, color: textColor.withValues(alpha: 0.5)),
+                      SizedBox(width: 8.sw),
+                      Text(
+                        "Safety & Community",
+                        style: TextStyle(
+                          color: textColor.withValues(alpha: 0.6),
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w900,
+                          fontFamily: "Satoshi",
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 24.sh),
+                  
+                  // Vibrant Share Button
                   GestureDetector(
-                    onTap: () => _showReportDialog(context),
-                    child: Text(
-                      "Report this recipe",
-                      style: TextStyle(
-                        color: textColor.withValues(alpha: 0.3),
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: "Satoshi",
-                        decoration: TextDecoration.underline,
+                    onTap: () => _shareRecipe(),
+                    child: Container(
+                      width: double.infinity,
+                      padding: EdgeInsets.symmetric(vertical: 16.sh),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [orange, const Color(0xFFF2894F)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16.sw),
+                        boxShadow: [
+                          BoxShadow(
+                            color: orange.withValues(alpha: 0.3),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.share_rounded, color: Colors.white, size: 20),
+                          SizedBox(width: 12.sw),
+                          Text(
+                            "Share with Friends",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 15.sp,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: "Satoshi",
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                  SizedBox(height: 12.sh),
-                  GestureDetector(
-                    onTap: () => _showBlockConfirm(context),
-                    child: Text(
-                      "Block this author",
-                      style: TextStyle(
-                        color: textColor.withValues(alpha: 0.3),
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: "Satoshi",
-                        decoration: TextDecoration.underline,
+                  
+                  SizedBox(height: 16.sh),
+                  
+                  if (FirebaseAuth.instance.currentUser?.uid != _recipe.authorId)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: GestureDetector(
+                          onTap: () => _showReportDialog(context),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(vertical: 14.sh),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16.sw),
+                              border: Border.all(color: Colors.red.withValues(alpha: 0.1)),
+                            ),
+                            child: Center(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.report_gmailerrorred_rounded, color: Colors.redAccent.withValues(alpha: 0.7), size: 16.sp),
+                                  SizedBox(width: 6.sw),
+                                  Text(
+                                    "Report",
+                                    style: TextStyle(
+                                      color: Colors.redAccent.withValues(alpha: 0.7),
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w700,
+                                      fontFamily: "Satoshi",
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
+                      SizedBox(width: 12.sw),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () => _showBlockConfirm(context),
+                          child: Container(
+                            padding: EdgeInsets.symmetric(vertical: 14.sh),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16.sw),
+                              border: Border.all(color: textColor.withValues(alpha: 0.1)),
+                            ),
+                            child: Center(
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.block_flipped, color: textColor.withValues(alpha: 0.4), size: 16.sp),
+                                  SizedBox(width: 6.sw),
+                                  Text(
+                                    "Block",
+                                    style: TextStyle(
+                                      color: textColor.withValues(alpha: 0.5),
+                                      fontSize: 12.sp,
+                                      fontWeight: FontWeight.w700,
+                                      fontFamily: "Satoshi",
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 30.sh),
                 ],
               ),
             ),
           ),
+          SizedBox(height: 50.sh),
         ],
       ),
     );
+  }
+
+  void _shareRecipe() {
+    final String appDownloadLink = "https://hiddenpantry.page.link/download"; // Placeholder link
+    final String recipeLink = "https://hiddenpantry.page.link/recipe?id=${_recipe.id}";
+    
+    final String shareText = "Check out this delicious recipe: ${_recipe.name} on Hidden Pantry!\n\n"
+        "View Recipe: $recipeLink\n\n"
+        "Don't have the app? Download it here: $appDownloadLink";
+
+    Share.share(shareText, subject: "Delicious Recipe: ${_recipe.name}");
   }
 
   Widget _iconTile({required VoidCallback onTap, required Widget child}) {
