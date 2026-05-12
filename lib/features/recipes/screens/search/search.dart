@@ -472,7 +472,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: widget.inShell ? Colors.transparent : bg,
-      resizeToAvoidBottomInset: true,
+      resizeToAvoidBottomInset: false,
       body: Stack(
         children: [
           if (!widget.inShell) PatternBackground(),
@@ -572,7 +572,7 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: widget.inShell || _searchFocus.hasFocus 
+      bottomNavigationBar: widget.inShell
           ? null 
           : HpBottomNav(
               currentIndex: 1,

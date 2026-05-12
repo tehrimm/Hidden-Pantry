@@ -76,6 +76,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       },
       child: Scaffold(
         backgroundColor: const Color(0xFFFFF3EB),
+        resizeToAvoidBottomInset: false,
         extendBody: true,
         body: Stack(
           children: [
