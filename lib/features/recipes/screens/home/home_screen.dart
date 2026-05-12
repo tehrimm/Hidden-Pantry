@@ -150,7 +150,10 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
                 // Navigate to search with the words
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => SearchScreen(initialQuery: result.recognizedWords)),
+                  MaterialPageRoute(builder: (_) => SearchScreen(
+                    initialQuery: result.recognizedWords,
+                    apiService: widget.apiService,
+                  )),
                 );
               }
             }
@@ -513,7 +516,10 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
   void _openSearch({bool openFilters = false}) {
     Navigator.push(
       context, 
-      MaterialPageRoute(builder: (_) => SearchScreen(openFilters: openFilters))
+      MaterialPageRoute(builder: (_) => SearchScreen(
+        openFilters: openFilters,
+        apiService: widget.apiService,
+      ))
     ).then((_) {
       // Reset bottom nav to home when returning from search
       if (mounted) {

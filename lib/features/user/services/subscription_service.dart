@@ -161,6 +161,7 @@ class SubscriptionService {
       'isTrial': isTrial,
       'remainingDownloads': (maxFreeDownloads - used).clamp(0, maxFreeDownloads),
       'usedDownloads': used,
+      'downloadedRecipeIds': data?['downloadedRecipeIds'] ?? [],
     };
   }
 
@@ -180,18 +181,25 @@ class SubscriptionService {
 
     // 2. Fetch current usage
     final profile = await getSubscriptionProfile();
+    final List<dynamic> existingIds = profile['downloadedRecipeIds'] ?? [];
+
+    // 3. IDEMPOTENCY: If already downloaded, allow without incrementing
+    if (existingIds.contains(recipeId)) {
+      return true;
+    }
+
+    // 4. Check limit
     if (profile['usedDownloads'] >= maxFreeDownloads) {
       return false; // Limit reached
     }
 
-    // 3. Increment total count (allows same recipe to be counted multiple times if redownloaded)
+    // 5. Increment total count and add to list
     if (_appendDownloadedRecipeIdOverride != null) {
       await _appendDownloadedRecipeIdOverride!(user.uid, recipeId);
     } else {
       final firestore = _firestore ?? FirebaseFirestore.instance;
       await firestore.collection('users').doc(user.uid).update({
         'totalDownloadCount': FieldValue.increment(1),
-        // We still keep the list for legacy support/UI but it's not the primary gate anymore
         'downloadedRecipeIds': FieldValue.arrayUnion([recipeId]),
       });
     }
