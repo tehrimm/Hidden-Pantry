@@ -331,6 +331,21 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
   List<String> _fixTags(List<String> incoming) {
     final preferred = <String>[
       "All",
+      "Breakfast",
+      "Lunch",
+      "Dinner",
+      "Pakistani",
+      "Asian",
+      "Dessert",
+      "Snack",
+      "Soup",
+      "Salad",
+      "Chicken",
+      "Seafood",
+      "Rice",
+      "Beverage",
+      "Baked",
+      "Spicy",
     ];
 
     // 1. Combine preferred with incoming (raw)
@@ -982,7 +997,7 @@ void _openUserProfile() {
   // ──────────────────── TAG ROW (rounded squares with icon + underline) ────────────────────
   Widget _tagRow() {
     final chips = tags.isEmpty
-        ? const ["All", "Breakfast", "Lunch", "Dinner", "Dessert", "Snack", "Soup", "Salad", "Pasta", "Sandwich", "Chicken", "Seafood", "Rice", "Beverage", "Baked", "Spicy"]
+        ? const ["All", "Breakfast", "Lunch", "Dinner", "Pakistani", "Asian", "Dessert", "Snack", "Soup", "Salad", "Chicken", "Seafood", "Rice", "Beverage", "Baked", "Spicy"]
         : tags;
 
     return SizedBox(

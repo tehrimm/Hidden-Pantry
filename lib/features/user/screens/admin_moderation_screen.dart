@@ -45,16 +45,46 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
           final contentId = report['contentId'] as String;
 
           if (contentType == 'recipe') {
-            final doc = await FirebaseFirestore.instance
+            // Try document ID first, then query by internal 'id' field
+            var doc = await FirebaseFirestore.instance
                 .collection('recipes')
                 .doc(contentId)
                 .get();
+            if (!doc.exists) {
+              // Recipe IDs from backend may not match Firestore doc IDs — query by field
+              final query = await FirebaseFirestore.instance
+                  .collection('recipes')
+                  .where('id', isEqualTo: contentId)
+                  .limit(1)
+                  .get();
+              if (query.docs.isNotEmpty) doc = query.docs.first;
+            }
             if (doc.exists) {
               final data = doc.data()!;
-              report['contentTitle'] = data['name'] ?? data['title'] ?? 'Untitled Recipe';
+              report['contentTitle'] = data['name'] ?? data['title'] ?? data['recipe_name'] ?? data['recipeName'] ?? 'Untitled Recipe';
               report['contentPreview'] = data['description'] ?? '';
               report['contentImageUrl'] = data['image_url'] ?? data['imageUrl'];
-              report['authorName'] = data['author_name'] ?? data['authorName'] ?? 'Unknown';
+              // Try all possible author name fields
+              final authorName = data['author_name'] ?? data['authorName'] ?? data['sourceName'];
+              if (authorName != null && authorName.toString().isNotEmpty) {
+                report['authorName'] = authorName;
+              } else {
+                // Try fetching from users collection using the report's authorId
+                try {
+                  final authorId = report['authorId'] as String? ?? '';
+                  if (authorId.isNotEmpty) {
+                    final userDoc = await FirebaseFirestore.instance.collection('users').doc(authorId).get();
+                    if (userDoc.exists) {
+                      report['authorName'] = userDoc.data()?['fullName'] ?? 'Unknown';
+                    } else {
+                      report['authorName'] = 'Author #$authorId';
+                    }
+                  }
+                } catch (_) {
+                  report['authorName'] = 'Unknown';
+                }
+              }
+              report['_firestoreDocId'] = doc.id; // Cache for navigation
             } else {
               report['contentTitle'] = 'Content deleted';
               report['contentPreview'] = 'This content has already been removed.';
@@ -347,12 +377,23 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
 
     try {
       if (contentType == 'recipe') {
-        final doc = await FirebaseFirestore.instance
+        // Try document ID first, then query by internal 'id' field
+        var doc = await FirebaseFirestore.instance
             .collection('recipes')
-            .doc(contentId)
+            .doc(report['_firestoreDocId'] ?? contentId)
             .get();
+        if (!doc.exists) {
+          final query = await FirebaseFirestore.instance
+              .collection('recipes')
+              .where('id', isEqualTo: contentId)
+              .limit(1)
+              .get();
+          if (query.docs.isNotEmpty) doc = query.docs.first;
+        }
         if (doc.exists && mounted) {
-          final recipe = Recipe.fromJson(doc.data()!);
+          final data = doc.data()!;
+          data['id'] = doc.id; // Ensure the Firestore doc ID is used
+          final recipe = Recipe.fromJson(data);
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => RecipeDetailsScreen(recipe: recipe)),
@@ -365,12 +406,23 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
         final parts = contentId.split('_');
         if (parts.length >= 2) {
           final recipeId = parts.sublist(1).join('_');
-          final recipeDoc = await FirebaseFirestore.instance
+          // Try document ID first, then query by field
+          var recipeDoc = await FirebaseFirestore.instance
               .collection('recipes')
               .doc(recipeId)
               .get();
+          if (!recipeDoc.exists) {
+            final query = await FirebaseFirestore.instance
+                .collection('recipes')
+                .where('id', isEqualTo: recipeId)
+                .limit(1)
+                .get();
+            if (query.docs.isNotEmpty) recipeDoc = query.docs.first;
+          }
           if (recipeDoc.exists && mounted) {
-            final recipe = Recipe.fromJson(recipeDoc.data()!);
+            final data = recipeDoc.data()!;
+            data['id'] = recipeDoc.id;
+            final recipe = Recipe.fromJson(data);
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => ReviewsScreen(recipe: recipe)),
@@ -384,7 +436,7 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        Toaster.show(context, 'Error navigating to content: $e', isError: true);
+        Toaster.show(context, 'Error navigating to content: \$e', isError: true);
       }
     }
   }
