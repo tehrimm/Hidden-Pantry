@@ -524,10 +524,12 @@ class _ReviewCardState extends State<_ReviewCard> {
     final userName = widget.data['userName'] ?? _fetchedUserName ?? "User";
     final userImageUrl = widget.data['userImageUrl'] ?? _fetchedUserImageUrl;
     
+    final isDeleted = widget.data['isDeleted'] == true;
     final likes = (widget.data['likes'] as num?)?.toInt() ?? 0;
     final likedBy = List<String>.from(widget.data['likedBy'] ?? []);
     final isLiked = user != null && likedBy.contains(user.uid);
-    final hasImage = userImageUrl != null && 
+    final hasImage = !isDeleted && 
+                    userImageUrl != null && 
                     userImageUrl.toString().trim().isNotEmpty && 
                     userImageUrl.toString().startsWith("http");
 
@@ -563,10 +565,15 @@ class _ReviewCardState extends State<_ReviewCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      userName,
+                      isDeleted ? "[Deleted]" : userName,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: widget.purple, fontWeight: FontWeight.bold, fontSize: 14.sp, fontFamily: "Satoshi"),
+                      style: TextStyle(
+                        color: isDeleted ? widget.purple.withValues(alpha:0.4) : widget.purple, 
+                        fontWeight: FontWeight.bold, 
+                        fontSize: 14.sp, 
+                        fontFamily: "Satoshi"
+                      ),
                     ),
                     Text(
                       dateStr,
@@ -575,21 +582,32 @@ class _ReviewCardState extends State<_ReviewCard> {
                   ],
                 ),
               ),
-              Row(
-                children: List.generate(5, (i) {
-                  return Icon(
-                    i < rating.floor() ? Icons.star : (i < rating ? Icons.star_half : Icons.star_border),
-                    color: widget.orange,
-                    size: 14.sp,
-                  );
-                }),
-              ),
+              if (!isDeleted)
+                Row(
+                  children: List.generate(5, (i) {
+                    return Icon(
+                      i < rating.floor() ? Icons.star : (i < rating ? Icons.star_half : Icons.star_border),
+                      color: widget.orange,
+                      size: 14.sp,
+                    );
+                  }),
+                ),
             ],
           ),
               
           if (comment.isNotEmpty) ...[
             SizedBox(height: 12.sh),
-            _buildCommentWithMentions(comment, widget.purple, widget.orange, 14.sp),
+            isDeleted 
+              ? Text(
+                  comment,
+                  style: TextStyle(
+                    color: widget.purple.withValues(alpha:0.4),
+                    fontStyle: FontStyle.italic,
+                    fontSize: 14.sp,
+                    fontFamily: "Satoshi",
+                  ),
+                )
+              : _buildCommentWithMentions(comment, widget.purple, widget.orange, 14.sp),
           ],
           
           if (imageUrl != null && imageUrl.isNotEmpty) ...[
@@ -626,45 +644,26 @@ class _ReviewCardState extends State<_ReviewCard> {
             SizedBox(height: 4.sh), // Much smaller gap if minimal review
           
           // Actions: Like, Reply & Delete
-          Row(
-            children: [
-              _AnimatedLikeButton(
-                isLiked: isLiked,
-                likes: likes,
-                purple: widget.purple,
-                orange: widget.orange,
-                onTap: user == null ? null : () => widget.recipeService.toggleLike(widget.reviewId, user.uid),
-              ),
-              SizedBox(width: 24.sw),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => _replyToUser(userName),
-                child: Row(
-                  children: [
-                    Icon(Icons.chat_bubble_outline, size: 18.sp, color: widget.purple.withValues(alpha:0.6)),
-                    SizedBox(width: 6.sw),
-                    Text(
-                      "Reply",
-                      style: TextStyle(
-                        color: widget.purple.withValues(alpha:0.6),
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: "Satoshi",
-                      ),
-                    ),
-                  ],
+          if (!isDeleted)
+            Row(
+              children: [
+                _AnimatedLikeButton(
+                  isLiked: isLiked,
+                  likes: likes,
+                  purple: widget.purple,
+                  orange: widget.orange,
+                  onTap: user == null ? null : () => widget.recipeService.toggleLike(widget.reviewId, user.uid),
                 ),
-              ),
-              if (user != null && widget.data['userId'] == user.uid) ...[
-                const Spacer(),
+                SizedBox(width: 24.sw),
                 GestureDetector(
-                  onTap: () => _confirmDelete(context),
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => _replyToUser(userName),
                   child: Row(
                     children: [
-                      Icon(Icons.delete_outline, color: widget.purple.withValues(alpha:0.6), size: 18.sp),
+                      Icon(Icons.chat_bubble_outline, size: 18.sp, color: widget.purple.withValues(alpha:0.6)),
                       SizedBox(width: 6.sw),
                       Text(
-                        "Delete",
+                        "Reply",
                         style: TextStyle(
                           color: widget.purple.withValues(alpha:0.6),
                           fontSize: 12.sp,
@@ -675,29 +674,49 @@ class _ReviewCardState extends State<_ReviewCard> {
                     ],
                   ),
                 ),
-              ] else if (user != null && (widget.data['userId'] != user.uid || user.email == "hiddenpantry.support@gmail.com")) ...[
-                const Spacer(),
-                GestureDetector(
-                  onTap: () => _reportReview(context),
-                  child: Row(
-                    children: [
-                      Icon(Icons.report_gmailerrorred_rounded, color: Colors.redAccent.withValues(alpha:0.6), size: 18.sp),
-                      SizedBox(width: 6.sw),
-                      Text(
-                        "Report",
-                        style: TextStyle(
-                          color: Colors.redAccent.withValues(alpha:0.6),
-                          fontSize: 12.sp,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: "Satoshi",
+                if (user != null && widget.data['userId'] == user.uid) ...[
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => _confirmDelete(context),
+                    child: Row(
+                      children: [
+                        Icon(Icons.delete_outline, color: widget.purple.withValues(alpha:0.6), size: 18.sp),
+                        SizedBox(width: 6.sw),
+                        Text(
+                          "Delete",
+                          style: TextStyle(
+                            color: widget.purple.withValues(alpha:0.6),
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: "Satoshi",
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
+                ] else if (user != null && (widget.data['userId'] != user.uid || user.email == "hiddenpantry.support@gmail.com")) ...[
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => _reportReview(context),
+                    child: Row(
+                      children: [
+                        Icon(Icons.report_gmailerrorred_rounded, color: Colors.redAccent.withValues(alpha:0.6), size: 18.sp),
+                        SizedBox(width: 6.sw),
+                        Text(
+                          "Report",
+                          style: TextStyle(
+                            color: Colors.redAccent.withValues(alpha:0.6),
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: "Satoshi",
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ],
-            ],
-          ),
+            ),
           
           // Reply Input
           if (_showReplyInput) ...[

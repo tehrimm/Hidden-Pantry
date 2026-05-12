@@ -149,7 +149,6 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
       print("Enrichment failed for ${report['contentId']}: $e");
     }
   }
-  }
 
   Future<void> _fetchReports() async {
     // Legacy method - the stream listener now handles this automatically.

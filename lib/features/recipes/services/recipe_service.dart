@@ -359,6 +359,10 @@ class RecipeService {
     final reviewRef = _firestore.collection('reviews').doc(reviewId);
     final recipeRef = _firestore.collection('recipes').doc(recipeId);
 
+    // Check if there are any replies to this review to decide between hard and soft delete
+    final repliesSnap = await reviewRef.collection('replies').limit(1).get();
+    final hasReplies = repliesSnap.docs.isNotEmpty;
+
     await _firestore.runTransaction((transaction) async {
       final reviewDoc = await transaction.get(reviewRef);
       if (!reviewDoc.exists) return;
@@ -401,7 +405,18 @@ class RecipeService {
         }
       }
 
-      transaction.delete(reviewRef);
+      if (hasReplies) {
+        // Soft delete: Keep the doc to anchor the replies, but redact content
+        transaction.update(reviewRef, {
+          'comment': 'This comment was deleted by the author.',
+          'isDeleted': true,
+          'imageUrl': FieldValue.delete(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
+      } else {
+        // Hard delete: No replies, safe to remove completely
+        transaction.delete(reviewRef);
+      }
     });
   }
 
@@ -469,17 +484,15 @@ class RecipeService {
 
 
 
-  /// Deletes a specific reply (Soft Delete to preserve context)
+  /// Deletes a specific reply
   Future<void> deleteReply(String reviewId, String replyId) async {
+    // Replies don't have children in the current flat structure, so hard delete is safe
     await _firestore
         .collection('reviews')
         .doc(reviewId)
         .collection('replies')
         .doc(replyId)
-        .update({
-      'comment': 'This comment was deleted',
-      'isDeleted': true,
-    });
+        .delete();
   }
 
   /// Toggles a like on a reply

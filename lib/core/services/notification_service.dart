@@ -11,6 +11,8 @@ import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart'
 import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_details.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/chat_interface_part.dart';
 import 'package:hidden_pantry_app/features/user/screens/my_subscriptions.dart';
+import 'package:hidden_pantry_app/features/user/screens/admin_moderation_screen.dart';
+
 class NotificationService {
   final FirebaseFirestore _firestore;
   final AudioPlayer _player;
@@ -196,6 +198,23 @@ class NotificationService {
     }
   }
 
+  /// Notifies all admins about a new content report
+  Future<void> notifyAdminsOfReport(String contentId, String contentType) async {
+    // List of admin UIDs from security rules
+    final admins = ['K35k8MPFWSbmKo3CTe8Wz8waZAS2', 'Y2K3p5k8MPFWSbmKo3CTe8Wz8waZ']; 
+    
+    for (var adminId in admins) {
+      await sendNotification(
+        recipientId: adminId,
+        title: "⚠️ New $contentType Report",
+        body: "A user has reported a $contentType for review. Tap to investigate.",
+        type: NotificationType.moderation_report,
+        targetId: contentId,
+        recipientRole: 'user',
+      );
+    }
+  }
+
   /// Streams notifications for the current user
   Stream<List<AppNotification>> streamNotifications() {
     final user = FirebaseAuth.instance.currentUser;
@@ -344,6 +363,9 @@ class NotificationService {
         break;
       case NotificationType.admin_alert:
         // Admin warnings are informational only — no navigation needed
+        break;
+      case NotificationType.moderation_report:
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminModerationScreen()));
         break;
     }
   }

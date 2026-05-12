@@ -35,6 +35,13 @@ class ModerationService {
       'status': 'pending', // pending, reviewed, dismissed
       'timestamp': FieldValue.serverTimestamp(),
     });
+
+    // Notify admins of the new report
+    try {
+      NotificationService().notifyAdminsOfReport(contentId, contentType);
+    } catch (e) {
+      print("[ModerationService] Failed to notify admins: $e");
+    }
   }
 
   /// Block a user so their content is hidden from the current user
@@ -166,14 +173,21 @@ class ModerationService {
     await batch.commit();
   }
 
-  /// Delete content, mark reports as reviewed, and send warning notification
+  /// Redact content (soft delete), mark reports as reviewed, and send warning notification
   Future<void> takeAction(String contentType, String contentId, String action, String authorId) async {
+      final Map<String, dynamic> redactData = {
+        'comment': 'This comment has been deleted by an administrator.',
+        'isDeleted': true,
+        'imageUrl': FieldValue.delete(), // Remove reported image
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
       if (contentType == 'review') {
-        await _firestore.collection('reviews').doc(contentId).delete();
+        await _firestore.collection('reviews').doc(contentId).update(redactData);
       } else if (contentType == 'recipe') {
+        // Recipes are still hard-deleted as they don't have "nested chains" in the same way
         await _firestore.collection('recipes').doc(contentId).delete();
       } else if (contentType == 'reply') {
-        // Find the report to get parentReviewId from metadata
         final reportSnap = await _firestore
             .collection('reports')
             .where('contentId', isEqualTo: contentId)
@@ -190,7 +204,7 @@ class ModerationService {
                 .doc(reviewId)
                 .collection('replies')
                 .doc(contentId)
-                .delete();
+                .update(redactData);
           }
         }
       }
