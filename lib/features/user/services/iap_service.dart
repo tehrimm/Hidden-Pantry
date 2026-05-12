@@ -252,7 +252,7 @@ class IAPService {
           'platformFee': platformFee,
           'googleFee': googleFee,
           'userName': user.displayName ?? "Subscriber",
-          'planTitle': purchase.productID.split('_').last.toUpperCase(),
+          'planTitle': purchase.productID.contains('silver') ? 'SILVER' : (purchase.productID.contains('gold') ? 'GOLD' : 'PLATINUM'),
           'timestamp': FieldValue.serverTimestamp(),
         });
 
