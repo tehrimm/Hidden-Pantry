@@ -40,7 +40,7 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
   Future<void> _cropImage(String path) async {
     final croppedFile = await ImageCropper().cropImage(
       sourcePath: path,
-      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1), // Square for recipes
+      aspectRatio: CropAspectRatio(ratioX: 1, ratioY: 1), // Square for recipes
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: 'Adjust Image',
@@ -56,9 +56,6 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
           aspectRatioLockEnabled: true,
           resetButtonHidden: false,
           aspectRatioPickerButtonHidden: true,
-        ),
-        WebUiSettings(
-          context: context,
         ),
       ],
     );

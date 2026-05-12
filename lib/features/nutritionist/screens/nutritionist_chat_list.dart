@@ -165,7 +165,7 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
     GlassDialog.show(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
+        backgroundColor: bg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text("Delete Conversation?", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
         content: Text(

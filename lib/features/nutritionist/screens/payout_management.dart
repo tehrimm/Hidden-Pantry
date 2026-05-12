@@ -546,7 +546,7 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
                       value: selectedMethod,
                       isExpanded: true,
                       borderRadius: BorderRadius.circular(14.sw),
-                      dropdownColor: Colors.white,
+                      dropdownColor: bg,
                       style: TextStyle(color: purple, fontSize: 14.sp, fontFamily: "Satoshi"),
                       onChanged: (v) => setModalState(() => selectedMethod = v!),
                       items: methods.map((m) => DropdownMenuItem(value: m, child: Text(m))).toList(),

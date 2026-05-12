@@ -173,9 +173,10 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     final confirmed = await GlassDialog.show<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text("Delete Plan?"),
-        content: const Text("This tier will no longer be available for new subscribers. Existing subscribers will not be affected."),
+        backgroundColor: bg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text("Delete Plan?", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+        content: Text("This tier will no longer be available for new subscribers. Existing subscribers will not be affected.", style: TextStyle(color: purple.withValues(alpha: 0.7), fontFamily: "Satoshi")),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
           TextButton(
@@ -697,7 +698,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("Cancel", style: TextStyle(color: purple.withValues(alpha: 0.5))),
+            child: Text("Cancel", style: TextStyle(color: purple.withValues(alpha: 0.5), fontWeight: FontWeight.w600, fontFamily: "Satoshi")),
           ),
           TextButton(
             onPressed: () {

@@ -34,11 +34,12 @@ class _ClientPlansScreenState extends State<ClientPlansScreen> {
     final confirmed = await GlassDialog.show<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        title: const Text("Delete Plan?"),
-        content: const Text("This action cannot be undone. Existing subscribers will lose access to future updates of this tier."),
+        backgroundColor: const Color(0xFFFFF3EB),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text("Delete Plan?", style: TextStyle(color: Color(0xFF462F4D), fontWeight: FontWeight.bold, fontFamily: "Satoshi")),
+        content: const Text("This action cannot be undone. Existing subscribers will lose access to future updates of this tier.", style: TextStyle(color: Color(0xFF462F4D), fontFamily: "Satoshi")),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel", style: TextStyle(color: Colors.grey, fontFamily: "Satoshi"))),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             child: const Text("Delete", style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),

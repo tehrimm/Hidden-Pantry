@@ -14,11 +14,14 @@ class RecipeSelectionSheet extends StatelessWidget {
     final Color orange = const Color(0xFFEF8A54);
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       height: MediaQuery.of(context).size.height * 0.8,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7F2),
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        boxShadow: [
+          BoxShadow(color: purple.withValues(alpha: 0.15), blurRadius: 30, offset: const Offset(0, -10)),
+        ],
       ),
       child: SafeArea(
         child: Column(

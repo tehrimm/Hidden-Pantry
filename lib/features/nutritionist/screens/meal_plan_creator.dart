@@ -363,17 +363,19 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
     GlassDialog.show(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.sw)),
-        title: Text("Add Note to $type", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 18.sp)),
+        backgroundColor: const Color(0xFFFFF7F2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24.sw)),
+        title: Text("Add Note to $type", style: TextStyle(color: purple, fontWeight: FontWeight.bold, fontSize: 18.sp, fontFamily: "Satoshi")),
         content: TextField(
           controller: noteCtrl,
           maxLines: 3,
-          style: TextStyle(fontSize: 14.sp),
+          style: TextStyle(fontSize: 14.sp, color: purple),
           decoration: InputDecoration(
             hintText: "Enter your note here...",
-            hintStyle: TextStyle(fontSize: 14.sp),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.sw)),
+            hintStyle: TextStyle(fontSize: 14.sp, color: purple.withValues(alpha: 0.4)),
+            filled: true,
+            fillColor: const Color(0xFFF9E3D5),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16.sw), borderSide: BorderSide.none),
           ),
         ),
         actions: [

@@ -609,10 +609,13 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
       isScrollControlled: true,
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+          boxShadow: [
+            BoxShadow(color: purple.withValues(alpha: 0.15), blurRadius: 30, offset: const Offset(0, -10)),
+          ],
         ),
         child: Column(
           children: [
