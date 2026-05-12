@@ -88,7 +88,9 @@ class NotificationService {
     String? recipientRole, 
   }) async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null || recipientId == user.uid) return;
+    // Allow admins to receive notifications even if they are the sender (for moderation alerts)
+    final isSystemAlert = type == NotificationType.moderation_report || type == NotificationType.admin_alert;
+    if (user == null || (recipientId == user.uid && !isSystemAlert)) return;
 
     final notification = {
       'recipientId': recipientId,

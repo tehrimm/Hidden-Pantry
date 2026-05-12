@@ -153,9 +153,23 @@ class ModerationService {
   /// Suspend a user for a specific number of days
   Future<void> suspendUser(String userId, int days) async {
     final until = DateTime.now().add(Duration(days: days));
-    await _firestore.collection('users').doc(userId).update({
+    final updateData = {
       'suspendedUntil': Timestamp.fromDate(until),
-    });
+    };
+
+    try {
+      // Try updating in users collection
+      await _firestore.collection('users').doc(userId).update(updateData);
+    } catch (e) {
+      // If fails (likely document doesn't exist), try nutritionists collection
+      try {
+        await _firestore.collection('nutritionists').doc(userId).update(updateData);
+      } catch (e2) {
+        // If both fail, this might be an API-only user (e.g. from Food.com)
+        // We can't suspend them in our DB, so we'll just log it.
+        print("[ModerationService] Author $userId is likely an external API user; suspension skipped.");
+      }
+    }
   }
 
   /// Dismiss all reports for a contentId
@@ -185,8 +199,18 @@ class ModerationService {
       if (contentType == 'review') {
         await _firestore.collection('reviews').doc(contentId).update(redactData);
       } else if (contentType == 'recipe') {
-        // Recipes are still hard-deleted as they don't have "nested chains" in the same way
-        await _firestore.collection('recipes').doc(contentId).delete();
+        // If it's a Firestore recipe, hard delete it
+        final doc = await _firestore.collection('recipes').doc(contentId).get();
+        if (doc.exists) {
+          await doc.reference.delete();
+        } else {
+          // If it's an API recipe, we "delete" it locally by adding to a blacklist
+          await _firestore.collection('moderated_content').doc(contentId).set({
+            'type': 'recipe',
+            'moderatedAt': FieldValue.serverTimestamp(),
+            'action': 'removed',
+          });
+        }
       } else if (contentType == 'reply') {
         final reportSnap = await _firestore
             .collection('reports')

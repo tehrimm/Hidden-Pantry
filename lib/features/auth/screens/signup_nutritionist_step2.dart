@@ -217,7 +217,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> with 
         if (!mounted) return;
         
         final isTest = widget.email.trim().toLowerCase() == "testnutritionist@gmail.com" || 
-                       widget.email.trim().toLowerCase() == "testnutrionist@gmail.com";
+                       widget.email.trim().toLowerCase() == "testnutritionist@gmail.com";
 
         if (!isTest) {
           await GlassDialog.show(

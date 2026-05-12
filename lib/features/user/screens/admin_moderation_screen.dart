@@ -83,34 +83,48 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
           final query = await FirebaseFirestore.instance.collection('recipes').where('id', isEqualTo: contentId).limit(1).get();
           if (query.docs.isNotEmpty) doc = query.docs.first;
         }
-        if (doc.exists) {
+        final bool isPartialDoc = doc.exists && (doc.data()?['name'] == null && doc.data()?['title'] == null);
+        
+        if (doc.exists && !isPartialDoc) {
           final data = doc.data()!;
-          enrichedData['contentTitle'] = data['name'] ?? data['title'] ?? data['recipe_name'] ?? data['recipeName'] ?? 'Untitled Recipe';
-          enrichedData['contentPreview'] = data['description'] ?? '';
-          enrichedData['contentImageUrl'] = data['image_url'] ?? data['imageUrl'];
+          enrichedData['contentTitle'] = data['name'] ?? data['title'] ?? data['recipe_name'] ?? data['recipeName'] ?? data['recipe_title'] ?? 'Untitled Recipe';
+          enrichedData['contentPreview'] = data['description'] ?? data['desc'] ?? '';
+          enrichedData['contentImageUrl'] = data['image_url'] ?? data['imageUrl'] ?? data['photoUrl'];
           
-          final authorName = data['author_name'] ?? data['authorName'] ?? data['sourceName'];
-          if (authorName != null && authorName.toString().isNotEmpty) {
+          final authorName = data['author_name'] ?? data['authorName'] ?? data['sourceName'] ?? data['userName'];
+          if (authorName != null && authorName.toString().isNotEmpty && authorName != 'Author #1') {
             enrichedData['authorName'] = authorName;
           } else {
-            final authorId = report['authorId'] as String? ?? '';
+            final authorId = data['author_id'] ?? data['authorId'] ?? report['authorId'] as String? ?? '';
             if (authorId.isNotEmpty) {
-              final userDoc = await FirebaseFirestore.instance.collection('users').doc(authorId).get();
-              enrichedData['authorName'] = userDoc.data()?['fullName'] ?? 'Author #$authorId';
+              var userDoc = await FirebaseFirestore.instance.collection('users').doc(authorId).get();
+              if (!userDoc.exists) {
+                userDoc = await FirebaseFirestore.instance.collection('nutritionists').doc(authorId).get();
+              }
+              final userData = userDoc.data();
+              enrichedData['authorName'] = userData?['fullName'] ?? userData?['name'] ?? userData?['userName'] ?? 'Author #$authorId';
             }
           }
           enrichedData['_firestoreDocId'] = doc.id;
         } else {
+          // If it's a partial doc or doesn't exist, try API fallback
           try {
             final apiService = const RecipeApiService(baseUrl: ApiConstants.baseUrl);
             final apiRecipe = await apiService.getRecipeById(contentId);
             enrichedData['contentTitle'] = apiRecipe.name;
-            enrichedData['contentPreview'] = apiRecipe.description;
+            enrichedData['contentPreview'] = apiRecipe.description ?? '';
             enrichedData['contentImageUrl'] = apiRecipe.imageUrl;
             enrichedData['authorName'] = apiRecipe.authorName ?? 'API Author';
             enrichedData['isApiRecipe'] = true;
           } catch (_) {
-            enrichedData['contentTitle'] = 'Content deleted';
+            if (isPartialDoc) {
+               // If API fails but we have a partial doc, show what we have
+               final data = doc.data()!;
+               enrichedData['contentTitle'] = data['id'] ?? 'Untitled Recipe';
+               enrichedData['authorName'] = 'Author #${data['authorId'] ?? data['author_id'] ?? 'Unknown'}';
+            } else {
+               enrichedData['contentTitle'] = 'Content deleted';
+            }
           }
         }
       } else if (contentType == 'review') {

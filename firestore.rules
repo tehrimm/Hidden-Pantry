@@ -215,5 +215,9 @@ service cloud.firestore {
       allow create: if isAuthenticated();
       allow read, update, delete: if isAdmin();
     }
+    match /moderated_content/{contentId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }

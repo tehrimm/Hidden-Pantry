@@ -423,6 +423,9 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
       case NotificationType.admin_alert:
         icon = Icons.gavel_rounded;
         break;
+      case NotificationType.moderation_report:
+        icon = Icons.report_problem_rounded;
+        break;
     }
 
     return Container(
