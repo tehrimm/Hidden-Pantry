@@ -8,6 +8,8 @@ import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/reviews/reviews.dart';
+import 'package:hidden_pantry_app/features/recipes/services/recipe_api_service.dart';
+import 'package:hidden_pantry_app/core/constants/api_constants.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'dart:ui' as ui;
 
@@ -86,8 +88,21 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
               }
               report['_firestoreDocId'] = doc.id; // Cache for navigation
             } else {
-              report['contentTitle'] = 'Content deleted';
-              report['contentPreview'] = 'This content has already been removed.';
+              // --- BUG FIX Fallback: Check API if not in Firestore ---
+              try {
+                final apiService = const RecipeApiService(baseUrl: ApiConstants.baseUrl);
+                final apiRecipe = await apiService.getRecipeById(contentId);
+                
+                report['contentTitle'] = apiRecipe.name;
+                report['contentPreview'] = apiRecipe.description;
+                report['contentImageUrl'] = apiRecipe.imageUrl;
+                report['authorName'] = apiRecipe.authorName ?? 'API Author';
+                report['isApiRecipe'] = true;
+              } catch (apiErr) {
+                print("[AdminModeration] API fallback failed for $contentId: $apiErr");
+                report['contentTitle'] = 'Content deleted';
+                report['contentPreview'] = 'This content has already been removed.';
+              }
             }
           } else if (contentType == 'review') {
             final doc = await FirebaseFirestore.instance
@@ -377,6 +392,21 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
 
     try {
       if (contentType == 'recipe') {
+        if (report['isApiRecipe'] == true) {
+          // --- BUG FIX: Navigate to API recipe details ---
+          final placeholder = Recipe(
+            id: contentId,
+            name: report['contentTitle'] ?? 'Loading...',
+            minutes: 0,
+            avgRating: 0.0,
+          );
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => RecipeDetailsScreen(recipe: placeholder)),
+          );
+          return;
+        }
+
         // Try document ID first, then query by internal 'id' field
         var doc = await FirebaseFirestore.instance
             .collection('recipes')

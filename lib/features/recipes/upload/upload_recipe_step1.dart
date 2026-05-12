@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'upload_recipe_step2.dart';
@@ -36,6 +37,39 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
     super.dispose();
   }
 
+  Future<void> _cropImage(String path) async {
+    final croppedFile = await ImageCropper().cropImage(
+      sourcePath: path,
+      aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1), // Square for recipes
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: 'Adjust Image',
+          toolbarColor: purple,
+          toolbarWidgetColor: Colors.white,
+          initAspectRatio: CropAspectRatioPreset.square,
+          lockAspectRatio: true,
+          activeControlsWidgetColor: orange,
+          backgroundColor: const Color(0xFFFFF3EB),
+        ),
+        IOSUiSettings(
+          title: 'Adjust Image',
+          aspectRatioLockEnabled: true,
+          resetButtonHidden: false,
+          aspectRatioPickerButtonHidden: true,
+        ),
+        WebUiSettings(
+          context: context,
+        ),
+      ],
+    );
+
+    if (croppedFile != null) {
+      setState(() {
+        _image = File(croppedFile.path);
+      });
+    }
+  }
+
   Future<void> _pickImage() async {
     showModalBottomSheet(
       context: context,
@@ -61,7 +95,7 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                     if (mounted) Toaster.show(context, 'Image too large (Max 5MB)', isError: true);
                     return;
                   }
-                  setState(() => _image = File(image.path));
+                  await _cropImage(image.path);
                 }
               }),
               SizedBox(height: 12.sh),
@@ -73,7 +107,7 @@ class _UploadRecipeStep1State extends State<UploadRecipeStep1> {
                     if (mounted) Toaster.show(context, 'Image too large (Max 5MB)', isError: true);
                     return;
                   }
-                  setState(() => _image = File(photo.path));
+                  await _cropImage(photo.path);
                 }
               }),
               SizedBox(height: 24.sh),

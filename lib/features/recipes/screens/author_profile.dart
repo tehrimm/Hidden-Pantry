@@ -208,64 +208,16 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
       body: Stack(
         children: [
           const PatternBackground(),
-                // Standardized Header - Back Button
-                Positioned(
-                  left: 30.sw,
-                  top: 51.sh,
-                  child: const BackButtonWidget(color: textColor),
-                ),
-                
-                // Block/More Button
-                Positioned(
-                  right: 30.sw,
-                  top: 51.sh,
-                  child: PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert_rounded, color: textColor),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.sw)),
-                    onSelected: (value) {
-                      if (value == 'block') {
-                        _showBlockConfirm(context);
-                      } else if (value == 'report') {
-                         _showReportDialog(context);
-                      }
-                    },
-                    itemBuilder: (context) => [
-                      PopupMenuItem(
-                        value: 'report',
-                        child: Row(
-                          children: [
-                            Icon(Icons.report_problem_outlined, color: Colors.orange, size: 20.sw),
-                            SizedBox(width: 10.sw),
-                            const Text("Report User", style: TextStyle(fontFamily: "Satoshi")),
-                          ],
-                        ),
-                      ),
-                      PopupMenuItem(
-                        value: 'block',
-                        child: Row(
-                          children: [
-                            Icon(Icons.block_flipped, color: Colors.red, size: 20.sw),
-                            SizedBox(width: 10.sw),
-                            const Text("Block User", style: TextStyle(fontFamily: "Satoshi")),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-
-                SafeArea(
-                  child: Column(
-                    children: [
-                      SizedBox(height: 70.sh), // Gap for standardized header
-
+          
+          SafeArea(
+            child: Column(
+              children: [
+                SizedBox(height: 70.sh), // Gap for standardized header
                 Expanded(
                   child: _loading 
                     ? Column(
                         children: [
                           SizedBox(height: 10.sh),
-                          // Subtle top loader
                           SizedBox(
                             width: 20.sw,
                             height: 20.sw,
@@ -279,6 +231,55 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
                         ],
                       )
                     : _buildContent(),
+                ),
+              ],
+            ),
+          ),
+
+          // CRITICAL FIX: Header elements moved to the END of the Stack 
+          // to ensure they are on top of all other elements for hit testing.
+          
+          // Back Button
+          Positioned(
+            left: 30.sw,
+            top: 51.sh,
+            child: const BackButtonWidget(color: textColor),
+          ),
+          
+          // Block/More Button
+          Positioned(
+            right: 30.sw,
+            top: 51.sh,
+            child: PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert_rounded, color: textColor),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.sw)),
+              onSelected: (value) {
+                if (value == 'block') {
+                  _showBlockConfirm(context);
+                } else if (value == 'report') {
+                    _showReportDialog(context);
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'report',
+                  child: Row(
+                    children: [
+                      Icon(Icons.report_problem_outlined, color: Colors.orange, size: 20.sw),
+                      SizedBox(width: 10.sw),
+                      const Text("Report User", style: TextStyle(fontFamily: "Satoshi")),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'block',
+                  child: Row(
+                    children: [
+                      Icon(Icons.block_flipped, color: Colors.red, size: 20.sw),
+                      SizedBox(width: 10.sw),
+                      const Text("Block User", style: TextStyle(fontFamily: "Satoshi")),
+                    ],
+                  ),
                 ),
               ],
             ),

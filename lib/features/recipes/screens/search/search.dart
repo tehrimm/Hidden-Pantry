@@ -354,7 +354,6 @@ class _SearchScreenState extends State<SearchScreen> {
 
         if (apiResults.length < _limit) _hasMore = false;
       });
-      FocusScope.of(context).unfocus();
     }
   }
 

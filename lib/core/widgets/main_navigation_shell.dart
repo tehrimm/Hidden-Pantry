@@ -80,19 +80,21 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         body: Stack(
           children: [
             // Background Gradient
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFFFFF3EB), Color(0xFFF6DFD1)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  stops: [0.4, 1.0],
+            Positioned.fill(
+              child: Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFFFFF3EB), Color(0xFFF6DFD1)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    stops: [0.4, 1.0],
+                  ),
                 ),
               ),
             ),
             
             // Decorative Orbs for premium feel (Consistency with Nutritionist Dashboard)
-            const _ShellBackgroundPattern(),
+            const Positioned.fill(child: _ShellBackgroundPattern()),
   
             IndexedStack(
               index: _currentIndex,
