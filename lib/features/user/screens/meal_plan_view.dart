@@ -399,7 +399,7 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                             padding: EdgeInsets.symmetric(vertical: 18.sh),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16.sw),
-                              side: BorderSide(color: Colors.red.withValues(alpha:0.3)),
+                              side: BorderSide(color: Colors.red.withOpacity(0.3)),
                             ),
                             elevation: 0,
                           ),
