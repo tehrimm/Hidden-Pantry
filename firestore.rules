@@ -165,6 +165,10 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    match /pending_purchases/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
     // ==================== PLATFORM PAYMENT RULES ====================
     match /platform_payments/{paymentId} {
       allow read: if request.auth != null && (resource.data.nutritionistId == request.auth.uid || isAdmin());

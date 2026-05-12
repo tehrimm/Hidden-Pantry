@@ -20,20 +20,31 @@ class HpBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
     const Color brandPurple = Color(0xFF462F4D);
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final navHeight = 70.sh; // The visible "bar" part
 
     return SizedBox(
-      height: 90.sh,
+      height: navHeight + bottomPadding + 20.sh, // 20.sh extra for the FAB overlap
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.bottomCenter,
         children: [
+          // BOTTOM FILLER (Solid purple to prevent any bleed below the bar)
+          Positioned(
+            bottom: -100, // Extend deep below the screen
+            left: 0,
+            right: 0,
+            height: 100 + bottomPadding + 10,
+            child: Container(color: brandPurple),
+          ),
+
           // MAIN NAV BAR BACKGROUND (NOTCHED)
           Positioned(
             bottom: 0,
             left: 0,
             right: 0,
             child: CustomPaint(
-              size: Size(double.infinity, 70.sh),
+              size: Size(double.infinity, navHeight + bottomPadding),
               painter: _NotchedNavPainter(
                 color: brandPurple,
                 notchRadius: 38.sw,
@@ -43,11 +54,11 @@ class HpBottomNav extends StatelessWidget {
 
           // ICONS ROW
           Positioned(
-            bottom: 0,
+            bottom: bottomPadding,
             left: 0,
             right: 0,
             child: SizedBox(
-              height: 70.sh,
+              height: navHeight,
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24.sw),
                 child: Row(
@@ -87,7 +98,7 @@ class HpBottomNav extends StatelessWidget {
 
           // FLOATING PLUS BUTTON
           Positioned(
-            bottom: 35.sh,
+            bottom: bottomPadding + (navHeight * 0.5) + 1.sh, // Moved slightly up
             child: GestureDetector(
               onTap: () => onTap(2),
               child: Container(

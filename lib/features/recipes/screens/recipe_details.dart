@@ -458,10 +458,11 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
           // Revert optimistic update if blocked
           if (mounted) setState(() => _remainingDownloads = originalRemaining);
           if (mounted) {
-            Navigator.push(
+            await Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
             );
+            _loadSubscriptionInfo(); // Refresh after returning from paywall
           }
           return;
         }

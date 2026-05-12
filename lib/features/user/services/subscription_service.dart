@@ -52,24 +52,62 @@ class SubscriptionService {
     if (user == null) return false;
 
     try {
+      // 1. Check the 'subscriptions' collection for any active platform premium
       final rows = _loadPlatformSubscriptionsOverride != null
           ? await _loadPlatformSubscriptionsOverride!(user.uid)
           : await _loadPlatformSubscriptions(user.uid);
+      
+      for (var row in rows) {
+        final expiry = row['expiryDate'];
+        if (expiry != null) {
+          DateTime? expiryDate;
+          if (expiry is Timestamp) {
+            expiryDate = expiry.toDate();
+          } else if (expiry is DateTime) {
+            expiryDate = expiry;
+          } else if (expiry is String) {
+            expiryDate = DateTime.tryParse(expiry);
+          }
 
-      if (rows.isNotEmpty) {
-        final expiry = rows.first['expiryDate'];
-        if (expiry is Timestamp) {
-          return expiry.toDate().isAfter(_now());
-        }
-        if (expiry is DateTime) {
-          return expiry.isAfter(_now());
+          if (expiryDate != null && expiryDate.isAfter(_now())) {
+            debugPrint("SubscriptionService: Active platform subscription found.");
+            return true;
+          }
         }
       }
 
+      // 2. Fallback: Check user document for 'isPremium' flag or 'subscriptionExpiry'
       final userData = _loadUserDataOverride != null
           ? await _loadUserDataOverride!(user.uid)
           : await _loadUserData(user.uid);
-      return userData?['isPremium'] == true;
+      
+      if (userData == null) return false;
+
+      // Check explicit flag
+      if (userData['isPremium'] == true) {
+        debugPrint("SubscriptionService: User flag 'isPremium' is true.");
+        return true;
+      }
+
+      // Check expiry in user doc
+      final userExpiry = userData['subscriptionExpiry'];
+      if (userExpiry != null) {
+        DateTime? expiryDate;
+        if (userExpiry is Timestamp) {
+          expiryDate = userExpiry.toDate();
+        } else if (userExpiry is DateTime) {
+          expiryDate = userExpiry;
+        } else if (userExpiry is String) {
+          expiryDate = DateTime.tryParse(userExpiry);
+        }
+
+        if (expiryDate != null && expiryDate.isAfter(_now())) {
+          debugPrint("SubscriptionService: User flag 'subscriptionExpiry' is still valid.");
+          return true;
+        }
+      }
+
+      return false;
     } catch (e) {
       debugPrint("Error checking premium status: $e");
       return false;
@@ -96,21 +134,8 @@ class SubscriptionService {
         trialExpiry = DateTime.tryParse(data['trialExpiresAt'] as String);
       }
 
-      if (trialExpiry == null) {
-        final createdAt = data['createdAt'];
-        DateTime? createdDate;
-        if (createdAt is Timestamp) {
-          createdDate = createdAt.toDate();
-        } else if (createdAt is DateTime) {
-          createdDate = createdAt;
-        } else if (createdAt is String) {
-          createdDate = DateTime.tryParse(createdAt);
-        }
-        
-        if (createdDate != null) {
-          trialExpiry = createdDate.add(const Duration(days: 7));
-        }
-      }
+      // REMOVED: Automatic 7-day trial fallback. 
+      // Trial must be explicitly granted via 'trialExpiresAt' field.
 
       if (trialExpiry == null) return false;
 
@@ -234,14 +259,22 @@ class SubscriptionService {
           ? await _loadNutritionistSubscriptionsOverride!(user.uid, nutritionistId)
           : await _loadNutritionistSubscriptions(user.uid, nutritionistId);
 
-      if (rows.isNotEmpty) {
-        final data = rows.first;
+      for (var data in rows) {
         final expiry = data['expiryDate'];
-        if (expiry is Timestamp) {
-          return expiry.toDate().isAfter(_now());
-        }
-        if (expiry is DateTime) {
-          return expiry.isAfter(_now());
+        if (expiry != null) {
+          DateTime? expiryDate;
+          if (expiry is Timestamp) {
+            expiryDate = expiry.toDate();
+          } else if (expiry is DateTime) {
+            expiryDate = expiry;
+          } else if (expiry is String) {
+            expiryDate = DateTime.tryParse(expiry);
+          }
+
+          if (expiryDate != null && expiryDate.isAfter(_now())) {
+            debugPrint("SubscriptionService: Active nutritionist subscription found for $nutritionistId.");
+            return true;
+          }
         }
       }
       return false;
@@ -263,7 +296,7 @@ class SubscriptionService {
         .collection('subscriptions')
         .where('userId', isEqualTo: uid)
         .where('planId', isEqualTo: 'platform_premium')
-        .where('status', isEqualTo: 'active')
+        .where('status', whereIn: ['active', 'trialing']) // Removed 'pending'
         .get();
     return snap.docs.map((d) => d.data()).toList();
   }
@@ -277,7 +310,7 @@ class SubscriptionService {
         .collection('subscriptions')
         .where('userId', isEqualTo: uid)
         .where('nutritionistId', isEqualTo: nutritionistId)
-        .where('status', isEqualTo: 'active')
+        .where('status', whereIn: ['active', 'trialing']) // Removed 'pending'
         .get();
     return snap.docs.map((d) => d.data()).toList();
   }
