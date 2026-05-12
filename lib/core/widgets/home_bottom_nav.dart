@@ -237,11 +237,9 @@ class _NotchedNavPainter extends CustomPainter {
     // Top right curve
     path.quadraticBezierTo(size.width, 0, size.width, topRadius);
     
-    // Line to bottom right
-    path.lineTo(size.width, size.height);
-    
-    // Close path
-    path.lineTo(0, size.height);
+    // Close path by going down beyond the bottom of the screen to prevent any bleed
+    path.lineTo(size.width, size.height + 100);
+    path.lineTo(0, size.height + 100);
     path.close();
 
     // Draw shadow

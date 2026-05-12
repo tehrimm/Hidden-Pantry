@@ -478,6 +478,7 @@ class _SearchScreenState extends State<SearchScreen> {
         children: [
           if (!widget.inShell) PatternBackground(),
           SafeArea(
+            bottom: false,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -839,7 +840,7 @@ class _SearchScreenState extends State<SearchScreen> {
     return CustomScrollView(
       slivers: [
         SliverPadding(
-          padding: const EdgeInsets.all(22),
+          padding: EdgeInsets.fromLTRB(22, 22, 22, 100.sh),
           sliver: SliverGrid(
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
@@ -915,7 +916,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
 
     return ListView(
-      padding: const EdgeInsets.all(22),
+      padding: EdgeInsets.fromLTRB(22, 22, 22, 100.sh), // Added large bottom padding
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
