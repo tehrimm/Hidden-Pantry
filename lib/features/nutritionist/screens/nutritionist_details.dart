@@ -1797,7 +1797,12 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
          orElse: () => throw Exception("Product $productId not found in store"),
        );
 
-       await iap.buyProduct(product, nutritionistId: widget.nutritionistId, context: context);
+       await iap.buyProduct(
+         product, 
+         nutritionistId: widget.nutritionistId, 
+         oldPurchase: iap.getActiveNutritionistPurchase(widget.nutritionistId),
+         context: context
+       );
        
        if (mounted) {
          setState(() => _isLoadingSubscription = false);

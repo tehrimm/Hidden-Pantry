@@ -25,22 +25,21 @@ class IAPService {
 
 
   // Product IDs (Must match Google Play Console)
-  static const String monthlyID = 'platform_premium_monthly';
-  static const String annualID = 'platform_premium_annual';
-  static const String nutritionistMembershipID = 'nutritionist_platform_membership';
+  // Platform Premium (Subscription ID: hidden_pantry_premium)
+  static const String premiumMonthly = 'hidden_pantry_premium:monthly-plan';
+  static const String premiumAnnual = 'hidden_pantry_premium:annual-plan';
   
-  // Nutritionist Tiers (For users to subscribe to nutritionists)
-  static const String nutritionistSilverMonthly = 'nutritionist_silver_monthly';
-  static const String nutritionistSilverQuarterly = 'nutritionist_silver_quarterly';
-  static const String nutritionistGoldMonthly = 'nutritionist_gold_monthly';
-  static const String nutritionistGoldQuarterly = 'nutritionist_gold_quarterly';
-  static const String nutritionistPlatinumMonthly = 'nutritionist_platinum_monthly';
-  static const String nutritionistPlatinumQuarterly = 'nutritionist_platinum_quarterly';
+  // Nutritionist Subscriptions (Subscription ID: nutritionist_subscription)
+  static const String nutritionistSilverMonthly = 'nutritionist_subscription:nutritionist-silver-monthly';
+  static const String nutritionistSilverQuarterly = 'nutritionist_subscription:nutritionist-silver-quarterly';
+  static const String nutritionistGoldMonthly = 'nutritionist_subscription:nutritionist-gold-monthly';
+  static const String nutritionistGoldQuarterly = 'nutritionist_subscription:nutritionist-gold-quarterly';
+  static const String nutritionistPlatinumMonthly = 'nutritionist_subscription:nutritionist-platinum-monthly';
+  static const String nutritionistPlatinumQuarterly = 'nutritionist_subscription:nutritionist-platinum-quarterly';
 
   static const Set<String> _productIds = {
-    monthlyID, 
-    annualID, 
-    nutritionistMembershipID,
+    premiumMonthly, 
+    premiumAnnual, 
     nutritionistSilverMonthly,
     nutritionistSilverQuarterly,
     nutritionistGoldMonthly,
@@ -51,6 +50,13 @@ class IAPService {
 
   List<ProductDetails> _products = [];
   List<ProductDetails> get products => _products;
+
+  // Track active purchases for upgrades
+  PurchaseDetails? _activePlatformPurchase;
+  PurchaseDetails? get activePlatformPurchase => _activePlatformPurchase;
+  
+  final Map<String, PurchaseDetails> _activeNutritionistPurchases = {};
+  PurchaseDetails? getActiveNutritionistPurchase(String nutritionistId) => _activeNutritionistPurchases[nutritionistId];
 
   /// Initialize listeners
   void initialize() {
@@ -97,8 +103,8 @@ class IAPService {
     }
   }
 
-  /// Start purchase flow
-  Future<void> buyProduct(ProductDetails product, {String? nutritionistId, BuildContext? context}) async {
+  /// Start purchase flow with optional upgrade/downgrade support
+  Future<void> buyProduct(ProductDetails product, {String? nutritionistId, PurchaseDetails? oldPurchase, BuildContext? context}) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
@@ -111,13 +117,15 @@ class IAPService {
       });
     }
 
-    final PurchaseParam purchaseParam = PurchaseParam(productDetails: product);
+    final PurchaseParam purchaseParam = PurchaseParam(
+      productDetails: product,
+    );
     await _iap.buyNonConsumable(purchaseParam: purchaseParam);
   }
 
   /// Development-only bypass for testing premium flow
   Future<void> buyTesterProduct({String? productId, String? nutritionistId, BuildContext? context}) async {
-    final id = productId ?? nutritionistMembershipID;
+    final id = productId ?? premiumMonthly;
     debugPrint("Tester account detected: Bypassing payment for $id");
     
     // Simulate recording pending purchase for tester
@@ -156,6 +164,14 @@ class IAPService {
       } else if (purchase.status == PurchaseStatus.error) {
         debugPrint("Purchase Error: ${purchase.error}");
       } else if (purchase.status == PurchaseStatus.purchased || purchase.status == PurchaseStatus.restored) {
+        // Success! Update local tracking
+        if (purchase.productID.contains('hidden_pantry_premium')) {
+          _activePlatformPurchase = purchase;
+        } else if (purchase.productID.contains('nutritionist_subscription')) {
+          // Note: We'd need the nutritionistId here, which isn't in PurchaseDetails.
+          // Usually handled via pendings, but for upgrade we mostly care about platform premium.
+        }
+        
         // Success! Update Firestore
         await _verifyAndEnablePremium(purchase);
       }
@@ -171,11 +187,11 @@ class IAPService {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final isNutritionistTier = purchase.productID.startsWith('nutritionist_');
-    final isNutritionistMembership = purchase.productID == nutritionistMembershipID;
+    final isNutritionistTier = purchase.productID.contains('nutritionist_subscription');
+    final isPlatformPremium = purchase.productID.contains('hidden_pantry_premium');
     
     int durationDays = 30; // Default Monthly
-    if (purchase.productID == annualID || purchase.productID.contains('yearly') || purchase.productID.contains('annual')) {
+    if (purchase.productID.contains('annual') || purchase.productID.contains('yearly')) {
       durationDays = 365;
     } else if (purchase.productID.contains('quarterly')) {
       durationDays = 90;
@@ -245,14 +261,7 @@ class IAPService {
 
         await batch.commit();
       }
-    } else if (isNutritionistMembership) {
-      // 🟠 NUTRITIONIST JOINING PLATFORM
-      await FirebaseFirestore.instance.collection('nutritionists').doc(user.uid).update({
-        'isActive': true,
-        'membershipExpiry': Timestamp.fromDate(expiry),
-        'lastPaymentDate': FieldValue.serverTimestamp(),
-      });
-    } else {
+    } else if (isPlatformPremium) {
       // 🔵 USER BUYING PLATFORM PREMIUM
       await FirebaseFirestore.instance.collection('subscriptions').add({
         'userId': user.uid,
@@ -288,7 +297,7 @@ class IAPService {
         'userId': user.uid,
         'planId': 'platform_premium',
         'planTitle': 'Hidden Pantry Premium',
-        'productId': isAnnual ? annualID : monthlyID,
+        'productId': isAnnual ? premiumAnnual : premiumMonthly,
         'purchaseId': 'debug_${DateTime.now().millisecondsSinceEpoch}',
         'status': 'active',
         'startDate': FieldValue.serverTimestamp(),

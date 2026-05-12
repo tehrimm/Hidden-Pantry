@@ -45,29 +45,29 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
 
   // 12 ingredients (KEEP labels EXACT, because Firestore values must match these)
   final List<_TileData> _tiles = const [
-    _TileData(label: 'Caffeine', asset: 'assets/food/caffeine.png', left: 95, top: 317, isLarge: false),
-    _TileData(label: 'Tree nuts', asset: 'assets/food/treenuts.png', left: 189, top: 283, isLarge: true),
-    _TileData(label: 'Peanuts', asset: 'assets/food/peanuts.png', left: 280, top: 352, isLarge: false),
+    _TileData(label: 'Caffeine', asset: 'assets/food/caffeine.png', left: 95, top: 367, isLarge: false),
+    _TileData(label: 'Tree nuts', asset: 'assets/food/treenuts.png', left: 189, top: 333, isLarge: true),
+    _TileData(label: 'Peanuts', asset: 'assets/food/peanuts.png', left: 280, top: 402, isLarge: false),
 
-    _TileData(label: 'Spicy', asset: 'assets/food/spicy.png', left: 33, top: 374, isLarge: false),
+    _TileData(label: 'Spicy', asset: 'assets/food/spicy.png', left: 33, top: 424, isLarge: false),
     _TileData(
       label: 'Gluten',
       asset: 'assets/food/gluten.png',
       left: 155,
-      top: 382,
+      top: 432,
       isLarge: false,
       iconW: 58,
       iconH: 39,
     ),
-    _TileData(label: 'Soy', asset: 'assets/food/soy.png', left: 222, top: 420, isLarge: true, iconW: 45, iconH: 45),
+    _TileData(label: 'Soy', asset: 'assets/food/soy.png', left: 222, top: 470, isLarge: true, iconW: 45, iconH: 45),
 
-    _TileData(label: 'Shellfish', asset: 'assets/food/shellfish.png', left: 68, top: 435, isLarge: true),
-    _TileData(label: 'Wheat', asset: 'assets/food/wheat.png', left: 150, top: 491, isLarge: true),
-    _TileData(label: 'Dairy', asset: 'assets/food/milk.png', left: 279, top: 525, isLarge: false, iconW: 35, iconH: 35),
+    _TileData(label: 'Shellfish', asset: 'assets/food/shellfish.png', left: 68, top: 485, isLarge: true),
+    _TileData(label: 'Wheat', asset: 'assets/food/wheat.png', left: 150, top: 541, isLarge: true),
+    _TileData(label: 'Dairy', asset: 'assets/food/milk.png', left: 279, top: 575, isLarge: false, iconW: 35, iconH: 35),
 
-    _TileData(label: 'Fish', asset: 'assets/food/fish.png', left: 33, top: 523, isLarge: false),
-    _TileData(label: 'Eggs', asset: 'assets/food/eggs.png', left: 98, top: 579, isLarge: false, iconW: 50, iconH: 42),
-    _TileData(label: 'Tomatoes', asset: 'assets/food/tomato.png', left: 205, top: 582, isLarge: true),
+    _TileData(label: 'Fish', asset: 'assets/food/fish.png', left: 33, top: 573, isLarge: false),
+    _TileData(label: 'Eggs', asset: 'assets/food/eggs.png', left: 98, top: 629, isLarge: false, iconW: 50, iconH: 42),
+    _TileData(label: 'Tomatoes', asset: 'assets/food/tomato.png', left: 205, top: 632, isLarge: true),
   ];
 
   @override
@@ -159,79 +159,89 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
     ResponsiveUtils.init(context);
     return Scaffold(
       backgroundColor: bg,
-      body: Stack(
-        children: [
-          const PatternBackground(),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
+          child: SizedBox(
+            height: 900.sh, // Give it a fixed height for the Stack to work
+            child: Stack(
+              children: [
+                const PatternBackground(),
 
-          // Back button ONLY in profile mode
-          if (widget.fromProfile)
-            Positioned(
-              left: 30.sw,
-              top: 51.sh,
-              child: BackButtonWidget(color: titleColor),
-            ),
-
-          // Skip ONLY in signup mode
-          if (!widget.fromProfile)
-            Positioned(
-              right: 30.sw,
-              top: 67.sh,
-              child: GestureDetector(
-                onTap: _skip,
-                child: Text(
-                  'Skip',
-                  style: TextStyle(
-                    color: const Color(0xFF74503C),
-                    fontSize: 15.sp,
-                    fontFamily: 'Satoshi',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-
-          // Title
+          // Header Group (Replaces fixed Positioned text)
           Positioned(
             left: 30.sw,
-            top: 117.sh,
-            child: _StaggeredItem(
-              index: 0,
-              delay: 100,
-              child: SizedBox(
-                width: 330.sw,
-                child: Text(
-                  'What should we\navoid for you?',
-                  style: TextStyle(
-                    color: titleColor,
-                    fontSize: 40.sp,
-                    fontFamily: 'Satoshi',
-                    fontWeight: FontWeight.w900,
-                    height: 1.10,
+            top: 30.sh,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Back/Skip Controls
+                SizedBox(
+                  width: 330.sw,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (widget.fromProfile)
+                        BackButtonWidget(color: titleColor)
+                      else
+                        const SizedBox.shrink(),
+                      if (!widget.fromProfile)
+                        GestureDetector(
+                          onTap: _skip,
+                          child: Text(
+                            'Skip',
+                            style: TextStyle(
+                              color: const Color(0xFF74503C),
+                              fontSize: 15.sp,
+                              fontFamily: 'Satoshi',
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-              ),
-            ),
-          ),
-
-          Positioned(
-            left: 30.sw,
-            top: 222.sh,
-            child: _StaggeredItem(
-              index: 1,
-              delay: 100,
-              child: SizedBox(
-                width: 325.sw,
-                child: Text(
-                  'Pick the ingredients you want to avoid due to\nallergies, intolerances, or personal health\nneeds.',
-                  style: TextStyle(
-                    color: titleColor,
-                    fontSize: 15.sp,
-                    fontFamily: 'Satoshi',
-                    fontWeight: FontWeight.w400,
-                    height: 1.35,
+                SizedBox(height: 30.sh),
+                
+                // Title
+                _StaggeredItem(
+                  index: 0,
+                  delay: 100,
+                  child: SizedBox(
+                    width: 330.sw,
+                    child: Text(
+                      'What should we\navoid for you?',
+                      style: TextStyle(
+                        color: titleColor,
+                        fontSize: 36.sp,
+                        fontFamily: 'Satoshi',
+                        fontWeight: FontWeight.w900,
+                        height: 1.10,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                SizedBox(height: 16.sh),
+                
+                // Subtitle
+                _StaggeredItem(
+                  index: 1,
+                  delay: 100,
+                  child: SizedBox(
+                    width: 325.sw,
+                    child: Text(
+                      'Pick the ingredients you want to avoid due to\nallergies, intolerances, or personal health\nneeds.',
+                      style: TextStyle(
+                        color: titleColor,
+                        fontSize: 15.sp,
+                        fontFamily: 'Satoshi',
+                        fontWeight: FontWeight.w400,
+                        height: 1.35,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
 
@@ -331,11 +341,11 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    );
-  }
+    ),
+  );
 }
 
 class _StaggeredItem extends StatelessWidget {

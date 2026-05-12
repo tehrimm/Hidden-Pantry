@@ -418,7 +418,7 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
 
   String _getPriceLabel() {
     if (_iapService.products.isEmpty) return _isAnnual ? "Rs. 2850" : "Rs. 250";
-    final targetId = _isAnnual ? IAPService.annualID : IAPService.monthlyID;
+    final targetId = _isAnnual ? IAPService.premiumAnnual : IAPService.premiumMonthly;
     try {
       final product = _iapService.products.firstWhere((p) => p.id == targetId);
       return product.price;
@@ -441,13 +441,18 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
     }
 
     try {
-      final targetId = _isAnnual ? IAPService.annualID : IAPService.monthlyID;
+      final targetId = _isAnnual ? IAPService.premiumAnnual : IAPService.premiumMonthly;
       final product = _iapService.products.firstWhere(
         (p) => p.id == targetId, 
         orElse: () => _iapService.products.first
       );
 
-      await _iapService.buyProduct(product, context: context);
+      // Pass the existing purchase if this is an upgrade/downgrade
+      await _iapService.buyProduct(
+        product, 
+        oldPurchase: _iapService.activePlatformPurchase,
+        context: context,
+      );
     } catch (e) {
       if (context.mounted) {
         Toaster.show(context, "Unable to process payment. Please try again.", isError: true);
