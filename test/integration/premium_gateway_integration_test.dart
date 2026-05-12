@@ -15,7 +15,7 @@ void main() {
       mockPlatformSubs = [];
       mockUserData = {
         'isPremium': false,
-        'createdAt': mockNow.subtract(const Duration(days: 30)), // Past trial
+        'trialExpiresAt': mockNow.subtract(const Duration(days: 30)), // Past trial
         'downloadedRecipeIds': [],
       };
 
@@ -34,17 +34,17 @@ void main() {
     });
 
     test('User in trial window can use premium features', () async {
-      mockUserData!['createdAt'] = mockNow.subtract(const Duration(days: 5));
+      mockUserData!['trialExpiresAt'] = mockNow.add(const Duration(days: 2));
       expect(await service.canUsePremiumFeature(), true);
     });
 
     test('User on last day of trial can use premium features', () async {
-      mockUserData!['createdAt'] = mockNow.subtract(const Duration(days: 6));
+      mockUserData!['trialExpiresAt'] = mockNow.add(const Duration(days: 1));
       expect(await service.canUsePremiumFeature(), true);
     });
 
     test('User exactly at trial expiry (7 days) is blocked', () async {
-      mockUserData!['createdAt'] = mockNow.subtract(const Duration(days: 7));
+      mockUserData!['trialExpiresAt'] = mockNow;
       expect(await service.canUsePremiumFeature(), false);
     });
 

@@ -15,7 +15,7 @@ void main() {
       mockPlatformSubs = [];
       mockUserData = {
         'isPremium': false,
-        'createdAt': mockNow.subtract(const Duration(days: 10)),
+        'trialExpiresAt': mockNow.subtract(const Duration(days: 10)),
         'downloadedRecipeIds': [],
       };
 
@@ -40,7 +40,7 @@ void main() {
       });
 
       test('image_recognition unlocked for trial user', () async {
-        mockUserData!['createdAt'] = mockNow.subtract(const Duration(days: 3));
+        mockUserData!['trialExpiresAt'] = mockNow.add(const Duration(days: 4));
         expect(await service.canUseFeature('image_recognition'), true);
       });
     });

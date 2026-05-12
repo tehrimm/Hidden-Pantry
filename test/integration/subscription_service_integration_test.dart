@@ -17,7 +17,7 @@ void main() {
     setUp(() {
       mockUserData = {
         'isPremium': false,
-        'createdAt': mockNow.subtract(const Duration(days: 10)), // 10 days old - past 7-day trial
+        'trialExpiresAt': mockNow.subtract(const Duration(days: 10)), // 10 days old - past trial
         'downloadedRecipeIds': [],
       };
       mockPlatformSubs = [];
@@ -42,12 +42,12 @@ void main() {
       });
 
       test('isTrialActive returns true within 7-day window', () async {
-        mockUserData!['createdAt'] = mockNow.subtract(const Duration(days: 3));
+        mockUserData!['trialExpiresAt'] = mockNow.add(const Duration(days: 4));
         expect(await service.isTrialActive(), true);
       });
 
       test('Trial expires exactly on day 7', () async {
-        mockUserData!['createdAt'] = mockNow.subtract(const Duration(days: 7));
+        mockUserData!['trialExpiresAt'] = mockNow;
         expect(await service.isTrialActive(), false); // 7 days == expiry, not before
       });
     });
@@ -83,7 +83,7 @@ void main() {
       });
 
       test('voice_cooking unlocked for trial user', () async {
-        mockUserData!['createdAt'] = mockNow.subtract(const Duration(days: 3));
+        mockUserData!['trialExpiresAt'] = mockNow.add(const Duration(days: 4));
         expect(await service.canUseFeature('voice_cooking'), true);
       });
 
