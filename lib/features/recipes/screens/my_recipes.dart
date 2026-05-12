@@ -700,7 +700,8 @@ class _MyRecipesScreenState extends State<MyRecipesScreen> {
                 HapticFeedback.lightImpact();
                 Navigator.push(context, MaterialPageRoute(builder: (_) => RecipeDetailsScreen(recipe: recipe)));
               },
-              onLongPress: () => (_isNutritionist ? _showEditShareSheet(recipe) : _showManagementOptions(recipe)),
+              onEdit: () => (_isNutritionist ? _showEditShareSheet(recipe) : _showManagementOptions(recipe)),
+              onDelete: () => _confirmDelete(recipe),
               onShareTap: _isNutritionist ? () => _showShareOptions(recipe) : null,
               onVisibilityTap: _isNutritionist ? () => _toggleVisibility(recipe) : null,
               isPublic: recipe.isPublic,

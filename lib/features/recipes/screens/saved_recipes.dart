@@ -475,7 +475,8 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
                 ),
               );
             },
-            onLongPress: () => _showRecipeOptions(recipes[index]),
+            onEdit: () => _showRecipeOptions(recipes[index]), // Shared options
+            onDelete: () => _removeFromCookbook(recipes[index]),
           ),
         );
       },
@@ -493,7 +494,8 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
           ),
         );
       },
-      onLongPress: () => _showRecipeOptions(recipe),
+      onEdit: () => _showRecipeOptions(recipe),
+      onDelete: () => _removeFromCookbook(recipe),
     );
   }
 
