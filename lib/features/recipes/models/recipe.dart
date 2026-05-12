@@ -807,12 +807,12 @@ class IngredientItem {
     // Pattern 1: Truncated "l" (large/lemon) or "g" or "c"
     if ((unit == "l" || unit == "g" || unit == "c") && name.isNotEmpty) {
       String lowName = name.toLowerCase();
-      // If name starts with "arge" and unit is "l" -> large
-      if (unit == "l" && lowName.startsWith("arge")) {
+      // If name starts with "arge" or "agre" and unit is "l" -> large
+      if (unit == "l" && (lowName.startsWith("arge") || lowName.startsWith("agre"))) {
          name = "large" + name.substring(4);
          unit = "";
-      } else if (unit == "l" && lowName.startsWith("emon")) {
-         name = "lemon" + name.substring(4);
+      } else if (unit == "l" && (lowName.startsWith("emon") || lowName.startsWith("mon"))) {
+         name = "lemon" + (lowName.startsWith("emon") ? name.substring(4) : name.substring(3));
          unit = "";
       }
     }
@@ -822,8 +822,10 @@ class IngredientItem {
     if (lowName.startsWith("ablespoon")) name = "t" + name;
     else if (lowName.startsWith("easpoon")) name = "t" + name;
     else if (lowName.startsWith("unces")) name = "o" + name;
-    else if (lowName.startsWith("arge ")) name = "l" + name;
+    else if (lowName.startsWith("arge ") || lowName.startsWith("agre ")) name = "l" + name;
     else if (lowName.startsWith("emon ")) name = "l" + name;
+    else if (lowName.startsWith("nion")) name = "o" + name;
+    else if (lowName.startsWith("otato")) name = "p" + name;
 
     // Pattern 3: If quantity is 0, try to re-parse the whole thing
     if (quantity == 0) {

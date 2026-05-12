@@ -33,11 +33,14 @@ class RecipeDetailsScreen extends StatefulWidget {
   final RecipeApiService? apiService;
   final RecipeService? recipeService;
 
+  final String? sourceAuthorId;
+
   const RecipeDetailsScreen({
     super.key,
     required this.recipe,
     this.apiService,
     this.recipeService,
+    this.sourceAuthorId,
   });
 
   @override
@@ -1274,6 +1277,13 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                 onTap: () {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (!mounted) return;
+                    
+                    // Prevent recursion: If we came from this author's profile, just go back.
+                    if (widget.sourceAuthorId == r.authorId) {
+                      Navigator.pop(context);
+                      return;
+                    }
+
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -1337,7 +1347,10 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => RecipeDetailsScreen(recipe: ar!),
+                                  builder: (_) => RecipeDetailsScreen(
+                                    recipe: ar!,
+                                    sourceAuthorId: widget.sourceAuthorId,
+                                  ),
                                 ),
                               );
                             });

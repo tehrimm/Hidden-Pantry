@@ -493,7 +493,12 @@ class _AuthorProfileScreenState extends State<AuthorProfileScreen> {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => RecipeDetailsScreen(recipe: r)),
+              MaterialPageRoute(
+                builder: (_) => RecipeDetailsScreen(
+                  recipe: r,
+                  sourceAuthorId: widget.authorId,
+                ),
+              ),
             );
           },
         );

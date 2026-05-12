@@ -16,8 +16,8 @@ class ResponsiveUtils {
     screenWidth = mq.size.width;
     screenHeight = mq.size.height;
 
-    wScale = screenWidth / designWidth;
-    hScale = screenHeight / designHeight;
+    wScale = (screenWidth / designWidth).clamp(0.95, 2.0);
+    hScale = (screenHeight / designHeight).clamp(0.95, 2.0);
     textScaler = mq.textScaler;
   }
 

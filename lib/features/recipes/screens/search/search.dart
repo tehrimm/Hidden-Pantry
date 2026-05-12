@@ -193,7 +193,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
     if (_debounce?.isActive ?? false) _debounce!.cancel();
     if (q.isNotEmpty) {
-      _debounce = Timer(const Duration(milliseconds: 500), () {
+      _debounce = Timer(const Duration(milliseconds: 800), () {
         _performSearch(q);
       });
     }
@@ -472,7 +472,7 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: widget.inShell ? Colors.transparent : bg,
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
           if (!widget.inShell) PatternBackground(),
