@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_api_service.dart';
 import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
+import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
 import 'package:hidden_pantry_app/core/constants/api_constants.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
@@ -94,6 +95,10 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
 
       if (widget.authorIds != null && widget.authorIds!.isNotEmpty) {
         futures.add(api.fetchFollowingFeed(widget.authorIds!, limit: _limit).then((res) {
+           fetchedRecipes = res;
+        }).catchError((_) {}));
+      } else if (widget.query == "top this week") {
+        futures.add(RecipeService().getTrendingRecipes(limit: _limit).then((res) {
            fetchedRecipes = res;
         }).catchError((_) {}));
       } else {

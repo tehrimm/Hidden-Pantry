@@ -29,18 +29,24 @@ class IAPService {
   static const String annualID = 'platform_premium_annual';
   static const String nutritionistMembershipID = 'nutritionist_platform_membership';
   
-  // Generic Nutritionist Tiers (For users to subscribe to nutritionists)
-  static const String nutritionistSubSilver = 'nutritionist_sub_silver';
-  static const String nutritionistSubGold = 'nutritionist_sub_gold';
-  static const String nutritionistSubPlatinum = 'nutritionist_sub_platinum';
+  // Nutritionist Tiers (For users to subscribe to nutritionists)
+  static const String nutritionistSilverMonthly = 'nutritionist_silver_monthly';
+  static const String nutritionistSilverQuarterly = 'nutritionist_silver_quarterly';
+  static const String nutritionistGoldMonthly = 'nutritionist_gold_monthly';
+  static const String nutritionistGoldQuarterly = 'nutritionist_gold_quarterly';
+  static const String nutritionistPlatinumMonthly = 'nutritionist_platinum_monthly';
+  static const String nutritionistPlatinumQuarterly = 'nutritionist_platinum_quarterly';
 
   static const Set<String> _productIds = {
     monthlyID, 
     annualID, 
     nutritionistMembershipID,
-    nutritionistSubSilver,
-    nutritionistSubGold,
-    nutritionistSubPlatinum,
+    nutritionistSilverMonthly,
+    nutritionistSilverQuarterly,
+    nutritionistGoldMonthly,
+    nutritionistGoldQuarterly,
+    nutritionistPlatinumMonthly,
+    nutritionistPlatinumQuarterly,
   };
 
   List<ProductDetails> _products = [];
@@ -165,11 +171,18 @@ class IAPService {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final isNutritionistTier = purchase.productID.startsWith('nutritionist_sub_');
+    final isNutritionistTier = purchase.productID.startsWith('nutritionist_');
     final isNutritionistMembership = purchase.productID == nutritionistMembershipID;
-    final isMonthly = purchase.productID == monthlyID || isNutritionistMembership || isNutritionistTier;
+    
+    int durationDays = 30; // Default Monthly
+    if (purchase.productID == annualID || purchase.productID.contains('yearly') || purchase.productID.contains('annual')) {
+      durationDays = 365;
+    } else if (purchase.productID.contains('quarterly')) {
+      durationDays = 90;
+    }
+    
     final now = DateTime.now();
-    final expiry = isMonthly ? now.add(const Duration(days: 30)) : now.add(const Duration(days: 365));
+    final expiry = now.add(Duration(days: durationDays));
 
     if (isNutritionistTier) {
       // 🟢 USER SUBSCRIBING TO NUTRITIONIST
@@ -178,9 +191,14 @@ class IAPService {
       
       if (nutritionistId != null) {
         // Find price for fee calculation (fallback if product not loaded)
-        double amount = 500; // Silver default
-        if (purchase.productID == nutritionistSubGold) amount = 1500;
-        if (purchase.productID == nutritionistSubPlatinum) amount = 3000;
+        double amount = 4000; // Silver Monthly default
+        if (purchase.productID.contains('gold')) amount = 7000;
+        if (purchase.productID.contains('platinum')) amount = 10000;
+        
+        // Adjust for quarterly
+        if (purchase.productID.contains('quarterly')) {
+          amount *= 2.75; // Roughly 3 months with a discount
+        }
         
         try {
           final p = _products.firstWhere((element) => element.id == purchase.productID);
@@ -245,7 +263,7 @@ class IAPService {
         'status': 'active',
         'startDate': FieldValue.serverTimestamp(),
         'expiryDate': Timestamp.fromDate(expiry),
-        'interval': isMonthly ? 'month' : 'year',
+        'interval': durationDays == 365 ? 'year' : (durationDays == 90 ? 'quarter' : 'month'),
         'billingSource': 'google_play',
         'createdAt': FieldValue.serverTimestamp(),
       });

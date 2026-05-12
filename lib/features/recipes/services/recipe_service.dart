@@ -80,6 +80,9 @@ class RecipeService {
         }
         await _firestore.collection('users').doc(uid).set(updates, SetOptions(merge: true));
       }
+
+      // Track global engagement for trending
+      _trackEngagement(recipeId, 'view');
     } catch (e) {
       print("[RecipeService] View personalization update failed: $e");
     }
@@ -681,6 +684,9 @@ class RecipeService {
       });
       print("[RecipeService] Recipe $recipeId liked");
 
+      // Track global engagement for trending
+      _trackEngagement(recipeId, 'like');
+
       // Trigger Notification to Recipe Owner
       _notifyRecipeOwner(recipeId, "liked your recipe");
     }
@@ -1022,6 +1028,61 @@ class RecipeService {
     } catch (e) {
       print('[RecipeService] toggleFavorite failed: $e');
       rethrow;
+    }
+  }
+
+  // --- Global Engagement Tracking for Trending ---
+
+  /// Tracks a generic engagement event (view or like) for a recipe
+  Future<void> _trackEngagement(String recipeId, String type) async {
+    try {
+      final ref = _firestore.collection('trending_events').doc();
+      await ref.set({
+        'recipeId': recipeId,
+        'type': type, // 'view' or 'like'
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print("[RecipeService] Failed to track engagement: $e");
+    }
+  }
+
+  /// Calculates and fetches trending recipes based on recent engagement
+  Future<List<Recipe>> getTrendingRecipes({int limit = 10, int days = 7}) async {
+    try {
+      // 1. Get events from the last X days
+      final cutoff = DateTime.now().subtract(Duration(days: days));
+      final eventsSnap = await _firestore
+          .collection('trending_events')
+          .where('timestamp', isGreaterThanOrEqualTo: cutoff)
+          .get();
+
+      if (eventsSnap.docs.isEmpty) return [];
+
+      // 2. Aggregate scores (e.g., view = 1 point, like = 5 points)
+      final Map<String, int> scores = {};
+      for (final doc in eventsSnap.docs) {
+        final data = doc.data();
+        final recipeId = data['recipeId'] as String?;
+        final type = data['type'] as String?;
+        if (recipeId == null) continue;
+
+        final points = type == 'like' ? 5 : 1;
+        scores[recipeId] = (scores[recipeId] ?? 0) + points;
+      }
+
+      // 3. Sort by score
+      final sortedIds = scores.keys.toList()
+        ..sort((a, b) => scores[b]!.compareTo(scores[a]!));
+
+      // 4. Fetch the top recipes
+      final topIds = sortedIds.take(limit).toList();
+      if (topIds.isEmpty) return [];
+
+      return await getRecipesByIds(topIds);
+    } catch (e) {
+      print("[RecipeService] Error fetching trending recipes: $e");
+      return [];
     }
   }
 }

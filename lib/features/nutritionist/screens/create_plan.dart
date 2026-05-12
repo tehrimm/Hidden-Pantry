@@ -24,19 +24,27 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
   final Color orange = const Color(0xFFEF8A54);
 
   late TextEditingController _nameController;
-  late TextEditingController _priceController;
   
   String _selectedInterval = "Monthly";
-  final List<String> _intervals = ["Weekly", "Monthly", "Quarterly", "Yearly"];
+  final List<String> _intervals = ["Monthly", "Quarterly"];
   
   // NEW: Tier Handling
   String _selectedTier = "Tier 1 (Silver)";
   final List<String> _tiers = ["Tier 1 (Silver)", "Tier 2 (Gold)", "Tier 3 (Platinum)"];
+
   int get _tierLevel {
     if (_selectedTier.contains("Tier 1")) return 1;
     if (_selectedTier.contains("Tier 2")) return 2;
     if (_selectedTier.contains("Tier 3")) return 3;
     return 1;
+  }
+
+  String get _calculatedPrice {
+    final bool isQuarterly = _selectedInterval == "Quarterly";
+    if (_tierLevel == 1) return isQuarterly ? "11000" : "4000";
+    if (_tierLevel == 2) return isQuarterly ? "19000" : "7000";
+    if (_tierLevel == 3) return isQuarterly ? "27000" : "10000";
+    return "0";
   }
 
   List<Map<String, dynamic>> _benefits = [
@@ -53,7 +61,6 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.initialPlan?['title'] ?? "");
-    _priceController = TextEditingController(text: widget.initialPlan?['price'] ?? "");
     _selectedInterval = widget.initialPlan?['interval'] ?? "Monthly";
     _isActive = widget.initialPlan?['isActive'] ?? true;
     
@@ -96,13 +103,11 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     }
     
     _nameController.addListener(() => setState(() {}));
-    _priceController.addListener(() => setState(() {}));
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _priceController.dispose();
     super.dispose();
   }
 
@@ -110,8 +115,8 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    if (_nameController.text.isEmpty || _priceController.text.isEmpty) {
-      Toaster.show(context, "Please fill in plan name and price", isError: true);
+    if (_nameController.text.isEmpty) {
+      Toaster.show(context, "Please fill in plan name", isError: true);
       return;
     }
 
@@ -128,7 +133,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
 
       final planData = {
         "title": _nameController.text,
-        "price": _priceController.text.replaceAll(',', ''), // Ensure no commas
+        "price": _calculatedPrice, 
         "interval": _selectedInterval,
         "benefits": cleanedBenefits,
         "nutritionistId": user.uid,
@@ -256,14 +261,10 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                 SizedBox(height: 16.sh),
                                 Row(
                                   children: [
-                                    Expanded(child: _inputField(
-                                      "PRICE", 
-                                      _priceController, 
+                                    Expanded(child: _readOnlyPriceField(
+                                      "FIXED PRICE", 
+                                      _calculatedPrice, 
                                       prefix: "Rs. ",
-                                      keyboardType: TextInputType.number,
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                                      ],
                                     )),
                                     SizedBox(width: 16.sw),
                                     Expanded(child: _intervalDropdown()),
@@ -447,7 +448,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                "Rs. ${_priceController.text.isEmpty ? "0" : _priceController.text}",
+                "Rs. $_calculatedPrice",
                 style: TextStyle(color: orange, fontSize: 32.sp, fontWeight: FontWeight.w900, fontFamily: "Satoshi"),
               ),
               Padding(
@@ -507,6 +508,36 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
             child: Text(
               text,
               style: TextStyle(color: purple, fontSize: 13.sp, fontWeight: FontWeight.w500, fontFamily: "Satoshi"),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _readOnlyPriceField(
+    String label, 
+    String value, {
+    String? prefix,
+  }) {
+    return Container(
+      padding: EdgeInsets.all(16.sw),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9E3D5).withValues(alpha: 0.6), 
+        borderRadius: BorderRadius.circular(16.sw),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(color: purple.withValues(alpha: 0.4), fontSize: 10.sp, fontWeight: FontWeight.w900),
+          ),
+          Padding(
+            padding: EdgeInsets.only(top: 8.sh),
+            child: Text(
+              "$prefix$value",
+              style: TextStyle(color: purple.withValues(alpha: 0.7), fontSize: 16.sp, fontWeight: FontWeight.bold),
             ),
           ),
         ],

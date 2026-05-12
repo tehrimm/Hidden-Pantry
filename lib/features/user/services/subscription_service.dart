@@ -87,18 +87,17 @@ class SubscriptionService {
           : await _loadUserData(user.uid);
       if (data == null) return false;
 
-      DateTime? createdDt;
-      if (data['createdAt'] is Timestamp) {
-        createdDt = (data['createdAt'] as Timestamp).toDate();
-      } else if (data['createdAt'] is DateTime) {
-        createdDt = data['createdAt'] as DateTime;
-      } else if (data['createdAt'] is String) {
-        createdDt = DateTime.tryParse(data['createdAt'] as String);
+      DateTime? trialExpiry;
+      if (data['trialExpiresAt'] is Timestamp) {
+        trialExpiry = (data['trialExpiresAt'] as Timestamp).toDate();
+      } else if (data['trialExpiresAt'] is DateTime) {
+        trialExpiry = data['trialExpiresAt'] as DateTime;
+      } else if (data['trialExpiresAt'] is String) {
+        trialExpiry = DateTime.tryParse(data['trialExpiresAt'] as String);
       }
 
-      if (createdDt == null) return false;
+      if (trialExpiry == null) return false;
 
-      final trialExpiry = createdDt.add(const Duration(days: 7));
       return _now().isBefore(trialExpiry);
     } catch (e) {
       return false;

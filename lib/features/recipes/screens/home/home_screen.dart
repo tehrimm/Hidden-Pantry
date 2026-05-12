@@ -271,10 +271,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
           likedRecipeIds: likedIds, topK: 50, minRating: 0.0,
         ).then((v) => rec = v).catchError((_) => <Recipe>[]),
 
-        api.recommend(
-          query: "top this week", tag: null, allergies: userAllergies,
-          likedRecipeIds: likedIds, topK: 50, minRating: 0.0,
-        ).then((v) => week = v).catchError((_) => <Recipe>[]),
+        RecipeService().getTrendingRecipes(limit: 50).then((v) => week = v).catchError((_) => <Recipe>[]),
       ];
 
       if (followedIds.isNotEmpty) {

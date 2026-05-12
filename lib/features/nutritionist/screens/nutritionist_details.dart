@@ -1780,9 +1780,17 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
        await iap.fetchProducts();
 
        final int tier = plan['tierLevel'] ?? 1;
-       String productId = IAPService.nutritionistSubSilver;
-       if (tier == 2) productId = IAPService.nutritionistSubGold;
-       if (tier == 3) productId = IAPService.nutritionistSubPlatinum;
+       final String interval = (plan['interval'] ?? 'Monthly').toString().toLowerCase();
+       
+       String productId = IAPService.nutritionistSilverMonthly;
+       
+       if (tier == 1) {
+         productId = interval.contains('quarter') ? IAPService.nutritionistSilverQuarterly : IAPService.nutritionistSilverMonthly;
+       } else if (tier == 2) {
+         productId = interval.contains('quarter') ? IAPService.nutritionistGoldQuarterly : IAPService.nutritionistGoldMonthly;
+       } else if (tier == 3) {
+         productId = interval.contains('quarter') ? IAPService.nutritionistPlatinumQuarterly : IAPService.nutritionistPlatinumMonthly;
+       }
 
        final product = iap.products.firstWhere(
          (p) => p.id == productId,
