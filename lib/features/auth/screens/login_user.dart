@@ -163,6 +163,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
+          TextInput.finishAutofillContext();
           if (isNutr) {
             Navigator.pushReplacement(
               context,
@@ -406,14 +407,12 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                         right: horizontal,
                         bottom: 20.sh + mq.viewInsets.bottom,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SizedBox(height: 15.sh),
-                          _AnimatedWrapper(
-                            animation: _staggeredAnimations[1],
-                            child: Text(
-                              "Login",
+                      child: AutofillGroup(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: 15.sh),
+                            _AnimatedWrapper(
                               style: TextStyle(
                                 color: purple,
                                 fontSize: 40.sp,
@@ -700,7 +699,8 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                               ),
                             ),
                           ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),

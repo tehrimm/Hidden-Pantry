@@ -332,6 +332,7 @@ class _SignupNutritionistScreenState extends State<SignupNutritionistScreen> wit
                         right: 30.sw,
                         bottom: 30.sh + mq.padding.bottom + mq.viewInsets.bottom,
                       ),
+                    child: AutofillGroup(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -703,6 +704,7 @@ class _SignupNutritionistScreenState extends State<SignupNutritionistScreen> wit
                           ),
                         ],
                       ),
+                    ),
                     ),
                   ),
                 ],

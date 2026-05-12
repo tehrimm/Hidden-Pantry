@@ -195,7 +195,7 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
           .catchError((e) => debugPrint("Background profile sync failed: $e"));
 
       if (!mounted) return;
-
+      TextInput.finishAutofillContext();
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (_) => AllergiesScreen(userService: _userService)),
@@ -385,9 +385,10 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
                       right: 30.sw,
                       bottom: 30.sh + mq.padding.bottom + mq.viewInsets.bottom,
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
+                    child: AutofillGroup(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                         _AnimatedWrapper(
                           animation: _staggeredAnimations[1],
                           child: SizedBox(
@@ -769,7 +770,8 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
                     ),
                   ),
                 ),
-              ],
+              ),
+            ],
             ),
           ],
         ),

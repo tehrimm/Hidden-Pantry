@@ -215,6 +215,7 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> with 
 
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         if (!mounted) return;
+        TextInput.finishAutofillContext();
         
         final isTest = widget.email.trim().toLowerCase() == "testnutritionist@gmail.com" || 
                        widget.email.trim().toLowerCase() == "testnutritionist@gmail.com";
