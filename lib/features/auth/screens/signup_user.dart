@@ -259,9 +259,11 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
         }
       }
     } on FirebaseAuthException catch (e) {
-      _snack("${e.message ?? "Google registration failed"}", isError: true);
-    } catch (_) {
-      _snack("Google registration failed", isError: true);
+      debugPrint("[AuthService] Google Registration FirebaseAuthException: ${e.code} - ${e.message}");
+      _snack("${e.message ?? "Google registration failed (${e.code}) "}", isError: true);
+    } catch (e) {
+      debugPrint("[AuthService] Google Registration General Error: $e");
+      _snack("Google registration failed: $e", isError: true);
     } finally {
       if (mounted) _setLoading(false);
     }

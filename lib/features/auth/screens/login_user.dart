@@ -260,15 +260,15 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
       debugPrint("Message: ${e.message}");
       if (e.code == '10' || e.code == 'DEVELOPER_ERROR') {
         debugPrint("⚠️ Likely Cause: Release SHA-1 fingerprint is missing in Firebase!");
-        debugPrint("Action: Run './gradlew signingReport' and add the Release SHA-1 to your Firebase Project Settings.");
       }
       debugPrint("---------------------------------------------------------");
       _snack("Google login failed: ${e.message ?? e.code}", isError: true);
     } on FirebaseAuthException catch (e) {
-      _snack("${e.message ?? "Google login failed"}", isError: true);
+      debugPrint("❌ [GoogleLogin] FirebaseAuthException: ${e.code}");
+      _snack("${e.message ?? "Google login failed (${e.code}) "}", isError: true);
     } catch (e) {
-      if (kDebugMode) debugPrint("[GoogleLogin] Unexpected error: $e");
-      _snack("Google login failed", isError: true);
+      debugPrint("[GoogleLogin] Unexpected error: $e");
+      _snack("Google login failed: $e", isError: true);
     } finally {
       if (mounted) _setLoading(false);
     }

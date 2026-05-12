@@ -211,7 +211,7 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
                     child: Icon(
                       report['contentType'] == 'recipe'
                           ? Icons.restaurant_menu_rounded
-                          : Icons.rate_review_rounded,
+                          : (report['contentType'] == 'reply' ? Icons.reply_rounded : Icons.rate_review_rounded),
                       color: orange,
                       size: 20.sp,
                     ),
@@ -486,10 +486,24 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
         } else if (mounted) {
           Toaster.show(context, 'Could not resolve review location.', isError: true);
         }
+      } else if (contentType == 'reply') {
+        final metadata = report['metadata'] as Map<String, dynamic>?;
+        final reviewId = metadata?['parentReviewId'] as String?;
+        if (reviewId != null) {
+          final parts = reviewId.split('_');
+          if (parts.length >= 2) {
+            final recipeId = parts.sublist(1).join('_');
+            final recipeDoc = await FirebaseFirestore.instance.collection('recipes').doc(recipeId).get();
+            if (recipeDoc.exists && mounted) {
+              final recipe = Recipe.fromJson({...recipeDoc.data()!, 'id': recipeDoc.id});
+              Navigator.push(context, MaterialPageRoute(builder: (_) => ReviewsScreen(recipe: recipe)));
+            }
+          }
+        }
       }
     } catch (e) {
       if (mounted) {
-        Toaster.show(context, 'Error navigating to content: \$e', isError: true);
+        Toaster.show(context, 'Error navigating to content: $e', isError: true);
       }
     }
   }

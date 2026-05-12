@@ -237,7 +237,14 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with 
       if (user != null) {
         await _handleSocialLoginResult(user);
       }
+    } on PlatformException catch (e) {
+      debugPrint("❌ [GoogleLogin] PlatformException: ${e.code} - ${e.message}");
+      _snack("Google login failed: ${e.message ?? e.code}");
+    } on FirebaseAuthException catch (e) {
+      debugPrint("❌ [GoogleLogin] FirebaseAuthException: ${e.code} - ${e.message}");
+      _snack("${e.message ?? "Google login failed (${e.code})"}");
     } catch (e) {
+      debugPrint("[GoogleLogin] Unexpected error: $e");
       _snack("Google login failed: $e");
     } finally {
       if (mounted) _setLoading(false);

@@ -191,7 +191,14 @@ class _SignupNutritionistScreenState extends State<SignupNutritionistScreen> wit
 
       final cred = await FirebaseAuth.instance.signInWithCredential(credential);
       await _handleSocialLoginResult(cred.user!);
+    } on PlatformException catch (e) {
+      debugPrint("❌ [GoogleSignup] PlatformException: ${e.code} - ${e.message}");
+      _snack("Google signup failed: ${e.message ?? e.code}");
+    } on FirebaseAuthException catch (e) {
+      debugPrint("❌ [GoogleSignup] FirebaseAuthException: ${e.code} - ${e.message}");
+      _snack("${e.message ?? "Google signup failed (${e.code})"}");
     } catch (e) {
+      debugPrint("[GoogleSignup] Unexpected error: $e");
       _snack("Google signup failed: $e");
     }
   }

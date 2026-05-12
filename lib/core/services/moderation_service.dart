@@ -197,5 +197,4 @@ class ModerationService {
         print("Failed to send warning notification: $e");
       }
     }
-  }
 }

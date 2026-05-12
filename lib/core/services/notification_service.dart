@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:hidden_pantry_app/features/user/models/notification_model.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/services.dart';
+import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'package:hidden_pantry_app/features/recipes/screens/recipe_details.dart';
 import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_details.dart';
@@ -321,7 +322,7 @@ class NotificationService {
         }
 
         if (recipe != null && context.mounted) {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => RecipeDetailsScreen(recipe: recipe)));
+          Navigator.push(context, MaterialPageRoute(builder: (context) => RecipeDetailsScreen(recipe: recipe!)));
         }
         break;
       case NotificationType.follow:
