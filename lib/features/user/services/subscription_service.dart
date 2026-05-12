@@ -96,6 +96,22 @@ class SubscriptionService {
         trialExpiry = DateTime.tryParse(data['trialExpiresAt'] as String);
       }
 
+      if (trialExpiry == null) {
+        final createdAt = data['createdAt'];
+        DateTime? createdDate;
+        if (createdAt is Timestamp) {
+          createdDate = createdAt.toDate();
+        } else if (createdAt is DateTime) {
+          createdDate = createdAt;
+        } else if (createdAt is String) {
+          createdDate = DateTime.tryParse(createdAt);
+        }
+        
+        if (createdDate != null) {
+          trialExpiry = createdDate.add(const Duration(days: 7));
+        }
+      }
+
       if (trialExpiry == null) return false;
 
       return _now().isBefore(trialExpiry);
@@ -111,45 +127,71 @@ class SubscriptionService {
     return false;
   }
 
+  /// Fetches all subscription-related info in a single object to minimize Firestore reads.
+  Future<Map<String, dynamic>> getSubscriptionProfile() async {
+    final user = _auth?.currentUser;
+    if (user == null) {
+      return {
+        'isPremium': false,
+        'isTrial': false,
+        'remainingDownloads': 0,
+        'usedDownloads': 0,
+      };
+    }
+
+    final data = _loadUserDataOverride != null
+        ? await _loadUserDataOverride!(user.uid)
+        : await _loadUserData(user.uid);
+    
+    final isPremium = await isPremiumUser(); // This still checks platform subs
+    final isTrial = await isTrialActive();
+    
+    // Support both old list and new counter
+    int used = 0;
+    if (data != null) {
+      if (data['totalDownloadCount'] != null) {
+        used = (data['totalDownloadCount'] as num).toInt();
+      } else if (data['downloadedRecipeIds'] is List) {
+        used = (data['downloadedRecipeIds'] as List).length;
+      }
+    }
+
+    return {
+      'isPremium': isPremium,
+      'isTrial': isTrial,
+      'remainingDownloads': (maxFreeDownloads - used).clamp(0, maxFreeDownloads),
+      'usedDownloads': used,
+    };
+  }
+
   /// Returns the number of remaining free downloads.
   Future<int> getRemainingDownloads() async {
-    final user = _auth?.currentUser;
-    if (user == null) return 0;
-
-    try {
-      final data = _loadUserDataOverride != null
-          ? await _loadUserDataOverride!(user.uid)
-          : await _loadUserData(user.uid);
-      final downloadedIds = List<String>.from(data?['downloadedRecipeIds'] ?? []);
-      return (maxFreeDownloads - downloadedIds.length).clamp(0, maxFreeDownloads);
-    } catch (e) {
-      return 0;
-    }
+    final profile = await getSubscriptionProfile();
+    return profile['remainingDownloads'];
   }
 
   /// Tracks a recipe download. Returns true if allowed, false if blocked.
   Future<bool> trackDownload(String recipeId) async {
+    // 1. Premium users have unlimited downloads
     if (await isPremiumUser() || await isTrialActive()) return true;
 
     final user = _auth?.currentUser;
     if (user == null) return false;
 
-    final userData = _loadUserDataOverride != null
-        ? await _loadUserDataOverride!(user.uid)
-        : await _loadUserData(user.uid);
-    final downloadedIds = List<String>.from(userData?['downloadedRecipeIds'] ?? []);
-
-    if (downloadedIds.contains(recipeId)) return true; // Already counted
-
-    if (downloadedIds.length >= maxFreeDownloads) {
+    // 2. Fetch current usage
+    final profile = await getSubscriptionProfile();
+    if (profile['usedDownloads'] >= maxFreeDownloads) {
       return false; // Limit reached
     }
 
+    // 3. Increment total count (allows same recipe to be counted multiple times if redownloaded)
     if (_appendDownloadedRecipeIdOverride != null) {
       await _appendDownloadedRecipeIdOverride!(user.uid, recipeId);
     } else {
       final firestore = _firestore ?? FirebaseFirestore.instance;
       await firestore.collection('users').doc(user.uid).update({
+        'totalDownloadCount': FieldValue.increment(1),
+        // We still keep the list for legacy support/UI but it's not the primary gate anymore
         'downloadedRecipeIds': FieldValue.arrayUnion([recipeId]),
       });
     }

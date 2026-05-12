@@ -138,9 +138,9 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
       child: Container(
         padding: EdgeInsets.all(20.sw),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.5),
+          color: const Color(0xFFFFF3EB),
           borderRadius: BorderRadius.circular(24.sw),
-          border: Border.all(color: Colors.white, width: 1.5),
+          border: Border.all(color: purple.withValues(alpha: 0.1), width: 1.5),
           boxShadow: [
             BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 15, offset: const Offset(0, 6)),
           ],
@@ -151,8 +151,21 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
           decoration: InputDecoration(
             hintText: "Plan Title (e.g., Weight Loss Week 1)",
             hintStyle: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 16.sp, fontWeight: FontWeight.normal),
-            border: InputBorder.none,
-            contentPadding: EdgeInsets.zero,
+            filled: true,
+            fillColor: Colors.transparent,
+            contentPadding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 8.sh),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16.sw),
+              borderSide: BorderSide(color: purple.withValues(alpha: 0.2)),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16.sw),
+              borderSide: BorderSide(color: purple.withValues(alpha: 0.2)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16.sw),
+              borderSide: BorderSide(color: orange, width: 1.5),
+            ),
           ),
         ),
       ),
@@ -276,9 +289,9 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
       delayMs: 300,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.5),
+          color: const Color(0xFFFFF3EB),
           borderRadius: BorderRadius.circular(20.sw),
-          border: Border.all(color: Colors.white, width: 1.5),
+          border: Border.all(color: purple.withValues(alpha: 0.1), width: 1.5),
           boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 15, offset: const Offset(0, 6))],
         ),
         padding: EdgeInsets.all(16.sw),
@@ -446,10 +459,20 @@ class _MealPlanCreatorScreenState extends State<MealPlanCreatorScreen> {
             decoration: InputDecoration(
               hintText: "Add any checks, instructions, or notes...",
               hintStyle: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 14.sp),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12.sw), borderSide: BorderSide(color: purple.withValues(alpha:0.1))),
-
               filled: true,
-              fillColor: const Color(0xFFFDECE4).withValues(alpha:0.3),
+              fillColor: const Color(0xFFFFF3EB),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.sw),
+                borderSide: BorderSide(color: purple.withValues(alpha: 0.2)),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.sw),
+                borderSide: BorderSide(color: purple.withValues(alpha: 0.2)),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12.sw),
+                borderSide: BorderSide(color: orange, width: 1.5),
+              ),
             ),
           ),
         ],
@@ -629,11 +652,22 @@ class _RecipeSearchModalState extends State<_RecipeSearchModal> {
               style: TextStyle(fontSize: 16.sp),
               decoration: InputDecoration(
                 hintText: "Search recipes...",
-                hintStyle: TextStyle(fontSize: 16.sp),
+                hintStyle: TextStyle(fontSize: 16.sp, color: purple.withValues(alpha: 0.4)),
                 prefixIcon: Icon(Icons.search, color: purple.withValues(alpha:0.5), size: 24.sw),
                 filled: true,
                 fillColor: Colors.white,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16.sw), borderSide: BorderSide.none),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16.sw),
+                  borderSide: BorderSide(color: purple.withValues(alpha: 0.2)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16.sw),
+                  borderSide: BorderSide(color: purple.withValues(alpha: 0.2)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16.sw),
+                  borderSide: BorderSide(color: orange, width: 1.5),
+                ),
                 contentPadding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 14.sh),
               ),
             ),

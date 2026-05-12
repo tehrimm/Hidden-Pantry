@@ -2100,15 +2100,43 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              DropdownButton<String>(
-                value: selectedReason,
-                isExpanded: true,
-                items: reasons.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
-                onChanged: (val) => setDialogState(() => selectedReason = val!),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF3EB),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF462F4D).withValues(alpha: 0.2)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    dropdownColor: const Color(0xFFFFF3EB),
+                    value: selectedReason,
+                    isExpanded: true,
+                    items: reasons.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                    onChanged: (val) => setDialogState(() => selectedReason = val!),
+                  ),
+                ),
               ),
+              const SizedBox(height: 16),
               TextField(
                 controller: detailsController,
-                decoration: const InputDecoration(hintText: "Additional details (optional)"),
+                decoration: InputDecoration(
+                  hintText: "Additional details (optional)",
+                  filled: true,
+                  fillColor: const Color(0xFFFFF3EB),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: const Color(0xFF462F4D).withValues(alpha: 0.2)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: const Color(0xFF462F4D).withValues(alpha: 0.2)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFEF8A54), width: 1.5),
+                  ),
+                ),
                 maxLines: 3,
               ),
             ],

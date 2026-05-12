@@ -68,10 +68,18 @@ class _ShareRecipePostDialogState extends State<ShareRecipePostDialog> {
                 hintText: "Add a message (optional)...",
                 hintStyle: TextStyle(color: purple.withValues(alpha: 0.4)),
                 filled: true,
-                fillColor: const Color(0xFFF9E3D5),
+                fillColor: const Color(0xFFFFF3EB),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
+                  borderSide: BorderSide(color: purple.withValues(alpha: 0.2)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: purple.withValues(alpha: 0.2)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: orange, width: 1.5),
                 ),
               ),
             ),

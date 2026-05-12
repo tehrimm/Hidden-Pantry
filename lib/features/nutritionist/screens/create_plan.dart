@@ -524,8 +524,9 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     return Container(
       padding: EdgeInsets.all(16.sw),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9E3D5).withValues(alpha: 0.6), 
+        color: const Color(0xFFFFF3EB), 
         borderRadius: BorderRadius.circular(16.sw),
+        border: Border.all(color: purple.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -556,8 +557,9 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     return Container(
       padding: EdgeInsets.all(16.sw),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9E3D5),
+        color: const Color(0xFFFFF3EB),
         borderRadius: BorderRadius.circular(16.sw),
+        border: Border.all(color: purple.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -592,9 +594,9 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
       margin: EdgeInsets.only(bottom: 12.sh),
       padding: EdgeInsets.all(16.sw),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9E3D5),
+        color: const Color(0xFFFFF3EB),
         borderRadius: BorderRadius.circular(20.sw),
-        border: Border.all(color: enabled ? orange : Colors.transparent, width: 1.sw),
+        border: Border.all(color: enabled ? orange : purple.withValues(alpha: 0.1), width: 1.sw),
       ),
       child: Row(
         children: [
@@ -646,8 +648,9 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9E3D5),
+        color: const Color(0xFFFFF3EB),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: purple.withValues(alpha: 0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

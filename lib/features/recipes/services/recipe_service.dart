@@ -1057,7 +1057,19 @@ class RecipeService {
           .where('timestamp', isGreaterThanOrEqualTo: cutoff)
           .get();
 
-      if (eventsSnap.docs.isEmpty) return [];
+      if (eventsSnap.docs.isEmpty) {
+        print("[RecipeService] No trending events found, falling back to popular recipes.");
+        // Fallback: Fetch top-rated recipes with most reviews
+        final popularSnap = await _firestore
+            .collection('recipes')
+            .where('is_public', isEqualTo: true)
+            .orderBy('review_count', descending: true)
+            .orderBy('avg_rating', descending: true)
+            .limit(limit)
+            .get();
+        
+        return popularSnap.docs.map((d) => Recipe.fromJson(d.data())).toList();
+      }
 
       // 2. Aggregate scores (e.g., view = 1 point, like = 5 points)
       final Map<String, int> scores = {};

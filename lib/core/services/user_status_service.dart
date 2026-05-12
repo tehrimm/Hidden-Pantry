@@ -27,21 +27,21 @@ class UserStatusService {
     };
 
     try {
-      // We try both collections because we don't know the role here easily without a query,
-      // but we can optimize by checking where the user document exists or using a shared field.
-      // For now, let's try to determine the role or just update both if they exist.
-      
       final userDoc = await _firestore.collection('users').doc(user.uid).get();
       if (userDoc.exists) {
         await _firestore.collection('users').doc(user.uid).update(statusData);
       }
+    } catch (e) {
+      debugPrint('Status update skipped for users collection: $e');
+    }
 
+    try {
       final nutritionistDoc = await _firestore.collection('nutritionists').doc(user.uid).get();
       if (nutritionistDoc.exists) {
         await _firestore.collection('nutritionists').doc(user.uid).update(statusData);
       }
     } catch (e) {
-      debugPrint('Error updating status: $e');
+      debugPrint('Status update skipped for nutritionists collection: $e');
     }
   }
 

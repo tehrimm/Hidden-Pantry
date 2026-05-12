@@ -12,7 +12,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hidden_pantry_app/features/user/services/follow_service.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
-import 'package:hidden_pantry_app/core/widgets/food_loader.dart';
+
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 
 
@@ -342,7 +342,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
                     ? const SizedBox(
                         width: 40,
                         height: 40,
-                        child: FoodLoader(size: 30),
+                        child: const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFEF8A54))),
                       )
                     : GestureDetector(
                         onTap: _loadMore,

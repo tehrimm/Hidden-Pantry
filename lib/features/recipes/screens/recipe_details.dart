@@ -28,6 +28,15 @@ import 'package:hidden_pantry_app/features/user/screens/tier_comparison_screen.d
 import 'package:hidden_pantry_app/core/services/moderation_service.dart';
 
 
+/// Top-level color constants for legacy compatibility
+const Color bgColor = Color(0xFFFFF3EB);
+const Color cardColor = Color(0xFFF9E3D5);
+const Color textColor = Color(0xFF462F4D);
+const Color orange = Color(0xFFEF8A54);
+const Color orange2 = Color(0xFFE48E5B);
+
+
+
 class RecipeDetailsScreen extends StatefulWidget {
   final Recipe recipe;
   final RecipeApiService? apiService;
@@ -48,11 +57,6 @@ class RecipeDetailsScreen extends StatefulWidget {
 }
 
 class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
-  static const Color bgColor = Color(0xFFFFF3EB);
-  static const Color cardColor = Color(0xFFF9E3D5);
-  static const Color textColor = Color(0xFF462F4D);
-  static const Color orange = Color(0xFFEF8A54);
-  static const Color orange2 = Color(0xFFE48E5B);
   
   // 🚀 SESSION CACHE: Retains state of visited recipes for instant loading
   static final Map<String, Recipe> _visitedRecipesCache = {};
@@ -68,7 +72,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   bool _liked = false;
   bool _bookmarked = false;
   bool _isDownloaded = false;
-  int _remainingDownloads = 0;
+  int? _remainingDownloads;
   bool _isPremium = false;
 
   int _servings = 1;
@@ -127,14 +131,17 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   }
 
   Future<void> _loadSubscriptionInfo() async {
-    final sub = SubscriptionService();
-    final remaining = await sub.getRemainingDownloads();
-    final premium = await sub.canUsePremiumFeature();
-    if (mounted) {
-      setState(() {
-        _remainingDownloads = remaining;
-        _isPremium = premium;
-      });
+    try {
+      final sub = SubscriptionService();
+      final profile = await sub.getSubscriptionProfile();
+      if (mounted) {
+        setState(() {
+          _remainingDownloads = profile['remainingDownloads'];
+          _isPremium = profile['isPremium'] || profile['isTrial'];
+        });
+      }
+    } catch (e) {
+      debugPrint("Error loading sub info: $e");
     }
   }
 
@@ -246,146 +253,119 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
       return;
     }
 
+    // 1. Try Firestore first (handles user-uploaded recipes reliably)
     try {
-      // 1. Try Firestore first (handles user-uploaded recipes reliably)
-      try {
-        final firestoreRecipe = await _recipeService.getRecipeById(_recipe.id).timeout(const Duration(seconds: 3));
-        if (firestoreRecipe != null) {
-          // --- 🛡️ ACCESS CONTROL: Nutritionist Recipe Check ---
-          if (firestoreRecipe.isNutritionistRecipe) {
-            final hasAccess = await SubscriptionService().hasNutritionistAccess(firestoreRecipe.authorId);
-            if (!hasAccess && mounted) {
-              _showRestrictedAccess(firestoreRecipe.authorId);
-              return;
-            }
-          }
-
-          final count = await _recipeService.countRecipesByAuthor(firestoreRecipe.authorId).timeout(const Duration(seconds: 3));
-            
-            if (mounted) {
-              setState(() {
-                _recipe = firestoreRecipe;
-                _visitedRecipesCache[_recipe.id] = firestoreRecipe; // Cache it!
-                _authorRecipeCount = count;
-                _servings = (firestoreRecipe.baseServings <= 0) ? 1 : firestoreRecipe.baseServings;
-                _loading = false;
-              });
-              
-              if (firestoreRecipe.authorName != null && firestoreRecipe.authorName!.isNotEmpty) {
-                final otherRecipes = await api.searchRecipes(firestoreRecipe.authorName!, limit: 12);
-                if (mounted) {
-                  setState(() {
-                    _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || r.authorId == firestoreRecipe.authorId)).toList();
-                    _loadingAuthorRecipes = false;
-                  });
-                }
-              }
-            }
+      final firestoreRecipe = await _recipeService.getRecipeById(_recipe.id).timeout(const Duration(seconds: 3));
+      
+      if (firestoreRecipe != null) {
+        // --- 🛡️ ACCESS CONTROL: Nutritionist Recipe Check ---
+        if (firestoreRecipe.isNutritionistRecipe) {
+          final hasAccess = await SubscriptionService().hasNutritionistAccess(firestoreRecipe.authorId);
+          if (!hasAccess && mounted) {
+            _showRestrictedAccess(firestoreRecipe.authorId);
             return;
           }
-      } catch (fsErr) {
-        print("[RecipeDetails] Firestore fetch failed: $fsErr. Trying API...");
-        if (mounted) {
-          setState(() {});
-        }
-      }
-
-      // 2. Try API next (official recipes)
-      try {
-        final fullRecipe = await api.getRecipeById(_recipe.id);
-        int count = 0;
-        if (fullRecipe.authorId.isNotEmpty) {
-          count = await api.countRecipesByAuthor(fullRecipe.authorId);
         }
 
+        // Fetch author recipes and count in parallel
+        final results = await Future.wait([
+          _recipeService.countRecipesByAuthor(firestoreRecipe.authorId).timeout(const Duration(seconds: 3)),
+          if (firestoreRecipe.authorName != null && firestoreRecipe.authorName!.isNotEmpty)
+            api.searchRecipes(firestoreRecipe.authorName!, limit: 12)
+          else
+            Future.value(<Recipe>[]),
+        ]);
+
+        final count = results[0] as int;
+        final otherRecipes = results[1] as List<Recipe>;
+          
         if (mounted) {
           setState(() {
-            _recipe = fullRecipe;
-            _visitedRecipesCache[_recipe.id] = fullRecipe; // Cache it!
+            _recipe = firestoreRecipe;
+            _visitedRecipesCache[_recipe.id] = firestoreRecipe;
             _authorRecipeCount = count;
-            _servings = (fullRecipe.baseServings <= 0) ? 1 : fullRecipe.baseServings;
+            _servings = (firestoreRecipe.baseServings <= 0) ? 1 : firestoreRecipe.baseServings;
+            _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || r.authorId == firestoreRecipe.authorId)).toList();
+            _loadingAuthorRecipes = false;
             _loading = false;
           });
         }
-
-        // EXTRA: Firestore dynamic merge as non-blocking background update
-        // Skip in widget tests to avoid pending timers from timeouts
-        if (!_isUnderTest) {
-          _recipeService.getRecipeById(_recipe.id).then((fsRecipe) {
-            if (fsRecipe != null && mounted) {
-              setState(() {
-                _recipe = _recipe.copyWith(
-                  avgRating: fsRecipe.avgRating,
-                  reviewCount: fsRecipe.reviewCount,
-                );
-                if (fsRecipe.baseServings > 1) {
-                  _servings = fsRecipe.baseServings;
-                }
-              });
-            }
-          }).catchError((_) {});
-        }
-        
-        // Fetch Other Recipes by same author
-        if (fullRecipe.authorId.isNotEmpty) {
-          final otherRecipes = await api.fetchRecipesByAuthor(fullRecipe.authorId, limit: 12);
-          if (mounted) {
-            setState(() {
-              _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || r.authorId == fullRecipe.authorId)).toList();
-              _loadingAuthorRecipes = false;
-            });
-            print("[RecipeDetails] Loaded ${_authorRecipes.length} recipes for authorId: ${fullRecipe.authorId}");
-          }
-        } else if (fullRecipe.authorName != null && fullRecipe.authorName!.isNotEmpty) {
-          final otherRecipes = await api.searchRecipes(fullRecipe.authorName!, limit: 12);
-          if (mounted) {
-            setState(() {
-              _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || (fullRecipe.authorId.isNotEmpty && r.authorId == fullRecipe.authorId))).toList();
-              _loadingAuthorRecipes = false;
-            });
-            print("[RecipeDetails] Fallback: Loaded ${_authorRecipes.length} recipes for authorName: ${fullRecipe.authorName}");
-          }
-        } else {
-          if (mounted) setState(() => _loadingAuthorRecipes = false);
-        }
-        return; // Success, exit
-      } catch (apiError) {
-        print("[RecipeDetails] API Fetch failed finally: $apiError.");
-        if (mounted) setState(() => _loadingAuthorRecipes = false);
+        return;
       }
+    } catch (fsErr) {
+      debugPrint("[RecipeDetails] Firestore fetch failed: $fsErr. Trying API...");
+    }
 
-      // 3. Fallback to Local Storage (if both Firestore and API fail)
-      if (user != null) {
-        final isOffline = await _localService.isRecipeOffline(_recipe.id, user.uid);
-        if (isOffline) {
-          final offlineRecipes = await _localService.getRecipesByIds([_recipe.id], user.uid);
-          if (offlineRecipes.isNotEmpty && mounted) {
-            setState(() {
-              _recipe = offlineRecipes.first;
-              _authorRecipeCount = 0;
-              _servings = (_recipe.baseServings <= 0) ? 1 : _recipe.baseServings;
-              _loading = false;
-            });
-            return;
-          }
-        }
-      }
+    // 2. Try API next (official recipes)
+    try {
+      final fullRecipe = await api.getRecipeById(_recipe.id);
+      
+      // Parallel fetch for author count and author recipes
+      final results = await Future.wait([
+        fullRecipe.authorId.isNotEmpty ? api.countRecipesByAuthor(fullRecipe.authorId) : Future.value(0),
+        fullRecipe.authorId.isNotEmpty 
+          ? api.fetchRecipesByAuthor(fullRecipe.authorId, limit: 12)
+          : (fullRecipe.authorName != null && fullRecipe.authorName!.isNotEmpty 
+              ? api.searchRecipes(fullRecipe.authorName!, limit: 12) 
+              : Future.value(<Recipe>[])),
+      ]);
+
+      final count = results[0] as int;
+      final otherRecipes = results[1] as List<Recipe>;
 
       if (mounted) {
         setState(() {
-          // Gracefully show passed-in recipe instead of error
+          _recipe = fullRecipe;
+          _visitedRecipesCache[_recipe.id] = fullRecipe;
+          _authorRecipeCount = count;
+          _servings = (fullRecipe.baseServings <= 0) ? 1 : fullRecipe.baseServings;
+          _authorRecipes = otherRecipes.where((r) => r.id != _recipe.id && (r.authorId.isEmpty || (fullRecipe.authorId.isNotEmpty && r.authorId == fullRecipe.authorId))).toList();
+          _loadingAuthorRecipes = false;
           _loading = false;
-          _error = null;
         });
       }
-    } catch (e) {
-      print("[RecipeDetails] General Error in _loadFullDetails: $e");
-      if (mounted) {
-        setState(() {
-          _loading = false;
-          _error = null;
-        });
+
+      // EXTRA: Firestore dynamic merge as non-blocking background update
+      if (!_isUnderTest) {
+        _recipeService.getRecipeById(_recipe.id).then((fsRecipe) {
+          if (fsRecipe != null && mounted) {
+            setState(() {
+              _recipe = _recipe.copyWith(
+                avgRating: fsRecipe.avgRating,
+                reviewCount: fsRecipe.reviewCount,
+              );
+            });
+          }
+        }).catchError((_) {});
       }
+      return;
+    } catch (apiError) {
+      debugPrint("[RecipeDetails] API Fetch failed finally: $apiError.");
+      if (mounted) setState(() => _loadingAuthorRecipes = false);
+    }
+
+    // 3. Fallback to Local Storage (if both Firestore and API fail)
+    try {
+      final isOffline = await _localService.isRecipeOffline(_recipe.id, user.uid);
+      if (isOffline) {
+        final offlineRecipes = await _localService.getRecipesByIds([_recipe.id], user.uid);
+        if (offlineRecipes.isNotEmpty && mounted) {
+          setState(() {
+            _recipe = offlineRecipes.first;
+            _authorRecipeCount = 0;
+            _servings = (_recipe.baseServings <= 0) ? 1 : _recipe.baseServings;
+            _loading = false;
+          });
+          return;
+        }
+      }
+    } catch (_) {}
+
+    if (mounted) {
+      setState(() {
+        _loading = false;
+        _error = null;
+      });
     }
   }
 
@@ -453,11 +433,19 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
           }
         }
       } else {
+        // Optimistic update for the quota display
+        int? originalRemaining = _remainingDownloads;
+        if (!_isPremium && _remainingDownloads != null && _remainingDownloads! > 0) {
+          setState(() => _remainingDownloads = _remainingDownloads! - 1);
+        }
+
         // 🛡️ GATE: Check if download is allowed (Premium/Trial or remaining free slots)
         final subService = SubscriptionService();
         final allowed = await subService.trackDownload(_recipe.id);
 
         if (!allowed) {
+          // Revert optimistic update if blocked
+          if (mounted) setState(() => _remainingDownloads = originalRemaining);
           if (mounted) {
             Navigator.push(
               context,
@@ -689,11 +677,11 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                         size: 22.sw,
                       ),
                     ),
-                    if (!_isPremium && !_isDownloaded && _remainingDownloads > 0)
+                    if (!_isPremium && !_isDownloaded && _remainingDownloads != null)
                       Padding(
                         padding: EdgeInsets.only(top: 2.sh),
                         child: Text(
-                          "$_remainingDownloads/5",
+                          "${5 - _remainingDownloads!}/5",
                           style: TextStyle(
                             fontSize: 8.sp,
                             color: textColor.withValues(alpha: 0.6),
@@ -1298,16 +1286,20 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                 },
                 child: Row(
                   children: [
-                    Text(
-                      "More from Author",
-                      style: TextStyle(
-                        color: textColor,
-                        fontSize: 20.sp,
-                        fontWeight: FontWeight.w800,
-                        fontFamily: "Satoshi",
+                    Expanded(
+                      child: Text(
+                        "More from Author",
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.w800,
+                          fontFamily: "Satoshi",
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const Spacer(),
+                    SizedBox(width: 10.sw),
                     Text(
                       "See all",
                       style: TextStyle(
@@ -1488,22 +1480,25 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
               ),
               child: Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.shield_rounded, size: 18.sp, color: textColor.withValues(alpha: 0.5)),
-                      SizedBox(width: 8.sw),
-                      Text(
-                        "Safety & Community",
-                        style: TextStyle(
-                          color: textColor.withValues(alpha: 0.6),
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w900,
-                          fontFamily: "Satoshi",
-                          letterSpacing: 1.2,
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.shield_rounded, size: 18.sp, color: textColor.withValues(alpha: 0.5)),
+                        SizedBox(width: 8.sw),
+                        Text(
+                          "Safety & Community",
+                          style: TextStyle(
+                            color: textColor.withValues(alpha: 0.6),
+                            fontSize: 13.sp,
+                            fontWeight: FontWeight.w900,
+                            fontFamily: "Satoshi",
+                            letterSpacing: 1.2,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   SizedBox(height: 24.sh),
                   
@@ -1528,21 +1523,24 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                           ),
                         ],
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.share_rounded, color: Colors.white, size: 20),
-                          SizedBox(width: 12.sw),
-                          Text(
-                            "Share with Friends",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: "Satoshi",
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.share_rounded, color: Colors.white, size: 20),
+                            SizedBox(width: 12.sw),
+                            Text(
+                              "Share with Friends",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15.sp,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: "Satoshi",
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),

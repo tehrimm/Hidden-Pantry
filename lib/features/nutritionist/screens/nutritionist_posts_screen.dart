@@ -194,7 +194,7 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
       builder: (context) => Container(
         height: MediaQuery.of(context).size.height * 0.7,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: const Color(0xFFFFF3EB),
           borderRadius: BorderRadius.vertical(top: Radius.circular(32.sw)),
         ),
         child: Column(
@@ -291,7 +291,7 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
             Container(
               padding: EdgeInsets.fromLTRB(20.sw, 12.sh, 20.sw, MediaQuery.of(context).viewInsets.bottom + 24.sh),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color(0xFFFFF3EB),
                 boxShadow: [BoxShadow(color: purple.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, -5))],
               ),
               child: Row(
@@ -304,8 +304,19 @@ class _NutritionistPostsScreenState extends State<NutritionistPostsScreen> {
                         hintText: "Add a comment...",
                         hintStyle: TextStyle(color: purple.withValues(alpha: 0.3)),
                         filled: true,
-                        fillColor: purple.withValues(alpha: 0.03),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(25.sw), borderSide: BorderSide.none),
+                        fillColor: const Color(0xFFFFF3EB),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.sw),
+                          borderSide: BorderSide(color: purple.withValues(alpha: 0.1)),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.sw),
+                          borderSide: BorderSide(color: purple.withValues(alpha: 0.1)),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16.sw),
+                          borderSide: BorderSide(color: orange, width: 1.5),
+                        ),
                         contentPadding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 12.sh),
                       ),
                     ),

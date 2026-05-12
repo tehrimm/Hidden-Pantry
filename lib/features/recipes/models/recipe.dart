@@ -779,8 +779,14 @@ class IngredientItem {
 
     // 4. Mixed Fractions: "1 1/2"
     final mixedMatch = RegExp(r'^(\d+)\s+(\d+)/(\d+)').firstMatch(s);
+    if (mixedMatch != null) {
+      final whole = double.tryParse(mixedMatch.group(1)!) ?? 0;
+      final num = double.tryParse(mixedMatch.group(2)!) ?? 0;
+      final den = double.tryParse(mixedMatch.group(3)!) ?? 1;
+      return whole + (num / den);
+    }
 
-    // 4. Simple Fractions: "3/4"
+    // 5. Simple Fractions: "3/4"
     final fracMatch = RegExp(r'(\d+)/(\d+)').firstMatch(s);
     if (fracMatch != null) {
       final num = double.tryParse(fracMatch.group(1)!) ?? 0;

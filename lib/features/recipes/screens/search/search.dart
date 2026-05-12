@@ -24,7 +24,7 @@ import 'package:hidden_pantry_app/core/widgets/skeletons.dart';
 import 'package:hidden_pantry_app/features/user/services/subscription_service.dart';
 import 'package:hidden_pantry_app/features/user/screens/premium_paywall_screen.dart';
 
-import 'package:hidden_pantry_app/core/widgets/food_loader.dart';
+
 
 class SearchScreen extends StatefulWidget {
   final bool inShell;
@@ -787,7 +787,7 @@ class _SearchScreenState extends State<SearchScreen> {
             itemBuilder: (_, i) => _StaggeredItem(index: i, child: const RecipeCardSkeleton()),
           ),
           const Center(
-            child: FoodLoader(size: 60),
+            child: const CircularProgressIndicator(strokeWidth: 3, valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFEF8A54))),
           ),
         ],
       );
@@ -874,7 +874,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     ? const SizedBox(
                         width: 40,
                         height: 40,
-                        child: FoodLoader(size: 30),
+                        child: const CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFEF8A54))),
                       )
                     : GestureDetector(
                         onTap: _loadMore,

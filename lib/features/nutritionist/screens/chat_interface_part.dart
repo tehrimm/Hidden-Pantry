@@ -727,9 +727,9 @@ class _ChatInterfaceState extends State<ChatInterface> {
       builder: (context) => Container(
         padding: EdgeInsets.symmetric(horizontal: 20.sw),
         decoration: BoxDecoration(
-          color: const Color(0xFF321B3A).withValues(alpha: 0.95),
+          color: const Color(0xFFFFF3EB),
           borderRadius: BorderRadius.vertical(top: Radius.circular(32.sw)),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          border: Border.all(color: const Color(0xFF462F4D).withValues(alpha: 0.1), width: 1.5),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -749,7 +749,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
                 Text(
                   "Quick Actions",
                   style: TextStyle(
-                    color: Colors.white,
+                    color: const Color(0xFF462F4D),
                     fontSize: 24.sp,
                     fontWeight: FontWeight.w900,
                     fontFamily: "Satoshi",
@@ -812,7 +812,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
                                   Text(
                                     action["title"] as String,
                                     style: TextStyle(
-                                      color: Colors.white,
+                                      color: const Color(0xFF462F4D),
                                       fontSize: 16.sp,
                                       fontWeight: FontWeight.w700,
                                       fontFamily: "Satoshi",
@@ -822,7 +822,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
                                   Text(
                                     action["subtitle"] as String,
                                     style: TextStyle(
-                                      color: Colors.white.withValues(alpha: 0.4),
+                                      color: const Color(0xFF462F4D).withValues(alpha: 0.4),
                                       fontSize: 12.sp,
                                       fontFamily: "Satoshi",
                                     ),
@@ -830,7 +830,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
                                 ],
                               ),
                             ),
-                            Icon(Icons.chevron_right_rounded, color: Colors.white.withValues(alpha: 0.2)),
+                            Icon(Icons.chevron_right_rounded, color: const Color(0xFF462F4D).withValues(alpha: 0.2)),
                           ],
                         ),
                       ),
@@ -1885,15 +1885,43 @@ class _ChatInterfaceState extends State<ChatInterface> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              DropdownButton<String>(
-                value: selectedReason,
-                isExpanded: true,
-                items: reasons.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
-                onChanged: (val) => setDialogState(() => selectedReason = val!),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFF3EB),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF462F4D).withValues(alpha: 0.2)),
+                ),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<String>(
+                    dropdownColor: const Color(0xFFFFF3EB),
+                    value: selectedReason,
+                    isExpanded: true,
+                    items: reasons.map((r) => DropdownMenuItem(value: r, child: Text(r))).toList(),
+                    onChanged: (val) => setDialogState(() => selectedReason = val!),
+                  ),
+                ),
               ),
+              const SizedBox(height: 16),
               TextField(
                 controller: detailsController,
-                decoration: const InputDecoration(hintText: "Additional details (optional)"),
+                decoration: InputDecoration(
+                  hintText: "Additional details (optional)",
+                  filled: true,
+                  fillColor: const Color(0xFFFFF3EB),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: const Color(0xFF462F4D).withValues(alpha: 0.2)),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: const Color(0xFF462F4D).withValues(alpha: 0.2)),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: Color(0xFFEF8A54), width: 1.5),
+                  ),
+                ),
                 maxLines: 3,
               ),
             ],

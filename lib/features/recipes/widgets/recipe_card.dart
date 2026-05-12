@@ -117,6 +117,7 @@ class RecipeCard extends StatelessWidget {
                 top: 5,
                 right: 5,
                 child: PopupMenuButton<String>(
+                  color: const Color(0xFFFFF3EB),
                   padding: EdgeInsets.zero,
                   icon: const Icon(Icons.more_vert_rounded, color: purple, size: 24),
                   onSelected: (value) {

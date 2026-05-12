@@ -106,11 +106,11 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
         filter: ui.ImageFilter.blur(sigmaX: 8, sigmaY: 8),
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFFF9E3D5).withValues(alpha: 0.95),
+            color: const Color(0xFFFFF3EB),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1.5),
+            border: Border.all(color: purple.withValues(alpha: 0.15), width: 1.5),
             boxShadow: [
-              BoxShadow(color: purple.withValues(alpha: 0.1), blurRadius: 30, offset: const Offset(0, -10)),
+              BoxShadow(color: purple.withValues(alpha: 0.08), blurRadius: 40, offset: const Offset(0, -10)),
             ],
           ),
           child: Column(
@@ -307,7 +307,15 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                           fillColor: const Color(0xFFFFF3EB),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide.none,
+                            borderSide: BorderSide(color: purple.withValues(alpha: 0.2)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: purple.withValues(alpha: 0.2)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: orange, width: 1.8),
                           ),
                         ),
                       ),
@@ -432,7 +440,15 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                           fillColor: const Color(0xFFFFF3EB),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
+                            borderSide: BorderSide(color: purple.withValues(alpha: 0.2)),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: purple.withValues(alpha: 0.2)),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: orange, width: 1.8),
                           ),
                         ),
                         dropdownColor: const Color(0xFFFFF3EB),

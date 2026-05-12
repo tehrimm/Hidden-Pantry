@@ -537,9 +537,9 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 16.sw),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFDECE4).withValues(alpha: 0.4),
+                    color: const Color(0xFFFFF3EB),
                     borderRadius: BorderRadius.circular(14.sw),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+                    border: Border.all(color: purple.withValues(alpha: 0.2), width: 1.5),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
@@ -624,9 +624,9 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
   Widget _formField(TextEditingController ctrl, String hint, {TextInputType keyboardType = TextInputType.name}) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFFDECE4).withValues(alpha: 0.4),
+        color: const Color(0xFFFFF3EB),
         borderRadius: BorderRadius.circular(14.sw),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 1.5),
+        border: Border.all(color: purple.withValues(alpha: 0.2), width: 1.5),
       ),
       child: TextField(
         controller: ctrl,

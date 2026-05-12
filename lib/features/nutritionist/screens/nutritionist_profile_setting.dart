@@ -722,9 +722,9 @@ class _InputCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.5),
+        color: const Color(0xFFFFF3EB),
         borderRadius: BorderRadius.circular(22.sw),
-        border: Border.all(color: Colors.white, width: 1.5),
+        border: Border.all(color: const Color(0xFF462F4D).withValues(alpha: 0.1), width: 1.5),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.04),
