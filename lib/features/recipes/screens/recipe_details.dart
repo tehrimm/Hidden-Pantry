@@ -1471,7 +1471,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                     offset: const Offset(0, 10),
                   ),
                 ],
-                border: Border.all(color: textColor.withValues(alpha: 0.1)),
+                border: Border.all(color: orange.withValues(alpha: 0.3), width: 1.5),
               ),
               child: Column(
                 children: [
@@ -1536,7 +1536,8 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                   
                   SizedBox(height: 16.sh),
                   
-                  if (FirebaseAuth.instance.currentUser?.uid != _recipe.authorId)
+                  if (FirebaseAuth.instance.currentUser?.uid != _recipe.authorId ||
+                      FirebaseAuth.instance.currentUser?.email == "hiddenpantry.support@gmail.com")
                     Row(
                       children: [
                         Expanded(
@@ -1545,9 +1546,9 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                           child: Container(
                             padding: EdgeInsets.symmetric(vertical: 14.sh),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: textColor.withValues(alpha: 0.04),
                               borderRadius: BorderRadius.circular(16.sw),
-                              border: Border.all(color: Colors.red.withValues(alpha: 0.1)),
+                              border: Border.all(color: Colors.redAccent.withValues(alpha: 0.2)),
                             ),
                             child: Center(
                               child: Row(
@@ -1577,15 +1578,15 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                           child: Container(
                             padding: EdgeInsets.symmetric(vertical: 14.sh),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: textColor.withValues(alpha: 0.04),
                               borderRadius: BorderRadius.circular(16.sw),
-                              border: Border.all(color: textColor.withValues(alpha: 0.1)),
+                              border: Border.all(color: orange.withValues(alpha: 0.3)),
                             ),
                             child: Center(
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.block_flipped, color: textColor.withValues(alpha: 0.4), size: 16.sp),
+                                  Icon(Icons.block_flipped, color: orange.withValues(alpha: 0.8), size: 16.sp),
                                   SizedBox(width: 6.sw),
                                   Text(
                                     "Block",
@@ -2145,68 +2146,76 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   }
 
   void _showBlockConfirm(BuildContext context) {
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: EdgeInsets.all(24.sw),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(30.sw)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 50.sw,
-              height: 50.sw,
-              decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), shape: BoxShape.circle),
-              child: Icon(Icons.block_flipped, color: Colors.red, size: 28.sp),
-            ),
-            SizedBox(height: 20.sh),
-            Text(
-              "Block Author?",
-              style: TextStyle(color: textColor, fontSize: 20.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
-            ),
-            SizedBox(height: 12.sh),
-            Text(
-              "You will no longer see recipes or content from this author. This action can be undone in settings.",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: textColor.withValues(alpha: 0.6), fontSize: 14.sp, fontFamily: "Satoshi", height: 1.4),
-            ),
-            SizedBox(height: 30.sh),
-            Row(
-              children: [
-                Expanded(
-                  child: TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text("Cancel", style: TextStyle(color: textColor.withValues(alpha: 0.5), fontWeight: FontWeight.bold)),
-                  ),
-                ),
-                SizedBox(width: 16.sw),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      await ModerationService().blockUser(_recipe.authorId);
-                      if (context.mounted) {
-                        Navigator.pop(context); // Close bottomsheet
-                        Navigator.pop(context); // Exit recipe details
-                        Toaster.show(context, "Author blocked.");
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.sw)),
-                      padding: EdgeInsets.symmetric(vertical: 14.sh),
+      builder: (context) => Dialog(
+        backgroundColor: bgColor,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30.sw)),
+        child: Padding(
+          padding: EdgeInsets.all(24.sw),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 50.sw,
+                height: 50.sw,
+                decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), shape: BoxShape.circle),
+                child: Icon(Icons.block_flipped, color: Colors.red, size: 28.sp),
+              ),
+              SizedBox(height: 20.sh),
+              Text(
+                "Block Author?",
+                style: TextStyle(color: textColor, fontSize: 20.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+              ),
+              SizedBox(height: 12.sh),
+              Text(
+                "You will no longer see recipes or content from this author. This action can be undone in settings.",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: textColor.withValues(alpha: 0.6), fontSize: 14.sp, fontFamily: "Satoshi", height: 1.4),
+              ),
+              SizedBox(height: 30.sh),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: textColor.withValues(alpha: 0.2), width: 1.5),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.sw)),
+                        padding: EdgeInsets.symmetric(vertical: 14.sh),
+                      ),
+                      child: Text("Cancel", style: TextStyle(color: textColor.withValues(alpha: 0.7), fontWeight: FontWeight.bold)),
                     ),
-                    child: const Text("Block", style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
-                ),
-              ],
-            ),
-            SizedBox(height: 10.sh),
-          ],
+                  SizedBox(width: 16.sw),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        await ModerationService().blockUser(
+                          _recipe.authorId,
+                          authorName: _recipe.authorName,
+                          photoUrl: _recipe.authorProfileImageUrl,
+                        );
+                        if (context.mounted) {
+                          Navigator.pop(context); // Close dialog
+                          Navigator.pop(context); // Exit recipe details
+                          Toaster.show(context, "Author blocked.");
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15.sw)),
+                        padding: EdgeInsets.symmetric(vertical: 14.sh),
+                        elevation: 0,
+                      ),
+                      child: const Text("Block", style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

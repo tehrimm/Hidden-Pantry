@@ -8,6 +8,7 @@ enum NotificationType {
   chat_message,
   nutritionist_post,
   subscription_alert,
+  admin_alert,
 }
 
 class AppNotification {
@@ -81,6 +82,7 @@ class AppNotification {
       case 'chat_message': return NotificationType.chat_message;
       case 'nutritionist_post': return NotificationType.nutritionist_post;
       case 'subscription_alert': return NotificationType.subscription_alert;
+      case 'admin_alert': return NotificationType.admin_alert;
       default: return NotificationType.like;
     }
   }

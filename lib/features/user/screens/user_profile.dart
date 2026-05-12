@@ -304,7 +304,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                         ),
                         
                         // Admin buttons (conditional)
-                        if (email == "hiddenpantry.support@gmail.com") ...[
+                        if (email == "hiddenpantry.support@gmail.com" ||
+                            _auth.currentUser?.email == "hiddenpantry.support@gmail.com") ...[
                           _tile(
                             iconData: Icons.gavel_rounded,
                             title: "Moderation Dashboard",

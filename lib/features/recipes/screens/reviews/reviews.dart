@@ -655,7 +655,7 @@ class _ReviewCardState extends State<_ReviewCard> {
                     ],
                   ),
                 ),
-              ] else if (user != null && widget.data['userId'] != user.uid) ...[
+              ] else if (user != null && (widget.data['userId'] != user.uid || user.email == "hiddenpantry.support@gmail.com")) ...[
                 const Spacer(),
                 GestureDetector(
                   onTap: () => _reportReview(context),

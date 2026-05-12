@@ -420,6 +420,9 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
       case NotificationType.subscription_alert:
         icon = Icons.stars_rounded;
         break;
+      case NotificationType.admin_alert:
+        icon = Icons.gavel_rounded;
+        break;
     }
 
     return Container(

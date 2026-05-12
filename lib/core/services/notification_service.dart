@@ -327,6 +327,9 @@ class NotificationService {
       case NotificationType.subscription_alert:
         Navigator.push(context, MaterialPageRoute(builder: (context) => MySubscriptionsScreen()));
         break;
+      case NotificationType.admin_alert:
+        // Admin warnings are informational only — no navigation needed
+        break;
     }
   }
 }

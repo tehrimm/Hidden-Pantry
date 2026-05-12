@@ -566,7 +566,7 @@ void _openUserProfile() {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => RecipeDetailsScreen(recipe: r)),
-    );
+    ).then((_) => _loadHome());
   }
 
   void _openNotifications() {

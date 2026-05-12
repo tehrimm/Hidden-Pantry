@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hidden_pantry_app/core/services/notification_service.dart';
+import 'package:hidden_pantry_app/features/user/models/notification_model.dart';
 
 class ModerationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -34,13 +36,24 @@ class ModerationService {
   }
 
   /// Block a user so their content is hidden from the current user
-  Future<void> blockUser(String userIdToBlock) async {
+  Future<void> blockUser(String userIdToBlock, {String? authorName, String? photoUrl}) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
-    await _firestore.collection('users').doc(user.uid).set({
+    final Map<String, dynamic> updateData = {
       'blockedUsers': FieldValue.arrayUnion([userIdToBlock]),
-    }, SetOptions(merge: true));
+    };
+
+    if (authorName != null || photoUrl != null) {
+      updateData['blockedUserProfiles'] = {
+        userIdToBlock: {
+          'name': authorName,
+          'photoUrl': photoUrl,
+        }
+      };
+    }
+
+    await _firestore.collection('users').doc(user.uid).set(updateData, SetOptions(merge: true));
   }
 
   /// Unblock a user
@@ -65,6 +78,20 @@ class ModerationService {
     if (data == null || data['blockedUsers'] == null) return [];
 
     return List<String>.from(data['blockedUsers']);
+  }
+
+  /// Get the cached profiles of blocked users
+  Future<Map<String, dynamic>> getBlockedUserProfiles() async {
+    final user = _auth.currentUser;
+    if (user == null) return {};
+
+    final doc = await _firestore.collection('users').doc(user.uid).get();
+    if (!doc.exists) return {};
+
+    final data = doc.data();
+    if (data == null || data['blockedUserProfiles'] == null) return {};
+
+    return data['blockedUserProfiles'] as Map<String, dynamic>;
   }
   /// Get all pending reports grouped by contentId with counts
   Future<List<Map<String, dynamic>>> getReportSummary() async {
@@ -120,8 +147,8 @@ class ModerationService {
     await batch.commit();
   }
 
-  /// Delete content and mark reports as reviewed
-  Future<void> takeAction(String contentType, String contentId, String action) async {
+  /// Delete content, mark reports as reviewed, and send warning notification
+  Future<void> takeAction(String contentType, String contentId, String action, String authorId) async {
     if (action == 'delete') {
       if (contentType == 'review') {
         await _firestore.collection('reviews').doc(contentId).delete();
@@ -130,6 +157,19 @@ class ModerationService {
       }
       
       await dismissReports(contentId);
+
+      // Send warning notification to the author
+      try {
+        await NotificationService().sendNotification(
+          recipientId: authorId,
+          title: "Content Removed & Warning",
+          body: "Your $contentType has been removed due to community reports. Please review our community guidelines. Further violations may result in account suspension.",
+          type: NotificationType.admin_alert,
+          playSound: true,
+        );
+      } catch (e) {
+        print("Failed to send warning notification: $e");
+      }
     }
   }
 }

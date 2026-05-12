@@ -32,6 +32,7 @@ class _BlockedAuthorsScreenState extends State<BlockedAuthorsScreen> {
     
     try {
       final blockedIds = await ModerationService().getBlockedUsers();
+      final cachedProfiles = await ModerationService().getBlockedUserProfiles();
       if (blockedIds.isEmpty) {
         if (mounted) setState(() { _blockedUsers = []; _loading = false; });
         return;
@@ -40,6 +41,16 @@ class _BlockedAuthorsScreenState extends State<BlockedAuthorsScreen> {
       // Fetch user details for each blocked ID
       List<Map<String, dynamic>> users = [];
       for (String id in blockedIds) {
+        // First check our new cached profiles (especially for backend/scraped authors)
+        if (cachedProfiles.containsKey(id)) {
+          users.add({
+            'id': id,
+            'name': cachedProfiles[id]['name'] ?? 'Unknown Author',
+            'photoUrl': cachedProfiles[id]['photoUrl'],
+          });
+          continue;
+        }
+
         try {
           final doc = await FirebaseFirestore.instance.collection('users').doc(id).get();
           if (doc.exists) {
@@ -57,6 +68,28 @@ class _BlockedAuthorsScreenState extends State<BlockedAuthorsScreen> {
                 'name': nDoc.data()?['fullName'] ?? 'Unknown User',
                 'photoUrl': nDoc.data()?['photoUrl'],
               });
+             } else {
+               // If completely not found in DB, try finding a recipe by them to extract name/photo
+               final recipeDoc = await FirebaseFirestore.instance
+                  .collection('recipes')
+                  .where('author_id', isEqualTo: id)
+                  .limit(1)
+                  .get();
+
+               if (recipeDoc.docs.isNotEmpty) {
+                 final rData = recipeDoc.docs.first.data();
+                 users.add({
+                  'id': id,
+                  'name': rData['author_name'] ?? rData['authorName'] ?? rData['sourceName'] ?? id,
+                  'photoUrl': rData['author_profile_image_url'] ?? rData['authorProfileImageUrl'] ?? rData['author_profile'],
+                 });
+               } else {
+                 users.add({
+                  'id': id,
+                  'name': id, // Show their ID/Username as a last resort
+                  'photoUrl': null,
+                 });
+               }
              }
           }
         } catch (_) {}
