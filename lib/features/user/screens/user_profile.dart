@@ -24,6 +24,7 @@ import 'package:hidden_pantry_app/core/widgets/main_navigation_shell.dart';
 import 'package:hidden_pantry_app/features/user/screens/user_network_screen.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
 import 'package:hidden_pantry_app/features/user/screens/user_help_support.dart';
+import 'package:hidden_pantry_app/core/services/view_mode_service.dart';
 
 class UserProfileScreen extends StatefulWidget {
   final FirebaseAuth? auth;
@@ -141,6 +142,11 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       ),
     );
     try {
+      // ⚡ Session Cleanup: Reset view mode and clear role cache
+      final viewService = ViewModeService();
+      await viewService.resetToNutritionistView();
+      viewService.clearCache();
+
       await _auth.signOut()
           .timeout(const Duration(seconds: 3));
     } catch (e) {
@@ -186,6 +192,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     try {
       final userService = UserService();
       await userService.deleteUserAccount();
+      
+      // ⚡ Session Cleanup: Clear role cache after deletion
+      ViewModeService().clearCache();
+      
       await FirebaseAuth.instance.signOut();
 
       if (!mounted) return;
