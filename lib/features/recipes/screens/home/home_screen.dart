@@ -69,6 +69,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
   List<Recipe> recommendations = const [];
   List<Recipe> weekly = const [];
   List<Recipe> followingFeed = const [];
+  Recipe? todaysPick;
 
   final FollowService _followService = FollowService();
 
@@ -272,6 +273,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
         ).then((v) => rec = v).catchError((_) => <Recipe>[]),
 
         RecipeService().getTrendingRecipes(limit: 50).then((v) => week = v).catchError((_) => <Recipe>[]),
+        _recipeService.getTodaysPick().then((v) => todaysPick = v).catchError((_) => null),
       ];
 
       if (followedIds.isNotEmpty) {
@@ -1136,7 +1138,9 @@ void _openUserProfile() {
     return const SizedBox();
   }
 
-  final r = recommendations.first;
+  final r = todaysPick ?? (recommendations.isNotEmpty ? recommendations.first : null);
+  if (r == null) return const SizedBox();
+
   final timeText = r.minutes > 0 ? "${r.minutes} min" : "";
   final diffText = r.difficulty ?? "";
 

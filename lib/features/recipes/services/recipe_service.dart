@@ -1050,26 +1050,35 @@ class RecipeService {
   /// Calculates and fetches trending recipes based on recent engagement
   Future<List<Recipe>> getTrendingRecipes({int limit = 10, int days = 7}) async {
     List<Recipe> results = [];
+    final now = DateTime.now();
     
-    // 1. Try to get trending from recent events (engagement score)
+    // 1. Try to get trending from recent events with Recency Decay
     try {
-      final cutoff = DateTime.now().subtract(Duration(days: days));
+      final cutoff = now.subtract(Duration(days: days));
       final eventsSnap = await _firestore
           .collection('trending_events')
           .where('timestamp', isGreaterThanOrEqualTo: cutoff)
           .get();
 
       if (eventsSnap.docs.isNotEmpty) {
-        final Map<String, int> scores = {};
+        final Map<String, double> scores = {};
         for (final doc in eventsSnap.docs) {
           final data = doc.data();
           final recipeId = data['recipeId'] as String?;
           final type = data['type'] as String?;
+          final timestamp = (data['timestamp'] as Timestamp?)?.toDate() ?? cutoff;
+          
           if (recipeId == null) continue;
 
-          // likes are worth more than views
-          final points = type == 'like' ? 5 : 1;
-          scores[recipeId] = (scores[recipeId] ?? 0) + points;
+          // Time decay: engagement from today is worth more than 6 days ago
+          final hoursOld = now.difference(timestamp).inHours;
+          final decayMultiplier = 1.0 / (1.0 + (hoursOld / 48.0)); // Soft decay every 2 days
+
+          // weighted points: likes=10, views=2
+          final basePoints = type == 'like' ? 10.0 : 2.0;
+          final points = basePoints * decayMultiplier;
+          
+          scores[recipeId] = (scores[recipeId] ?? 0.0) + points;
         }
 
         final sortedIds = scores.keys.toList()
@@ -1082,36 +1091,116 @@ class RecipeService {
       print("[RecipeService] Trending events fetch failed: $e");
     }
 
-    if (results.isNotEmpty) return results;
-
-    // 2. Fallback: Fetch top-rated recipes from Firestore (Simple Popularity)
-    try {
-      print("[RecipeService] Falling back to popular recipes in Firestore.");
-      final popularSnap = await _firestore
-          .collection('recipes')
-          .where('is_public', isEqualTo: true)
-          .orderBy('review_count', descending: true)
-          .limit(limit)
-          .get();
-      
-      if (popularSnap.docs.isNotEmpty) {
-        results = popularSnap.docs.map((d) => Recipe.fromJson(d.data())).toList();
+    // 2. Fallback / Merge: Popular recipes from Firestore
+    if (results.length < limit) {
+      try {
+        final popularSnap = await _firestore
+            .collection('recipes')
+            .where('is_public', isEqualTo: true)
+            .orderBy('review_count', descending: true)
+            .limit(limit)
+            .get();
+        
+        final popularRecipes = popularSnap.docs.map((d) => Recipe.fromJson(d.data())).toList();
+        
+        // Merge without duplicates
+        final existingIds = results.map((r) => r.id).toSet();
+        for (var r in popularRecipes) {
+          if (!existingIds.contains(r.id)) {
+            results.add(r);
+            if (results.length >= limit) break;
+          }
+        }
+      } catch (e) {
+        print("[RecipeService] Firestore popular fallback failed: $e");
       }
-    } catch (e) {
-      print("[RecipeService] Firestore popular fallback failed: $e");
     }
 
-    if (results.isNotEmpty) return results;
-
-    // 3. Final Fallback: Fetch "popular" recommendations from API (Global Trending)
-    try {
-      print("[RecipeService] Final fallback: API popular recipes.");
-      results = await _api.recommend(query: "popular", topK: limit);
-    } catch (e) {
-      print("[RecipeService] API popular fallback failed: $e");
+    // 3. Final Fallback: Fetch "popular" recommendations from API
+    if (results.isEmpty) {
+      try {
+        results = await _api.recommend(query: "popular", topK: limit);
+      } catch (e) {
+        print("[RecipeService] API popular fallback failed: $e");
+      }
     }
 
     return results;
+  }
+
+  /// NEW: Fetches a specialized "Today's Pick" using engagement and rating metrics
+  Future<Recipe?> getTodaysPick() async {
+    try {
+      final now = DateTime.now();
+      final day = now.weekday;
+      
+      // Theme fallback tags
+      String themeTag;
+      switch (day) {
+        case 1: themeTag = "Healthy"; break;
+        case 2: themeTag = "Spicy"; break;
+        case 3: themeTag = "Comfort Food"; break;
+        case 4: themeTag = "Asian"; break;
+        case 5: themeTag = "Quick"; break;
+        case 6: themeTag = "Dessert"; break;
+        case 7: themeTag = "Family"; break;
+        default: themeTag = "Dinner";
+      }
+
+      // 1. PRIORITY: High Engagement (Views)
+      // Fetch top engaged recipes from metrics
+      final metricsSnap = await _firestore
+          .collection('recipe_metrics')
+          .orderBy('viewCount', descending: true)
+          .limit(20)
+          .get();
+      
+      if (metricsSnap.docs.isNotEmpty) {
+        final engagedIds = metricsSnap.docs.map((d) => d.id).toList();
+        final recipes = await getRecipesByIds(engagedIds);
+        
+        // Filter for high quality public recipes
+        final pool = recipes.where((r) => r.isPublic && r.avgRating >= 3.0).toList();
+        
+        if (pool.isNotEmpty) {
+          // Use a mix of date and hour to make it refresh several times a day 
+          // but still feel "selected" for a period.
+          final hourBlock = now.hour ~/ 4; // Changes every 4 hours
+          final seed = now.year + now.month + now.day + hourBlock;
+          return pool[seed % pool.length];
+        }
+      }
+
+      // 2. SECONDARY: High Rating + Theme
+      final snap = await _firestore
+          .collection('recipes')
+          .where('is_public', isEqualTo: true)
+          .where('avg_rating', isGreaterThanOrEqualTo: 4.2)
+          .limit(20)
+          .get();
+
+      if (snap.docs.isNotEmpty) {
+        final seed = now.year + now.month + now.day + (now.hour ~/ 2);
+        final index = seed % snap.docs.length;
+        return Recipe.fromJson(snap.docs[index].data());
+      }
+
+      // 3. Fallback: API popular with theme
+      final apiResults = await _api.recommend(
+        query: themeTag,
+        topK: 5,
+        minRating: 4.0,
+      );
+      
+      if (apiResults.isNotEmpty) {
+        return apiResults.first;
+      }
+
+      return null;
+    } catch (e) {
+      print("[RecipeService] Error fetching Today's Pick: $e");
+      return null;
+    }
   }
 }
 
