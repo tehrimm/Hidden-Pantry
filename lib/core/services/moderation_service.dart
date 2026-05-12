@@ -103,9 +103,23 @@ class ModerationService {
         .orderBy('timestamp', descending: true)
         .get();
 
+    return _processReportSnapshot(snapshot.docs);
+  }
+
+  /// Get real-time stream of pending reports grouped by contentId
+  Stream<List<Map<String, dynamic>>> getReportSummaryStream() {
+    return _firestore
+        .collection('reports')
+        .where('status', isEqualTo: 'pending')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) => _processReportSnapshot(snapshot.docs));
+  }
+
+  List<Map<String, dynamic>> _processReportSnapshot(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
     final Map<String, Map<String, dynamic>> summary = {};
 
-    for (var doc in snapshot.docs) {
+    for (var doc in docs) {
       final data = doc.data();
       final contentId = data['contentId'] as String;
 
@@ -114,14 +128,13 @@ class ModerationService {
           'contentId': contentId,
           'contentType': data['contentType'],
           'authorId': data['authorId'],
-          'reason': data['reason'], // First reason
+          'reason': data['reason'],
           'reportCount': 0,
           'reports': [],
         };
       }
       summary[contentId]!['reportCount']++;
       summary[contentId]!['reports'].add({'id': doc.id, ...data});
-      // Carry over metadata to summary
       if (data['metadata'] != null) {
         summary[contentId]!['metadata'] = data['metadata'];
       }

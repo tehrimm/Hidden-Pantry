@@ -1,6 +1,7 @@
 import 'dart:developer';
 import 'dart:math' as math;
 import 'dart:ui';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -68,6 +69,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
 
   List<Recipe> recommendations = const [];
   List<Recipe> weekly = const [];
+  List<Recipe> week = []; // FIX: Added as class member to resolve compilation errors
   List<Recipe> followingFeed = const [];
   Recipe? todaysPick;
 
@@ -88,10 +90,12 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isSpeechAvailable = false;
   bool _isListening = false;
+  StreamSubscription? _userSub;
 
   @override
   void dispose() {
     _tagScrollController.dispose();
+    _userSub?.cancel();
     super.dispose();
   }
 
@@ -103,6 +107,32 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
     _checkNutritionistStatus();
     _loadHome();
     _initSpeech();
+    _setupUserListener();
+  }
+
+  void _setupUserListener() {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    _userSub?.cancel();
+    _userSub = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .snapshots()
+        .listen((doc) {
+      if (!doc.exists || !mounted) return;
+      final data = doc.data()!;
+      final newAllergies = (data['allergies'] as List?)?.map((e) => e.toString()).toList() ?? [];
+
+      // Check if allergies actually changed before triggering a full reload
+      final currentSorted = List<String>.from(userAllergies)..sort();
+      final newSorted = List<String>.from(newAllergies)..sort();
+      
+      if (currentSorted.join(',') != newSorted.join(',')) {
+        log("[HomeScreen] Allergies changed from $currentSorted to $newSorted. Refreshing recommendations.");
+        _loadHome();
+      }
+    });
   }
 
   Future<void> _initSpeech() async {
@@ -173,11 +203,11 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
     }
   }
 
-  Future<void> _loadHome() async {
+  Future<void> _loadHome({bool isRefresh = false}) async {
     if (mounted) {
       setState(() {
-        // Only show loading if we don't have data yet
-        if (recommendations.isEmpty && weekly.isEmpty) {
+        // Show loading if we don't have data yet OR if this is a manual refresh
+        if (isRefresh || (recommendations.isEmpty && weekly.isEmpty)) {
           loading = true;
         }
         loadError = null;
@@ -238,12 +268,17 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
         );
       }
 
-      await Future.wait(initialFutures);
+      // 2. Start recipe futures that DON'T depend on user data immediately
+      final independentRecipeFutures = <Future>[
+        _recipeService.getTrendingRecipes(limit: 50).then((v) => week = v).catchError((_) => <Recipe>[]),
+        _recipeService.getTodaysPick().then((v) => todaysPick = v).catchError((_) => null),
+      ];
+
+      await Future.wait([...initialFutures, ...independentRecipeFutures]);
       final fixedTags = _fixTags(fetchedTags);
 
-      // 2. Fetch recipe recommendations concurrently
+      // 3. Fetch recipe recommendations (dependent on user preference data)
       List<Recipe> rec = [];
-      List<Recipe> week = [];
       List<Recipe> feed = [];
 
       final feedFallback = () async {
@@ -269,18 +304,15 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
         }
       };
 
-      final recipeFutures = <Future>[
+      final dependentRecipeFutures = <Future>[
         api.recommend(
           query: "popular", tag: selectedTag, allergies: userAllergies,
           likedRecipeIds: likedIds, topK: 50, minRating: 0.0,
         ).then((v) => rec = v).catchError((_) => <Recipe>[]),
-
-        RecipeService().getTrendingRecipes(limit: 50).then((v) => week = v).catchError((_) => <Recipe>[]),
-        _recipeService.getTodaysPick().then((v) => todaysPick = v).catchError((_) => null),
       ];
 
       if (followedIds.isNotEmpty) {
-        recipeFutures.add(
+        dependentRecipeFutures.add(
           api.fetchFollowingFeed(followedIds).then((res) async {
             if (res.isNotEmpty) {
               feed = res;
@@ -293,7 +325,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
         );
       }
 
-      await Future.wait(recipeFutures);
+      await Future.wait(dependentRecipeFutures);
 
 
       if (!mounted) return;
@@ -753,7 +785,7 @@ void _openUserProfile() {
                     // Scrollable Content
                     Expanded(
                       child: RefreshIndicator(
-                        onRefresh: _loadHome,
+                        onRefresh: () => _loadHome(isRefresh: true),
                         color: orange,
                         backgroundColor: Colors.white,
                         child: ListView(

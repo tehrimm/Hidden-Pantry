@@ -12,6 +12,7 @@ import 'package:hidden_pantry_app/features/recipes/services/recipe_api_service.d
 import 'package:hidden_pantry_app/core/constants/api_constants.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 import 'dart:ui' as ui;
+import 'dart:async';
 
 class AdminModerationScreen extends StatefulWidget {
   const AdminModerationScreen({super.key});
@@ -24,6 +25,8 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
   final ModerationService _moderationService = ModerationService();
   bool _loading = true;
   List<Map<String, dynamic>> _reports = [];
+  StreamSubscription? _reportSub;
+  final Map<String, Map<String, dynamic>> _enrichedCache = {};
 
   static const Color purple = Color(0xFF462F4D);
   static const Color orange = Color(0xFFF2894F);
@@ -32,132 +35,125 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchReports();
+    _reportSub = _moderationService.getReportSummaryStream().listen((reports) {
+      _handleNewReports(reports);
+    });
   }
 
-  Future<void> _fetchReports() async {
-    setState(() => _loading = true);
+  @override
+  void dispose() {
+    _reportSub?.cancel();
+    super.dispose();
+  }
+
+  void _handleNewReports(List<Map<String, dynamic>> rawReports) async {
+    if (!mounted) return;
+
+    // 1. Update UI immediately with what we have (preserving cache)
+    setState(() {
+      _reports = rawReports.map((r) {
+        final id = r['contentId'] as String;
+        if (_enrichedCache.containsKey(id)) {
+          return {...r, ..._enrichedCache[id]!};
+        }
+        return r;
+      }).toList();
+      _loading = false;
+    });
+
+    // 2. Identify and enrich only missing ones
+    final toEnrich = rawReports.where((r) => !_enrichedCache.containsKey(r['contentId'])).toList();
+    if (toEnrich.isEmpty) return;
+
+    // Enrich concurrently but update UI as each one finishes
+    for (final report in toEnrich) {
+      _enrichSingleReport(report, rawReports);
+    }
+  }
+
+  Future<void> _enrichSingleReport(Map<String, dynamic> report, List<Map<String, dynamic>> rawReports) async {
     try {
-      final reports = await _moderationService.getReportSummary();
+      final contentType = report['contentType'] as String;
+      final contentId = report['contentId'] as String;
+      final Map<String, dynamic> enrichedData = {};
 
-      // Enrich each report with actual content details
-      for (var report in reports) {
-        try {
-          final contentType = report['contentType'] as String;
-          final contentId = report['contentId'] as String;
-
-          if (contentType == 'recipe') {
-            // Try document ID first, then query by internal 'id' field
-            var doc = await FirebaseFirestore.instance
-                .collection('recipes')
-                .doc(contentId)
-                .get();
-            if (!doc.exists) {
-              // Recipe IDs from backend may not match Firestore doc IDs — query by field
-              final query = await FirebaseFirestore.instance
-                  .collection('recipes')
-                  .where('id', isEqualTo: contentId)
-                  .limit(1)
-                  .get();
-              if (query.docs.isNotEmpty) doc = query.docs.first;
-            }
-            if (doc.exists) {
-              final data = doc.data()!;
-              report['contentTitle'] = data['name'] ?? data['title'] ?? data['recipe_name'] ?? data['recipeName'] ?? 'Untitled Recipe';
-              report['contentPreview'] = data['description'] ?? '';
-              report['contentImageUrl'] = data['image_url'] ?? data['imageUrl'];
-              // Try all possible author name fields
-              final authorName = data['author_name'] ?? data['authorName'] ?? data['sourceName'];
-              if (authorName != null && authorName.toString().isNotEmpty) {
-                report['authorName'] = authorName;
-              } else {
-                // Try fetching from users collection using the report's authorId
-                try {
-                  final authorId = report['authorId'] as String? ?? '';
-                  if (authorId.isNotEmpty) {
-                    final userDoc = await FirebaseFirestore.instance.collection('users').doc(authorId).get();
-                    if (userDoc.exists) {
-                      report['authorName'] = userDoc.data()?['fullName'] ?? 'Unknown';
-                    } else {
-                      report['authorName'] = 'Author #$authorId';
-                    }
-                  }
-                } catch (_) {
-                  report['authorName'] = 'Unknown';
-                }
-              }
-              report['_firestoreDocId'] = doc.id; // Cache for navigation
-            } else {
-              // --- BUG FIX Fallback: Check API if not in Firestore ---
-              try {
-                final apiService = const RecipeApiService(baseUrl: ApiConstants.baseUrl);
-                final apiRecipe = await apiService.getRecipeById(contentId);
-                
-                report['contentTitle'] = apiRecipe.name;
-                report['contentPreview'] = apiRecipe.description;
-                report['contentImageUrl'] = apiRecipe.imageUrl;
-                report['authorName'] = apiRecipe.authorName ?? 'API Author';
-                report['isApiRecipe'] = true;
-              } catch (apiErr) {
-                print("[AdminModeration] API fallback failed for $contentId: $apiErr");
-                report['contentTitle'] = 'Content deleted';
-                report['contentPreview'] = 'This content has already been removed.';
-              }
-            }
-          } else if (contentType == 'review') {
-            final doc = await FirebaseFirestore.instance
-                .collection('reviews')
-                .doc(contentId)
-                .get();
-            if (doc.exists) {
-              final data = doc.data()!;
-              report['contentTitle'] = 'Review by ${data['userName'] ?? 'Unknown'}';
-              report['contentPreview'] = data['comment'] ?? data['text'] ?? '';
-              report['authorName'] = data['userName'] ?? 'Unknown';
-            } else {
-              report['contentTitle'] = 'Content deleted';
-              report['contentPreview'] = 'This content has already been removed.';
-            }
-          } else if (contentType == 'reply') {
-            final metadata = report['metadata'] as Map<String, dynamic>?;
-            final reviewId = metadata?['parentReviewId'] as String?;
-            if (reviewId != null) {
-              final doc = await FirebaseFirestore.instance
-                  .collection('reviews')
-                  .doc(reviewId)
-                  .collection('replies')
-                  .doc(contentId)
-                  .get();
-              if (doc.exists) {
-                final data = doc.data()!;
-                report['contentTitle'] = 'Reply by ${data['userName'] ?? 'Unknown'}';
-                report['contentPreview'] = data['comment'] ?? '';
-                report['authorName'] = data['userName'] ?? 'Unknown';
-              } else {
-                report['contentTitle'] = 'Reply deleted';
-                report['contentPreview'] = 'This reply has already been removed.';
-              }
-            } else {
-              report['contentTitle'] = 'Orphaned reply';
-              report['contentPreview'] = 'Missing parent review data.';
+      if (contentType == 'recipe') {
+        var doc = await FirebaseFirestore.instance.collection('recipes').doc(contentId).get();
+        if (!doc.exists) {
+          final query = await FirebaseFirestore.instance.collection('recipes').where('id', isEqualTo: contentId).limit(1).get();
+          if (query.docs.isNotEmpty) doc = query.docs.first;
+        }
+        if (doc.exists) {
+          final data = doc.data()!;
+          enrichedData['contentTitle'] = data['name'] ?? data['title'] ?? data['recipe_name'] ?? data['recipeName'] ?? 'Untitled Recipe';
+          enrichedData['contentPreview'] = data['description'] ?? '';
+          enrichedData['contentImageUrl'] = data['image_url'] ?? data['imageUrl'];
+          
+          final authorName = data['author_name'] ?? data['authorName'] ?? data['sourceName'];
+          if (authorName != null && authorName.toString().isNotEmpty) {
+            enrichedData['authorName'] = authorName;
+          } else {
+            final authorId = report['authorId'] as String? ?? '';
+            if (authorId.isNotEmpty) {
+              final userDoc = await FirebaseFirestore.instance.collection('users').doc(authorId).get();
+              enrichedData['authorName'] = userDoc.data()?['fullName'] ?? 'Author #$authorId';
             }
           }
-        } catch (_) {
-          report['contentTitle'] = report['contentId'];
-          report['contentPreview'] = '';
+          enrichedData['_firestoreDocId'] = doc.id;
+        } else {
+          try {
+            final apiService = const RecipeApiService(baseUrl: ApiConstants.baseUrl);
+            final apiRecipe = await apiService.getRecipeById(contentId);
+            enrichedData['contentTitle'] = apiRecipe.name;
+            enrichedData['contentPreview'] = apiRecipe.description;
+            enrichedData['contentImageUrl'] = apiRecipe.imageUrl;
+            enrichedData['authorName'] = apiRecipe.authorName ?? 'API Author';
+            enrichedData['isApiRecipe'] = true;
+          } catch (_) {
+            enrichedData['contentTitle'] = 'Content deleted';
+          }
+        }
+      } else if (contentType == 'review') {
+        final doc = await FirebaseFirestore.instance.collection('reviews').doc(contentId).get();
+        if (doc.exists) {
+          final data = doc.data()!;
+          enrichedData['contentTitle'] = 'Review by ${data['userName'] ?? 'Unknown'}';
+          enrichedData['contentPreview'] = data['comment'] ?? data['text'] ?? '';
+          enrichedData['authorName'] = data['userName'] ?? 'Unknown';
+        }
+      } else if (contentType == 'reply') {
+        final metadata = report['metadata'] as Map<String, dynamic>?;
+        final reviewId = metadata?['parentReviewId'] as String?;
+        if (reviewId != null) {
+          final doc = await FirebaseFirestore.instance.collection('reviews').doc(reviewId).collection('replies').doc(contentId).get();
+          if (doc.exists) {
+            final data = doc.data()!;
+            enrichedData['contentTitle'] = 'Reply by ${data['userName'] ?? 'Unknown'}';
+            enrichedData['contentPreview'] = data['comment'] ?? '';
+            enrichedData['authorName'] = data['userName'] ?? 'Unknown';
+          }
         }
       }
 
-      setState(() {
-        _reports = reports;
-        _loading = false;
-      });
-    } catch (e) {
-      setState(() => _loading = false);
-      if (mounted) {
-        Toaster.show(context, 'Error fetching reports: $e', isError: true);
+      if (!mounted) return;
+      if (enrichedData.isNotEmpty) {
+        _enrichedCache[contentId] = enrichedData;
+        setState(() {
+          _reports = rawReports.map((r) {
+            final id = r['contentId'] as String;
+            return {...r, ...(_enrichedCache[id] ?? {})};
+          }).toList();
+        });
       }
+    } catch (e) {
+      print("Enrichment failed for ${report['contentId']}: $e");
     }
+  }
+  }
+
+  Future<void> _fetchReports() async {
+    // Legacy method - the stream listener now handles this automatically.
+    // We can keep it as an alias for manual refresh if needed.
   }
 
   Future<void> _suspendUser(String userId, int days) async {

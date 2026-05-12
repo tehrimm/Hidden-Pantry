@@ -812,29 +812,31 @@ class RecipeService {
         // 2. Identify missing IDs (likely from API or partial docs)
         final missingIds = chunk.where((id) => !validFetchedIds.contains(id)).toList();
         
-        // 3. Fetch missing from API
-        for (var id in missingIds) {
-          try {
-            final r = await _api.getRecipeById(id);
-            results.add(r);
-          } catch (e) {
-            print("[RecipeService] API fallback failed for $id: $e");
-            if (partialDocs.containsKey(id)) {
-               final data = partialDocs[id]!;
-               data['name'] = "Recipe Unavailable";
-               data['minutes'] = 0;
-               results.add(Recipe.fromJson(data));
-            } else {
-               results.add(Recipe(
-                 id: id, 
-                 name: "Recipe Unavailable", 
-                 minutes: 0, 
-                 avgRating: 0.0, 
-                 authorName: "System",
-                 imageUrl: null
-               ));
+        // 3. Fetch missing from API in parallel
+        if (missingIds.isNotEmpty) {
+          final apiResults = await Future.wait(missingIds.map((id) async {
+            try {
+              return await _api.getRecipeById(id);
+            } catch (e) {
+              print("[RecipeService] API fallback failed for $id: $e");
+              if (partialDocs.containsKey(id)) {
+                final data = partialDocs[id]!;
+                data['name'] = "Recipe Unavailable";
+                data['minutes'] = 0;
+                return Recipe.fromJson(data);
+              } else {
+                return Recipe(
+                  id: id, 
+                  name: "Recipe Unavailable", 
+                  minutes: 0, 
+                  avgRating: 0.0, 
+                  authorName: "System",
+                  imageUrl: null
+                );
+              }
             }
-          }
+          }));
+          results.addAll(apiResults);
         }
       } catch (e) {
         print("[RecipeService] Error fetching chunk of recipes: $e");

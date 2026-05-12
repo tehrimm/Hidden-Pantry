@@ -47,11 +47,11 @@ class _SkeletonBoxState extends State<SkeletonBox> with SingleTickerProviderStat
         
         // Premium Warm Beige Palette vs Glassy Palette
         final base = widget.glassy 
-            ? Colors.white.withValues(alpha: 0.1) 
-            : const Color(0xFFF5E9E2);
-        final highlight = widget.glassy 
             ? Colors.white.withValues(alpha: 0.25) 
-            : const Color(0xFFFCF5F1);
+            : const Color(0xFFD6C0B0); // Darkened for better visibility
+        final highlight = widget.glassy 
+            ? Colors.white.withValues(alpha: 0.5) 
+            : const Color(0xFFEBD9CE); // Slightly lighter for contrast
 
         Widget box = Container(
           width: widget.width,
