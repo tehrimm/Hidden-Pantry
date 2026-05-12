@@ -443,6 +443,7 @@ class _PlanCardItemState extends State<_PlanCardItem> {
                   shape: BoxShape.circle,
                 ),
                 child: PopupMenuButton<String>(
+                  color: const Color(0xFFFFF3EB),
                   icon: Icon(Icons.more_vert_rounded, color: purple.withValues(alpha: 0.4), size: 22.sw),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.sw)),
                   onSelected: (value) {

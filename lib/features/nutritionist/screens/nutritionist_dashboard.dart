@@ -32,7 +32,7 @@ class NutritionistDashboard extends StatefulWidget {
 }
 
 class _NutritionistDashboardState extends State<NutritionistDashboard> {
-  final Color bg = const Color(0xFFFFF7F2);
+  final Color bg = const Color(0xFFFFF3EB);
   final Color purple = const Color(0xFF321B3A);
   final Color orange = const Color(0xFFFF8C5A);
   final Color brown = const Color(0xFF5D4037);
@@ -304,7 +304,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                         decoration: InputDecoration(
                           hintText: "What's on your mind?...",
                           filled: true,
-                          fillColor: const Color(0xFFF9E3D5),
+                          fillColor: const Color(0xFFFFF3EB),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                             borderSide: BorderSide.none,
@@ -429,13 +429,13 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                         decoration: InputDecoration(
                           isDense: true,
                           filled: true,
-                          fillColor: const Color(0xFFF9E3D5),
+                          fillColor: const Color(0xFFFFF3EB),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
                             borderSide: BorderSide.none,
                           ),
                         ),
-                        dropdownColor: const Color(0xFFF9E3D5),
+                        dropdownColor: const Color(0xFFFFF3EB),
                         items: const [
                           DropdownMenuItem(value: 0, child: Text("Free (Public)", style: TextStyle(color: Color(0xFF462F4D), fontFamily: "Satoshi"))),
                           DropdownMenuItem(value: 1, child: Text("Tier 1 (Silver Sub)", style: TextStyle(color: Color(0xFF462F4D), fontFamily: "Satoshi"))),

@@ -661,6 +661,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
               value: _selectedInterval,
               isExpanded: true,
               icon: Icon(Icons.keyboard_arrow_down_rounded, color: purple, size: 24.sw),
+              dropdownColor: const Color(0xFFFFF3EB),
               style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
               items: _intervals.map((String value) {
                 return DropdownMenuItem<String>(

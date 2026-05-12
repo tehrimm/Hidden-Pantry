@@ -459,6 +459,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
         ),
         actions: [
           PopupMenuButton<String>(
+            color: const Color(0xFFFFF3EB),
             icon: Icon(Icons.more_vert_rounded, color: purple),
             onSelected: (value) {
               if (value == 'clear') {

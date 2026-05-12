@@ -407,7 +407,7 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
                                         hint: Text("Select Specialized Domain", style: TextStyle(color: hint, fontSize: 14.sp, fontWeight: FontWeight.w500, fontFamily: 'Satoshi')),
                                         isExpanded: true,
                                         icon: const Icon(Icons.arrow_drop_down_rounded, color: text),
-                                        dropdownColor: Colors.white,
+                                        dropdownColor: const Color(0xFFFFF3EB),
                                         style: TextStyle(color: text, fontSize: 14.sp, fontWeight: FontWeight.w600, fontFamily: 'Satoshi'),
                                         items: _domains.map((d) {
                                           return DropdownMenuItem(
