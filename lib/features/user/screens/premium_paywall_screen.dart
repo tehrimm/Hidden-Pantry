@@ -436,7 +436,13 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
     HapticFeedback.heavyImpact();
     
     if (_iapService.products.isEmpty) {
-      Toaster.show(context, "Billing service not ready. Please try again.", isError: true);
+      setState(() => _isLoadingProducts = true);
+      await _iapService.fetchProducts();
+      setState(() => _isLoadingProducts = false);
+      
+      if (_iapService.products.isEmpty && context.mounted) {
+        Toaster.show(context, "Store service not ready. Please try again in a moment.", isError: true);
+      }
       return;
     }
 

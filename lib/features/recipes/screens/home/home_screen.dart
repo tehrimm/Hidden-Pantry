@@ -65,6 +65,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
   String selectedTag = "All";
 
   bool loading = true;
+  bool _isFetching = false;
   String? loadError;
 
   List<Recipe> recommendations = const [];
@@ -130,7 +131,9 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
       
       if (currentSorted.join(',') != newSorted.join(',')) {
         log("[HomeScreen] Allergies changed from $currentSorted to $newSorted. Refreshing recommendations.");
-        _loadHome();
+        // Update the local list immediately so the next check works
+        userAllergies = newAllergies;
+        _loadHome(isRefresh: true);
       }
     });
   }
@@ -204,9 +207,11 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
   }
 
   Future<void> _loadHome({bool isRefresh = false}) async {
+    if (_isFetching) return;
+    _isFetching = true;
+
     if (mounted) {
       setState(() {
-        // Show loading if we don't have data yet OR if this is a manual refresh
         if (isRefresh || (recommendations.isEmpty && weekly.isEmpty)) {
           loading = true;
         }
@@ -270,8 +275,8 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
 
       // 2. Start recipe futures that DON'T depend on user data immediately
       final independentRecipeFutures = <Future>[
-        _recipeService.getTrendingRecipes(limit: 50).then((v) => week = v).catchError((_) => <Recipe>[]),
-        _recipeService.getTodaysPick().then((v) => todaysPick = v).catchError((_) => null),
+        _recipeService.getTrendingRecipes(limit: 50, allergies: userAllergies).then((v) => week = v).catchError((_) => <Recipe>[]),
+        _recipeService.getTodaysPick(allergies: userAllergies).then((v) => todaysPick = v).catchError((_) => null),
       ];
 
       await Future.wait([...initialFutures, ...independentRecipeFutures]);
@@ -349,6 +354,8 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
         // Keep existing user data on error if possible
       });
       log("Home error: $e");
+    } finally {
+      _isFetching = false;
     }
   }
 

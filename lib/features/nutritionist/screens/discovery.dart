@@ -20,7 +20,9 @@ class NutritionistDiscoveryScreen extends StatefulWidget {
   State<NutritionistDiscoveryScreen> createState() => _NutritionistDiscoveryScreenState();
 }
 
-class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScreen> {
+class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   final Color bg = const Color(0xFFFFF3EB);
   final Color purple = const Color(0xFF462F4D);
   final Color orange = const Color(0xFFEF8A54);
@@ -154,6 +156,7 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     ResponsiveUtils.init(context);
     Widget content = Container(
       color: widget.inShell ? Colors.transparent : bg,

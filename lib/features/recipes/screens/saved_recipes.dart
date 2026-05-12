@@ -35,7 +35,9 @@ class SavedRecipesScreen extends StatefulWidget {
   State<SavedRecipesScreen> createState() => _SavedRecipesScreenState();
 }
 
-class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
+class _SavedRecipesScreenState extends State<SavedRecipesScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   final Color bg = const Color(0xFFFFF3EB);
   final Color purple = const Color(0xFF462F4D);
   final Color cardColor = const Color(0xFFFDECE4);
@@ -175,6 +177,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     ResponsiveUtils.init(context);
     final user = _auth.currentUser;
     if (user == null) return const Scaffold(body: Center(child: Text("Please login")));

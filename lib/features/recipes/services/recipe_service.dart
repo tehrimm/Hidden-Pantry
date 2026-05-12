@@ -1070,7 +1070,7 @@ class RecipeService {
   }
 
   /// Calculates and fetches trending recipes based on recent engagement
-  Future<List<Recipe>> getTrendingRecipes({int limit = 10, int days = 7}) async {
+  Future<List<Recipe>> getTrendingRecipes({int limit = 10, int days = 7, List<String>? allergies}) async {
     List<Recipe> results = [];
     final now = DateTime.now();
     
@@ -1106,8 +1106,14 @@ class RecipeService {
         final sortedIds = scores.keys.toList()
           ..sort((a, b) => scores[b]!.compareTo(scores[a]!));
 
-        final topIds = sortedIds.take(limit).toList();
+        // Take more than limit to allow for allergy filtering
+        final topIds = sortedIds.take(limit * 2).toList();
         results = await getRecipesByIds(topIds);
+        
+        if (allergies != null && allergies.isNotEmpty) {
+           results = results.where((r) => _passesAllergyFilter(r, allergies)).toList();
+        }
+        results = results.take(limit).toList();
       }
     } catch (e) {
       print("[RecipeService] Trending events fetch failed: $e");
@@ -1120,11 +1126,15 @@ class RecipeService {
             .collection('recipes')
             .where('is_public', isEqualTo: true)
             .orderBy('review_count', descending: true)
-            .limit(limit)
+            .limit(limit * 2) // More for filtering
             .get();
         
-        final popularRecipes = popularSnap.docs.map((d) => Recipe.fromJson(d.data())).toList();
+        var popularRecipes = popularSnap.docs.map((d) => Recipe.fromJson(d.data())).toList();
         
+        if (allergies != null && allergies.isNotEmpty) {
+          popularRecipes = popularRecipes.where((r) => _passesAllergyFilter(r, allergies)).toList();
+        }
+
         // Merge without duplicates
         final existingIds = results.map((r) => r.id).toSet();
         for (var r in popularRecipes) {
@@ -1141,7 +1151,7 @@ class RecipeService {
     // 3. Final Fallback: Fetch "popular" recommendations from API
     if (results.isEmpty) {
       try {
-        results = await _api.recommend(query: "popular", topK: limit);
+        results = await _api.recommend(query: "popular", topK: limit, allergies: allergies ?? []);
       } catch (e) {
         print("[RecipeService] API popular fallback failed: $e");
       }
@@ -1150,8 +1160,47 @@ class RecipeService {
     return results;
   }
 
+  bool _passesAllergyFilter(Recipe r, List<String> userAllergies) {
+    final rName = r.name.toLowerCase();
+    final rTags = r.tags.map((e) => e.toLowerCase()).toSet();
+    final rAllergens = (r.allergens).map((e) => e.toLowerCase()).toSet();
+    final rIngredients = r.ingredients.map((e) => e.name.toLowerCase()).toList();
+
+    final Map<String, List<String>> synonyms = {
+      "dairy": ["milk", "cheese", "butter", "cream", "yogurt", "lactose", "whey", "casein", "ghee"],
+      "tree nuts": ["almond", "walnut", "cashew", "pecan", "pistachio", "hazelnut", "brazil nut", "macadamia"],
+      "shellfish": ["shrimp", "crab", "lobster", "mussel", "oyster", "scallop", "clam", "prawn"],
+      "spicy": ["chili", "pepper", "jalapeno", "habanero", "cayenne", "sriracha", "hot sauce", "wasabi"],
+      "gluten": ["wheat", "barley", "rye", "malt", "farro", "bulgur"],
+      "eggs": ["egg", "yolk", "egg white", "albumin"],
+    };
+
+    for (final allergy in userAllergies) {
+      final a = allergy.toLowerCase().trim();
+      final searchTerms = [a, ...(synonyms[a] ?? [])];
+      
+      if (a == "gluten") {
+        bool isGlutenFree = rName.contains("gluten-free") || 
+                           rName.contains("gluten free") ||
+                           rTags.contains("gluten-free") ||
+                           rTags.contains("gluten free");
+        if (isGlutenFree) continue;
+      }
+
+      for (final term in searchTerms) {
+        if (rAllergens.contains(term)) return false;
+        if (rTags.contains(term)) return false;
+        if (rName.contains(term)) return false;
+        for (final ing in rIngredients) {
+          if (ing.contains(term)) return false;
+        }
+      }
+    }
+    return true;
+  }
+
   /// NEW: Fetches a specialized "Today's Pick" using engagement and rating metrics
-  Future<Recipe?> getTodaysPick() async {
+  Future<Recipe?> getTodaysPick({List<String>? allergies}) async {
     try {
       final now = DateTime.now();
       final day = now.weekday;
@@ -1170,24 +1219,24 @@ class RecipeService {
       }
 
       // 1. PRIORITY: High Engagement (Views)
-      // Fetch top engaged recipes from metrics
       final metricsSnap = await _firestore
           .collection('recipe_metrics')
           .orderBy('viewCount', descending: true)
-          .limit(20)
+          .limit(40) // More for filtering
           .get();
       
       if (metricsSnap.docs.isNotEmpty) {
         final engagedIds = metricsSnap.docs.map((d) => d.id).toList();
-        final recipes = await getRecipesByIds(engagedIds);
+        var recipes = await getRecipesByIds(engagedIds);
         
-        // Filter for high quality public recipes
+        if (allergies != null && allergies.isNotEmpty) {
+          recipes = recipes.where((r) => _passesAllergyFilter(r, allergies)).toList();
+        }
+
         final pool = recipes.where((r) => r.isPublic && r.avgRating >= 3.0).toList();
         
         if (pool.isNotEmpty) {
-          // Use a mix of date and hour to make it refresh several times a day 
-          // but still feel "selected" for a period.
-          final hourBlock = now.hour ~/ 4; // Changes every 4 hours
+          final hourBlock = now.hour ~/ 4;
           final seed = now.year + now.month + now.day + hourBlock;
           return pool[seed % pool.length];
         }
@@ -1198,20 +1247,28 @@ class RecipeService {
           .collection('recipes')
           .where('is_public', isEqualTo: true)
           .where('avg_rating', isGreaterThanOrEqualTo: 4.2)
-          .limit(20)
+          .limit(40) // More for filtering
           .get();
 
       if (snap.docs.isNotEmpty) {
-        final seed = now.year + now.month + now.day + (now.hour ~/ 2);
-        final index = seed % snap.docs.length;
-        return Recipe.fromJson(snap.docs[index].data());
+        var recipes = snap.docs.map((d) => Recipe.fromJson(d.data())).toList();
+        if (allergies != null && allergies.isNotEmpty) {
+           recipes = recipes.where((r) => _passesAllergyFilter(r, allergies)).toList();
+        }
+
+        if (recipes.isNotEmpty) {
+          final seed = now.year + now.month + now.day + (now.hour ~/ 2);
+          final index = seed % recipes.length;
+          return recipes[index];
+        }
       }
 
       // 3. Fallback: API popular with theme
       final apiResults = await _api.recommend(
         query: themeTag,
-        topK: 5,
+        topK: 10,
         minRating: 4.0,
+        allergies: allergies ?? [],
       );
       
       if (apiResults.isNotEmpty) {

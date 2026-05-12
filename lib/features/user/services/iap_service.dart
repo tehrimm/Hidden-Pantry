@@ -28,6 +28,8 @@ class IAPService {
   // Platform Premium (Subscription ID: hidden_pantry_premium)
   static const String premiumMonthly = 'hidden_pantry_premium:monthly-plan';
   static const String premiumAnnual = 'hidden_pantry_premium:annual-plan';
+  static const String premiumDiscounted = 'hidden_pantry_premium:discounted-price';
+  static const String premiumFreeTrial = 'hidden_pantry_premium:7-day-free-trial';
   
   // Nutritionist Subscriptions (Subscription ID: nutritionist_subscription)
   static const String nutritionistSilverMonthly = 'nutritionist_subscription:nutritionist-silver-monthly';
@@ -40,6 +42,8 @@ class IAPService {
   static const Set<String> _productIds = {
     premiumMonthly, 
     premiumAnnual, 
+    premiumDiscounted,
+    premiumFreeTrial,
     nutritionistSilverMonthly,
     nutritionistSilverQuarterly,
     nutritionistGoldMonthly,
@@ -58,15 +62,19 @@ class IAPService {
   final Map<String, PurchaseDetails> _activeNutritionistPurchases = {};
   PurchaseDetails? getActiveNutritionistPurchase(String nutritionistId) => _activeNutritionistPurchases[nutritionistId];
 
-  /// Initialize listeners
-  void initialize() {
+  /// Initialize listeners and fetch product data
+  Future<void> initialize() async {
     if (_isTest) return;
+    
     final purchaseUpdated = _iap.purchaseStream;
     _subscription = purchaseUpdated.listen(
       _onPurchaseUpdate,
       onDone: () => _subscription.cancel(),
       onError: (error) => debugPrint("IAP Error: $error"),
     );
+
+    // Initial fetch
+    await fetchProducts();
   }
 
   /// Clean up
@@ -76,28 +84,42 @@ class IAPService {
 
   /// Fetch products from store
   Future<void> fetchProducts() async {
-    if (_isTest) {
-      debugPrint("IAP: Skipping fetchProducts in test environment.");
-      return;
-    }
+    if (_isTest) return;
+
     try {
+      // Small delay to ensure billing service has time to connect
+      await Future.delayed(const Duration(milliseconds: 500));
+      
       final bool available = await _iap.isAvailable();
       if (!available) {
-        debugPrint("IAP: Billing service is NOT available. Check if Play Store is set up.");
-        return;
+        debugPrint("IAP: Billing service is NOT available. Attempting to connect...");
+        // On some devices, calling isAvailable() might not be enough, we just try to query
       }
 
       final ProductDetailsResponse response = await _iap.queryProductDetails(_productIds);
-      if (response.notFoundIDs.isNotEmpty) {
-        debugPrint("IAP: Products not found in store: ${response.notFoundIDs}");
-      }
       
       if (response.error != null) {
         debugPrint("IAP: Query Error: ${response.error!.message}");
+        // If service is not ready, retry once after 3 seconds
+        if (response.error!.message.contains('not ready') || response.error!.message.contains('disconnected')) {
+          await Future.delayed(const Duration(seconds: 3));
+          return fetchProducts();
+        }
       }
 
+      if (response.notFoundIDs.isNotEmpty) {
+        debugPrint("IAP: Products not found in store: ${response.notFoundIDs}");
+        // IMPORTANT: If products are missing, it might be due to propagation or ID mismatch.
+        // We log it clearly so the user can see in debug logs.
+      }
+      
       _products = response.productDetails;
       debugPrint("IAP: Loaded ${_products.length} products successfully.");
+      
+      // If we still have no products and it's available, retry one more time after a longer delay
+      if (_products.isEmpty && available) {
+        Future.delayed(const Duration(seconds: 10), fetchProducts);
+      }
     } catch (e) {
       debugPrint("IAP: Fatal error fetching products: $e");
     }
@@ -187,7 +209,8 @@ class IAPService {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final isNutritionistTier = purchase.productID.contains('nutritionist_subscription');
+    final isNutritionistTier = purchase.productID.contains('nutritionist_subscription') || 
+                               purchase.productID.contains('nutrionist_subscription');
     final isPlatformPremium = purchase.productID.contains('hidden_pantry_premium');
     
     int durationDays = 30; // Default Monthly

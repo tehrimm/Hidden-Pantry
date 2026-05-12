@@ -98,7 +98,7 @@ class _CategoriesScreenState extends State<CategoriesScreen> {
            fetchedRecipes = res;
         }).catchError((_) {}));
       } else if (widget.query == "top this week") {
-        futures.add(RecipeService().getTrendingRecipes(limit: _limit).then((res) {
+        futures.add(RecipeService().getTrendingRecipes(limit: _limit, allergies: widget.allergies).then((res) {
            fetchedRecipes = res;
         }).catchError((_) {}));
       } else {
