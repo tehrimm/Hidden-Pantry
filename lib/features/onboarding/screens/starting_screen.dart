@@ -57,7 +57,7 @@ class _StartingScreenState extends State<StartingScreen>
     // Knife entrance controller only — tweens set in didChangeDependencies
     _knifeCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1400),
+      duration: const Duration(milliseconds: 1000),
     );
 
     // After 4 seconds -> Check Session -> Home OR LoadingOne
@@ -65,7 +65,8 @@ class _StartingScreenState extends State<StartingScreen>
       debugPrint('[StartingScreen] Timer elapsed - checking auth state');
       if (!mounted) return;
 
-      final user = FirebaseAuth.instance.currentUser;
+      // Ensure Firebase has fully restored the session from disk before checking
+      final user = await FirebaseAuth.instance.authStateChanges().first;
       if (user != null) {
         // 🛑 Check for suspension first
         try {
@@ -178,8 +179,8 @@ class _StartingScreenState extends State<StartingScreen>
       end: 280.sh,      // final top
     ).animate(CurvedAnimation(parent: _knifeCtrl, curve: Curves.easeOutCubic));
 
-    // Start knife AFTER 1 second
-    Future.delayed(const Duration(seconds: 1), () {
+    // Start knife quickly to prevent laggy perception
+    Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) _knifeCtrl.forward();
     });
   }

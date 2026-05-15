@@ -345,10 +345,8 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
       setState(() {
         loading = false;
         loadError = e.toString();
-        tags = _fixTags(const []);
-        recommendations = const [];
-        weekly = const [];
-        // Keep existing user data on error if possible
+        // Do NOT wipe tags, recommendations, or weekly here! 
+        // If the app is backgrounded, it throws a network error. We want to keep the old UI state visible.
       });
       log("Home error: $e");
     } finally {
@@ -530,7 +528,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
       setState(() {
         loading = false;
         loadError = e.toString();
-        recommendations = const [];
+        // Do NOT wipe recommendations here to preserve UI on background network error
       });
     }
   }
