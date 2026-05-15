@@ -1124,12 +1124,14 @@ class RecipeService {
       try {
         final popularSnap = await _firestore
             .collection('recipes')
-            .where('is_public', isEqualTo: true)
             .orderBy('review_count', descending: true)
-            .limit(limit * 2) // More for filtering
+            .limit(limit * 4) // Fetch more to account for local filtering
             .get();
         
-        var popularRecipes = popularSnap.docs.map((d) => Recipe.fromJson(d.data())).toList();
+        var popularRecipes = popularSnap.docs
+            .map((d) => Recipe.fromJson(d.data()))
+            .where((r) => r.isPublic)
+            .toList();
         
         if (allergies != null && allergies.isNotEmpty) {
           popularRecipes = popularRecipes.where((r) => _passesAllergyFilter(r, allergies)).toList();
@@ -1228,6 +1230,8 @@ class RecipeService {
           topK: 20,
           allergies: allergies ?? [],
         );
+        // Ensure API recipes have an image
+        pool = pool.where((r) => r.imageUrl != null && r.imageUrl!.trim().isNotEmpty).toList();
       } catch (e) {
         print("[RecipeService] API theme fetch failed: $e");
       }
@@ -1249,10 +1253,11 @@ class RecipeService {
            recipes = recipes.where((r) => _passesAllergyFilter(r, allergies)).toList();
         }
 
-        // Filter by the specific daily theme
+        // Filter by the specific daily theme and ensure it has an image!
         pool = recipes.where((r) => 
-          r.tags.any((t) => t.toLowerCase() == themeTag.toLowerCase()) ||
-          r.name.toLowerCase().contains(themeTag.toLowerCase())
+          (r.imageUrl != null && r.imageUrl!.trim().isNotEmpty) &&
+          (r.tags.any((t) => t.toLowerCase() == themeTag.toLowerCase()) ||
+           r.name.toLowerCase().contains(themeTag.toLowerCase()))
         ).toList();
       }
 
@@ -1276,16 +1281,20 @@ class RecipeService {
       // 4. Absolute fallback if no theme recipes exist at all: Just return a highly rated recipe
       final fallbackSnap = await _firestore
           .collection('recipes')
-          .where('is_public', isEqualTo: true)
           .orderBy('avg_rating', descending: true)
-          .limit(10)
+          .limit(30) // Fetch more to account for local filtering
           .get();
           
       if (fallbackSnap.docs.isNotEmpty) {
-         var recipes = fallbackSnap.docs.map((d) => Recipe.fromJson(d.data())).toList();
+         var recipes = fallbackSnap.docs
+             .map((d) => Recipe.fromJson(d.data()))
+             .where((r) => r.isPublic)
+             .toList();
          if (allergies != null && allergies.isNotEmpty) {
            recipes = recipes.where((r) => _passesAllergyFilter(r, allergies)).toList();
          }
+         // Ensure fallback recipe has an image
+         recipes = recipes.where((r) => r.imageUrl != null && r.imageUrl!.trim().isNotEmpty).toList();
          if (recipes.isNotEmpty) {
             return recipes.first;
          }
