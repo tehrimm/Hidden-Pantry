@@ -793,6 +793,7 @@ void _openUserProfile() {
                         color: orange,
                         backgroundColor: Colors.white,
                         child: ListView(
+                          key: const PageStorageKey<String>('home_screen_scroll'),
                           padding: EdgeInsets.only(bottom: 180.sh),
                           children: [
                             SizedBox(height: 6.sh),
@@ -813,7 +814,7 @@ void _openUserProfile() {
                               onSeeAll: _openCategoryView,
                             ),
                             SizedBox(height: 12.sh),
-                            _horizontalCards(loading ? null : recommendations),
+                            _horizontalCards(loading ? null : recommendations, 'recommendations_scroll'),
 
                             SizedBox(height: 24.sh),
                             _weeklySection(),
@@ -822,7 +823,7 @@ void _openUserProfile() {
                               SizedBox(height: 24.sh),
                               _sectionHeader("From People You Follow", onSeeAll: _openFollowingFeed),
                               SizedBox(height: 12.sh),
-                              _horizontalCards(loading ? null : followingFeed),
+                              _horizontalCards(loading ? null : followingFeed, 'following_scroll'),
                             ],
 
                             if (loadError != null) ...[
@@ -1691,7 +1692,7 @@ void _openUserProfile() {
   }
 
   // ──────────────────── CARDS ────────────────────
-  Widget _horizontalCards(List<Recipe>? list) {
+  Widget _horizontalCards(List<Recipe>? list, String scrollKey) {
     if (list == null) {
       return SizedBox(
         height: 240.sh,
@@ -1722,6 +1723,7 @@ void _openUserProfile() {
     return SizedBox(
       height: 190.sh,
       child: ListView.separated(
+        key: PageStorageKey<String>(scrollKey),
         padding: EdgeInsets.symmetric(horizontal: 22.sw),
         scrollDirection: Axis.horizontal,
         itemBuilder: (_, i) => _recipeCard(list[i]),

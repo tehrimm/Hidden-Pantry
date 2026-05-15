@@ -1417,7 +1417,12 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
           return const Center(child: CircularProgressIndicator());
         }
 
-        final plans = snapshot.data?.docs ?? [];
+        final allPlans = snapshot.data?.docs ?? [];
+        final plans = allPlans.where((p) {
+          final d = p.data() as Map<String, dynamic>;
+          final interval = (d['interval'] ?? 'monthly').toString().toLowerCase();
+          return !interval.contains('quarter');
+        }).toList();
         if (plans.isEmpty) {
           return _placeholderTab("No active plans.");
         }
@@ -1786,11 +1791,11 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
        String productId = IAPService.nutritionistSilverMonthly;
        
        if (tier == 1) {
-         productId = interval.contains('quarter') ? IAPService.nutritionistSilverQuarterly : IAPService.nutritionistSilverMonthly;
+         productId = IAPService.nutritionistSilverMonthly;
        } else if (tier == 2) {
-         productId = interval.contains('quarter') ? IAPService.nutritionistGoldQuarterly : IAPService.nutritionistGoldMonthly;
+         productId = IAPService.nutritionistGoldMonthly;
        } else if (tier == 3) {
-         productId = interval.contains('quarter') ? IAPService.nutritionistPlatinumQuarterly : IAPService.nutritionistPlatinumMonthly;
+         productId = IAPService.nutritionistPlatinumMonthly;
        }
 
        final product = iap.products.firstWhere(

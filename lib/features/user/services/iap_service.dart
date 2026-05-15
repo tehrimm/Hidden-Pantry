@@ -33,11 +33,8 @@ class IAPService {
   
   // Nutritionist Subscriptions (Subscription ID: nutritionist_subscription)
   static const String nutritionistSilverMonthly = 'nutritionist_subscription:nutritionist-silver-monthly';
-  static const String nutritionistSilverQuarterly = 'nutritionist_subscription:nutritionist-silver-quarterly';
   static const String nutritionistGoldMonthly = 'nutritionist_subscription:nutritionist-gold-monthly';
-  static const String nutritionistGoldQuarterly = 'nutritionist_subscription:nutritionist-gold-quarterly';
   static const String nutritionistPlatinumMonthly = 'nutritionist_subscription:nutritionist-platinum-monthly';
-  static const String nutritionistPlatinumQuarterly = 'nutritionist_subscription:nutritionist-platinum-quarterly';
 
   static const Set<String> _productIds = {
     premiumMonthly, 
@@ -45,11 +42,8 @@ class IAPService {
     premiumDiscounted,
     premiumFreeTrial,
     nutritionistSilverMonthly,
-    nutritionistSilverQuarterly,
     nutritionistGoldMonthly,
-    nutritionistGoldQuarterly,
     nutritionistPlatinumMonthly,
-    nutritionistPlatinumQuarterly,
   };
 
   List<ProductDetails> _products = [];
@@ -231,13 +225,8 @@ class IAPService {
       if (nutritionistId != null) {
         // Find price for fee calculation (fallback if product not loaded)
         double amount = 4000; // Silver Monthly default
-        if (purchase.productID.contains('gold')) amount = 7000;
-        if (purchase.productID.contains('platinum')) amount = 10000;
-        
-        // Adjust for quarterly
-        if (purchase.productID.contains('quarterly')) {
-          amount *= 2.75; // Roughly 3 months with a discount
-        }
+        if (purchase.productID.contains('gold')) amount = 6000;
+        if (purchase.productID.contains('platinum')) amount = 8000;
         
         try {
           final p = _products.firstWhere((element) => element.id == purchase.productID);
