@@ -1199,80 +1199,96 @@ class RecipeService {
     return true;
   }
 
-  /// NEW: Fetches a specialized "Today's Pick" using engagement and rating metrics
+  /// NEW: Fetches a specialized "Today's Pick" strictly based on a daily theme
   Future<Recipe?> getTodaysPick({List<String>? allergies}) async {
     try {
       final now = DateTime.now();
       final day = now.weekday;
       
-      // Theme fallback tags
+      // Theme based on the day of the week
       String themeTag;
       switch (day) {
-        case 1: themeTag = "Healthy"; break;
-        case 2: themeTag = "Spicy"; break;
-        case 3: themeTag = "Comfort Food"; break;
-        case 4: themeTag = "Asian"; break;
-        case 5: themeTag = "Quick"; break;
-        case 6: themeTag = "Dessert"; break;
-        case 7: themeTag = "Family"; break;
+        case 1: themeTag = "Dessert"; break;      // Monday
+        case 2: themeTag = "Healthy"; break;      // Tuesday
+        case 3: themeTag = "Asian"; break;        // Wednesday
+        case 4: themeTag = "Quick"; break;        // Thursday
+        case 5: themeTag = "Comfort Food"; break; // Friday
+        case 6: themeTag = "Spicy"; break;        // Saturday
+        case 7: themeTag = "Family"; break;       // Sunday
         default: themeTag = "Dinner";
       }
 
-      // 1. PRIORITY: High Engagement (Views)
-      final metricsSnap = await _firestore
-          .collection('recipe_metrics')
-          .orderBy('viewCount', descending: true)
-          .limit(40) // More for filtering
-          .get();
-      
-      if (metricsSnap.docs.isNotEmpty) {
-        final engagedIds = metricsSnap.docs.map((d) => d.id).toList();
-        var recipes = await getRecipesByIds(engagedIds);
-        
-        if (allergies != null && allergies.isNotEmpty) {
-          recipes = recipes.where((r) => _passesAllergyFilter(r, allergies)).toList();
-        }
+      List<Recipe> pool = [];
 
-        final pool = recipes.where((r) => r.isPublic && r.avgRating >= 3.0).toList();
-        
-        if (pool.isNotEmpty) {
-          final hourBlock = now.hour ~/ 4;
-          final seed = now.year + now.month + now.day + hourBlock;
-          return pool[seed % pool.length];
-        }
+      // 1. Try to fetch from API using the exact theme tag
+      try {
+        pool = await _api.recommend(
+          query: "popular", // Asks backend to sort by popularity/rating
+          tag: themeTag,
+          topK: 20,
+          allergies: allergies ?? [],
+        );
+      } catch (e) {
+        print("[RecipeService] API theme fetch failed: $e");
       }
 
-      // 2. SECONDARY: High Rating + Theme
-      final snap = await _firestore
-          .collection('recipes')
-          .where('is_public', isEqualTo: true)
-          .where('avg_rating', isGreaterThanOrEqualTo: 4.2)
-          .limit(40) // More for filtering
-          .get();
+      // 2. Fallback to Firestore if API returns empty
+      if (pool.isEmpty) {
+        // Fetch recipes and filter locally since complex composite indexes might be missing
+        final snap = await _firestore
+            .collection('recipes')
+            .where('is_public', isEqualTo: true)
+            .orderBy('avg_rating', descending: true)
+            .limit(50) 
+            .get();
 
-      if (snap.docs.isNotEmpty) {
         var recipes = snap.docs.map((d) => Recipe.fromJson(d.data())).toList();
+        
+        // Filter allergens
         if (allergies != null && allergies.isNotEmpty) {
            recipes = recipes.where((r) => _passesAllergyFilter(r, allergies)).toList();
         }
 
-        if (recipes.isNotEmpty) {
-          final seed = now.year + now.month + now.day + (now.hour ~/ 2);
-          final index = seed % recipes.length;
-          return recipes[index];
-        }
+        // Filter by the specific daily theme
+        pool = recipes.where((r) => 
+          r.tags.any((t) => t.toLowerCase() == themeTag.toLowerCase()) ||
+          r.name.toLowerCase().contains(themeTag.toLowerCase())
+        ).toList();
       }
 
-      // 3. Fallback: API popular with theme
-      final apiResults = await _api.recommend(
-        query: themeTag,
-        topK: 10,
-        minRating: 4.0,
-        allergies: allergies ?? [],
-      );
-      
-      if (apiResults.isNotEmpty) {
-        return apiResults.first;
+      // 3. Select the recipe from the pool
+      if (pool.isNotEmpty) {
+        // Sort by rating to be safe
+        pool.sort((a, b) => b.avgRating.compareTo(a.avgRating));
+
+        // Take the top 5 highest-rated recipes in this theme
+        final topCandidates = pool.take(5).toList();
+
+        // Cycle through the top 5 based on the week of the month.
+        // This ensures they see the absolute highest rated, but it changes slightly 
+        // each week so they don't see the exact same dessert every single Monday forever.
+        final weekOfMonth = (now.day ~/ 7); 
+        final index = weekOfMonth % topCandidates.length;
+
+        return topCandidates[index];
+      }
+
+      // 4. Absolute fallback if no theme recipes exist at all: Just return a highly rated recipe
+      final fallbackSnap = await _firestore
+          .collection('recipes')
+          .where('is_public', isEqualTo: true)
+          .orderBy('avg_rating', descending: true)
+          .limit(10)
+          .get();
+          
+      if (fallbackSnap.docs.isNotEmpty) {
+         var recipes = fallbackSnap.docs.map((d) => Recipe.fromJson(d.data())).toList();
+         if (allergies != null && allergies.isNotEmpty) {
+           recipes = recipes.where((r) => _passesAllergyFilter(r, allergies)).toList();
+         }
+         if (recipes.isNotEmpty) {
+            return recipes.first;
+         }
       }
 
       return null;

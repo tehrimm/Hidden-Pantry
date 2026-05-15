@@ -273,13 +273,8 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
         );
       }
 
-      // 2. Start recipe futures that DON'T depend on user data immediately
-      final independentRecipeFutures = <Future>[
-        _recipeService.getTrendingRecipes(limit: 50, allergies: userAllergies).then((v) => week = v).catchError((_) => <Recipe>[]),
-        _recipeService.getTodaysPick(allergies: userAllergies).then((v) => todaysPick = v).catchError((_) => null),
-      ];
-
-      await Future.wait([...initialFutures, ...independentRecipeFutures]);
+      // 2. Start recipe futures that depend on user data
+      await Future.wait(initialFutures);
       final fixedTags = _fixTags(fetchedTags);
 
       // 3. Fetch recipe recommendations (dependent on user preference data)
@@ -310,6 +305,8 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
       };
 
       final dependentRecipeFutures = <Future>[
+        _recipeService.getTrendingRecipes(limit: 50, allergies: userAllergies).then((v) => week = v).catchError((_) => <Recipe>[]),
+        _recipeService.getTodaysPick(allergies: userAllergies).then((v) => todaysPick = v).catchError((_) => null),
         api.recommend(
           query: "popular", tag: selectedTag, allergies: userAllergies,
           likedRecipeIds: likedIds, topK: 50, minRating: 0.0,
