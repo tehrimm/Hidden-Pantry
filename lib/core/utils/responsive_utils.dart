@@ -23,8 +23,10 @@ class ResponsiveUtils {
 
     // Cache the maximum bottom padding. Samsung devices dynamically shrink
     // viewPadding to 0 when the keyboard opens, causing the nav bar to jump.
+    // We also cap it at 50 to prevent some Android skins from incorrectly 
+    // reporting the entire keyboard height inside viewPadding.
     final currentBottomPadding = mq.viewPadding.bottom;
-    if (currentBottomPadding > maxBottomPadding) {
+    if (currentBottomPadding > maxBottomPadding && currentBottomPadding < 50) {
       maxBottomPadding = currentBottomPadding;
     }
   }

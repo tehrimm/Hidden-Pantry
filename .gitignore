@@ -55,3 +55,7 @@ CON
 
 # Cloud Functions Node modules
 functions/node_modules/
+
+# Ignore large APK binary files
+public/*.apk
+*.apk
