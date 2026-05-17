@@ -41,6 +41,9 @@ class _MockHttpClientRequest extends Mock implements HttpClientRequest {
   HttpHeaders get headers => _MockHttpHeaders();
 
   @override
+  Future<HttpClientResponse> get done => Future.value(_MockHttpClientResponse());
+
+  @override
   Future<HttpClientResponse> close() async {
     return _MockHttpClientResponse();
   }
@@ -54,6 +57,9 @@ class _MockHttpClientResponse extends Mock implements HttpClientResponse {
 
   @override
   int get contentLength => _transparentImage.length;
+
+  @override
+  HttpHeaders get headers => _MockHttpHeaders();
 
   @override
   HttpClientResponseCompressionState get compressionState =>
