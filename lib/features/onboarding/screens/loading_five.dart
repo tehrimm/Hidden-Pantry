@@ -30,6 +30,42 @@ class _LoadingFiveState extends State<LoadingFive> {
   @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
+    final double screenHeight = MediaQuery.of(context).size.height;
+    final double screenWidth = MediaQuery.of(context).size.width;
+    final double hScale = screenHeight / 852.0;
+    final double wScale = screenWidth / 393.0;
+
+    final bool isSmallScreen = screenHeight < 780;
+
+    // Stretch the card so its margin is exactly 30 logical pixels from both sides
+    final double cardLeft = isSmallScreen ? 30.0 : 26.sw;
+    final double cardWidth = isSmallScreen ? (screenWidth - 60.0) : 341.sw;
+    // Maintain a slightly shorter height on small screens to fit all buttons and login text, but use topCenter alignment to keep top wave flawless
+    final double cardHeight = isSmallScreen ? 470.0 : cardWidth * 1.648;
+    final double cardTop = isSmallScreen ? 16 * hScale : 28.sh;
+    final double cardBottom = cardTop + cardHeight;
+
+    final double logoTop = cardTop + (isSmallScreen ? 36 * hScale : 28 * hScale);
+    final double logoWidth = isSmallScreen ? 140 * wScale : 113.sw;
+    final double logoHeight = isSmallScreen ? 32 * hScale : 26.sh;
+
+    final double questionTop = cardTop + (isSmallScreen ? 12 * hScale : 15 * hScale);
+    final double questionSize = isSmallScreen ? 44.sw : 52.sw;
+
+    // Position Title and Description dynamically relative to the bottom of the card with guaranteed zero overlap
+    final double subtextTop = isSmallScreen 
+        ? cardBottom - 85 * hScale 
+        : cardBottom - 81 * hScale;
+    final double titleTop = isSmallScreen 
+        ? subtextTop - 95 * hScale 
+        : subtextTop - 106 * hScale;
+
+    // Position buttons relative to the bottom of the card, using premium heights to avoid squishing
+    final double buttonHeight = isSmallScreen ? 52.0 : 60.sh;
+    final double homecookTop = cardBottom + (isSmallScreen ? 14 * hScale : 34 * hScale);
+    final double nutritionistTop = homecookTop + buttonHeight + (isSmallScreen ? 10 * hScale : 10.sh);
+    final double loginTop = nutritionistTop + buttonHeight + (isSmallScreen ? 15 * hScale : 17.sh);
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFF3EB),
       body: SizedBox(
@@ -55,29 +91,32 @@ class _LoadingFiveState extends State<LoadingFive> {
 
                 // Background Image
                 Positioned(
-                  left: 26.sw,
-                  top: 28.sh,
+                  left: cardLeft,
+                  top: cardTop,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(45.sw),
-                    child: Image.asset(
-                      'assets/bg/4.png',
-                      width: 341.sw,
-                      height: 562.sh,
-                      fit: BoxFit.cover,
+                    child: SizedBox(
+                      width: cardWidth,
+                      height: cardHeight,
+                      child: Image.asset(
+                        'assets/bg/4.png',
+                        fit: BoxFit.cover,
+                        alignment: Alignment.topCenter,
+                      ),
                     ),
                   ),
                 ),
 
                 // Logo (Centered horizontally)
                 Positioned(
-                  top: 56.sh,
+                  top: logoTop,
                   left: 0,
                   right: 0,
                   child: Center(
                     child: Image.asset(
                       'assets/logos/logo2.png',
-                      width: 113.sw,
-                      height: 26.sh,
+                      width: logoWidth,
+                      height: logoHeight,
                       fit: BoxFit.contain,
                     ),
                   ),
@@ -86,7 +125,7 @@ class _LoadingFiveState extends State<LoadingFive> {
                 // Question Mark Button
                 Positioned(
                   right: 26.sw,
-                  top: 43.sh,
+                  top: questionTop,
                   child: GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -97,11 +136,11 @@ class _LoadingFiveState extends State<LoadingFive> {
                       );
                     },
                     child: Container(
-                      width: 52.sw,
-                      height: 52.sw, // Keeping it square
+                      width: questionSize,
+                      height: questionSize, // Keeping it square
                       decoration: BoxDecoration(
                         color: const Color(0xFFF5DDCE),
-                        borderRadius: BorderRadius.circular(26.sw),
+                        borderRadius: BorderRadius.circular(questionSize / 2),
                       ),
                       child: Center(
                         child: Text(
@@ -120,10 +159,10 @@ class _LoadingFiveState extends State<LoadingFive> {
 
                 // Title Text
                 Positioned(
-                  left: 45.sw,
-                  top: 403.sh,
+                  left: cardLeft + (isSmallScreen ? 20.sw : 19.sw),
+                  top: titleTop,
                   child: SizedBox(
-                    width: 291.sw,
+                    width: cardWidth - (isSmallScreen ? 40.sw : 50.sw),
                     child: Text(
                       'Create an\nAccount',
                       style: TextStyle(
@@ -139,10 +178,10 @@ class _LoadingFiveState extends State<LoadingFive> {
 
                 // Subtitle Text
                 Positioned(
-                  left: 45.sw,
-                  top: 509.sh,
+                  left: cardLeft + (isSmallScreen ? 20.sw : 19.sw),
+                  top: subtextTop,
                   child: SizedBox(
-                    width: 237.sw,
+                    width: cardWidth - (isSmallScreen ? 40.sw : 104.sw),
                     child: Text(
                       'Create an account as a home cook\nor a professional nutritionist',
                       style: TextStyle(
@@ -159,7 +198,7 @@ class _LoadingFiveState extends State<LoadingFive> {
                 // Register Homecook Button
                 Positioned(
                   left: 26.sw,
-                  top: 624.sh,
+                  top: homecookTop,
                   child: GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -169,7 +208,7 @@ class _LoadingFiveState extends State<LoadingFive> {
                     },
                     child: Container(
                       width: 341.sw,
-                      height: 60.sh,
+                      height: buttonHeight,
                       decoration: BoxDecoration(
                         color: const Color(0xFFF2894F),
                         borderRadius: BorderRadius.circular(20.sw),
@@ -203,7 +242,7 @@ class _LoadingFiveState extends State<LoadingFive> {
                 // Register Nutritionist Button
                 Positioned(
                   left: 26.sw,
-                  top: 694.sh,
+                  top: nutritionistTop,
                   child: GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -213,7 +252,7 @@ class _LoadingFiveState extends State<LoadingFive> {
                     },
                     child: Container(
                       width: 341.sw,
-                      height: 60.sh,
+                      height: buttonHeight,
                       decoration: BoxDecoration(
                         color: const Color(0xFFF9E3D5),
                         borderRadius: BorderRadius.circular(20.sw),
@@ -252,7 +291,7 @@ class _LoadingFiveState extends State<LoadingFive> {
                 Positioned(
                   left: 0,
                   right: 0,
-                  top: 771.sh,
+                  top: loginTop,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [

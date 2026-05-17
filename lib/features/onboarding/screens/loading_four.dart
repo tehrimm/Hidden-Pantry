@@ -33,6 +33,33 @@ class LoadingFour extends StatelessWidget {
             final double wScale = screenWidth / designWidth;
             final double hScale = screenHeight / designHeight;
 
+            final bool isSmallScreen = screenHeight < 780;
+
+            final double cardTop = 34 * hScale;
+            final double cardHeight = 788 * hScale;
+            final double cardWidth = 341 * wScale;
+            final double cardLeft = 26 * wScale;
+
+            final double logoTop = 62 * hScale;
+
+            // Position all key interactive elements relative to the bottom of the card container
+            final double progressBarTop = isSmallScreen 
+                ? cardTop + cardHeight - 58 * hScale 
+                : cardTop + cardHeight - 46 * hScale;
+            final double progressBarLeft = isSmallScreen 
+                ? 38 * wScale 
+                : 26 * wScale;
+
+            final double nextButtonTop = cardTop + cardHeight - 73 * hScale;
+
+            // Shift texts higher up on small screens to prevent overlap while maintaining exact scale mapping
+            final double titleTop = isSmallScreen 
+                ? cardTop + cardHeight - 330 * hScale 
+                : cardTop + cardHeight - 267 * hScale;
+            final double subtextTop = isSmallScreen 
+                ? cardTop + cardHeight - 200 * hScale 
+                : cardTop + cardHeight - 174 * hScale;
+
             return SizedBox(
               width: screenWidth,
               height: screenHeight,
@@ -54,23 +81,24 @@ class LoadingFour extends StatelessWidget {
                   const _OnboardingBackgroundPattern(),
 
                   Positioned(
-                    left: 26 * wScale,
-                    top: 34 * hScale,
+                    left: cardLeft,
+                    top: cardTop,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(40),
                       child: SizedBox(
-                        width: 341 * wScale,
-                        height: 788 * hScale,
+                        width: cardWidth,
+                        height: cardHeight,
                         child: Image.asset(
                           'assets/bg/6.png',
                           fit: BoxFit.cover,
+                          alignment: Alignment.bottomCenter,
                         ),
                       ),
                     ),
                   ),
 
                   Positioned(
-                    top: 62 * hScale,
+                    top: logoTop,
                     left: 0,
                     right: 0,
                     child: Center(
@@ -85,7 +113,7 @@ class LoadingFour extends StatelessWidget {
 
                   Positioned(
                     left: 52 * wScale,
-                    top: 555 * hScale,
+                    top: titleTop,
                     child: SizedBox(
                       width: 330 * wScale,
                       child: Text(
@@ -103,7 +131,7 @@ class LoadingFour extends StatelessWidget {
 
                   Positioned(
                     left: 52 * wScale,
-                    top: 648 * hScale,
+                    top: subtextTop,
                     child: SizedBox(
                       width: 290 * wScale,
                       child: Text(
@@ -121,8 +149,8 @@ class LoadingFour extends StatelessWidget {
                   ),
 
                   Positioned(
-                    left: 26 * wScale,
-                    top: 776 * hScale,
+                    left: progressBarLeft,
+                    top: progressBarTop,
                     child: OnboardingProgressBar(
                       currentStep: 4,
                       totalSteps: 4,
@@ -132,7 +160,7 @@ class LoadingFour extends StatelessWidget {
 
                   Positioned(
                     right: 46 * wScale,
-                    top: 749 * hScale,
+                    top: nextButtonTop,
                     child: GestureDetector(
                       onTap: () {
                         Navigator.pushReplacement(

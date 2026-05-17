@@ -35,6 +35,33 @@ class LoadingTwo extends StatelessWidget {
             final double wScale = screenWidth / designWidth;
             final double hScale = screenHeight / designHeight;
 
+            final bool isSmallScreen = screenHeight < 780;
+
+            final double cardTop = 34 * hScale;
+            final double cardHeight = 788 * hScale;
+            final double cardWidth = 341 * wScale;
+            final double cardLeft = 26 * wScale;
+
+            final double logoTop = 62 * hScale;
+
+            // Position all key interactive elements relative to the bottom of the card container
+            final double progressBarTop = isSmallScreen 
+                ? cardTop + cardHeight - 58 * hScale 
+                : cardTop + cardHeight - 46 * hScale;
+            final double progressBarLeft = isSmallScreen 
+                ? 38 * wScale 
+                : 26 * wScale;
+
+            final double nextButtonTop = cardTop + cardHeight - 73 * hScale;
+
+            // Shift texts higher up on small screens to prevent overlap while maintaining exact scale mapping
+            final double titleTop = isSmallScreen 
+                ? cardTop + cardHeight - 330 * hScale 
+                : cardTop + cardHeight - 267 * hScale;
+            final double subtextTop = isSmallScreen 
+                ? cardTop + cardHeight - 200 * hScale 
+                : cardTop + cardHeight - 174 * hScale;
+
             return SizedBox(
               width: screenWidth,
               height: screenHeight,
@@ -57,16 +84,17 @@ class LoadingTwo extends StatelessWidget {
 
                   // Big card image
                   Positioned(
-                    left: 26 * wScale,
-                    top: 34 * hScale,
+                    left: cardLeft,
+                    top: cardTop,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(40),
                       child: SizedBox(
-                        width: 341 * wScale,
-                        height: 788 * hScale,
+                        width: cardWidth,
+                        height: cardHeight,
                         child: Image.asset(
                           'assets/bg/2.png',
                           fit: BoxFit.cover,
+                          alignment: Alignment.bottomCenter,
                         ),
                       ),
                     ),
@@ -74,7 +102,7 @@ class LoadingTwo extends StatelessWidget {
 
                   // Top logo (center)
                   Positioned(
-                    top: 62 * hScale,
+                    top: logoTop,
                     left: 0,
                     right: 0,
                     child: Center(
@@ -90,7 +118,7 @@ class LoadingTwo extends StatelessWidget {
                   // Title
                   Positioned(
                     left: 52 * wScale,
-                    top: 555 * hScale,
+                    top: titleTop,
                     child: SizedBox(
                       width: 330 * wScale,
                       child: Text(
@@ -109,7 +137,7 @@ class LoadingTwo extends StatelessWidget {
                   // Subtext
                   Positioned(
                     left: 52 * wScale,
-                    top: 648 * hScale,
+                    top: subtextTop,
                     child: SizedBox(
                       width: 290 * wScale,
                       child: Text(
@@ -128,8 +156,8 @@ class LoadingTwo extends StatelessWidget {
 
                   // Progress bar (4 states) -> currentStep: 2
                   Positioned(
-                    left: 26 * wScale,
-                    top: 776 * hScale,
+                    left: progressBarLeft,
+                    top: progressBarTop,
                     child: OnboardingProgressBar(
                       currentStep: 2,
                       totalSteps: 4,
@@ -140,7 +168,7 @@ class LoadingTwo extends StatelessWidget {
                   // Next button
                   Positioned(
                     right: 46 * wScale, // Adjusted from left: 307
-                    top: 749 * hScale,
+                    top: nextButtonTop,
                     child: GestureDetector(
                       onTap: () async {
                         // Preload the next screen's heavy asset before animating
