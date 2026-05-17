@@ -320,7 +320,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with 
     final horizontal = isTablet ? 24.0 : 30.sw;
     final topPad = mq.padding.top;
 
-    final fieldHeight = isTablet ? 60.0 : 70.sh;
+    final fieldHeight = isTablet ? 60.0 : 85.sh;
 
     return PopScope(
       canPop: false,
@@ -362,7 +362,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with 
                       _AnimatedWrapper(
                         animation: _staggeredAnimations[0],
                         child: Padding(
-                          padding: EdgeInsets.fromLTRB(horizontal, topPad + 24.sh, horizontal, 20.sh),
+                          padding: EdgeInsets.fromLTRB(horizontal, topPad + (isTablet ? 24.sh : 45.sh), horizontal, 20.sh),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [

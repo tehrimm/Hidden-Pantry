@@ -20,15 +20,16 @@ class LoadingOne extends StatelessWidget {
 
           final bool isTablet = screenWidth >= 600;
 
-          // Scale factors (clamped on tablets for a beautiful, premium mobile column view)
-          final double wScale = isTablet ? 1.15 : (screenWidth / designWidth);
-          final double hScale = isTablet ? 1.15 : (screenHeight / designHeight);
+          // Use unified scale on tablets so the card fills nicely without distortion
+          final double unifiedTabletScale = (screenHeight * 0.85) / 788;
+          final double wScale = isTablet ? unifiedTabletScale : (screenWidth / designWidth);
+          final double hScale = isTablet ? unifiedTabletScale : (screenHeight / designHeight);
 
           final bool isSmallScreen = screenHeight < 780;
 
           final double cardWidth = 341 * wScale;
           final double cardHeight = 788 * hScale;
-          final double cardTop = isTablet ? (screenHeight - cardHeight) / 2 - 10 : 34 * hScale;
+          final double cardTop = isTablet ? (screenHeight - cardHeight) / 2 : 34 * hScale;
           final double cardLeft = isTablet ? (screenWidth - cardWidth) / 2 : 26 * wScale;
 
           final double logoTop = isTablet ? cardTop + 45 * hScale : 62 * hScale;
@@ -42,8 +43,9 @@ class LoadingOne extends StatelessWidget {
               : (isSmallScreen ? 38 * wScale : 26 * wScale);
 
           final double nextButtonTop = cardTop + cardHeight - 73 * hScale;
+          final double rightScreenMargin = screenWidth - (cardLeft + cardWidth);
           final double nextButtonRight = isTablet
-              ? screenWidth - (cardLeft + cardWidth) + 20 * wScale
+              ? rightScreenMargin + 28 * wScale
               : 46 * wScale;
 
           // Shift texts higher up on small screens to prevent overlap while maintaining exact scale mapping
