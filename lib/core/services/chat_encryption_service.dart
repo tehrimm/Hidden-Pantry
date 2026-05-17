@@ -20,7 +20,9 @@ class ChatEncryptionService {
     FlutterSecureStorage? storage,
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
-  })  : _storage = storage ?? const FlutterSecureStorage(),
+  })  : _storage = storage ?? const FlutterSecureStorage(
+          aOptions: AndroidOptions(encryptedSharedPreferences: true),
+        ),
         _firestore = firestore ?? FirebaseFirestore.instance,
         _auth = auth ?? FirebaseAuth.instance;
 
@@ -41,8 +43,8 @@ class ChatEncryptionService {
   }
 
   // Constants
-  static const String _privateKeyPrefix = 'chat_private_key_';
-  static const String _publicKeyPrefix = 'chat_public_key_';
+  static const String _privateKeyPrefix = 'chat_private_key_v2_';
+  static const String _publicKeyPrefix = 'chat_public_key_v2_';
 
   // --- RSA Initialization & Storage ---
 
@@ -120,6 +122,7 @@ class ChatEncryptionService {
       BigInt.parse(map['d']),
       BigInt.parse(map['p']),
       BigInt.parse(map['q']),
+      map['e'] != null ? BigInt.parse(map['e']) : BigInt.from(65537),
     );
   }
 
@@ -140,12 +143,15 @@ class ChatEncryptionService {
     try {
       final userRef = _firestore.collection('users').doc(uid);
       final nutRef = _firestore.collection('nutritionists').doc(uid);
+      
       final uDoc = await userRef.get();
       if (uDoc.exists) {
         await userRef.update({'chatPublicKey': publicKeyString});
-      } else {
-        final nDoc = await nutRef.get();
-        if (nDoc.exists) await nutRef.update({'chatPublicKey': publicKeyString});
+      }
+      
+      final nDoc = await nutRef.get();
+      if (nDoc.exists) {
+        await nutRef.update({'chatPublicKey': publicKeyString});
       }
     } catch (_) {}
   }
@@ -166,10 +172,6 @@ class ChatEncryptionService {
         return {'cipherText': plaintext, 'isEncrypted': 'false'};
       }
 
-      String? senderPubStr;
-      final sDoc = await _firestore.collection('users').doc(user.uid).get();
-      senderPubStr = sDoc.data()?['chatPublicKey'] ?? (await _firestore.collection('nutritionists').doc(user.uid).get()).data()?['chatPublicKey'];
-
       // AES Logic
       final aesKeyBytes = _generateRandomBytes(32);
       final aesIVBytes = _generateRandomBytes(16);
@@ -181,24 +183,18 @@ class ChatEncryptionService {
       final rsaRecipient = encrypt.Encrypter(encrypt.RSA(publicKey: _parsePublicKeyFromString(recipientPubStr)));
       final encKeyRecipient = rsaRecipient.encrypt(keyPayload).base64;
 
-      // RSA Logic for sender (self-decryption)
+      // RSA Logic for sender (self-decryption) - ALWAYS derive from local private key for 100% consistency
       String? encKeySender;
-      if (senderPubStr == null || !senderPubStr.contains(":")) {
-        // ⚡ FIX: If Firestore sync is pending, try to derive public key from local storage
-        try {
-          final keyData = await _storage.read(key: '$_privateKeyPrefix${user.uid}');
-          if (keyData != null && keyData.startsWith('{')) {
-            final priv = _parsePrivateKeyFromJson(json.decode(keyData));
-            final pub = _derivePublicKey(priv);
-            final rsaSender = encrypt.Encrypter(encrypt.RSA(publicKey: pub));
-            encKeySender = rsaSender.encrypt(keyPayload).base64;
-          }
-        } catch (e) {
-          debugPrint("Local public key derivation failed: $e");
+      try {
+        final keyData = await _storage.read(key: '$_privateKeyPrefix${user.uid}');
+        if (keyData != null && keyData.startsWith('{')) {
+          final priv = _parsePrivateKeyFromJson(json.decode(keyData));
+          final pub = _derivePublicKey(priv);
+          final rsaSender = encrypt.Encrypter(encrypt.RSA(publicKey: pub));
+          encKeySender = rsaSender.encrypt(keyPayload).base64;
         }
-      } else {
-        final rsaSender = encrypt.Encrypter(encrypt.RSA(publicKey: _parsePublicKeyFromString(senderPubStr)));
-        encKeySender = rsaSender.encrypt(keyPayload).base64;
+      } catch (e) {
+        debugPrint("Local public key derivation failed: $e");
       }
 
       return {
@@ -218,14 +214,26 @@ class ChatEncryptionService {
     final user = _auth.currentUser;
     if (user == null) return "[Error: No User]";
 
+    final msgSender = data['senderId'] ?? "unknown";
+    final msgTime = data['timestamp'] != null ? data['timestamp'].toString() : "no-timestamp";
+
     try {
-      final keyData = await _storage.read(key: '$_privateKeyPrefix${user.uid}');
-      if (keyData == null || !keyData.startsWith('{')) return "[E2EE Setup Pending]";
+      final keyPath = '$_privateKeyPrefix${user.uid}';
+      final keyData = await _storage.read(key: keyPath);
+      if (keyData == null || !keyData.startsWith('{')) {
+        debugPrint("E2EE decrypt: Local key v2 not found for ${user.uid}");
+        return "[E2EE Setup Pending]";
+      }
 
       final privKey = _parsePrivateKeyFromJson(json.decode(keyData));
       final rsa = encrypt.Encrypter(encrypt.RSA(privateKey: privKey));
 
       final targetKey = (data['senderId'] == user.uid) ? (data['senderEncryptedKey'] ?? data['encryptedKey']) : data['encryptedKey'];
+      if (targetKey == null) {
+        debugPrint("E2EE decrypt FAILED: targetKey is null for message from $msgSender at $msgTime");
+        return "[Decryption Failed]";
+      }
+
       final decryptedPayload = rsa.decrypt(encrypt.Encrypted.fromBase64(targetKey));
       
       final parts = decryptedPayload.split("|");
@@ -233,9 +241,11 @@ class ChatEncryptionService {
       final iv = encrypt.IV(base64.decode(parts[1]));
       final aes = encrypt.Encrypter(encrypt.AES(aesKey, mode: encrypt.AESMode.cbc));
 
-      return aes.decrypt(encrypt.Encrypted.fromBase64(data['cipherText']), iv: iv);
+      final decryptedText = aes.decrypt(encrypt.Encrypted.fromBase64(data['cipherText']), iv: iv);
+      debugPrint("E2EE decrypt SUCCESS: Decrypted message from $msgSender at $msgTime. Text: '$decryptedText'");
+      return decryptedText;
     } catch (e) {
-      debugPrint("Decryption error: $e");
+      debugPrint("E2EE decrypt FAILED: Error decrypting message from $msgSender at $msgTime. Error: $e");
       return "[Decryption Failed]";
     }
   }

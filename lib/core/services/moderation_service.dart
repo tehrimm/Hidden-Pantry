@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hidden_pantry_app/core/services/notification_service.dart';
 import 'package:hidden_pantry_app/features/user/models/notification_model.dart';
+import 'package:hidden_pantry_app/features/recipes/services/recipe_service.dart';
 
 class ModerationService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -187,17 +188,43 @@ class ModerationService {
     await batch.commit();
   }
 
-  /// Redact content (soft delete), mark reports as reviewed, and send warning notification
+  /// Hard-delete flagged content, wipe related subcollections, mark reports as reviewed, and send warning notification
   Future<void> takeAction(String contentType, String contentId, String action, String authorId) async {
-      final Map<String, dynamic> redactData = {
-        'comment': 'This comment has been deleted by an administrator.',
-        'isDeleted': true,
-        'imageUrl': FieldValue.delete(), // Remove reported image
-        'updatedAt': FieldValue.serverTimestamp(),
-      };
-
       if (contentType == 'review') {
-        await _firestore.collection('reviews').doc(contentId).update(redactData);
+        // 1. Revert recipe scores and author statistics
+        final parts = contentId.split('_');
+        if (parts.length >= 2) {
+          final userId = parts[0];
+          final recipeId = parts.sublist(1).join('_');
+          try {
+            await RecipeService().deleteReview(recipeId, userId);
+          } catch (e) {
+            print("[ModerationService] Error reverting recipe stats for $contentId: $e");
+          }
+        }
+
+        // 2. Safely wipe out all nested replies in the subcollection to prevent resurrection
+        try {
+          final repliesSnapshot = await _firestore
+              .collection('reviews')
+              .doc(contentId)
+              .collection('replies')
+              .get();
+          
+          if (repliesSnapshot.docs.isNotEmpty) {
+            final batch = _firestore.batch();
+            for (var doc in repliesSnapshot.docs) {
+              batch.delete(doc.reference);
+            }
+            await batch.commit();
+          }
+        } catch (e) {
+          print("[ModerationService] Error deleting replies subcollection for $contentId: $e");
+        }
+
+        // 3. Hard-delete the review document itself
+        await _firestore.collection('reviews').doc(contentId).delete();
+
       } else if (contentType == 'recipe') {
         // If it's a Firestore recipe, hard delete it
         final doc = await _firestore.collection('recipes').doc(contentId).get();
@@ -223,12 +250,13 @@ class ModerationService {
           final metadata = reportSnap.docs.first.data()['metadata'] as Map<String, dynamic>?;
           final reviewId = metadata?['parentReviewId'] as String?;
           if (reviewId != null) {
+            // Hard delete the reply so it completely disappears from the thread
             await _firestore
                 .collection('reviews')
                 .doc(reviewId)
                 .collection('replies')
                 .doc(contentId)
-                .update(redactData);
+                .delete();
           }
         }
       }

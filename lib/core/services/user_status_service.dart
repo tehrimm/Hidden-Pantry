@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:hidden_pantry_app/core/services/chat_encryption_service.dart';
 
 class UserStatusService {
   static UserStatusService? _instance;
@@ -25,6 +26,10 @@ class UserStatusService {
     _authSub = _auth.authStateChanges().listen((user) {
       if (user != null) {
         updateStatus(true);
+        // Sync stable E2EE keys immediately on login/startup so clients are ready to receive
+        ChatEncryptionService().initializeKeys().catchError((e) {
+          debugPrint("Failed to initialize E2EE keys on startup: $e");
+        });
       }
     });
   }

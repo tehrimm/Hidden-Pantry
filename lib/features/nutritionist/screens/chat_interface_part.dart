@@ -54,12 +54,13 @@ class _ChatInterfaceState extends State<ChatInterface> {
   bool _canShareMealPlans = false;
   bool _canShareSupplements = false;
   String? _myPhotoUrl;
+  bool _keysInitialized = false;
 
 
   @override
   void initState() {
     super.initState();
-    ChatEncryptionService().initializeKeys(); // Initialize E2EE
+    _initChat();
     _resetUnreadCount();
     _clearRelatedNotifications();
     _msgCtrl.addListener(_onTextChanged);
@@ -67,6 +68,15 @@ class _ChatInterfaceState extends State<ChatInterface> {
     if (_isNutritionist) {
       _checkClientBenefits();
     } else {
+    }
+  }
+
+  Future<void> _initChat() async {
+    await ChatEncryptionService().initializeKeys(); // Initialize E2EE and await it!
+    if (mounted) {
+      setState(() {
+        _keysInitialized = true;
+      });
     }
   }
 
@@ -535,103 +545,125 @@ class _ChatInterfaceState extends State<ChatInterface> {
                   ],
                 ),
               ),
-              // Messages
-              Expanded(
-                child: StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection("chats")
-                        .doc(_chatId)
-                        .collection("messages")
-                        .orderBy("timestamp", descending: true)
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.hasError) return const Center(child: Text("Error loading chats"));
-                      if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-
-                      final allDocs = snapshot.data!.docs;
-                      // Filter docs: exclude if deletedBy contains me
-                      final meId = FirebaseAuth.instance.currentUser?.uid;
-                      final docs = allDocs.where((doc) {
-                        final data = doc.data() as Map<String, dynamic>;
-                        final deletedBy = List<String>.from(data["deletedBy"] ?? []);
-                        return !deletedBy.contains(meId);
-                      }).toList();
-
-                      if (docs.isEmpty) {
-                        return Center(
-                          child: Text(
-                            "Start the conversation!",
-                            style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 16.sp),
-                          ),
-                        );
-                      }
-
-                      return ListView.builder(
-                        reverse: true,
-                        controller: _scrollCtrl,
-                        padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 20.sh),
-                        itemCount: docs.length,
-                        itemBuilder: (context, index) {
-                          final data = docs[index].data() as Map<String, dynamic>;
-                          final docId = docs[index].id;
-                          final isMe = data["senderId"] == FirebaseAuth.instance.currentUser?.uid;
-
-                          return _FadeSlideEntry(
-                            delayMs: index * 50, // Slight stagger
-                            child: _buildMessageItem(data, isMe, docId),
-                          );
-                        },
-                      );
-                    },
-                  ),
-              ),
-              // Typing Indicator
-              StreamBuilder<DocumentSnapshot>(
-                stream: FirebaseFirestore.instance.collection("chats").doc(_chatId).snapshots(),
-                builder: (context, snap) {
-                  if (!snap.hasData || !snap.data!.exists) return const SizedBox.shrink();
-                  final data = snap.data!.data() as Map<String, dynamic>;
-                  final typingMap = data["typingStatus"] as Map<String, dynamic>?;
-                  if (typingMap == null) return const SizedBox.shrink();
-
-                  // Find other participant's typing status
-                  bool isOtherTyping = false;
-                  typingMap.forEach((uid, isT) {
-                    if (uid != FirebaseAuth.instance.currentUser?.uid && isT == true) {
-                      isOtherTyping = true;
-                    }
-                  });
-
-                  if (!isOtherTyping) return const SizedBox.shrink();
-
-                  return Padding(
-                    padding: EdgeInsets.only(left: 16.sw, bottom: 8.sh),
-                    child: Row(
+              if (!_keysInitialized)
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 6.sh),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12.sw),
-                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 4.sw)],
-                          ),
-                          child: Row(
-                            children: [
-                              Text(
-                                "typing",
-                                style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 11.sp, fontWeight: FontWeight.bold),
-                              ),
-                              SizedBox(width: 4.sw),
-                              _dotAnimation(),
-                            ],
+                        Icon(Icons.enhanced_encryption_rounded, color: orange, size: 40.sw),
+                        SizedBox(height: 16.sh),
+                        Text(
+                          "Securing connection...",
+                          style: TextStyle(
+                            color: purple.withValues(alpha: 0.6),
+                            fontFamily: "Satoshi",
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14.sp,
                           ),
                         ),
                       ],
                     ),
-                  );
-                }
-              ),
-              // Input bar
+                  ),
+                )
+              else ...[
+                // Messages
+                Expanded(
+                  child: StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection("chats")
+                          .doc(_chatId)
+                          .collection("messages")
+                          .orderBy("timestamp", descending: true)
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasError) return const Center(child: Text("Error loading chats"));
+                        if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+
+                        final allDocs = snapshot.data!.docs;
+                        // Filter docs: exclude if deletedBy contains me
+                        final meId = FirebaseAuth.instance.currentUser?.uid;
+                        final docs = allDocs.where((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          final deletedBy = List<String>.from(data["deletedBy"] ?? []);
+                          return !deletedBy.contains(meId);
+                        }).toList();
+
+                        if (docs.isEmpty) {
+                          return Center(
+                            child: Text(
+                              "Start the conversation!",
+                              style: TextStyle(color: purple.withValues(alpha:0.4), fontSize: 16.sp),
+                            ),
+                          );
+                        }
+
+                        return ListView.builder(
+                          reverse: true,
+                          controller: _scrollCtrl,
+                          padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 20.sh),
+                          itemCount: docs.length,
+                          itemBuilder: (context, index) {
+                            final data = docs[index].data() as Map<String, dynamic>;
+                            final docId = docs[index].id;
+                            final isMe = data["senderId"] == FirebaseAuth.instance.currentUser?.uid;
+
+                            return _FadeSlideEntry(
+                              delayMs: index * 50, // Slight stagger
+                              child: _buildMessageItem(data, isMe, docId),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                ),
+                // Typing Indicator
+                StreamBuilder<DocumentSnapshot>(
+                  stream: FirebaseFirestore.instance.collection("chats").doc(_chatId).snapshots(),
+                  builder: (context, snap) {
+                    if (!snap.hasData || !snap.data!.exists) return const SizedBox.shrink();
+                    final data = snap.data!.data() as Map<String, dynamic>;
+                    final typingMap = data["typingStatus"] as Map<String, dynamic>?;
+                    if (typingMap == null) return const SizedBox.shrink();
+
+                    // Find other participant's typing status
+                    bool isOtherTyping = false;
+                    typingMap.forEach((uid, isT) {
+                      if (uid != FirebaseAuth.instance.currentUser?.uid && isT == true) {
+                        isOtherTyping = true;
+                      }
+                    });
+
+                    if (!isOtherTyping) return const SizedBox.shrink();
+
+                    return Padding(
+                      padding: EdgeInsets.only(left: 16.sw, bottom: 8.sh),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 6.sh),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(12.sw),
+                              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha:0.05), blurRadius: 4.sw)],
+                            ),
+                            child: Row(
+                              children: [
+                                Text(
+                                  "typing",
+                                  style: TextStyle(color: purple.withValues(alpha:0.5), fontSize: 11.sp, fontWeight: FontWeight.bold),
+                                ),
+                                SizedBox(width: 4.sw),
+                                _dotAnimation(),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                ),
+                // Input bar
                 Container(
                   padding: EdgeInsets.fromLTRB(16.sw, 12.sh, 16.sw, MediaQuery.of(context).padding.bottom + 12.sh),
                   decoration: BoxDecoration(
@@ -702,9 +734,10 @@ class _ChatInterfaceState extends State<ChatInterface> {
                   ),
                 ),
               ],
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -919,7 +952,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
         NotificationService().sendNotification(
           recipientId: recipientId,
           title: "New Message from $senderName",
-          body: "[Encrypted Message]",
+          body: text,
           type: NotificationType.chat_message,
           targetId: _chatId,
           recipientRole: _isNutritionist ? 'user' : 'nutritionist',

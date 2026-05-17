@@ -34,14 +34,9 @@ class HpBottomNav extends StatelessWidget {
           clipBehavior: Clip.none,
           alignment: Alignment.bottomCenter,
           children: [
-            // BOTTOM FILLER (Solid purple to prevent any bleed below the bar)
-            Positioned(
-              bottom: -100, // Extend deep below the screen
-              left: 0,
-              right: 0,
-              height: 100 + bottomPadding + 10,
-              child: Container(color: brandPurple),
-            ),
+            // MAIN NAV BAR BACKGROUND (NOTCHED)
+            // The custom painter path already goes down to size.height + 100
+            // and covers the bottom of the screen completely, preventing any bleed.
 
             // MAIN NAV BAR BACKGROUND (NOTCHED)
             // Shadow is drawn via BoxShadow on a clipped container to prevent
