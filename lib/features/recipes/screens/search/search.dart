@@ -476,6 +476,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
     return Scaffold(
       backgroundColor: widget.inShell ? Colors.transparent : bg,
       resizeToAvoidBottomInset: false,
+      extendBody: true,
       body: Stack(
         children: [
           if (!widget.inShell) PatternBackground(),

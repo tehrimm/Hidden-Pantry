@@ -304,6 +304,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> with AutomaticK
 
     return Scaffold(
       backgroundColor: widget.inShell ? Colors.transparent : bg,
+      extendBody: true,
       body: content,
       bottomNavigationBar: HpBottomNav(
         currentIndex: 3,

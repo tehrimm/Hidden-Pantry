@@ -1232,12 +1232,12 @@ class RecipeService {
       // Theme based on the day of the week
       String themeTag;
       switch (day) {
-        case 1: themeTag = "Dessert"; break;      // Monday
-        case 2: themeTag = "Healthy"; break;      // Tuesday
-        case 3: themeTag = "Asian"; break;        // Wednesday
-        case 4: themeTag = "Quick"; break;        // Thursday
+        case 1: themeTag = "Vegetarian"; break;   // Meatless Monday
+        case 2: themeTag = "Mexican"; break;      // Taco Tuesday
+        case 3: themeTag = "Quick"; break;        // Wednesday
+        case 4: themeTag = "Healthy"; break;      // Thursday
         case 5: themeTag = "Comfort Food"; break; // Friday
-        case 6: themeTag = "Spicy"; break;        // Saturday
+        case 6: themeTag = "Dessert"; break;      // Saturday
         case 7: themeTag = "Family"; break;       // Sunday
         default: themeTag = "Dinner";
       }

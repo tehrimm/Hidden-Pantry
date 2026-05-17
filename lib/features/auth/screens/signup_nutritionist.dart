@@ -257,7 +257,7 @@ class _SignupNutritionistScreenState extends State<SignupNutritionistScreen> wit
     final bool isTablet = screenWidth >= 600;
 
     final horizontal = isTablet ? 24.0 : 30.sw;
-    final fieldH = isTablet ? 60.0 : 70.sh;
+    final fieldH = isTablet ? 60.0 : 85.sh;
     final baseGap = 16.sh;
     final errOffset = 4.sh;
 
@@ -304,7 +304,7 @@ class _SignupNutritionistScreenState extends State<SignupNutritionistScreen> wit
                       _AnimatedWrapper(
                         animation: _staggeredAnimations[0],
                         child: Padding(
-                          padding: EdgeInsets.fromLTRB(horizontal, topPad + 24.sh, horizontal, 20.sh),
+                          padding: EdgeInsets.fromLTRB(horizontal, topPad + (isTablet ? 24.sh : 45.sh), horizontal, 20.sh),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
