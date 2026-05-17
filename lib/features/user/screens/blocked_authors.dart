@@ -137,42 +137,41 @@ class _BlockedAuthorsScreenState extends State<BlockedAuthorsScreen> {
           ),
 
           SafeArea(
+            bottom: false,
             child: Column(
               children: [
-                SizedBox(height: 80.sh),
+                SizedBox(height: MediaQuery.of(context).size.width >= 600 ? 24.sh : 35.sh),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 30.sw),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: BackButtonWidget(
+                          onPressed: () => Navigator.pop(context),
+                          color: text,
+                        ),
+                      ),
+                      Text(
+                        'Blocked Authors',
+                        style: TextStyle(
+                          color: text,
+                          fontSize: 24.sp,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Satoshi',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 25.sh),
                 Expanded(
                   child: _loading
                       ? Center(child: CircularProgressIndicator(color: orange))
                       : _blockedUsers.isEmpty
                           ? _buildEmptyState()
                           : _buildBlockedList(),
-                ),
-              ],
-            ),
-          ),
-
-          // Header
-          Positioned(
-            left: 30.sw,
-            right: 0,
-            top: topPad + 36.sh,
-            height: 50.sh,
-            child: Stack(
-              children: [
-                BackButtonWidget(
-                  onPressed: () => Navigator.pop(context),
-                  color: text,
-                ),
-                Center(
-                  child: Text(
-                    'Blocked Authors',
-                    style: TextStyle(
-                      color: text,
-                      fontSize: 24.sp,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Satoshi',
-                    ),
-                  ),
                 ),
               ],
             ),

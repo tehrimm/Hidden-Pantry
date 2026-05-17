@@ -746,6 +746,7 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
   @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
+    final isTablet = MediaQuery.of(context).size.width >= 600;
 
     return Scaffold(
       backgroundColor: bg,
@@ -753,15 +754,17 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
         children: [
           const PatternBackground(),
           SafeArea(
+            bottom: false,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                SizedBox(height: isTablet ? 24.sh : 35.sh),
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 25.sw, vertical: 15.sh),
+                  padding: EdgeInsets.symmetric(horizontal: 30.sw),
                   child: Row(
                     children: [
                       const BackButtonWidget(),
-                      SizedBox(width: 20.sw),
+                      SizedBox(width: 16.sw),
                       Expanded(
                         child: Text(
                           'Moderation Dashboard',
@@ -776,7 +779,7 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
                       // Report count badge
                       if (!_loading && _reports.isNotEmpty)
                         Container(
-                          padding: EdgeInsets.symmetric(horizontal: 10.sw, vertical: 4.sh),
+                          padding: EdgeInsets.symmetric(horizontal: 12.sw, vertical: 6.sh),
                           decoration: BoxDecoration(
                             color: Colors.redAccent.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12.sw),
@@ -794,6 +797,7 @@ class _AdminModerationScreenState extends State<AdminModerationScreen> {
                     ],
                   ),
                 ),
+                SizedBox(height: 25.sh),
                 Expanded(
                   child: _loading
                       ? const Center(child: CircularProgressIndicator(color: orange))

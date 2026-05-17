@@ -245,8 +245,10 @@ void _openBlockedAuthors() {
         body: Builder(
           builder: (context) {
             ResponsiveUtils.init(context);
-            final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-            final topPad = MediaQuery.of(context).padding.top;
+            final mq = MediaQuery.of(context);
+            final bool isTablet = mq.size.width >= 600;
+            final bottomInset = mq.viewInsets.bottom;
+            final topPad = mq.padding.top;
             return GestureDetector(
               onTap: () => FocusScope.of(context).unfocus(),
               child: Stack(
@@ -291,14 +293,41 @@ void _openBlockedAuthors() {
                         decoration: BoxDecoration(color: text.withValues(alpha: 0.06), borderRadius: BorderRadius.circular(3.sw)))),
                   ),
 
-                  // SCROLLABLE CONTENT
+                  // SCROLLABLE CONTENT in clean SafeArea Column
                   SafeArea(
+                    bottom: false,
                     child: Column(
                       children: [
-                        SizedBox(height: 80.sh), // Gap for fixed header
+                        SizedBox(height: isTablet ? 24.sh : 35.sh),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 30.sw),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: BackButtonWidget(
+                                  onPressed: _goBackToProfile,
+                                  color: text,
+                                ),
+                              ),
+                              Text(
+                                'Your profile',
+                                style: TextStyle(
+                                  color: text,
+                                  fontSize: 24.sp,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Satoshi',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 25.sh),
                         Expanded(
                           child: ListView(
-                            padding: EdgeInsets.fromLTRB(30.sw, 20.sh, 30.sw, bottomInset + 40.sh),
+                            physics: const BouncingScrollPhysics(),
+                            padding: EdgeInsets.fromLTRB(30.sw, 10.sh, 30.sw, bottomInset + 40.sh),
                             children: [
                               // Profile pic
                               _FadeSlideEntry(
@@ -680,33 +709,6 @@ void _openBlockedAuthors() {
                                 ),
                               ),
                             ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Fixed Header
-                  Positioned(
-                    left: 30.sw,
-                    right: 0,
-                    top: topPad + 36.sh,
-                    height: 50.sh,
-                    child: Stack(
-                      children: [
-                        BackButtonWidget(
-                          onPressed: _goBackToProfile,
-                          color: text,
-                        ),
-                        Center(
-                          child: Text(
-                            'Your profile',
-                            style: TextStyle(
-                              color: text,
-                              fontSize: 24.sp,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Satoshi',
-                            ),
                           ),
                         ),
                       ],

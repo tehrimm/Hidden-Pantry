@@ -97,6 +97,10 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
   @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
+    final mq = MediaQuery.of(context);
+    final topPad = mq.padding.top;
+    final bool isTablet = mq.size.width >= 600;
+
     return Scaffold(
       backgroundColor: bg,
       body: Stack(
@@ -107,7 +111,7 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
           if (widget.fromProfile)
             Positioned(
               left: 30.sw,
-              top: 51.sh,
+              top: topPad + (isTablet ? 12.sh : 18.sh),
               child: const BackButtonWidget(color: titleColor),
             ),
 
@@ -115,17 +119,17 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
           if (!widget.fromProfile)
             Positioned(
               right: 30.sw,
-              top: 67.sh,
+              top: topPad + (isTablet ? 12.sh : 18.sh) + 12.sh,
               child: GestureDetector(
                 onTap: _skip,
                 child: Text('Skip', style: TextStyle(color: const Color(0xFF74503C), fontSize: 15.sp, fontFamily: 'Satoshi', fontWeight: FontWeight.w500)),
               ),
             ),
 
-          // Title - Fixed top position for A71
+          // Title
           Positioned(
             left: 30.sw,
-            top: 105.sh,
+            top: topPad + (isTablet ? 60.sh : 82.sh),
             child: _StaggeredItem(
               index: 0,
               delay: 100,
@@ -136,10 +140,10 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
             ),
           ),
 
-          // Subtitle - Moved slightly down to avoid overlap
+          // Subtitle
           Positioned(
             left: 30.sw,
-            top: 215.sh,
+            top: topPad + (isTablet ? 150.sh : 192.sh),
             child: _StaggeredItem(
               index: 1,
               delay: 100,
@@ -153,7 +157,7 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
           for (int i = 0; i < _tiles.length; i++)
             Positioned(
               left: _tiles[i].left.sw,
-              top: _tiles[i].top.sh,
+              top: _tiles[i].top.sh + (topPad > 35 ? 20.sh : 0),
               child: _StaggeredItem(
                 index: i + 3,
                 delay: 40,
@@ -172,7 +176,7 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
 
           Positioned(
             left: 30.sw,
-            top: 710.sh,
+            bottom: 105.sh,
             child: _StaggeredItem(
               index: 15,
               child: Text('${_selected.length}/12 Selected', style: TextStyle(color: titleColor, fontSize: 14.sp, fontWeight: FontWeight.w600, fontFamily: 'Satoshi')),
@@ -180,16 +184,16 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
           ),
 
           Positioned(
-            left: 32.sw,
-            top: 748.sh,
+            left: 30.sw,
+            right: 30.sw,
+            bottom: 30.sh,
             child: _StaggeredItem(
               index: 16,
               child: GestureDetector(
                 onTap: _loading ? null : _save,
                 child: Container(
-                  width: 332.sw,
-                  height: 62.sh,
-                  decoration: BoxDecoration(color: buttonOrange, borderRadius: BorderRadius.circular(20.sh), boxShadow: [BoxShadow(color: buttonOrange.withValues(alpha: 0.35), blurRadius: 15, offset: const Offset(0, 8))]),
+                  height: math.max(60.0, 62.sh),
+                  decoration: BoxDecoration(color: buttonOrange, borderRadius: BorderRadius.circular(20.sw), boxShadow: [BoxShadow(color: buttonOrange.withValues(alpha: 0.35), blurRadius: 15, offset: const Offset(0, 8))]),
                   child: Center(
                     child: _loading
                         ? const CircularProgressIndicator(color: Colors.white)
@@ -201,7 +205,7 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
                               Image.asset('assets/icons/next_button.png', width: 18.sw, height: 18.sh, fit: BoxFit.contain),
                             ],
                           ),
-                        ),
+                  ),
                 ),
               ),
             ),

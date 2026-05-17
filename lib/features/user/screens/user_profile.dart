@@ -227,7 +227,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       child: GestureDetector(
         onTap: loading ? null : _deleteAccount,
         child: Container(
-          height: 70.sh,
+          height: math.max(70.0, 70.sh),
           decoration: BoxDecoration(
             color: Colors.red,
             borderRadius: BorderRadius.circular(20.sw),
@@ -253,175 +253,175 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
   @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
-    final double topPad = MediaQuery.of(context).padding.top;
+    final mq = MediaQuery.of(context);
+    final bool isTablet = mq.size.width >= 600;
+
     return Scaffold(
       backgroundColor: bg,
       body: Stack(
         children: [
           const PatternBackground(),
 
-            // Content Area (Scrollable below header)
-            SafeArea(
-              child: Column(
-                children: [
-                  SizedBox(height: 96.sh), // Absolute gap for fixed header
-                  Expanded(
-                    child: ListView(
-                      padding: EdgeInsets.only(bottom: 20.sh),
-                      children: [
-                        // Profile block
-                        _modernProfileHeader(),
+          // Content Area in clean SafeArea Column
+          SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                SizedBox(height: isTablet ? 24.sh : 35.sh),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 30.sw),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: BackButtonWidget(
+                          onPressed: () => Navigator.of(context).pop(),
+                          color: brown,
+                        ),
+                      ),
+                      Text(
+                        "My profile",
+                        style: TextStyle(
+                          color: purple,
+                          fontSize: 26.sp,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                          fontFamily: "Satoshi",
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 25.sh),
+                Expanded(
+                  child: ListView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.only(bottom: mq.padding.bottom + 20.sh),
+                    children: [
+                      // Profile block
+                      _modernProfileHeader(),
 
-                        SizedBox(height: 20.sh),
+                      SizedBox(height: 20.sh),
 
-                        // Buttons
+                      // Buttons
+                      _tile(
+                        icon: "assets/icons/setting.png",
+                        title: "Profile Setting",
+                        onTap: () => _go(const ProfileSettingScreen()),
+                      ),
+                      _tile(
+                        icon: "assets/icons/book.png",
+                        title: "My Recipes",
+                        onTap: () => _go(const MyRecipesScreen()),
+                      ),
+                      _tile(
+                        iconData: Icons.favorite_border_rounded,
+                        title: "My Favourites",
+                        onTap: () => _go(const MyFavouritesScreen()),
+                      ),
+                      _tile(
+                        iconData: Icons.restaurant_menu_rounded,
+                        title: "Meal Plans",
+                        onTap: () => _go(const MyPlansScreen()),
+                      ),
+                      _tile(
+                        icon: "assets/icons/card.png",
+                        title: "My Subscriptions",
+                        onTap: () => _go(const MySubscriptionsScreen()),
+                      ),
+                      _tile(
+                        icon: "assets/icons/users.png",
+                        title: "My Network",
+                        onTap: () => _go(const UserNetworkScreen()),
+                      ),
+                      _tile(
+                        iconData: Icons.help_outline_rounded,
+                        title: "Help & Support",
+                        onTap: () => _go(const UserHelpSupportScreen()),
+                      ),
+
+                      // Admin buttons (conditional)
+                      if (email == "hiddenpantry.support@gmail.com" ||
+                          _auth.currentUser?.email == "hiddenpantry.support@gmail.com") ...[
+                        _tile(
+                          iconData: Icons.gavel_rounded,
+                          title: "Moderation Dashboard",
+                          onTap: () => _go(const AdminModerationScreen()),
+                        ),
+                        _tile(
+                          iconData: Icons.payments_outlined,
+                          title: "Payment Requests",
+                          onTap: () => _go(const AdminPayoutRequestsScreen()),
+                        ),
                         _tile(
                           icon: "assets/icons/setting.png",
-                          title: "Profile Setting",
-                          onTap: () => _go(const ProfileSettingScreen()),
+                          title: "Certificates Pending Approval",
+                          onTap: () => _go(const AdminCertificateReviewScreen()),
                         ),
-                        _tile(
-                          icon: "assets/icons/book.png",
-                          title: "My Recipes",
-                          onTap: () => _go(const MyRecipesScreen()),
-                        ),
-                        // New Favourites Tile
-                        _tile(
-                          iconData: Icons.favorite_border_rounded, 
-                          title: "My Favourites", 
-                          onTap: () => _go(const MyFavouritesScreen()),
-                        ),
-                        _tile(
-                          iconData: Icons.restaurant_menu_rounded, 
-                          title: "Meal Plans",
-                          onTap: () => _go(const MyPlansScreen()),
-                        ),
-                        _tile(
-                          icon: "assets/icons/card.png", // Using card as placeholder for subs
-                          title: "My Subscriptions",
-                          onTap: () => _go(const MySubscriptionsScreen()),
-                        ),
-                        // Notifications removed as per user request
-                        _tile(
-                          icon: "assets/icons/users.png", // Using existing icon
-                          title: "My Network",
-                          onTap: () => _go(const UserNetworkScreen()),
-                        ),
-                        _tile(
-                          iconData: Icons.help_outline_rounded,
-                          title: "Help & Support",
-                          onTap: () => _go(const UserHelpSupportScreen()),
-                        ),
-                        
-                        // Admin buttons (conditional)
-                        if (email == "hiddenpantry.support@gmail.com" ||
-                            _auth.currentUser?.email == "hiddenpantry.support@gmail.com") ...[
-                          _tile(
-                            iconData: Icons.gavel_rounded,
-                            title: "Moderation Dashboard",
-                            onTap: () => _go(const AdminModerationScreen()),
-                          ),
-                          _tile(
-                            iconData: Icons.payments_outlined,
-                            title: "Payment Requests",
-                            onTap: () => _go(const AdminPayoutRequestsScreen()),
-                          ),
-                          _tile(
-                            icon: "assets/icons/setting.png",
-                            title: "Certificates Pending Approval",
-                            onTap: () => _go(const AdminCertificateReviewScreen()),
-                          ),
-                        ],
+                      ],
 
-                        SizedBox(height: 26.sh),
+                      SizedBox(height: 26.sh),
 
-                        // Logout button
-                        Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 22.sw),
-                          child: GestureDetector(
-                            onTap: () {
-                               HapticFeedback.lightImpact();
-                               _logout();
-                            },
-                            child: Container(
-                              height: 70.sh,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [orange, const Color(0xFFFFA06A)],
+                      // Logout button
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 22.sw),
+                        child: GestureDetector(
+                          onTap: () {
+                            HapticFeedback.lightImpact();
+                            _logout();
+                          },
+                          child: Container(
+                            height: math.max(70.0, 70.sh),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [orange, const Color(0xFFFFA06A)],
+                              ),
+                              borderRadius: BorderRadius.circular(22.sw),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: orange.withValues(alpha: 0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 6),
+                                )
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Image.asset(
+                                  "assets/icons/logout.png",
+                                  width: 18.sw,
+                                  height: 18.sh,
+                                  fit: BoxFit.contain,
+                                  color: Colors.white,
                                 ),
-                                borderRadius: BorderRadius.circular(22.sw),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: orange.withValues(alpha: 0.3),
-                                    blurRadius: 12,
-                                    offset: const Offset(0, 6),
-                                  )
-                                ],
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Image.asset(
-                                    "assets/icons/logout.png",
-                                    width: 18.sw,
-                                    height: 18.sh,
-                                    fit: BoxFit.contain,
+                                SizedBox(width: 12.sw),
+                                Text(
+                                  "Logout",
+                                  style: TextStyle(
                                     color: Colors.white,
+                                    fontSize: 15.sp,
+                                    fontWeight: FontWeight.w700,
+                                    letterSpacing: 0.2,
+                                    fontFamily: "Satoshi",
                                   ),
-                                  SizedBox(width: 12.sw),
-                                  Text(
-                                    "Logout",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 15.sp,
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: 0.2,
-                                      fontFamily: "Satoshi",
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
-                        SizedBox(height: 16.sh),
-                        _deleteAccountButton(),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            // Fixed Header (Top Layer)
-            Positioned(
-              left: 30.sw,
-              top: topPad + 36.sh,
-              child: BackButtonWidget(
-                onPressed: () => Navigator.of(context).pop(),
-                color: brown,
-              ),
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              top: topPad + 36.sh,
-              height: 50.sh,
-              child: Center(
-                child: Text(
-                  "My profile",
-                  style: TextStyle(
-                    color: purple,
-                    fontSize: 26.sp,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.3,
-                    fontFamily: "Satoshi",
+                      ),
+                      SizedBox(height: 16.sh),
+                      _deleteAccountButton(),
+                    ],
                   ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -547,7 +547,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
             onTap();
           },
           child: Ink(
-            height: 70.sh,
+            height: math.max(70.0, 70.sh),
             decoration: BoxDecoration(
               color: tileBg,
               borderRadius: BorderRadius.circular(22.sw),

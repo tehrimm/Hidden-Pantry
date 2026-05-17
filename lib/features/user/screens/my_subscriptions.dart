@@ -21,6 +21,7 @@ class MySubscriptionsScreen extends StatefulWidget {
 }
 
 class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
+  int _pastLimit = 3;
   static const Color _bg = Color(0xFFFFF3EB);
   static const Color _purple = Color(0xFF462F4D);
   static const Color _orange = Color(0xFFEF8A54);
@@ -221,13 +222,52 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                                     child: _sectionHeader('Past Subscriptions'),
                                   ),
                                   SizedBox(height: 12.sh),
-                                  ...expiredNuts.map((doc) {
+                                  ...expiredNuts.take(_pastLimit).map((doc) {
                                     animIndex++;
                                     return _FadeSlideEntry(
                                       delayMs: 500 + (animIndex * 100),
                                       child: _subscriptionCard(doc),
                                     );
                                   }),
+                                  if (expiredNuts.length > _pastLimit)
+                                    Padding(
+                                      padding: EdgeInsets.only(top: 12.sh, bottom: 20.sh),
+                                      child: Center(
+                                        child: InkWell(
+                                          onTap: () {
+                                            HapticFeedback.lightImpact();
+                                            setState(() {
+                                              _pastLimit += 5;
+                                            });
+                                          },
+                                          borderRadius: BorderRadius.circular(20.sw),
+                                          child: Container(
+                                            padding: EdgeInsets.symmetric(horizontal: 24.sw, vertical: 12.sh),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withValues(alpha: 0.6),
+                                              borderRadius: BorderRadius.circular(20.sw),
+                                              border: Border.all(color: _purple.withValues(alpha: 0.1)),
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  'Load More History (${expiredNuts.length - _pastLimit})',
+                                                  style: TextStyle(
+                                                    color: _purple,
+                                                    fontSize: 12.sp,
+                                                    fontWeight: FontWeight.w800,
+                                                    fontFamily: 'Satoshi',
+                                                  ),
+                                                ),
+                                                SizedBox(width: 8.sw),
+                                                Icon(Icons.keyboard_arrow_down_rounded, color: _purple, size: 16.sw),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
                                 ],
                                 SizedBox(height: 40.sh),
                               ],

@@ -30,6 +30,7 @@ class _AdminPayoutRequestsScreenState extends State<AdminPayoutRequestsScreen> {
         children: [
           const PatternBackground(),
           SafeArea(
+            bottom: false,
             child: Column(
               children: [
                 _buildHeader(),
@@ -43,9 +44,11 @@ class _AdminPayoutRequestsScreenState extends State<AdminPayoutRequestsScreen> {
   }
 
   Widget _buildHeader() {
+    final isTablet = MediaQuery.of(context).size.width >= 600;
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 20.sw, vertical: 24.sh),
+      padding: EdgeInsets.fromLTRB(30.sw, isTablet ? 24.sh : 35.sh, 30.sw, 25.sh),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           BackButtonWidget(onPressed: () => Navigator.pop(context)),
           SizedBox(width: 16.sw),

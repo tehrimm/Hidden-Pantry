@@ -990,8 +990,8 @@ void _openUserProfile() {
         child: GestureDetector(
           onTap: _openSearch,
         child: Container(
-          height: 44.sh,
-          padding: EdgeInsets.only(left: 16.sw, right: 4.sw),
+          height: math.max(50.0, 50.sh),
+          padding: EdgeInsets.only(left: 18.sw, right: 6.sw),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(28.sw),
@@ -1012,7 +1012,7 @@ void _openUserProfile() {
                   "Search recipes, ingredients...",
                   style: TextStyle(
                     color: purple.withValues(alpha: 0.45),
-                    fontSize: 13.sp,
+                    fontSize: 14.sp,
                     fontFamily: "Satoshi",
                   ),
                 ),
@@ -1028,8 +1028,8 @@ void _openUserProfile() {
                   _toggleListening();
                 },
                 child: Container(
-                  width: 36.sw,
-                  height: 36.sw,
+                  width: math.max(38.0, 38.sw),
+                  height: math.max(38.0, 38.sw),
                   decoration: BoxDecoration(
                     color: _isListening ? orange : purple,
                     borderRadius: BorderRadius.circular(18.sw),
@@ -1060,7 +1060,7 @@ void _openUserProfile() {
         : tags;
 
     return SizedBox(
-      height: 68.sh,
+      height: math.max(78.0, 78.sh),
       child: ListView.separated(
         controller: _tagScrollController,
         padding: EdgeInsets.symmetric(horizontal: 22.sw),
@@ -1094,8 +1094,8 @@ void _openUserProfile() {
                   AnimatedContainer(
                     duration: const Duration(milliseconds: 250),
                     curve: Curves.easeOut,
-                    width: 54.sw,
-                    height: 52.sh,
+                    width: math.max(58.0, 58.sw),
+                    height: math.max(60.0, 60.sh),
                     decoration: BoxDecoration(
                       color: isSelected ? purple : chipBg,
                       borderRadius: BorderRadius.circular(12.sw),
@@ -1127,7 +1127,7 @@ void _openUserProfile() {
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: isSelected ? orange : purple,
-                              fontSize: 8.sp,
+                              fontSize: 10.sp,
                               fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
                               fontFamily: "Satoshi",
                             ),

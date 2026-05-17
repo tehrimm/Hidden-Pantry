@@ -77,16 +77,18 @@ class _AdminCertificateReviewScreenState extends State<AdminCertificateReviewScr
           // Decorative Animated Background Elements removed per user request
 
           SafeArea(
+            bottom: false,
             child: Column(
               children: [
-                SizedBox(height: 20.sh),
+                SizedBox(height: MediaQuery.of(context).size.width >= 600 ? 24.sh : 35.sh),
                 
                 // Animated Header
                 FadeTransition(
                   opacity: _headerFade,
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(22.sw, 20.sh, 22.sw, 0),
+                    padding: EdgeInsets.symmetric(horizontal: 30.sw),
                     child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         BackButtonWidget(
                           onPressed: () => Navigator.pop(context),
@@ -134,7 +136,7 @@ class _AdminCertificateReviewScreenState extends State<AdminCertificateReviewScr
                   ),
                 ),
 
-                SizedBox(height: 20.sh),
+                SizedBox(height: 25.sh),
 
 
 

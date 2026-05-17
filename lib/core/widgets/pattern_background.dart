@@ -52,6 +52,7 @@ class _PatternBackgroundState extends State<PatternBackground>
     const baseW = 393.0;
     const baseH = 852.0;
     final size = MediaQuery.of(context).size;
+    final bool isSmallPhone = size.height < 720;
     double sx(double v) => v * (size.width / baseW);
     double sy(double v) => v * (size.height / baseH);
 
@@ -136,7 +137,7 @@ class _PatternBackgroundState extends State<PatternBackground>
             // ── 4. Decorative stroke ellipses (original pattern) ──────────
             Positioned(
               left: sx(-154),
-              top: sy(-14),
+              top: sy(-14) + (isSmallPhone ? -25.0 : 0.0),
               child: Transform.rotate(
                 angle: 21 * math.pi / 180,
                 child: Container(
@@ -153,7 +154,7 @@ class _PatternBackgroundState extends State<PatternBackground>
             ),
             Positioned(
               left: sx(-149),
-              top: sy(-100),
+              top: sy(-100) + (isSmallPhone ? -25.0 : 0.0),
               child: Transform.rotate(
                 angle: 4 * math.pi / 180,
                 child: Container(
