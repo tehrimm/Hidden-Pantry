@@ -362,7 +362,7 @@ class _LoginNutritionistScreenState extends State<LoginNutritionistScreen> with 
                       _AnimatedWrapper(
                         animation: _staggeredAnimations[0],
                         child: Padding(
-                          padding: EdgeInsets.fromLTRB(horizontal, topPad + (isTablet ? 24.sh : 45.sh), horizontal, 20.sh),
+                          padding: EdgeInsets.fromLTRB(horizontal, topPad + (isTablet ? 24.sh : 35.sh), horizontal, 20.sh),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
