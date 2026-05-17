@@ -17,8 +17,9 @@ class ResponsiveUtils {
     screenWidth = mq.size.width;
     screenHeight = mq.size.height;
 
-    wScale = (screenWidth / designWidth).clamp(0.5, 2.0);
-    hScale = (screenHeight / designHeight).clamp(0.5, 2.0);
+    final bool isTabOrDesktop = screenWidth >= 600;
+    wScale = (screenWidth / designWidth).clamp(0.5, isTabOrDesktop ? 1.15 : 2.0);
+    hScale = (screenHeight / designHeight).clamp(0.5, isTabOrDesktop ? 1.15 : 2.0);
     textScaler = mq.textScaler;
 
     // Cache the bottom padding only when the keyboard is completely closed.

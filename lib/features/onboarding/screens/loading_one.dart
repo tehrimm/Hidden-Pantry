@@ -18,28 +18,33 @@ class LoadingOne extends StatelessWidget {
           const double designWidth = 393.0;
           const double designHeight = 852.0;
 
-          // Scale factors
-          final double wScale = screenWidth / designWidth;
-          final double hScale = screenHeight / designHeight;
+          final bool isTablet = screenWidth >= 600;
+
+          // Scale factors (clamped on tablets for a beautiful, premium mobile column view)
+          final double wScale = isTablet ? 1.15 : (screenWidth / designWidth);
+          final double hScale = isTablet ? 1.15 : (screenHeight / designHeight);
 
           final bool isSmallScreen = screenHeight < 780;
 
-          final double cardTop = 34 * hScale;
-          final double cardHeight = 788 * hScale;
           final double cardWidth = 341 * wScale;
-          final double cardLeft = 26 * wScale;
+          final double cardHeight = 788 * hScale;
+          final double cardTop = isTablet ? (screenHeight - cardHeight) / 2 - 10 : 34 * hScale;
+          final double cardLeft = isTablet ? (screenWidth - cardWidth) / 2 : 26 * wScale;
 
-          final double logoTop = 62 * hScale;
+          final double logoTop = isTablet ? cardTop + 45 * hScale : 62 * hScale;
 
           // Position all key interactive elements relative to the bottom of the card container
           final double progressBarTop = isSmallScreen 
               ? cardTop + cardHeight - 58 * hScale 
               : cardTop + cardHeight - 46 * hScale;
-          final double progressBarLeft = isSmallScreen 
-              ? 38 * wScale 
-              : 26 * wScale;
+          final double progressBarLeft = isTablet
+              ? cardLeft + 26 * wScale
+              : (isSmallScreen ? 38 * wScale : 26 * wScale);
 
           final double nextButtonTop = cardTop + cardHeight - 73 * hScale;
+          final double nextButtonRight = isTablet
+              ? screenWidth - (cardLeft + cardWidth) + 20 * wScale
+              : 46 * wScale;
 
           // Shift texts higher up on small screens to prevent overlap while maintaining exact scale mapping
           final double titleTop = isSmallScreen 
@@ -104,10 +109,10 @@ class LoadingOne extends StatelessWidget {
 
                 // Title
                 Positioned(
-                  left: 52 * wScale,
+                  left: cardLeft + 26 * wScale,
                   top: titleTop,
                   child: SizedBox(
-                    width: 330 * wScale,
+                    width: cardWidth - 50 * wScale,
                     child: Text(
                       'Share Your\nRecipes',
                       style: TextStyle(
@@ -123,10 +128,10 @@ class LoadingOne extends StatelessWidget {
 
                 // Subtext
                 Positioned(
-                  left: 52 * wScale,
+                  left: cardLeft + 26 * wScale,
                   top: subtextTop,
                   child: SizedBox(
-                    width: 260 * wScale,
+                    width: cardWidth - 81 * wScale,
                     child: Text(
                       'Upload your creations and help\nthe community cook better.',
                       style: TextStyle(
@@ -154,7 +159,7 @@ class LoadingOne extends StatelessWidget {
 
                 // Next button
                 Positioned(
-                  right: 46 * wScale, // Adjusted from left: 307
+                  right: nextButtonRight,
                   top: nextButtonTop,
                   child: GestureDetector(
                     onTap: () async {

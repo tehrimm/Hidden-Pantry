@@ -295,13 +295,16 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> with 
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
     final mq = MediaQuery.of(context);
+    final double screenWidth = mq.size.width;
+    final bool isTablet = screenWidth >= 600;
 
-    final fieldH = 70.sh;
+    final horizontal = isTablet ? 24.0 : 30.sw;
+    final fieldH = isTablet ? 60.0 : 70.sh;
     final baseGap = 16.sh;
     final errOffset = 4.sh;
 
     EdgeInsets padMain() =>
-        EdgeInsets.symmetric(horizontal: 30.sw, vertical: 22.sh);
+        EdgeInsets.symmetric(horizontal: horizontal, vertical: 22.sh);
 
     final topPad = mq.padding.top;
 
@@ -333,64 +336,67 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> with 
               const Positioned.fill(child: PatternBackground()),
 
               // 3. Content
-              Column(
-                children: [
-                  _AnimatedWrapper(
-                    animation: _staggeredAnimations[0],
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(30.sw, topPad + 36.sh, 30.sw, 20.sh),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const BackButtonWidget(),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const LoginNutritionistScreen()),
-                              );
-                            },
-                            child: Text(
-                              "Login",
-                              style: TextStyle(
-                                color: purple,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w700,
-                                fontFamily: "Satoshi",
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: EdgeInsets.only(
-                        left: 30.sw,
-                        right: 30.sw,
-                        bottom: 30.sh + mq.padding.bottom + mq.viewInsets.bottom,
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _AnimatedWrapper(
-                            animation: _staggeredAnimations[1],
-                            child: SizedBox(
-                              width: 337.sw,
-                              child: Text(
-                                "Register",
-                                style: TextStyle(
-                                  color: purple,
-                                  fontSize: 40.sp,
-                                  fontWeight: FontWeight.w900,
-                                  height: 1.1,
-                                  fontFamily: "Satoshi",
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 480.0),
+                  child: Column(
+                    children: [
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[0],
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(horizontal, topPad + 24.sh, horizontal, 20.sh),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const BackButtonWidget(),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const LoginNutritionistScreen()),
+                                  );
+                                },
+                                child: Text(
+                                  "Login",
+                                  style: TextStyle(
+                                    color: purple,
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w700,
+                                    fontFamily: "Satoshi",
+                                  ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
+                        ),
+                      ),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          padding: EdgeInsets.only(
+                            left: horizontal,
+                            right: horizontal,
+                            bottom: 30.sh + mq.padding.bottom + mq.viewInsets.bottom,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _AnimatedWrapper(
+                                animation: _staggeredAnimations[1],
+                                child: SizedBox(
+                                  width: isTablet ? 337.0 : 337.sw,
+                                  child: Text(
+                                    "Register",
+                                    style: TextStyle(
+                                      color: purple,
+                                      fontSize: 40.sp,
+                                      fontWeight: FontWeight.w900,
+                                      height: 1.1,
+                                      fontFamily: "Satoshi",
+                                    ),
+                                  ),
+                                ),
+                              ),
                           SizedBox(height: 46.sh),
                           _AnimatedWrapper(
                             animation: _staggeredAnimations[2],
@@ -599,11 +605,13 @@ class _SignupNutritionistStep2State extends State<SignupNutritionistStep2> with 
                             ),
                           ),
                           SizedBox(height: 40.sh),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ],
           ),

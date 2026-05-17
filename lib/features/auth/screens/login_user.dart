@@ -324,15 +324,15 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
     }
   }
 
-  @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
     final mq = MediaQuery.of(context);
-
-    final horizontal = 30.sw;
+    final double screenWidth = mq.size.width;
+    final bool isTablet = screenWidth >= 600;
+    final horizontal = isTablet ? 24.0 : 30.sw;
     final topPad = mq.padding.top;
 
-    final fieldHeight = 70.sh;
+    final fieldHeight = isTablet ? 60.0 : 70.sh;
 
     return PopScope(
       canPop: false,
@@ -366,52 +366,55 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
               const Positioned.fill(child: PatternBackground()),
 
               // 3. Content
-              Column(
-                children: [
-                  _AnimatedWrapper(
-                    animation: _staggeredAnimations[0],
-                    child: Padding(
-                      padding: EdgeInsets.fromLTRB(horizontal, topPad + 36.sh, horizontal, 20.sh),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          BackButtonWidget(onPressed: _goLoadingFive),
-                          GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const LoginNutritionistScreen(),
+              Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 480.0),
+                  child: Column(
+                    children: [
+                      _AnimatedWrapper(
+                        animation: _staggeredAnimations[0],
+                        child: Padding(
+                          padding: EdgeInsets.fromLTRB(horizontal, topPad + 24.sh, horizontal, 20.sh),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              BackButtonWidget(onPressed: _goLoadingFive),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => const LoginNutritionistScreen(),
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  "Nutritionist",
+                                  style: TextStyle(
+                                    color: purple,
+                                    fontSize: 14.sp,
+                                    fontWeight: FontWeight.w700,
+                                    fontFamily: "Satoshi",
+                                  ),
                                 ),
-                              );
-                            },
-                            child: Text(
-                              "Nutritionist",
-                              style: TextStyle(
-                                color: purple,
-                                fontSize: 14.sp,
-                                fontWeight: FontWeight.w700,
-                                fontFamily: "Satoshi",
                               ),
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      physics: const BouncingScrollPhysics(),
-                      padding: EdgeInsets.only(
-                        left: horizontal,
-                        right: horizontal,
-                        bottom: 20.sh + mq.viewInsets.bottom,
-                      ),
-                      child: AutofillGroup(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(height: 15.sh),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          physics: const BouncingScrollPhysics(),
+                          padding: EdgeInsets.only(
+                            left: horizontal,
+                            right: horizontal,
+                            bottom: 20.sh + mq.viewInsets.bottom,
+                          ),
+                          child: AutofillGroup(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                SizedBox(height: 15.sh),
                             _AnimatedWrapper(
                               animation: _staggeredAnimations[1],
                               child: Text(
@@ -702,12 +705,14 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                                 ),
                               ),
                             ),
-                          ],
+                              ],
+                            ),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ],
           ),

@@ -32,25 +32,29 @@ class _LoadingFiveState extends State<LoadingFive> {
     ResponsiveUtils.init(context);
     final double screenHeight = MediaQuery.of(context).size.height;
     final double screenWidth = MediaQuery.of(context).size.width;
-    final double hScale = screenHeight / 852.0;
-    final double wScale = screenWidth / 393.0;
 
     final bool isSmallScreen = screenHeight < 780;
+    final bool isTablet = screenWidth >= 600;
 
-    // Stretch the card so its margin is exactly 30 logical pixels from both sides
-    final double cardLeft = isSmallScreen ? 30.0 : 26.sw;
-    final double cardWidth = isSmallScreen ? (screenWidth - 60.0) : 341.sw;
+    // Scale factors (clamped on tablets for a beautiful, premium mobile column view)
+    final double wScale = isTablet ? 1.15 : (screenWidth / 393.0);
+    final double hScale = isTablet ? 1.15 : (screenHeight / 852.0);
+
+    // Stretch the card so its margin is exactly 30 logical pixels from both sides on small screens, center on tablets
+    final double cardLeft = isTablet ? (screenWidth - 341 * wScale) / 2 : (isSmallScreen ? 30.0 : 26.sw);
+    final double cardWidth = isTablet ? 341 * wScale : (isSmallScreen ? (screenWidth - 60.0) : 341.sw);
     // Maintain a slightly shorter height on small screens to fit all buttons and login text, but use topCenter alignment to keep top wave flawless
-    final double cardHeight = isSmallScreen ? 470.0 : cardWidth * 1.648;
-    final double cardTop = isSmallScreen ? 16 * hScale : 28.sh;
+    final double cardHeight = isTablet ? cardWidth * 1.648 : (isSmallScreen ? 470.0 : cardWidth * 1.648);
+    final double cardTop = isTablet ? 45 * hScale : (isSmallScreen ? 16 * hScale : 28.sh);
     final double cardBottom = cardTop + cardHeight;
 
-    final double logoTop = cardTop + (isSmallScreen ? 36 * hScale : 28 * hScale);
-    final double logoWidth = isSmallScreen ? 140 * wScale : 113.sw;
-    final double logoHeight = isSmallScreen ? 32 * hScale : 26.sh;
+    final double logoTop = cardTop + (isTablet ? 28 * hScale : (isSmallScreen ? 36 * hScale : 28 * hScale));
+    final double logoWidth = isTablet ? 113 * wScale : (isSmallScreen ? 140 * wScale : 113.sw);
+    final double logoHeight = isTablet ? 26 * hScale : (isSmallScreen ? 32 * hScale : 26.sh);
 
     final double questionTop = cardTop + (isSmallScreen ? 12 * hScale : 15 * hScale);
-    final double questionSize = isSmallScreen ? 44.sw : 52.sw;
+    final double questionSize = isTablet ? 52 * wScale : (isSmallScreen ? 44.sw : 52.sw);
+    final double questionRight = isTablet ? screenWidth - (cardLeft + cardWidth) + 15 * wScale : 26.sw;
 
     // Position Title and Description dynamically relative to the bottom of the card with guaranteed zero overlap
     final double subtextTop = isSmallScreen 
@@ -61,10 +65,13 @@ class _LoadingFiveState extends State<LoadingFive> {
         : subtextTop - 106 * hScale;
 
     // Position buttons relative to the bottom of the card, using premium heights to avoid squishing
-    final double buttonHeight = isSmallScreen ? 52.0 : 60.sh;
-    final double homecookTop = cardBottom + (isSmallScreen ? 14 * hScale : 34 * hScale);
-    final double nutritionistTop = homecookTop + buttonHeight + (isSmallScreen ? 10 * hScale : 10.sh);
-    final double loginTop = nutritionistTop + buttonHeight + (isSmallScreen ? 15 * hScale : 17.sh);
+    final double buttonHeight = isTablet ? 60 * hScale : (isSmallScreen ? 52.0 : 60.sh);
+    final double homecookTop = cardBottom + (isTablet ? 34 * hScale : (isSmallScreen ? 14 * hScale : 34 * hScale));
+    final double nutritionistTop = homecookTop + buttonHeight + (isTablet ? 10 * hScale : (isSmallScreen ? 10 * hScale : 10.sh));
+    final double loginTop = nutritionistTop + buttonHeight + (isTablet ? 15 * hScale : (isSmallScreen ? 15 * hScale : 17.sh));
+
+    final double buttonLeft = isTablet ? cardLeft : (isSmallScreen ? 30.0 : 26.sw);
+    final double buttonWidth = isTablet ? cardWidth : (isSmallScreen ? (screenWidth - 60.0) : 341.sw);
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF3EB),
@@ -124,7 +131,7 @@ class _LoadingFiveState extends State<LoadingFive> {
 
                 // Question Mark Button
                 Positioned(
-                  right: 26.sw,
+                  right: questionRight,
                   top: questionTop,
                   child: GestureDetector(
                     onTap: () {
@@ -147,7 +154,7 @@ class _LoadingFiveState extends State<LoadingFive> {
                           '?',
                           style: TextStyle(
                             color: const Color(0xFF462F4D),
-                            fontSize: 20.sp,
+                            fontSize: 20 * wScale,
                             fontFamily: 'Satoshi',
                             fontWeight: FontWeight.w700,
                           ),
@@ -159,15 +166,15 @@ class _LoadingFiveState extends State<LoadingFive> {
 
                 // Title Text
                 Positioned(
-                  left: cardLeft + (isSmallScreen ? 20.sw : 19.sw),
+                  left: cardLeft + 26 * wScale,
                   top: titleTop,
                   child: SizedBox(
-                    width: cardWidth - (isSmallScreen ? 40.sw : 50.sw),
+                    width: cardWidth - 50 * wScale,
                     child: Text(
                       'Create an\nAccount',
                       style: TextStyle(
                         color: const Color(0xFFFFF2EA),
-                        fontSize: 40.sp,
+                        fontSize: 40 * wScale,
                         fontWeight: FontWeight.w900,
                         height: 1.1,
                         fontFamily: 'Satoshi',
@@ -178,17 +185,17 @@ class _LoadingFiveState extends State<LoadingFive> {
 
                 // Subtitle Text
                 Positioned(
-                  left: cardLeft + (isSmallScreen ? 20.sw : 19.sw),
+                  left: cardLeft + 26 * wScale,
                   top: subtextTop,
                   child: SizedBox(
-                    width: cardWidth - (isSmallScreen ? 40.sw : 104.sw),
+                    width: cardWidth - 52 * wScale,
                     child: Text(
                       'Create an account as a home cook\nor a professional nutritionist',
                       style: TextStyle(
                         color: const Color(0xFFFFF2EA),
-                        fontSize: 14.sp,
+                        fontSize: 14 * wScale,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 0.3.sw,
+                        letterSpacing: 0.3 * wScale,
                         fontFamily: 'Satoshi',
                       ),
                     ),
@@ -197,7 +204,7 @@ class _LoadingFiveState extends State<LoadingFive> {
 
                 // Register Homecook Button
                 Positioned(
-                  left: 26.sw,
+                  left: buttonLeft,
                   top: homecookTop,
                   child: GestureDetector(
                     onTap: () {
@@ -207,29 +214,29 @@ class _LoadingFiveState extends State<LoadingFive> {
                       );
                     },
                     child: Container(
-                      width: 341.sw,
+                      width: buttonWidth,
                       height: buttonHeight,
                       decoration: BoxDecoration(
                         color: const Color(0xFFF2894F),
-                        borderRadius: BorderRadius.circular(20.sw),
+                        borderRadius: BorderRadius.circular(20 * wScale),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Image.asset(
                             'assets/icons/chef.png',
-                            width: 24.sw,
-                            height: 24.sw,
+                            width: 24 * wScale,
+                            height: 24 * wScale,
                             fit: BoxFit.contain,
                           ),
-                          SizedBox(width: 12.sw),
+                          SizedBox(width: 12 * wScale),
                           Text(
                             'Register as Homecook',
                             style: TextStyle(
                               color: const Color(0xFFFFF2EA),
-                              fontSize: 14.sp,
+                              fontSize: 14 * wScale,
                               fontWeight: FontWeight.bold,
-                              letterSpacing: 0.3.sw,
+                              letterSpacing: 0.3 * wScale,
                               fontFamily: 'Satoshi',
                             ),
                           ),
@@ -241,7 +248,7 @@ class _LoadingFiveState extends State<LoadingFive> {
 
                 // Register Nutritionist Button
                 Positioned(
-                  left: 26.sw,
+                  left: buttonLeft,
                   top: nutritionistTop,
                   child: GestureDetector(
                     onTap: () {
@@ -251,11 +258,11 @@ class _LoadingFiveState extends State<LoadingFive> {
                       );
                     },
                     child: Container(
-                      width: 341.sw,
+                      width: buttonWidth,
                       height: buttonHeight,
                       decoration: BoxDecoration(
                         color: const Color(0xFFF9E3D5),
-                        borderRadius: BorderRadius.circular(20.sw),
+                        borderRadius: BorderRadius.circular(20 * wScale),
                         border: Border.all(color: Colors.white, width: 1.5),
                       ),
                       child: FittedBox(
@@ -265,18 +272,18 @@ class _LoadingFiveState extends State<LoadingFive> {
                           children: [
                             Image.asset(
                               'assets/icons/apple.png',
-                              width: 24.sw,
-                              height: 24.sw,
+                              width: 24 * wScale,
+                              height: 24 * wScale,
                               fit: BoxFit.contain,
                             ),
-                            SizedBox(width: 12.sw),
+                            SizedBox(width: 12 * wScale),
                             Text(
                               'Register as Nutritionist',
                               style: TextStyle(
                                 color: const Color(0xFFF2894F),
-                                fontSize: 14.sp,
+                                fontSize: 14 * wScale,
                                 fontWeight: FontWeight.bold,
-                                letterSpacing: 0.3.sw,
+                                letterSpacing: 0.3 * wScale,
                                 fontFamily: 'Satoshi',
                               ),
                             ),
