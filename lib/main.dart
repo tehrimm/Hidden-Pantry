@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hidden_pantry_app/features/onboarding/screens/starting_screen.dart';
 import 'firebase_options.dart';
 
@@ -42,6 +44,11 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
+  // Disable app verification so Phone OTP works on Android Emulators
+  if (kDebugMode) {
+    await FirebaseAuth.instance.setSettings(appVerificationDisabledForTesting: true);
+  }
+
   // ⚡ Enable Firestore offline persistence — reads are served from cache on repeat opens
   FirebaseFirestore.instance.settings = const Settings(
     persistenceEnabled: true,
@@ -62,15 +69,17 @@ Future<void> main() async {
     print("FCM Service could not be initialized: $e");
   }
 
-  // App Check (fixes: "No AppCheckProvider installed")
-  // Use PlayIntegrity (Android) and DeviceCheck (iOS) to stop Debug quota exhaustion which causes "Too many attempts" errors.
-  try {
-    await FirebaseAppCheck.instance.activate(
-      androidProvider: AndroidProvider.playIntegrity,
-      appleProvider: AppleProvider.deviceCheck,
-    );
-  } catch (e) {
-    print("AppCheck Init Non-fatal Error: $e");
+  // App Check
+  // Use PlayIntegrity (Android) and DeviceCheck (iOS) in release mode
+  if (!kDebugMode) {
+    try {
+      await FirebaseAppCheck.instance.activate(
+        androidProvider: AndroidProvider.playIntegrity,
+        appleProvider: AppleProvider.deviceCheck,
+      );
+    } catch (e) {
+      print("AppCheck Init Non-fatal Error: $e");
+    }
   }
 
   // Initialize In-App Purchases is handled in initState of HiddenPantryApp

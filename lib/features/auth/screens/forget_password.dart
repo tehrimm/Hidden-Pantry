@@ -64,7 +64,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
     final mq = MediaQuery.of(context);
-    final horizontal = 30.sw;
+    final bool isTablet = mq.size.width >= 600;
     final topPad = mq.padding.top;
 
     return Scaffold(
@@ -97,7 +97,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                 _AnimatedWrapper(
                   animation: _staggeredAnimations[0],
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(horizontal, topPad + 36.sh, horizontal, 20.sh),
+                    padding: EdgeInsets.fromLTRB(30.sw, topPad + (isTablet ? 24.sh : 35.sh), 30.sw, 20.sh),
                     child: Row(
                       children: [
                         BackButtonWidget(
@@ -116,8 +116,8 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                   child: SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
                     padding: EdgeInsets.only(
-                      left: horizontal,
-                      right: horizontal,
+                      left: 30.sw,
+                      right: 30.sw,
                       bottom: 22.sh,
                     ),
                     child: Column(
@@ -158,9 +158,11 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                         SizedBox(height: 28.sh),
                         _AnimatedWrapper(
                           animation: _staggeredAnimations[3],
-                          child: Row(
-                            children: [
-                              Expanded(
+                          child: IntrinsicHeight(
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Expanded(
                                 child: _OptionCard(
                                   title: "Email",
                                   subtitle: "your@email.com",
@@ -189,6 +191,7 @@ class _ForgetPasswordScreenState extends State<ForgetPasswordScreen> with Ticker
                                 ),
                               ),
                             ],
+                          ),
                           ),
                         ),
                         SizedBox(height: 40.sh),
@@ -317,7 +320,6 @@ class _OptionCard extends StatelessWidget {
         child: BackdropFilter(
           filter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
           child: Container(
-            height: 173.sh,
             decoration: BoxDecoration(
               color: selected 
                   ? const Color(0xFFF9E3D5).withValues(alpha: 0.8)
@@ -365,7 +367,7 @@ class _OptionCard extends StatelessWidget {
                 SizedBox(height: 6.sh),
                 Text(
                   subtitle,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: brown,

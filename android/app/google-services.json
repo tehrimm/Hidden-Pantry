@@ -14,6 +14,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "1089198153938-aed4bel58bajt77esd5ckrk5rtrbt8sj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hiddenpantry",
+            "certificate_hash": "d46102426e9a0dc668d578f74021ba14747e2694"
+          }
+        },
+        {
+          "client_id": "1089198153938-ldn12boq5q7hm0u9fn3nocc9be1kmv36.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hiddenpantry",
+            "certificate_hash": "09f8c7fb2f2d43a7d07e3c3bad5bbaf10c7d7110"
+          }
+        },
+        {
           "client_id": "1089198153938-pcdpp0iuftqk6l9dnqtq5grnq9ks09gu.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

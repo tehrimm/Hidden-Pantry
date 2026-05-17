@@ -211,6 +211,7 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> w
     ResponsiveUtils.init(context);
     final mq = MediaQuery.of(context);
     final horizontal = 30.sw;
+    final bool isTablet = mq.size.width >= 600;
     final topPad = mq.padding.top;
 
     return Scaffold(
@@ -244,7 +245,7 @@ class _ForgetPasswordPhoneScreenState extends State<ForgetPasswordPhoneScreen> w
                 _AnimatedWrapper(
                   animation: _staggeredAnimations[0],
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(horizontal, topPad + 36.sh, horizontal, 20.sh),
+                    padding: EdgeInsets.fromLTRB(horizontal, topPad + (isTablet ? 24.sh : 35.sh), horizontal, 20.sh),
                     child: Row(
                       children: [
                         BackButtonWidget(
