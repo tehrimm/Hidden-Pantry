@@ -397,7 +397,6 @@
         <div class="recipe-header">
           <span class="section-badge" id="recipeCategory">Recipe</span>
           <h1 id="recipeTitle">Recipe Title</h1>
-          <p class="recipe-description" id="recipeDescription"></p>
           <div class="allergens-wrap" id="allergensList"></div>
         </div>
 
@@ -911,7 +910,6 @@
 
       document.getElementById('recipeTitle').textContent = name;
       document.getElementById('recipeCategory').textContent = category;
-      document.getElementById('recipeDescription').textContent = desc;
       document.getElementById('recipeTime').textContent = `${time} mins`;
       document.getElementById('recipeCalories').textContent = cal.includes('kcal') ? cal : `${cal} kcal`;
       document.getElementById('recipeRating').textContent = `${rating} ★`;

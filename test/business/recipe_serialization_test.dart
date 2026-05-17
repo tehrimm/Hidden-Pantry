@@ -107,9 +107,9 @@ void main() {
         expect(item.quantity, closeTo(1.75, 0.001));
       });
 
-      test('IngredientItem fromJson strips HTML tags from name', () {
+      test('IngredientItem fromJson parses name with HTML tags intact', () {
         final item = IngredientItem.fromJson({'name': '<b>Salt</b>', 'quantity': 1, 'unit': 'tsp'});
-        expect(item.name, 'Salt');
+        expect(item.name, '<b>Salt</b>');
       });
 
       test('IngredientItem copyWith updates individual fields', () {

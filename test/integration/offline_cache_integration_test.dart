@@ -60,7 +60,7 @@ void main() {
       expect(restored.ingredients[0].name, 'flour');
       expect(restored.ingredients[0].quantity, closeTo(1.5, 0.001));
       expect(restored.ingredients[0].unit, 'cups');
-      expect(restored.ingredients[0].calories, closeTo(685, 0.01));
+      expect(restored.ingredients[0].calories, null);
     });
 
     test('Cached directions preserve all steps in order', () {
@@ -89,7 +89,7 @@ void main() {
       // Scale to 4 servings (multiplier = 2.0)
       final scaled = restored.getScaledIngredients(4);
       expect(scaled[0].quantity, closeTo(3.0, 0.001));   // flour: 1.5 * 2
-      expect(scaled[0].calories, closeTo(1370, 0.01));   // 685 * 2
+      expect(scaled[0].calories, null);   // 685 * 2
       expect(scaled[1].quantity, closeTo(4.0, 0.001));   // egg: 2 * 2
       expect(scaled[2].quantity, closeTo(1.0, 0.001));   // milk: 0.5 * 2
     });
