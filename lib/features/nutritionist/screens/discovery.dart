@@ -220,7 +220,10 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
 
   Widget _contentList() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection("nutritionists").snapshots(),
+      stream: FirebaseFirestore.instance
+          .collection("nutritionists")
+          .where("verificationStatus", isEqualTo: "approved")
+          .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _discoverySkeleton();

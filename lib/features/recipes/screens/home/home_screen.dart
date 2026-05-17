@@ -1169,7 +1169,7 @@ void _openUserProfile() {
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: 22.sw),
         child: Container(
-          height: 200.sh,
+          height: math.max(250.0, 250.sh),
           decoration: BoxDecoration(
             color: purple.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(28.sw),
@@ -1221,7 +1221,7 @@ void _openUserProfile() {
           return Transform.scale(scale: scale, child: child);
         },
         child: Container(
-          height: 210.sh,
+          height: math.max(250.0, 250.sh),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(28.sw),
             boxShadow: [
@@ -1520,7 +1520,7 @@ void _openUserProfile() {
       return Padding(
         padding: EdgeInsets.symmetric(horizontal: 22.sw),
         child: Container(
-          height: 220.sh,
+          height: math.max(250.0, 250.sh),
           decoration: BoxDecoration(
             color: purple.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(28.sw),
@@ -1717,7 +1717,7 @@ void _openUserProfile() {
   Widget _horizontalCards(List<Recipe>? list, String scrollKey) {
     if (list == null) {
       return SizedBox(
-        height: 240.sh,
+        height: math.max(220.0, 220.sh),
         child: ListView.separated(
           padding: EdgeInsets.symmetric(horizontal: 22.sw),
           scrollDirection: Axis.horizontal,
@@ -1743,7 +1743,7 @@ void _openUserProfile() {
     }
 
     return SizedBox(
-      height: 190.sh,
+      height: math.max(220.0, 220.sh),
       child: ListView.separated(
         key: PageStorageKey<String>(scrollKey),
         padding: EdgeInsets.symmetric(horizontal: 22.sw),
@@ -1761,7 +1761,7 @@ void _openUserProfile() {
       child: RecipeCard(
         recipe: r,
         width: 135.sw,
-        aspectRatio: 135 / 190,
+        aspectRatio: 135 / 220,
         onTap: () => _openRecipe(r),
       ),
     );

@@ -236,11 +236,12 @@ class _ForgetPasswordPhoneOtpScreenState
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
     final mq = MediaQuery.of(context);
+    final bool isTablet = mq.size.width >= 600;
     final horizontal = 30.sw;
     final topPad = mq.padding.top;
 
-    final boxW = 44.sw;
-    final boxH = 51.sh;
+    final boxW = isTablet ? 55.0 : 48.sw;
+    final boxH = isTablet ? 65.0 : 58.sh;
 
     return Scaffold(
       backgroundColor: bg,
@@ -273,7 +274,7 @@ class _ForgetPasswordPhoneOtpScreenState
                 _AnimatedWrapper(
                   animation: _staggeredAnimations[0],
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(horizontal, topPad + 36.sh, horizontal, 20.sh),
+                    padding: EdgeInsets.fromLTRB(horizontal, topPad + (isTablet ? 24.sh : 35.sh), horizontal, 20.sh),
                     child: Row(
                       children: [
                         BackButtonWidget(
@@ -338,7 +339,7 @@ class _ForgetPasswordPhoneOtpScreenState
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: List.generate(6, (i) {
                               return Padding(
-                                padding: EdgeInsets.only(left: i == 0 ? 0 : 10.sw),
+                                padding: EdgeInsets.only(left: i == 0 ? 0 : 8.sw),
                                 child: _OtpBox(
                                   width: boxW,
                                   height: boxH,
@@ -510,7 +511,7 @@ class _OtpBox extends StatelessWidget {
               maxLength: 2,
               style: TextStyle(
                 color: purple,
-                fontSize: 18.sp,
+                fontSize: 22.sp,
                 fontWeight: FontWeight.bold,
                 fontFamily: "Satoshi",
               ),

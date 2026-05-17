@@ -32,7 +32,8 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
   @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
-    final panelHeight = widget.viewOnly ? 0.0 : 160.sh;
+    final mq = MediaQuery.of(context);
+    final bool isTablet = mq.size.width >= 600;
 
     return Scaffold(
       backgroundColor: const Color(0xFFFFF3EB),
@@ -88,143 +89,140 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
                 ),
               ),
 
-              // Animated Title & Back
-              _FadeSlideEntry(
-                delayMs: 100,
-                child: Stack(
+              // Content in Column
+              SafeArea(
+                bottom: false,
+                child: Column(
                   children: [
-                    Positioned(
-                      left: 30.sw,
-                      top: MediaQuery.paddingOf(context).top + 30.sh,
-                      child: GestureDetector(
-                        onTap: () => Navigator.pop(context),
-                        child: Container(
-                          width: 50.sw,
-                          height: 50.sw,
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFF9E3D5),
-                            borderRadius: BorderRadius.circular(25.sw),
-                          ),
-                          child: Icon(Icons.arrow_back_ios_new, size: 18.sp, color: const Color(0xFF462F4D)),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 120.sw,
-                      top: MediaQuery.paddingOf(context).top + 20.sh,
-                      child: SizedBox(
-                        width: 220.sw,
-                        child: Text(
-                          'Terms and\nCondition',
-                          style: TextStyle(
-                            color: const Color(0xFF462F4D),
-                            fontSize: 32.sp,
-                            fontWeight: FontWeight.w800,
-                            fontFamily: 'Satoshi',
-                            height: 1.05,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Animated Scrollable Terms
-              Positioned(
-                left: 29.sw,
-                right: 29.sw,
-                top: MediaQuery.paddingOf(context).top + 120.sh,
-                bottom: widget.viewOnly ? MediaQuery.paddingOf(context).bottom + 16.sh : panelHeight,
-                child: ListView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: EdgeInsets.zero,
-                  children: _getTermsWidgets(fontSize: 14.sp),
-                ),
-              ),
-
-              // Bottom Panel (Animated)
-              if (!widget.viewOnly)
-                Positioned(
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: _FadeSlideEntry(
-                    delayMs: 800,
-                    child: Container(
-                      color: const Color(0xFFF9E3D5),
-                      padding: EdgeInsets.fromLTRB(
-                        26.sw,
-                        12.sh,
-                        26.sw,
-                        MediaQuery.paddingOf(context).bottom + 14.sh,
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              GestureDetector(
-                                onTap: () => setState(() => agreed = !agreed),
+                    SizedBox(height: isTablet ? 24.sh : 35.sh),
+                    _FadeSlideEntry(
+                      delayMs: 100,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 30.sw),
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            Align(
+                              alignment: Alignment.centerLeft,
+                              child: GestureDetector(
+                                onTap: () => Navigator.pop(context),
                                 child: Container(
-                                  width: 18.sw,
-                                  height: 18.sw,
+                                  width: 50.sw,
+                                  height: 50.sw,
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(4.sw),
-                                    border: Border.all(color: const Color(0xFF462F4D), width: 1.5.sw),
+                                    color: const Color(0xFFF9E3D5),
+                                    borderRadius: BorderRadius.circular(25.sw),
                                   ),
-                                  child: agreed
-                                      ? Icon(Icons.check, size: 14.sp, color: const Color(0xFF462F4D))
-                                      : null,
+                                  child: Icon(Icons.arrow_back_ios_new, size: 18.sp, color: const Color(0xFF462F4D)),
                                 ),
                               ),
-                              SizedBox(width: 10.sw),
-                              Expanded(
-                                child: Text(
-                                  'I have read and agree to the Terms and Conditions',
-                                  style: TextStyle(
-                                    color: const Color(0xFF462F4D),
-                                    fontSize: 14.sp,
-                                    fontWeight: FontWeight.w500,
-                                    letterSpacing: 0.3,
-                                    fontFamily: 'Satoshi',
-                                    height: 1.25,
+                            ),
+                            Text(
+                              'Terms and\nCondition',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: const Color(0xFF462F4D),
+                                fontSize: 32.sp,
+                                fontWeight: FontWeight.w800,
+                                fontFamily: 'Satoshi',
+                                height: 1.05,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 30.sh),
+                    Expanded(
+                      child: ListView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: EdgeInsets.only(
+                          left: 30.sw,
+                          right: 30.sw,
+                          bottom: widget.viewOnly ? MediaQuery.paddingOf(context).bottom + 16.sh : 20.sh,
+                        ),
+                        children: _getTermsWidgets(fontSize: 14.sp),
+                      ),
+                    ),
+                    if (!widget.viewOnly)
+                      _FadeSlideEntry(
+                        delayMs: 800,
+                        child: Container(
+                          color: const Color(0xFFF9E3D5),
+                          padding: EdgeInsets.fromLTRB(
+                            26.sw,
+                            12.sh,
+                            26.sw,
+                            MediaQuery.paddingOf(context).bottom + 14.sh,
+                          ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  GestureDetector(
+                                    onTap: () => setState(() => agreed = !agreed),
+                                    child: Container(
+                                      width: 18.sw,
+                                      height: 18.sw,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(4.sw),
+                                        border: Border.all(color: const Color(0xFF462F4D), width: 1.5.sw),
+                                      ),
+                                      child: agreed
+                                          ? Icon(Icons.check, size: 14.sp, color: const Color(0xFF462F4D))
+                                          : null,
+                                    ),
+                                  ),
+                                  SizedBox(width: 10.sw),
+                                  Expanded(
+                                    child: Text(
+                                      'I have read and agree to the Terms and Conditions',
+                                      style: TextStyle(
+                                        color: const Color(0xFF462F4D),
+                                        fontSize: 14.sp,
+                                        fontWeight: FontWeight.w500,
+                                        letterSpacing: 0.3,
+                                        fontFamily: 'Satoshi',
+                                        height: 1.25,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 14.sh),
+                              GestureDetector(
+                                onTap: agreed ? () => Navigator.pop(context, true) : null,
+                                child: Opacity(
+                                  opacity: agreed ? 1.0 : 0.55,
+                                  child: Container(
+                                    width: double.infinity,
+                                    height: 62.sh,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF2894F),
+                                      borderRadius: BorderRadius.circular(20.sw),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      'Agree and Continue',
+                                      style: TextStyle(
+                                        color: const Color(0xFFFFF2EA),
+                                        fontSize: 15.sp,
+                                        fontWeight: FontWeight.w600,
+                                        fontFamily: 'Satoshi',
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
                             ],
                           ),
-                          SizedBox(height: 14.sh),
-                          GestureDetector(
-                            onTap: agreed ? () => Navigator.pop(context, true) : null,
-                            child: Opacity(
-                              opacity: agreed ? 1.0 : 0.55,
-                              child: Container(
-                                width: double.infinity,
-                                height: 62.sh,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFF2894F),
-                                  borderRadius: BorderRadius.circular(20.sw),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  'Agree and Continue',
-                                  style: TextStyle(
-                                    color: const Color(0xFFFFF2EA),
-                                    fontSize: 15.sp,
-                                    fontWeight: FontWeight.w600,
-                                    fontFamily: 'Satoshi',
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
+                  ],
                 ),
+              ),
             ],
           ),
         ),
