@@ -288,8 +288,7 @@ class Recipe {
       return Map<String, String>.from(m);
     }
 
-    // Case B: top-level fields (your FastAPI index)
-    final hasAny = [
+final hasAny = [
       json['calories'],
       json['protein'],
       json['carbs'],
@@ -312,20 +311,13 @@ class Recipe {
     };
   }
 
-  static List<IngredientItem> _parseIngredients(Map<String, dynamic> json) {
-    // 1. Try preferred: ingredients_parsed (list of maps or map-strings)
-    final parsed = json['ingredients_parsed'];
-    if (parsed != null) {
-      final list = _coerceList(parsed);
-      final out = <IngredientItem>[];
-      for (final e in list) {
-        final item = parseIngredient(e);
-        if (item != null) out.add(item);
-      }
-      if (out.isNotEmpty) return out;
-    }
+  static IngredientItem? parseIngredient(dynamic e) {
+    if (e == null) return null;
+    return IngredientItem.fromJson(e);
+  }
 
-    // 2. Try fallback: ingredients (list of strings or map-strings)
+  static List<IngredientItem> _parseIngredients(Map<String, dynamic> json) {
+    // 1. Try preferred: ingredients (raw strings are safer because backend NLP often corrupts them)
     final ing = json['ingredients'];
     if (ing != null) {
       final list = _coerceList(ing);
@@ -337,146 +329,22 @@ class Recipe {
       if (out.isNotEmpty) return out;
     }
 
+    // 2. Try fallback: ingredients_parsed
+    final parsed = json['ingredients_parsed'];
+    if (parsed != null) {
+      final list = _coerceList(parsed);
+      final out = <IngredientItem>[];
+      for (final e in list) {
+        final item = parseIngredient(e);
+        if (item != null) out.add(item);
+      }
+      if (out.isNotEmpty) return out;
+    }
+
     return const [];
   }
 
-  static IngredientItem? parseIngredient(dynamic e) {
-    if (e == null) return null;
 
-    if (e is Map) {
-      return IngredientItem.fromJson(Map<String, dynamic>.from(e));
-    }
-
-    if (e is String) {
-      String s = e.trim();
-      if (s.isEmpty) return null;
-
-      // 1. SMART REPAIR FOR TRUNCATED STRINGS
-      String low = s.toLowerCase();
-      if (low.startsWith("ablespoon")) s = "t$s";
-      else if (low.startsWith("easpoon")) s = "t$s";
-      else if (low.startsWith("unces")) s = "o$s";
-      else if (low.startsWith("arge ")) s = "l$s";
-      else if (low.startsWith("emon ")) s = "l$s";
-
-      // 2. Check for stringified Map (messy backend data)
-      if (s.contains('name') && (s.contains('{') || s.contains(':'))) {
-        try {
-          final nameMatch = RegExp(r'''['"]?name['"]?\s*[:=]\s*['"]?([^,}'"]+)['"]?''', caseSensitive: false).firstMatch(s);
-          final qtyMatch = RegExp(r'''['"]?quantit[y]?['"]?\s*[:=]\s*['"]?([^,}'" ]+)['"]?''', caseSensitive: false).firstMatch(s);
-          final unitMatch = RegExp(r'''['"]?unit['"]?\s*[:=]\s*['"]?([^,;)}'"]+)''', caseSensitive: false).firstMatch(s);
-
-          if (nameMatch != null) {
-            String name = nameMatch.group(1)!.trim().replaceAll("'", "").replaceAll('"', "");
-            String qtyStr = qtyMatch?.group(1)?.trim().replaceAll("'", "").replaceAll('"', "") ?? "1";
-            String unit = unitMatch?.group(1)?.trim().replaceAll("'", "").replaceAll('"', "") ?? "";
-
-            return IngredientItem(
-              name: name, 
-              quantity: IngredientItem.toDouble(qtyStr), 
-              unit: unit.toLowerCase()
-            );
-          }
-        } catch (_) {}
-      }
-
-      // 3. Robust Word-Based Parsing
-      final commonUnits = {
-        'tablespoon', 'tablespoons', 'teaspoon', 'teaspoons',
-        'tbsp', 'tbsp.', 'tbsps.', 'tbs', 'tbs.', 
-        'tsp', 'tsp.', 'tsps.', 'ts', 'ts.',
-        'cup', 'cups', 'oz', 'ounce', 'ounces', 'can', 'cans', 'lb', 'pound', 
-        'pounds', 'g', 'gram', 'grams', 'kg', 'kilogram', 'kilograms', 
-        'ml', 'milliliter', 'milliliters', 'l', 'liter', 'liters', 'pkg', 'package',
-        'slice', 'slices', 'piece', 'pieces', 'clove', 'cloves', 'stick', 'sticks',
-        'pinch', 'pinches', 'dash', 'dashes', 'handful', 'handfuls', 'head', 'heads',
-        'fluid ounce', 'fluid ounces', 'fl oz', 'fl. oz.'
-      };
-
-      String qtyPart = "";
-      String unitPart = "";
-      String namePart = "";
-
-      // 3.1. Extract leading quantity
-      final qtyRegex = RegExp(r'^([0-9\s\./¼½¾⅓⅔⅛⅜⅝⅞-]+(?:\s+to\s+[0-9\s\./¼½¾⅓⅔⅛⅜⅝⅞-]+)?)', caseSensitive: false);
-      final qtyMatch = qtyRegex.firstMatch(s);
-      String remaining = s;
-      
-      if (qtyMatch != null) {
-        qtyPart = qtyMatch.group(1)!.trim();
-        remaining = s.substring(qtyMatch.end).trim();
-      }
-
-      if (remaining.isNotEmpty) {
-        // 3.2. Check for multi-word units first (e.g., "fluid ounce")
-        bool multiWordFound = false;
-        final multiWordUnits = commonUnits.where((u) => u.contains(' ')).toList()
-          ..sort((a, b) => b.length.compareTo(a.length));
-        
-        for (final unit in multiWordUnits) {
-          if (remaining.toLowerCase().startsWith("$unit ")) {
-            unitPart = unit;
-            namePart = remaining.substring(unit.length).trim();
-            multiWordFound = true;
-            break;
-          } else if (remaining.toLowerCase() == unit) {
-            unitPart = unit;
-            namePart = "";
-            multiWordFound = true;
-            break;
-          }
-        }
-
-        if (!multiWordFound) {
-          // 3.3. Check first word for unit
-          final words = remaining.split(RegExp(r'\s+'));
-          final firstWord = words.first.toLowerCase();
-          
-          // Clean first word of trailing punctuation for comparison
-          final cleanFirstWord = firstWord.replaceAll(RegExp(r'[.,;]$'), '');
-          
-          if (commonUnits.contains(firstWord) || commonUnits.contains(cleanFirstWord)) {
-            unitPart = firstWord;
-            namePart = words.skip(1).join(" ").trim();
-          } else {
-            // 3.4. Handle attached units like "10g" if qtyRegex missed them or they are mixed
-            // Check if firstWord starts with numbers and ends with a unit
-            final attachedMatch = RegExp(r'^(\d+)([a-zA-Z]+)$').firstMatch(firstWord);
-            if (attachedMatch != null) {
-              final potentialQty = attachedMatch.group(1)!;
-              final potentialUnit = attachedMatch.group(2)!.toLowerCase();
-              if (commonUnits.contains(potentialUnit)) {
-                qtyPart = qtyPart.isEmpty ? potentialQty : "$qtyPart $potentialQty";
-                unitPart = potentialUnit;
-                namePart = words.skip(1).join(" ").trim();
-              } else {
-                namePart = remaining;
-              }
-            } else {
-              namePart = remaining;
-            }
-          }
-        }
-      }
-
-      if (qtyPart.isEmpty) qtyPart = "1";
-
-      String cleanName = namePart.trim();
-      if (cleanName.toLowerCase().startsWith("of ")) cleanName = cleanName.substring(3).trim();
-      
-      // Remove leading/trailing parentheses and noise
-      final noise = RegExp(r'^[(),.\s]+|[(),.\s]+$');
-      cleanName = cleanName.replaceAll(noise, '').trim();
-
-      return IngredientItem(
-        name: cleanName.isEmpty ? (unitPart.isEmpty ? qtyPart : unitPart) : cleanName,
-        quantity: IngredientItem.toDouble(qtyPart),
-        displayQuantity: qtyPart, // Store the exact string
-        unit: unitPart,
-      );
-    }
-    return null;
-  }
 
 
   static List<String> _parseDirections(Map<String, dynamic> json) {
@@ -741,123 +609,149 @@ class IngredientItem {
     );
   }
 
-  static double toDouble(dynamic v, {double fallback = 0.0}) {
-    if (v == null) return fallback;
+  static double toDouble(dynamic v) {
+    if (v == null) return 0.0;
     if (v is num) return v.toDouble();
-    
-    final s = v.toString().trim();
-    if (s.isEmpty) return fallback;
+    String s = v.toString().trim().toLowerCase();
+    if (s.isEmpty) return 0.0;
 
-    // 1. Direct Parse
-    final direct = double.tryParse(s);
-    if (direct != null) return direct;
-
-    // 2. Handle Ranges: "1 to 2" or "1-2"
-    if (s.contains(' to ') || (s.contains('-') && !s.startsWith('-'))) {
-      final parts = s.split(RegExp(r'\s+to\s+|-'));
-      if (parts.length >= 2) {
-        final v1 = toDouble(parts[0].trim());
-        final v2 = toDouble(parts[1].trim());
-        if (v1 > 0 && v2 > 0) return (v1 + v2) / 2;
-        if (v1 > 0) return v1;
-      }
-    }
-
-    // 3. Range Handling: "1/4-1/2" or "1-2"
-    if (s.contains('-')) {
-      final parts = s.split('-');
-      if (parts.length == 2) {
-        final val1 = toDouble(parts[0], fallback: -1);
-        final val2 = toDouble(parts[1], fallback: -1);
-        if (val1 != -1 && val2 != -1) {
-          return (val1 + val2) / 2; // Return average for ranges
-        } else if (val1 != -1) {
-          return val1;
+    // Handle Ranges
+    for (var delim in [' to ', '-', '–']) {
+      if (s.contains(delim)) {
+        var parts = s.split(delim);
+        if (parts.length >= 2) {
+          return (toDouble(parts[0]) + toDouble(parts[1])) / 2.0;
         }
       }
     }
 
-    // 4. Mixed Fractions: "1 1/2"
-    final mixedMatch = RegExp(r'^(\d+)\s+(\d+)/(\d+)').firstMatch(s);
-    if (mixedMatch != null) {
-      final whole = double.tryParse(mixedMatch.group(1)!) ?? 0;
-      final num = double.tryParse(mixedMatch.group(2)!) ?? 0;
-      final den = double.tryParse(mixedMatch.group(3)!) ?? 1;
-      return whole + (num / den);
+    try {
+      if (s.contains('/')) {
+        var parts = s.split(' ');
+        double total = 0;
+        for (var p in parts) {
+          if (p.contains('/')) {
+            var f = p.split('/');
+            total += double.parse(f[0]) / double.parse(f[1]);
+          } else if (p.isNotEmpty) {
+            total += double.parse(p);
+          }
+        }
+        return total;
+      }
+      return double.parse(s);
+    } catch (e) {
+      return 0.0;
     }
-
-    // 5. Simple Fractions: "3/4"
-    final fracMatch = RegExp(r'(\d+)/(\d+)').firstMatch(s);
-    if (fracMatch != null) {
-      final num = double.tryParse(fracMatch.group(1)!) ?? 0;
-      final den = double.tryParse(fracMatch.group(2)!) ?? 1;
-      return num / den;
-    }
-
-    // 5. Clean Numeric Fallback (extracts first number found)
-    final numMatch = RegExp(r'(\d+\.?\d*)').firstMatch(s);
-    if (numMatch != null) {
-      return double.tryParse(numMatch.group(1)!) ?? fallback;
-    }
-
-    return fallback;
   }
 
-  factory IngredientItem.fromJson(Map<String, dynamic> json) {
-    String name = (json['name'] ?? json['ingredient'] ?? "").toString();
-    double quantity = toDouble(json['quantity'] ?? json['quantiy'], fallback: 0.0);
-    String unit = (json['unit'] ?? "").toString().trim().toLowerCase();
-    double? calories = json['calories'] != null ? toDouble(json['calories']) : null;
+  factory IngredientItem.fromJson(dynamic json) {
+    if (json == null) return IngredientItem(name: "", quantity: 0, unit: "");
 
-    // SMART REPAIR:
-    // Pattern 1: Truncated "l" (large/lemon) or "g" or "c"
-    if ((unit == "l" || unit == "g" || unit == "c") && name.isNotEmpty) {
-      String lowName = name.toLowerCase();
-      // If name starts with "arge" or "agre" and unit is "l" -> large
-      if (unit == "l" && (lowName.startsWith("arge") || lowName.startsWith("agre"))) {
-         name = "large" + name.substring(4);
-         unit = "";
-      } else if (unit == "l" && (lowName.startsWith("emon") || lowName.startsWith("mon"))) {
-         name = "lemon" + (lowName.startsWith("emon") ? name.substring(4) : name.substring(3));
-         unit = "";
+    if (json is Map) {
+      final name = (json['name'] ?? json['ingredient'] ?? "").toString();
+      final qtyVal = json['quantity'] ?? json['quantiy'] ?? 0;
+      final unit = (json['unit'] ?? "").toString().toLowerCase();
+      final displayQuantity = json['displayQuantity']?.toString();
+
+      final parsedQty = toDouble(qtyVal);
+      final finalDisplayQty = (displayQuantity == null || displayQuantity.trim().isEmpty) && parsedQty == 0
+          ? "as needed"
+          : displayQuantity;
+
+      return IngredientItem(
+        name: name,
+        quantity: parsedQty,
+        unit: unit,
+        displayQuantity: finalDisplayQty,
+      );
+    }
+
+    // Case: Input is a string (e.g., "1 cup milk" or "to taste salt")
+    String s = json.toString().trim();
+    if (s.isEmpty) return const IngredientItem(name: "", quantity: 0, unit: "");
+
+    String displayQuantity = "";
+    String unit = "";
+    String name = s;
+
+    // 1. Detect Special Prefixes (to taste, as needed, handful)
+    final prefixes = [
+      RegExp(r'^to\s+taste\b', caseSensitive: false),
+      RegExp(r'^as\s+needed\b', caseSensitive: false),
+      RegExp(r'^handful\b', caseSensitive: false),
+      RegExp(r'^a\s+handful\b', caseSensitive: false),
+    ];
+
+    for (var pattern in prefixes) {
+      if (pattern.hasMatch(s)) {
+        displayQuantity = pattern.firstMatch(s)![0]!.toLowerCase();
+        name = s.replaceFirst(pattern, '').trim();
+        name = name.replaceFirst(RegExp(r'^of\s+', caseSensitive: false), '').trim();
+        return IngredientItem(
+          name: name,
+          quantity: 0,
+          unit: "",
+          displayQuantity: displayQuantity,
+        );
       }
     }
 
-    // Pattern 2: Missing first letter in common units/adjectives
-    String lowName = name.toLowerCase();
-    if (lowName.startsWith("ablespoon")) name = "t" + name;
-    else if (lowName.startsWith("easpoon")) name = "t" + name;
-    else if (lowName.startsWith("unces")) name = "o" + name;
-    else if (lowName.startsWith("arge ") || lowName.startsWith("agre ")) name = "l" + name;
-    else if (lowName.startsWith("emon ")) name = "l" + name;
-    else if (lowName.startsWith("nion")) name = "o" + name;
-    else if (lowName.startsWith("otato")) name = "p" + name;
-
-    // Pattern 3: If quantity is 0, try to re-parse the whole thing
-    if (quantity == 0) {
-      final combined = unit.isEmpty ? name : "$unit $name";
-      final smartParsed = Recipe.parseIngredient(combined);
-      if (smartParsed != null && smartParsed.quantity > 0) {
-        return smartParsed;
-      }
+    // Check for "to taste" at the end
+    final tasteSuffix = RegExp(r'\s+to\s+taste\s*$', caseSensitive: false);
+    if (tasteSuffix.hasMatch(s)) {
+      displayQuantity = "to taste";
+      name = s.replaceFirst(tasteSuffix, '').trim();
+      name = name.replaceAll(RegExp(r',$'), '').trim();
+      return IngredientItem(
+        name: name,
+        quantity: 0,
+        unit: "",
+        displayQuantity: displayQuantity,
+      );
     }
 
-    // Strip HTML tags if any
-    name = name.replaceAll(RegExp(r'<[^>]*>'), '').trim();
-    unit = unit.replaceAll(RegExp(r'<[^>]*>'), '').trim();
+    // 2. Parse Quantity (Numbers, Fractions, Ranges)
+    final qtyRegex = RegExp(r'^(\d+[\d\s\./¼½¾⅓⅔⅛⅜⅝⅞-]*?)(?=\s+[a-zA-Z]|$)');
+    final qtyMatch = qtyRegex.firstMatch(s);
 
-    final rawQty = (json['quantity'] ?? json['quantiy'])?.toString();
-    final bool isComplex = rawQty != null && (rawQty.contains('/') || rawQty.contains('-'));
+    if (qtyMatch != null) {
+      String rawQty = qtyMatch.group(1)!.trim();
+      displayQuantity = rawQty;
+      name = s.substring(qtyMatch.end).trim();
 
-    return IngredientItem(
-      name: name,
-      quantity: quantity == 0 ? 1.0 : quantity,
-      displayQuantity: json['displayQuantity'] ?? (isComplex ? rawQty : null), 
-      unit: unit,
-      calories: calories,
-    );
+      // 3. Detect Unit
+      final units = [
+        'tablespoons', 'tablespoon', 'tbsp', 'tbs',
+        'teaspoons', 'teaspoon', 'tsp', 'ts',
+        'cups', 'cup', 'c', 'ounces', 'ounce', 'oz',
+        'pounds', 'pound', 'lbs', 'lb', 'grams', 'gram', 'g',
+        'kg', 'ml', 'l', 'cloves', 'clove', 'can', 'pkg', 'slices', 'slice',
+        'pinch', 'dash', 'sticks', 'stick', 'handful', 'handfuls', 'ears', 'stalk', 'stalks'
+      ];
+      units.sort((a, b) => b.length.compareTo(a.length));
+      final unitRegex = RegExp('^(${units.join('|')})\\b', caseSensitive: false);
+      final unitMatch = unitRegex.firstMatch(name);
+
+      if (unitMatch != null) {
+        unit = unitMatch.group(1)!.toLowerCase();
+        name = name.substring(unitMatch.end).trim();
+      }
+
+      // Cleanup
+      name = name.replaceFirst(RegExp(r'^of\s+', caseSensitive: false), '').trim();
+      name = name.replaceFirst(RegExp(r'^,\s*'), '').trim();
+
+      return IngredientItem(
+        name: name,
+        quantity: toDouble(rawQty),
+        unit: unit,
+        displayQuantity: displayQuantity,
+      );
+    }
+
+    return IngredientItem(name: s, quantity: 0, unit: "", displayQuantity: "as needed");
   }
-
 
   Map<String, dynamic> toJson() {
     return {

@@ -306,7 +306,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
 
       final dependentRecipeFutures = <Future>[
         _recipeService.getTrendingRecipes(limit: 50, allergies: userAllergies).then((v) => week = v).catchError((_) => <Recipe>[]),
-        _recipeService.getTodaysPick(allergies: userAllergies).then((v) => todaysPick = v).catchError((_) => null),
+        _recipeService.getTodaysPick(allergies: userAllergies, selectedTag: selectedTag).then((v) => todaysPick = v).catchError((_) => null),
         api.recommend(
           query: "popular", tag: selectedTag, allergies: userAllergies,
           likedRecipeIds: likedIds, topK: 50, minRating: 0.0,
@@ -517,9 +517,12 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
         minRating: 0.0,
       );
 
+      final tp = await _recipeService.getTodaysPick(allergies: userAllergies, selectedTag: tag);
+
       if (!mounted) return;
       setState(() {
         recommendations = _rerankByPreferences(rec);
+        todaysPick = tp;
         loading = false;
       });
       log("Tag results loaded: ${rec.length} recommendations");
@@ -879,9 +882,12 @@ void _openUserProfile() {
       padding: EdgeInsets.symmetric(horizontal: 22.sw),
       child: Row(
         children: [
-          GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: _openUserProfile,
+          Semantics(
+            label: "User Profile",
+            button: true,
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: _openUserProfile,
             child: ClipRRect(
               borderRadius: BorderRadius.circular(50.sw),
               child: Container(
@@ -899,13 +905,17 @@ void _openUserProfile() {
                     : Center(
                         child: Icon(Icons.person_rounded, color: purple, size: 28.sw),
                       ),
+                ),
               ),
             ),
           ),
           const Spacer(),
           // Notification icon (replaced search)
-          GestureDetector(
-            onTap: _openNotifications,
+          Semantics(
+            label: "Notifications",
+            button: true,
+            child: GestureDetector(
+              onTap: _openNotifications,
             child: StreamBuilder<List<AppNotification>>(
               stream: NotificationService().streamNotifications(),
               builder: (context, snapshot) {
@@ -937,6 +947,7 @@ void _openUserProfile() {
                 );
               }
             ),
+          ),
           ),
         ],
       ),
@@ -973,8 +984,11 @@ void _openUserProfile() {
   Widget _searchBar() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 22.sw),
-      child: GestureDetector(
-        onTap: _openSearch,
+      child: Semantics(
+        label: "Search recipes or ingredients",
+        button: true,
+        child: GestureDetector(
+          onTap: _openSearch,
         child: Container(
           height: 44.sh,
           padding: EdgeInsets.only(left: 16.sw, right: 4.sw),
@@ -1004,9 +1018,12 @@ void _openUserProfile() {
                 ),
               ),
               // Voice search button (formerly filter)
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
+              Semantics(
+                label: _isListening ? "Stop voice search" : "Start voice search",
+                button: true,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
                   HapticFeedback.mediumImpact();
                   _toggleListening();
                 },
@@ -1027,8 +1044,10 @@ void _openUserProfile() {
                   ),
                 ),
               ),
+              ),
             ],
           ),
+        ),
         ),
       ),
     );
@@ -1050,8 +1069,12 @@ void _openUserProfile() {
           final t = chips[i];
           final isSelected = t == selectedTag;
 
-          return GestureDetector(
-            onTap: () {
+          return Semantics(
+            label: "$t tag",
+            selected: isSelected,
+            button: true,
+            child: GestureDetector(
+              onTap: () {
               // Smooth scroll to center the tapped tag
               final screenW = MediaQuery.of(context).size.width;
               final scale = screenW / 375;
@@ -1130,8 +1153,9 @@ void _openUserProfile() {
                 ],
               ),
             ),
-          );
-        },
+          ),
+        );
+      },
         separatorBuilder: (_, __) => SizedBox(width: 6.sw),
         itemCount: chips.length,
       ),

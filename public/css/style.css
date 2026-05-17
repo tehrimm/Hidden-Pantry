@@ -123,7 +123,9 @@ p  { color: var(--text-muted); font-weight: 400; }
   font-size: 22px; font-weight: 900; color: var(--purple); letter-spacing: -0.5px;
 }
 .nav-logo span { color: var(--orange); }
-.nav-logo img { width: 40px; height: 40px; border-radius: 10px; object-fit: contain; }
+.nav-logo img { width: 64px; height: 64px; border-radius: 14px; object-fit: contain; }
+.header-logo { width: 100px !important; height: 100px !important; transition: var(--transition); }
+.header-logo:hover { transform: scale(1.05); }
 .nav-links {
   display: flex; align-items: center; gap: 6px;
 }
@@ -228,10 +230,10 @@ footer {
 }
 .hero-phone-inner {
   width: calc(100% - 16px); height: calc(100% - 16px);
-  background: var(--bg); border-radius: 38px;
+  background: #000; border-radius: 38px;
   overflow: hidden; display: flex; align-items: center; justify-content: center;
 }
-.hero-phone-inner img { width: 100%; height: 100%; object-fit: cover; }
+.hero-phone-inner img { width: 100%; height: 100%; object-fit: contain; }
 .hero-phone-placeholder {
   text-align: center; padding: 20px;
 }
@@ -276,17 +278,26 @@ footer {
 .screenshots-scroll::-webkit-scrollbar { display: none; }
 .screenshot-card {
   flex: 0 0 220px; height: 420px;
-  background: rgba(255,255,255,0.08);
+  background: transparent;
   border: 1px solid rgba(255,255,255,0.15);
   border-radius: 28px; overflow: hidden;
   scroll-snap-align: start;
   transition: var(--transition); cursor: pointer;
+  position: relative;
   display: flex; align-items: center; justify-content: center;
-  flex-direction: column; gap: 10px;
-  text-align: center; padding: 20px;
 }
 .screenshot-card:hover { transform: scale(1.04); border-color: var(--orange); }
-.screenshot-card img { width: 100%; height: 100%; object-fit: cover; border-radius: 20px; }
+.screenshot-card img { width: 100%; height: 100%; object-fit: contain; }
+.screenshot-card .card-title {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: rgba(70, 47, 77, 0.9);
+  color: #fff; padding: 12px; font-size: 13px; font-weight: 600;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  pointer-events: none;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+.screenshot-card:hover .card-title { transform: translateY(0); }
 .screenshot-card.placeholder .ph-icon { font-size: 36px; margin-bottom: 8px; }
 .screenshot-card.placeholder p { font-size: 12px; color: rgba(255,255,255,0.5); }
 .screenshot-card.placeholder span { font-size: 11px; color: rgba(255,255,255,0.3); font-family: monospace; }

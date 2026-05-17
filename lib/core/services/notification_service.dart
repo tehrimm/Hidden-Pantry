@@ -12,6 +12,7 @@ import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_det
 import 'package:hidden_pantry_app/features/nutritionist/screens/chat_interface_part.dart';
 import 'package:hidden_pantry_app/features/user/screens/my_subscriptions.dart';
 import 'package:hidden_pantry_app/features/user/screens/admin_moderation_screen.dart';
+import 'package:hidden_pantry_app/features/admin/screens/admin_certificate_review.dart';
 
 class NotificationService {
   final FirebaseFirestore _firestore;
@@ -202,10 +203,8 @@ class NotificationService {
 
   /// Notifies all admins about a new content report
   Future<void> notifyAdminsOfReport(String contentId, String contentType) async {
-    // List of admin UIDs from security rules
-    final admins = ['K35k8MPFWSbmKo3CTe8Wz8waZAS2', 'Y2K3p5k8MPFWSbmKo3CTe8Wz8waZ']; 
-    
-    for (var adminId in admins) {
+    final adminIds = await _getAdminIds();
+    for (var adminId in adminIds) {
       await sendNotification(
         recipientId: adminId,
         title: "⚠️ New $contentType Report",
@@ -215,6 +214,34 @@ class NotificationService {
         recipientRole: 'user',
       );
     }
+  }
+
+  /// Notifies all admins about a new nutritionist application
+  Future<void> notifyAdminsOfApplication(String nutritionistId, String name) async {
+    final adminIds = await _getAdminIds();
+    for (var adminId in adminIds) {
+      await sendNotification(
+        recipientId: adminId,
+        title: "🛡️ New Nutritionist Application",
+        body: "$name has applied for verification. Review their certificate now.",
+        type: NotificationType.nutritionist_application,
+        targetId: nutritionistId,
+        recipientRole: 'user',
+      );
+    }
+  }
+
+  Future<List<String>> _getAdminIds() async {
+    try {
+      final snap = await _firestore.collection('users')
+          .where('role', isEqualTo: 'admin')
+          .get();
+      if (snap.docs.isNotEmpty) {
+        return snap.docs.map((d) => d.id).toList();
+      }
+    } catch (_) {}
+    // Fallback hardcoded admins
+    return ['K35k8MPFWSbmKo3CTe8Wz8waZAS2', 'Y2K3p5k8MPFWSbmKo3CTe8Wz8waZ'];
   }
 
   /// Streams notifications for the current user
@@ -368,6 +395,12 @@ class NotificationService {
         break;
       case NotificationType.moderation_report:
         Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminModerationScreen()));
+        break;
+      case NotificationType.nutritionist_application:
+        // Navigate to the specific review screen
+        Navigator.push(context, MaterialPageRoute(builder: (context) => AdminCertificateReviewScreen(
+          nutritionistId: notif.targetId!,
+        )));
         break;
     }
   }

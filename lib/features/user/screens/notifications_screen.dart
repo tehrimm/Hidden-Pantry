@@ -74,6 +74,7 @@ class NotificationsScreen extends StatelessWidget {
                           final grouped = _groupNotifications(notifications);
     
                           return ListView.builder(
+                            key: const PageStorageKey('notifications_list'),
                             itemCount: grouped.keys.length,
                             padding: EdgeInsets.only(bottom: 20.sh),
                             itemBuilder: (context, index) {
@@ -425,6 +426,9 @@ class _NotificationItemWidgetState extends State<_NotificationItemWidget> {
         break;
       case NotificationType.moderation_report:
         icon = Icons.report_problem_rounded;
+        break;
+      case NotificationType.nutritionist_application:
+        icon = Icons.verified_user_rounded;
         break;
     }
 

@@ -20,113 +20,121 @@ class HpBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
     const Color brandPurple = Color(0xFF462F4D);
-    final bottomPadding = MediaQuery.of(context).padding.bottom;
-    final navHeight = 70.sh; // The visible "bar" part
-
-    return SizedBox(
-      height: navHeight + bottomPadding + 20.sh, // 20.sh extra for the FAB overlap
-      child: Stack(
-        clipBehavior: Clip.none,
-        alignment: Alignment.bottomCenter,
-        children: [
-          // BOTTOM FILLER (Solid purple to prevent any bleed below the bar)
-          Positioned(
-            bottom: -100, // Extend deep below the screen
-            left: 0,
-            right: 0,
-            height: 100 + bottomPadding + 10,
-            child: Container(color: brandPurple),
-          ),
-
-          // MAIN NAV BAR BACKGROUND (NOTCHED)
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: CustomPaint(
-              size: Size(double.infinity, navHeight + bottomPadding),
-              painter: _NotchedNavPainter(
-                color: brandPurple,
-                notchRadius: 38.sw,
-              ),
+    // Use the safely cached maxBottomPadding.
+    // Unlike padding.bottom or viewPadding.bottom, this will NEVER shrink
+    // when the keyboard opens, keeping the nav bar totally stable on all phones.
+    final bottomPadding = ResponsiveUtils.maxBottomPadding;
+    final navHeight = 70.sh;
+    return Material(
+      elevation: 0,
+      color: Colors.transparent,
+      child: SizedBox(
+        height: navHeight + bottomPadding + 20.sh, // 20.sh extra for the FAB overlap
+        child: Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.bottomCenter,
+          children: [
+            // BOTTOM FILLER (Solid purple to prevent any bleed below the bar)
+            Positioned(
+              bottom: -100, // Extend deep below the screen
+              left: 0,
+              right: 0,
+              height: 100 + bottomPadding + 10,
+              child: Container(color: brandPurple),
             ),
-          ),
 
-          // ICONS ROW
-          Positioned(
-            bottom: bottomPadding,
-            left: 0,
-            right: 0,
-            child: SizedBox(
-              height: navHeight,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 24.sw),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _navIcon(
-                      index: 0,
-                      active: "assets/icons/home_active.png",
-                      inactive: "assets/icons/home_inactive.png",
-                    ),
-                    _navIcon(
-                      index: 1,
-                      active: "assets/icons/search_active.png",
-                      inactive: "assets/icons/search_inactive.png",
-                    ),
-
-                    SizedBox(width: 60.sw), // space for FAB notch
-
-                    _navIcon(
-                      index: 3,
-                      active: "assets/icons/bookmark_active.png",
-                      inactive: "assets/icons/bookmark_inactive.png",
-                    ),
-
-                    isNutritionistInUserView
-                        ? _expertIcon()
-                        : _navIcon(
-                            index: 4,
-                            active: "assets/icons/user_active.png",
-                            inactive: "assets/icons/user_inactive.png",
-                          ),
-                  ],
+            // MAIN NAV BAR BACKGROUND (NOTCHED)
+            // Shadow is drawn via BoxShadow on a clipped container to prevent
+            // bleed outside the nav bar bounds into the body area.
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: CustomPaint(
+                size: Size(double.infinity, navHeight + bottomPadding),
+                painter: _NotchedNavPainter(
+                  color: brandPurple,
+                  notchRadius: 38.sw,
                 ),
               ),
             ),
-          ),
 
-          // FLOATING PLUS BUTTON
-          Positioned(
-            bottom: bottomPadding + (navHeight * 0.5) + 1.sh, // Moved slightly up
-            child: GestureDetector(
-              onTap: () => onTap(2),
-              child: Container(
-                width: 60.sw,
-                height: 60.sw,
-                decoration: BoxDecoration(
-                  color: orange,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: orange.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Image.asset(
-                    "assets/icons/plus.png",
-                    width: 24.sw,
-                    height: 24.sw,
-                    color: Colors.white,
+            // ICONS ROW
+            Positioned(
+              bottom: bottomPadding,
+              left: 0,
+              right: 0,
+              child: SizedBox(
+                height: navHeight,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 24.sw),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _navIcon(
+                        index: 0,
+                        active: "assets/icons/home_active.png",
+                        inactive: "assets/icons/home_inactive.png",
+                      ),
+                      _navIcon(
+                        index: 1,
+                        active: "assets/icons/search_active.png",
+                        inactive: "assets/icons/search_inactive.png",
+                      ),
+
+                      SizedBox(width: 60.sw), // space for FAB notch
+
+                      _navIcon(
+                        index: 3,
+                        active: "assets/icons/bookmark_active.png",
+                        inactive: "assets/icons/bookmark_inactive.png",
+                      ),
+
+                      isNutritionistInUserView
+                          ? _expertIcon()
+                          : _navIcon(
+                              index: 4,
+                              active: "assets/icons/user_active.png",
+                              inactive: "assets/icons/user_inactive.png",
+                            ),
+                    ],
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+
+            // FLOATING PLUS BUTTON
+            Positioned(
+              bottom: bottomPadding + (navHeight * 0.5) + 1.sh,
+              child: GestureDetector(
+                onTap: () => onTap(2),
+                child: Container(
+                  width: 60.sw,
+                  height: 60.sw,
+                  decoration: BoxDecoration(
+                    color: orange,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: orange.withValues(alpha: 0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Image.asset(
+                      "assets/icons/plus.png",
+                      width: 24.sw,
+                      height: 24.sw,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -253,10 +261,9 @@ class _NotchedNavPainter extends CustomPainter {
     path.lineTo(0, size.height + 100);
     path.close();
 
-    // Draw shadow
-    canvas.drawShadow(path, Colors.black.withValues(alpha: 0.5), 8.0, true);
-    
-    // Draw background
+    // Draw background only — no shadow blur here.
+    // A blur painted on the Canvas bleeds outside the widget's clip bounds
+    // and renders a visible rectangle above the nav bar in the body area.
     canvas.drawPath(path, paint);
   }
 

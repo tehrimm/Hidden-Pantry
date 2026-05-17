@@ -229,7 +229,7 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
                 borderRadius: BorderRadius.circular(12.sw),
               ),
               child: Text(
-                "POTENTIAL MONTHLY: Rs. ${projected.toInt()}",
+                "POTENTIAL NET MONTHLY: Rs. ${(projected * 0.75).toInt()}",
                 style: TextStyle(color: orange, fontSize: 11.sp, fontWeight: FontWeight.bold, letterSpacing: 0.5),
               ),
             ),
@@ -270,7 +270,7 @@ class _PayoutManagementScreenState extends State<PayoutManagementScreen> {
                 SizedBox(width: 6.sw),
                 Flexible(
                   child: Text(
-                    "Hidden Pantry deducts a 10% platform fee from each transaction.",
+                    "Hidden Pantry deducts a 10% platform fee from each transaction, while Google deducts 15% from each transaction for In-App Purchases.",
                     style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 10.sp, fontFamily: "Satoshi"),
                   ),
                 ),

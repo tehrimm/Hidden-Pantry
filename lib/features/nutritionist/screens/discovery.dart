@@ -266,7 +266,7 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
           bool matchesDomain = false;
           if (_selectedDomain == 'All' || isTopRated) {
             matchesDomain = true;
-          } else {
+          } else if (domain.isNotEmpty) {
             // Flexible matching: "Sports" matches "Sports Nutrition"
             matchesDomain = domain.contains(selected) || selected.contains(domain);
           }
@@ -285,6 +285,7 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
         }
 
         return ListView(
+          key: const PageStorageKey('nutritionist_discovery_list'),
           padding: const EdgeInsets.only(left: 22, right: 22, top: 10, bottom: 120),
           children: [
             if (filteredSubscribed.isNotEmpty) ...[

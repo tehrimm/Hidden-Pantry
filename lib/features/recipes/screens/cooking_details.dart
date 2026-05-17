@@ -1028,7 +1028,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
                                               ),
                                               SizedBox(height: 2.sh),
                                               Text(
-                                                "${_fmtQty(ing.quantity)} ${ing.unit}",
+                                                "${ing.displayQuantity ?? _fmtQty(ing.quantity)}${ing.unit.isEmpty ? '' : ' ${ing.unit}'}",
                                                 maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: TextStyle(
@@ -1271,7 +1271,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
                   separatorBuilder: (_, __) => Divider(height: 24.sh),
                   itemBuilder: (context, index) {
                     final ing = widget.recipe.ingredients[index];
-                    final qtyStr = _fmtQty(ing.quantity);
+                    final qtyStr = ing.displayQuantity ?? _fmtQty(ing.quantity);
                     return Padding(
                       padding: EdgeInsets.symmetric(vertical: 4.sh),
                       child: Row(

@@ -77,7 +77,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
       child: Scaffold(
         backgroundColor: const Color(0xFFFFF3EB),
         resizeToAvoidBottomInset: false,
-        extendBody: true,
+        extendBody: true, // Needed to draw behind Android system gesture bar
         body: Stack(
           children: [
             // Background Gradient
@@ -93,27 +93,36 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 ),
               ),
             ),
-            
-            // Decorative Orbs for premium feel (Consistency with Nutritionist Dashboard)
+
+            // Decorative Orbs
             const Positioned.fill(child: _ShellBackgroundPattern()),
-  
+
+            // Tab content — sits behind the nav bar
             IndexedStack(
               index: _currentIndex,
               children: const [
                 HomeScreen(inShell: true),
                 SearchScreen(inShell: true),
-                SizedBox.shrink(), // Placeholder for plus button slot (index 2)
+                SizedBox.shrink(),
                 SavedRecipesScreen(inShell: true),
                 NutritionistDiscoveryScreen(inShell: true),
               ],
             ),
+
+            // Nav bar rendered directly in the Stack — no Scaffold surface slot,
+            // no automatic Material elevation rectangle on Android.
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: HpBottomNav(
+                currentIndex: _currentIndex,
+                onTap: _onTap,
+                orange: orange,
+                isNutritionistInUserView: _isNutritionist,
+              ),
+            ),
           ],
-        ),
-        bottomNavigationBar: HpBottomNav(
-          currentIndex: _currentIndex,
-          onTap: _onTap,
-          orange: orange,
-          isNutritionistInUserView: _isNutritionist,
         ),
       ),
     );

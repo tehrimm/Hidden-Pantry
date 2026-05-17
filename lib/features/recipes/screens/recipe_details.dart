@@ -1639,8 +1639,8 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
   }
 
   void _shareRecipe() {
-    final String appDownloadLink = "https://hiddenpantry.page.link/download"; // Placeholder link
-    final String recipeLink = "https://hiddenpantry.page.link/recipe?id=${_recipe.id}";
+    final String appDownloadLink = "https://arched-sunbeam-478306-u3.web.app/hidden_pantry.apk";
+    final String recipeLink = "https://arched-sunbeam-478306-u3.web.app/recipe?id=${_recipe.id}";
     
     final String shareText = "Check out this delicious recipe: ${_recipe.name} on Hidden Pantry!\n\n"
         "View Recipe: $recipeLink\n\n"

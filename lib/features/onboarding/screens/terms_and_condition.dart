@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'package:url_launcher/url_launcher.dart';
 
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
@@ -231,6 +232,17 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
     );
   }
 
+  Future<void> _launchURL(String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    try {
+      if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+        debugPrint("Could not launch $urlString");
+      }
+    } catch (e) {
+      debugPrint("Error launching $urlString: $e");
+    }
+  }
+
   List<Widget> _getTermsWidgets({required double fontSize}) {
     final base = TextStyle(
       color: const Color(0xFF462F4D),
@@ -346,9 +358,7 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
                       const TextSpan(text: 'Your use of Hidden Pantry is also governed by our '),
                       WidgetSpan(
                         child: GestureDetector(
-                          onTap: () {
-                            // Link to Privacy Policy
-                          },
+                          onTap: () => _launchURL('https://hiddenpantry.app/privacy'),
                           child: Text('Privacy Policy', style: linkStyle),
                         ),
                       ),
@@ -365,9 +375,7 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
                       const TextSpan(text: 'Account Deletion: You may delete your account and all data permanently through "Settings". This action is irreversible.\n\nSpecific Data Deletion: You may delete specific data without deleting your account, including:\n• Recipes: Through "My Recipes"\n• Chat Messages: Through "Clear Chat" in conversations\n• Profile Data: Through Profile Settings\n\nFor more instructions, please visit our '),
                       WidgetSpan(
                         child: GestureDetector(
-                          onTap: () {
-                            // Link to Data & Account Management Page
-                          },
+                          onTap: () => _launchURL('https://hiddenpantry.app/data-deletion'),
                           child: Text('Data & Account Management Page', style: linkStyle),
                         ),
                       ),
@@ -384,18 +392,14 @@ class _TermsAndConditionScreenState extends State<TermsAndConditionScreen> {
                       const TextSpan(text: 'If you have any questions or concerns about these Terms, please reach out:\n📧 Email: '),
                       WidgetSpan(
                         child: GestureDetector(
-                          onTap: () {
-                            // Link to email
-                          },
+                          onTap: () => _launchURL('mailto:hiddenpantry.support@gmail.com'),
                           child: Text('hiddenpantry.support@gmail.com', style: linkStyle),
                         ),
                       ),
                       const TextSpan(text: '\n🌐 Website: '),
                       WidgetSpan(
                         child: GestureDetector(
-                          onTap: () {
-                            // Link to website
-                          },
+                          onTap: () => _launchURL('https://hiddenpantry.app'),
                           child: Text('hiddenpantry.app', style: linkStyle),
                         ),
                       ),

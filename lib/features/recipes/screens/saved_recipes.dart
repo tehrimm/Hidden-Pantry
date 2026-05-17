@@ -246,6 +246,7 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> with AutomaticK
                       }
 
                       return SingleChildScrollView(
+                        key: const PageStorageKey('saved_recipes_scroll'),
                         padding: EdgeInsets.symmetric(horizontal: 30.sw),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -730,7 +731,6 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> with AutomaticK
   Widget _headerText() {
     return Container(
       width: double.infinity,
-      height: 280.sh,
       decoration: const BoxDecoration(
         color: Colors.transparent,
       ),

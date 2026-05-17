@@ -7,6 +7,7 @@ import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
 import 'package:hidden_pantry_app/core/widgets/back_button_widget.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 class UserNetworkScreen extends StatefulWidget {
   final int initialIndex;
@@ -135,7 +136,24 @@ class _UserNetworkScreenState extends State<UserNetworkScreen> {
                       fontFamily: "Satoshi",
                     ),
                   ),
-                  const Spacer(flex: 2),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () {
+                      HapticFeedback.mediumImpact();
+                      Share.share(
+                        "Hey! I'm using Hidden Pantry to discover amazing recipes and connect with expert nutritionists. Download the app here: https://arched-sunbeam-478306-u3.web.app/hidden_pantry.apk",
+                        subject: "Join me on Hidden Pantry!",
+                      );
+                    },
+                    child: Container(
+                      padding: EdgeInsets.all(10.sw),
+                      decoration: BoxDecoration(
+                        color: orange.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.person_add_alt_1_rounded, color: orange, size: 20.sw),
+                    ),
+                  ),
                 ],
               ),
             ),

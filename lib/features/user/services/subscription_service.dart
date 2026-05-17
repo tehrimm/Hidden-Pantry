@@ -284,10 +284,128 @@ class SubscriptionService {
     }
   }
 
+  /// Checks if the user has ANY active nutritionist subscription.
+  Future<bool> hasAnyActiveNutritionistSubscription() async {
+    final user = _auth?.currentUser;
+    if (user == null) return false;
+
+    try {
+      final firestore = _firestore ?? FirebaseFirestore.instance;
+      final snap = await firestore
+          .collection('subscriptions')
+          .where('userId', isEqualTo: user.uid)
+          .where('status', whereIn: ['active', 'trialing'])
+          .get();
+
+      for (var doc in snap.docs) {
+        final data = doc.data();
+        if (data['nutritionistId'] != null) {
+          final expiry = data['expiryDate'];
+          if (expiry != null) {
+            DateTime? expiryDate;
+            if (expiry is Timestamp) {
+              expiryDate = expiry.toDate();
+            } else if (expiry is DateTime) {
+              expiryDate = expiry;
+            } else if (expiry is String) {
+              expiryDate = DateTime.tryParse(expiry);
+            }
+
+            if (expiryDate != null && expiryDate.isAfter(_now())) {
+              debugPrint("SubscriptionService: Active nutritionist subscription found for ${data['nutritionistId']}.");
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    } catch (e) {
+      debugPrint("Error checking for any active nutritionist subscription: $e");
+      return false;
+    }
+  }
+
+  /// Checks if the user has already subscribed to the Annual Plan for 2 or more years.
+  Future<bool> hasExhaustedAnnualDiscount() async {
+    final user = _auth?.currentUser;
+    if (user == null) return false;
+
+    try {
+      final firestore = _firestore ?? FirebaseFirestore.instance;
+      final snap = await firestore
+          .collection('subscriptions')
+          .where('userId', isEqualTo: user.uid)
+          .where('productId', isEqualTo: 'hidden_pantry_premium:annual-plan')
+          .get();
+
+      // Each annual subscription document represents 1 year.
+      // If they have 2 or more, they have exhausted the 2-year discount.
+      return snap.docs.length >= 2;
+    } catch (e) {
+      debugPrint("Error checking annual discount usage: $e");
+      return false; // Default to not exhausted on error
+    }
+  }
+
+  /// Checks if the user has ever subscribed to the platform premium, thus exhausting their 7-day trial.
+  Future<bool> hasExhaustedFreeTrial() async {
+    final user = _auth?.currentUser;
+    if (user == null) return false;
+
+    try {
+      final firestore = _firestore ?? FirebaseFirestore.instance;
+      final snap = await firestore
+          .collection('subscriptions')
+          .where('userId', isEqualTo: user.uid)
+          .where('planId', isEqualTo: 'platform_premium')
+          .limit(1)
+          .get();
+
+      return snap.docs.isNotEmpty;
+    } catch (e) {
+      debugPrint("Error checking free trial exhaustion: $e");
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>?> _loadUserData(String uid) async {
     final firestore = _firestore ?? FirebaseFirestore.instance;
     final userDoc = await firestore.collection('users').doc(uid).get();
     return userDoc.data();
+  }
+
+  /// Retrieves the productId of the user's currently active platform premium subscription.
+  Future<String?> getActivePlatformProductId() async {
+    final user = _auth?.currentUser;
+    if (user == null) return null;
+
+    try {
+      final rows = _loadPlatformSubscriptionsOverride != null
+          ? await _loadPlatformSubscriptionsOverride!(user.uid)
+          : await _loadPlatformSubscriptions(user.uid);
+      
+      for (var row in rows) {
+        final expiry = row['expiryDate'];
+        if (expiry != null) {
+          DateTime? expiryDate;
+          if (expiry is Timestamp) {
+            expiryDate = expiry.toDate();
+          } else if (expiry is DateTime) {
+            expiryDate = expiry;
+          } else if (expiry is String) {
+            expiryDate = DateTime.tryParse(expiry);
+          }
+
+          if (expiryDate != null && expiryDate.isAfter(_now())) {
+            return row['productId'] as String?;
+          }
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint("Error getting active platform product ID: $e");
+      return null;
+    }
   }
 
   Future<List<Map<String, dynamic>>> _loadPlatformSubscriptions(String uid) async {

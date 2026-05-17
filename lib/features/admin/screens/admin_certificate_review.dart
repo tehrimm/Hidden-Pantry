@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:hidden_pantry_app/features/nutritionist/services/nutritionist_service.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
@@ -10,7 +11,8 @@ import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 class AdminCertificateReviewScreen extends StatefulWidget {
   final NutritionistService? nutritionistService;
-  const AdminCertificateReviewScreen({super.key, this.nutritionistService});
+  final String? nutritionistId;
+  const AdminCertificateReviewScreen({super.key, this.nutritionistService, this.nutritionistId});
 
   @override
   State<AdminCertificateReviewScreen> createState() => _AdminCertificateReviewScreenState();
@@ -31,7 +33,16 @@ class _AdminCertificateReviewScreenState extends State<AdminCertificateReviewScr
   void initState() {
     super.initState();
     _nutritionistService = widget.nutritionistService ?? const NutritionistService();
-    _pendingStream = _nutritionistService.getPendingNutritionists();
+    
+    if (widget.nutritionistId != null) {
+      // If a specific ID is provided, show only that one (even if they already changed status)
+      _pendingStream = FirebaseFirestore.instance.collection("nutritionists")
+          .where("uid", isEqualTo: widget.nutritionistId)
+          .snapshots()
+          .map((snapshot) => snapshot.docs.map((doc) => doc.data()).toList());
+    } else {
+      _pendingStream = _nutritionistService.getPendingNutritionists();
+    }
 
     _headerController = AnimationController(
       vsync: this,

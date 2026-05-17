@@ -1020,9 +1020,9 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                             },
                             child: _animatedStatCard(
                               label: "Net Earnings", 
-                              value: loading ? "..." : "Rs. ${(total * 0.9).toInt()}", 
+                              value: loading ? "..." : "Rs. ${total.toInt()}", 
                               icon: Icons.monetization_on_rounded,
-                              subtitle: "After 10% Fee",
+                              subtitle: "Withdrawable",
                               delay: 300,
                             ),
                           ),
@@ -1031,9 +1031,9 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
                          Expanded(
                           child: _animatedStatCard(
                             label: "Projected Net/Mo", 
-                            value: "Rs. ${(projectedMonthly * 0.9).toInt()}", 
+                            value: "Rs. ${(projectedMonthly * 0.75).toInt()}", 
                             icon: Icons.trending_up_rounded,
-                            subtitle: "90% Share (Active)",
+                            subtitle: "75% Share (Active)",
                             delay: 400,
                           ),
                         ),

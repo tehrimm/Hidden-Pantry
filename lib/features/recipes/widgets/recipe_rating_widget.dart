@@ -8,6 +8,7 @@ class RecipeRatingWidget extends StatelessWidget {
   final TextStyle? style;
   final double iconSize;
   final Color? color;
+  final bool useStream;
 
   const RecipeRatingWidget({
     super.key,
@@ -16,70 +17,50 @@ class RecipeRatingWidget extends StatelessWidget {
     this.style,
     this.iconSize = 14,
     this.color,
+    this.useStream = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (Platform.environment.containsKey('FLUTTER_TEST')) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.star_rounded,
-            color: color ?? const Color(0xFFEF8A54),
-            size: iconSize,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            initialRating.toStringAsFixed(1),
-            style: style ?? const TextStyle(
-              fontSize: 11,
-              fontFamily: "Satoshi",
-            ),
-          ),
-        ],
-      );
+    if (Platform.environment.containsKey('FLUTTER_TEST') || !useStream) {
+      return _buildRating(initialRating);
     }
 
     return StreamBuilder<DocumentSnapshot>(
       stream: FirebaseFirestore.instance.collection('recipes').doc(recipeId).snapshots(),
       builder: (context, snapshot) {
         double displayRating = initialRating;
-        
         if (snapshot.hasData && snapshot.data!.exists) {
           final data = snapshot.data!.data() as Map<String, dynamic>;
           displayRating = double.tryParse(data['avg_rating']?.toString() ?? "0") ?? initialRating;
         }
-
-        if (displayRating <= 0) {
-          return Text(
-            "no rating",
-            style: style ?? const TextStyle(
-              fontSize: 11,
-              fontFamily: "Satoshi",
-            ),
-          );
-        }
-
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.star_rounded,
-              color: color ?? const Color(0xFFEF8A54),
-              size: iconSize,
-            ),
-            const SizedBox(width: 4),
-            Text(
-              displayRating.toStringAsFixed(1),
-              style: style ?? const TextStyle(
-                fontSize: 11,
-                fontFamily: "Satoshi",
-              ),
-            ),
-          ],
-        );
+        return _buildRating(displayRating);
       },
+    );
+  }
+
+  Widget _buildRating(double rating) {
+    if (rating <= 0) {
+      return Text(
+        "no rating",
+        style: style ?? const TextStyle(fontSize: 11, fontFamily: "Satoshi"),
+      );
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.star_rounded,
+          color: color ?? const Color(0xFFEF8A54),
+          size: iconSize,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          rating.toStringAsFixed(1),
+          style: style ?? const TextStyle(fontSize: 11, fontFamily: "Satoshi"),
+        ),
+      ],
     );
   }
 }

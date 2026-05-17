@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/recipe.dart';
 import '../../recipes/widgets/recipe_rating_widget.dart';
 import '../../../core/widgets/skeletons.dart';
@@ -60,22 +61,18 @@ class RecipeCard extends StatelessWidget {
                   child: Container(
                     color: const Color(0xFFF9E3D5),
                     child: hasImage
-                        ? Image.network(
-                            imageUrl,
+                        ? CachedNetworkImage(
+                            imageUrl: imageUrl,
                             fit: BoxFit.cover,
-                            loadingBuilder: (context, child, progress) => progress == null
-                                ? child
-                                : const SkeletonBox(
-                                    width: double.infinity,
-                                    height: double.infinity,
-                                    borderRadius: BorderRadius.all(Radius.circular(16)),
-                                  ),
-                            errorBuilder: (context, error, stackTrace) {
-                              return Image.asset(
-                                'assets/logos/recipe_placeholder.jpg',
-                                fit: BoxFit.cover,
-                              );
-                            },
+                            placeholder: (context, url) => const SkeletonBox(
+                              width: double.infinity,
+                              height: double.infinity,
+                              borderRadius: BorderRadius.all(Radius.circular(16)),
+                            ),
+                            errorWidget: (context, url, error) => Image.asset(
+                              'assets/logos/recipe_placeholder.jpg',
+                              fit: BoxFit.cover,
+                            ),
                           )
                         : Image.asset(
                             'assets/logos/recipe_placeholder.jpg',

@@ -108,36 +108,22 @@ class RecipeApiService {
       throw Exception("Recipe id is empty.");
     }
 
-    // Candidate endpoints
-    final candidates = <Uri>[
-      Uri.parse("$baseUrl/recipes/$id"),
-      Uri.parse("$baseUrl/recipe/$id"),
-      Uri.parse("$baseUrl/recipes?id=$id"),
-      Uri.parse("$baseUrl/recipe?id=$id"),
-    ];
+    final uri = Uri.parse("$baseUrl/recipes/$id");
 
     try {
-      // Try all candidates in parallel to avoid sequential timeout delays
-      final responses = await Future.wait(
-        candidates.map((uri) => http.get(uri).timeout(const Duration(seconds: 8)).catchError((e) {
-          return http.Response("Timeout or Error", 408);
-        })),
-      );
+      final res = await http.get(uri).timeout(const Duration(seconds: 8));
 
-      for (var i = 0; i < responses.length; i++) {
-        final res = responses[i];
-        if (res.statusCode == 200) {
-          final decoded = jsonDecode(res.body);
-          if (decoded is Map<String, dynamic>) {
-            final maybeRecipe = decoded["recipe"] ?? decoded["data"] ?? decoded;
-            if (maybeRecipe is Map<String, dynamic>) {
-              return Recipe.fromJson(maybeRecipe);
-            }
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+        if (decoded is Map<String, dynamic>) {
+          final maybeRecipe = decoded["recipe"] ?? decoded["data"] ?? decoded;
+          if (maybeRecipe is Map<String, dynamic>) {
+            return Recipe.fromJson(maybeRecipe);
           }
         }
       }
       
-      throw Exception("Recipe not found after trying multiple endpoints.");
+      throw Exception("Recipe not found or invalid format.");
     } catch (e) {
       print("[RecipeApiService] getRecipeById failed: $e");
       rethrow;
@@ -223,8 +209,11 @@ class RecipeApiService {
     print('DEBUG API: Using effectiveQuery="$effectiveQuery"');
     
     final uri = Uri.parse("$baseUrl/recommend");
-    // Fetch MORE results for ingredient/allergy filtering, but cap to avoid timeouts
-    final topK = (hasIngredients || (allergies != null && allergies.isNotEmpty)) ? 200 : (limit > 50 ? limit : 50);
+    // Fetch a large pool (300) from the backend semantic search. 
+    // Semantic embeddings often bury exact keyword matches behind "similar" junk.
+    // We need a deep pool so our local strict text filter and +500 exact-match
+    // scoring logic has the actual recipes to promote to the top.
+    final topK = 300; 
     
     final body = <String, dynamic>{
       "query": effectiveQuery,
@@ -266,7 +255,7 @@ class RecipeApiService {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         futures.add(
-          FirebaseFirestore.instance.collection('users').doc(user.uid).get().then((snap) {
+          FirebaseFirestore.instance.collection('users').doc(user.uid).get().timeout(const Duration(seconds: 3)).then((snap) {
             final data = snap.data();
             if (data != null && data['tagWeights'] is Map) {
               final tw = data['tagWeights'] as Map;
@@ -276,19 +265,21 @@ class RecipeApiService {
         );
         futures.add(
           FirebaseFirestore.instance.collection('users').doc(user.uid).collection('views')
-              .orderBy('lastViewed', descending: true).limit(200).get().then((vs) {
+              .orderBy('lastViewed', descending: true).limit(200).get().timeout(const Duration(seconds: 3)).then((vs) {
             recentViewed = vs.docs.map((d) => d.id).toSet();
           }).catchError((_) {})
         );
         futures.add(
-          FirebaseFirestore.instance.collection('users').doc(user.uid).collection('following').get().then((fs) {
+          FirebaseFirestore.instance.collection('users').doc(user.uid).collection('following').get().timeout(const Duration(seconds: 3)).then((fs) {
             followedAuthors = fs.docs.map((d) => d.id).toSet();
           }).catchError((_) {})
         );
       }
     } catch (_) {}
 
+    print("DEBUG API: Waiting for all futures (Backend + Firestore Personalization)...");
     await Future.wait(futures);
+    print("DEBUG API: Futures complete. API returned ${allRecipes.length} recipes before local filtering.");
 
     try {
       
@@ -297,37 +288,32 @@ class RecipeApiService {
         allRecipes = allRecipes.where((r) => r.minutes > 0 && r.minutes <= maxMinutes).toList();
       }
 
-      // NOTE: Allergen filtering is handled by the backend (allergies passed in request body).
-      // Local re-filtering with RecipeMatcher is intentionally removed — it uses over-broad
-      // synonym matching (e.g. "wheat" blocks anything with "flour" or "bread") which
-      // eliminates nearly all results. Trust the backend's filtering instead.
-
-      // Note: We no longer perform strict tag filtering here.
-      // Instead, we will use tags in the ranking logic below to prioritize "best matches".
-
       // Filter by ingredients if provided — strict AND with flexible fallback
       if (ingredients != null && ingredients.isNotEmpty) {
         print('DEBUG API: Filtering ${allRecipes.length} recipes by ${ingredients.length} ingredients');
 
-        // Smart ingredient match:
-        // - "almond milk" (multi-word) only matches if recipe ingredient CONTAINS the full term.
-        //   Prevents "almond milk".contains("milk") = true causing false positives.
-        // - "chicken" (single-word) also checks reverse so "chicken breast" in recipe matches.
         bool _matchIngredient(String selectedIng, String rIng) {
           final s = selectedIng.toLowerCase().trim();
           final r = rIng.toLowerCase().trim();
-          if (r.contains(s)) return true; // recipe has "unsweetened almond milk" → matches "almond milk"
-          // Only allow reverse for single-word selectors (avoid "almond milk" matching "milk")
+          if (r.contains(s)) return true; 
           if (!s.contains(' ') && s.contains(r)) return true;
           return false;
         }
 
-        // Strict AND ONLY: recipe must contain ALL selected ingredients
         allRecipes = allRecipes.where((r) {
           final recipeIngredientNames = r.ingredients.map((i) => i.name.toLowerCase()).toList();
-          return ingredients.every((selectedIng) =>
-            recipeIngredientNames.any((rIng) => _matchIngredient(selectedIng, rIng))
-          );
+          final rName = r.name.toLowerCase();
+          
+          return ingredients.every((selectedIng) {
+            // Check ingredients first
+            bool hasIng = recipeIngredientNames.any((rIng) => _matchIngredient(selectedIng, rIng));
+            // If not found in ingredients, check if it's literally in the recipe title
+            if (!hasIng) {
+              final s = selectedIng.toLowerCase().trim();
+              if (rName.contains(s)) hasIng = true;
+            }
+            return hasIng;
+          });
         }).toList();
         print('DEBUG API: Strict AND matched ${allRecipes.length} recipes');
       }
@@ -335,11 +321,12 @@ class RecipeApiService {
       // Sorting & Ranking
       final q = query.toLowerCase().trim();
       final scoredRecipes = <MapEntry<Recipe, double>>[];
+      
+      print("DEBUG API: Starting scoring loop for ${allRecipes.length} recipes with query='$q'");
 
       for (final r in allRecipes) {
         double score = 1.0; 
         
-        // Boost based on number of matching ingredients
         if (hasIngredients) {
           final recipeIngs = r.ingredients.map((i) => i.name.toLowerCase()).toList();
           int matchCount = 0;
@@ -349,66 +336,57 @@ class RecipeApiService {
               matchCount++;
             }
           }
-          score += matchCount * 100; // Large boost for ingredient matches
-          
-          // Bonus: prefer recipes with FEWER total ingredients (closer to exact pantry match)
-          if (r.ingredients.isNotEmpty) {
-            score += (1.0 / r.ingredients.length) * 50;
-          }
+          score += matchCount * 100; 
+          if (r.ingredients.isNotEmpty) score += (1.0 / r.ingredients.length) * 50;
         }
 
-        // Boost based on number of matching tags (Flexible OR / Best Match)
         if (tags != null && tags.isNotEmpty) {
           final recipeTags = r.tags.map((t) => t.toLowerCase()).toList();
           int tagMatchCount = 0;
           for (final selected in tags) {
-            final lower = selected.toLowerCase();
-            if (recipeTags.contains(lower)) {
-              tagMatchCount++;
-            }
+            if (recipeTags.contains(selected.toLowerCase())) tagMatchCount++;
           }
-          score += tagMatchCount * 50; // Weight for tag matches
+          score += tagMatchCount * 50;
         }
 
-        // User preference boost based on tagWeights
         if (userTagWeights.isNotEmpty) {
           double pref = 0;
           for (final t in r.tags) {
             pref += (userTagWeights[t.toLowerCase()] ?? 0).toDouble();
           }
-          score += pref; // gentle nudge, name/ingredients boosts still dominate
+          score += pref; 
         }
-        if (r.authorId.isNotEmpty && followedAuthors.contains(r.authorId)) {
-          score += 200;
-        }
-        if (recentViewed.contains(r.id)) {
-          score -= 300;
-        }
+        if (r.authorId.isNotEmpty && followedAuthors.contains(r.authorId)) score += 200;
+        if (recentViewed.contains(r.id)) score -= 300;
 
         if (q.isNotEmpty) {
-           // 1. Name Match
           final rName = r.name.toLowerCase();
+          bool hasNameMatch = false;
           if (rName == q) {
             score += 500; 
+            hasNameMatch = true;
           } else if (rName.startsWith(q)) {
             score += 200; 
+            hasNameMatch = true;
           } else if (rName.contains(q)) {
             score += 100;
+            hasNameMatch = true;
           }
           
-          // 2. Ingredients Match (with query text)
           final hasIng = r.ingredients.any((i) => i.name.toLowerCase().contains(q));
           if (hasIng) score += 40;
           
-          // 3. Tags Match (Query)
           final hasTag = r.tags.any((t) => t.toLowerCase().contains(q));
           if (hasTag) score += 20;
 
-          // 4. Author Name Match
           final hasAuthor = (r.authorName ?? "").toLowerCase().contains(q);
           if (hasAuthor) score += 30;
+
+          if (!hasNameMatch && !hasIng && !hasTag && !hasAuthor) {
+            print("DEBUG API: Dropping '${r.name}' because it does not contain the word '$q'");
+            continue;
+          }
         } else {
-          // If no query, use rating as secondary sort
           score += r.avgRating * 2;
         }
 
@@ -416,14 +394,10 @@ class RecipeApiService {
       }
 
       scoredRecipes.sort((a, b) => b.value.compareTo(a.value));
+      print("DEBUG API: Scored list contains ${scoredRecipes.length} recipes after STRICT filter");
       
-      // Filter out recipes that match NO tags if tags were specified
-      // but only if NO search query was provided. 
-      // This keeps the result pool clean for "pure" tag/ingredient searches.
       var finalResults = scoredRecipes;
       if (tags != null && tags.isNotEmpty && q.isEmpty) {
-         // Keep only those that matched at least one tag
-         // (Ingredients are already strictly filtered above)
          finalResults = finalResults.where((e) {
             final r = e.key;
             return r.tags.any((rt) => tags.any((st) => st.toLowerCase() == rt.toLowerCase()));

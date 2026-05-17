@@ -26,7 +26,6 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
   late TextEditingController _nameController;
   
   String _selectedInterval = "Monthly";
-  final List<String> _intervals = ["Monthly", "Quarterly"];
   
   // NEW: Tier Handling
   String _selectedTier = "Tier 1 (Silver)";
@@ -40,10 +39,9 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
   }
 
   String get _calculatedPrice {
-    final bool isQuarterly = _selectedInterval == "Quarterly";
-    if (_tierLevel == 1) return isQuarterly ? "11000" : "4000";
-    if (_tierLevel == 2) return isQuarterly ? "19000" : "7000";
-    if (_tierLevel == 3) return isQuarterly ? "27000" : "10000";
+    if (_tierLevel == 1) return "4000";
+    if (_tierLevel == 2) return "6000";
+    if (_tierLevel == 3) return "8000";
     return "0";
   }
 
@@ -134,7 +132,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
       final planData = {
         "title": _nameController.text,
         "price": _calculatedPrice, 
-        "interval": _selectedInterval,
+        "interval": "Monthly",
         "benefits": cleanedBenefits,
         "nutritionistId": user.uid,
         "createdAt": widget.planId == null ? FieldValue.serverTimestamp() : (widget.initialPlan?['createdAt'] ?? FieldValue.serverTimestamp()),
@@ -268,7 +266,7 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
                                       prefix: "Rs. ",
                                     )),
                                     SizedBox(width: 16.sw),
-                                    Expanded(child: _intervalDropdown()),
+                                    Expanded(child: _fixedIntervalField()),
                                   ],
                                 ),
                               ],
@@ -644,12 +642,12 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
     );
   }
 
-  Widget _intervalDropdown() {
+  Widget _fixedIntervalField() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.all(16.sw),
       decoration: BoxDecoration(
         color: const Color(0xFFFFF3EB),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(16.sw),
         border: Border.all(color: purple.withValues(alpha: 0.1)),
       ),
       child: Column(
@@ -659,22 +657,11 @@ class _CreatePlanScreenState extends State<CreatePlanScreen> {
             "INTERVAL",
             style: TextStyle(color: purple.withValues(alpha: 0.4), fontSize: 10.sp, fontWeight: FontWeight.w900),
           ),
-          DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _selectedInterval,
-              isExpanded: true,
-              icon: Icon(Icons.keyboard_arrow_down_rounded, color: purple, size: 24.sw),
-              dropdownColor: const Color(0xFFFFF3EB),
-              style: TextStyle(color: purple, fontSize: 16.sp, fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
-              items: _intervals.map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (newValue) {
-                if (newValue != null) setState(() => _selectedInterval = newValue);
-              },
+          Padding(
+            padding: EdgeInsets.only(top: 8.sh),
+            child: Text(
+              "Monthly",
+              style: TextStyle(color: purple.withValues(alpha: 0.7), fontSize: 16.sp, fontWeight: FontWeight.bold),
             ),
           ),
         ],

@@ -566,7 +566,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
                           )
                         : KeyedSubtree(
                             key: const ValueKey('results_list'),
-                            child: _resultsList(),
+                            child: _resultsList(key: const PageStorageKey('search_results_scroll')),
                           ),
                   ),
                 ),
@@ -773,7 +773,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
     );
   }
 
-  Widget _resultsList() {
+  Widget _resultsList({Key? key}) {
     if (_isSearching) {
       return Stack(
         children: [
@@ -840,6 +840,7 @@ class _SearchScreenState extends State<SearchScreen> with AutomaticKeepAliveClie
     }
 
     return CustomScrollView(
+      key: key ?? const PageStorageKey('search_results_scroll'),
       slivers: [
         SliverPadding(
           padding: EdgeInsets.fromLTRB(22, 22, 22, 100.sh),

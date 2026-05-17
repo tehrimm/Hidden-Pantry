@@ -5,9 +5,12 @@ import 'package:flutter/services.dart';
 import 'package:hidden_pantry_app/core/utils/glass_dialog.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 import 'package:hidden_pantry_app/core/widgets/pattern_background.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:hidden_pantry_app/features/user/services/iap_service.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:hidden_pantry_app/core/utils/toaster.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hidden_pantry_app/features/user/services/subscription_service.dart';
 import 'package:hidden_pantry_app/core/widgets/app_dialog.dart';
 
 class PremiumPaywallScreen extends StatefulWidget {
@@ -27,10 +30,30 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
   static const Color _orange = Color(0xFFEF8A54);
   static const Color _bg = Color(0xFFFFF3EB);
 
+  bool _isEligibleForDiscount = true;
+  bool _hasExhaustedFreeTrial = false;
+  String? _activePlatformProductId;
+
   @override
   void initState() {
     super.initState();
     _loadProducts();
+    _checkDiscountEligibility();
+  }
+
+  Future<void> _checkDiscountEligibility() async {
+    final subService = SubscriptionService();
+    final exhaustedAnnual = await subService.hasExhaustedAnnualDiscount();
+    final exhaustedTrial = await subService.hasExhaustedFreeTrial();
+    final activeProductId = await subService.getActivePlatformProductId();
+    
+    if (mounted) {
+      setState(() {
+        _isEligibleForDiscount = !exhaustedAnnual;
+        _hasExhaustedFreeTrial = exhaustedTrial;
+        _activePlatformProductId = activeProductId;
+      });
+    }
   }
 
   Future<void> _loadProducts() async {
@@ -106,7 +129,7 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
                         _buildFeatureList(),
                         SizedBox(height: 30.sh),
                         _buildPlanToggle(),
-                        if (!_isAnnual) ...[
+                        if (!_isAnnual && !_hasExhaustedFreeTrial) ...[
                           SizedBox(height: 30.sh),
                           _buildTrialTimeline(),
                         ],
@@ -165,7 +188,7 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
   }
 
   Widget _buildTrialBadge() {
-    if (_isAnnual) return const SizedBox.shrink();
+    if (_isAnnual || _hasExhaustedFreeTrial) return const SizedBox.shrink();
     
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.sw, vertical: 8.sh),
@@ -330,7 +353,7 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
                   setState(() => _isAnnual = true);
                 }
               },
-              badge: "Save 5%",
+              badge: _isEligibleForDiscount ? "Save 5%" : null,
             ),
           ),
         ],
@@ -395,15 +418,19 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
           ),
           SizedBox(height: 20.sh),
           _PrimaryButton(
-            text: _isAnnual ? "Subscribe Now" : "Start 7-Day Free Trial",
+            text: _getButtonText(),
             onPressed: () => _handleSubscription(context),
             isPremium: true,
           ),
           SizedBox(height: 16.sh),
           Text(
             _isAnnual 
-              ? "Charged annually. No trial included."
-              : "No commitment. Cancel anytime before Day 7.",
+              ? (_isEligibleForDiscount 
+                  ? "5% discount applies for your first 2 years. Standard rate from Year 3."
+                  : "Charged annually. No trial included.")
+              : (_hasExhaustedFreeTrial 
+                  ? "Charged monthly. Cancel anytime." 
+                  : "No commitment. Cancel anytime before Day 7."),
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12.sp,
@@ -411,29 +438,94 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
               fontFamily: 'Satoshi',
             ),
           ),
+          SizedBox(height: 12.sh),
+          TextButton(
+            onPressed: () => _restorePurchases(context),
+            child: Text(
+              "Restore Purchases",
+              style: TextStyle(
+                fontSize: 13.sp,
+                color: _purple.withValues(alpha: 0.6),
+                fontWeight: FontWeight.w600,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
 
-  String _getPriceLabel() {
-    if (_iapService.products.isEmpty) return _isAnnual ? "Rs. 2850" : "Rs. 250";
-    final targetId = _isAnnual ? IAPService.premiumAnnual : IAPService.premiumMonthly;
+  void _restorePurchases(BuildContext context) async {
+    setState(() => _isLoadingProducts = true);
     try {
-      final product = _iapService.products.firstWhere((p) => p.id == targetId);
-      return product.price;
-    } catch (_) {
-      return _isAnnual ? "Rs. 2850" : "Rs. 250";
+      await _iapService.restorePurchases();
+      if (context.mounted) {
+        Toaster.show(context, "Subscriptions synced successfully!");
+        Navigator.pop(context); // Refresh state by closing paywall
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Toaster.show(context, "Nothing to restore.", isError: true);
+      }
+    } finally {
+      if (mounted) setState(() => _isLoadingProducts = false);
     }
   }
 
+  String _getPriceLabel() {
+    if (_isAnnual && !_isEligibleForDiscount) return "Rs. 3000";
+
+    if (_iapService.products.isEmpty) return _isAnnual ? "Rs. 2850" : "Rs. 250";
+    final targetId = _isAnnual ? IAPService.premiumAnnual : IAPService.premiumMonthly;
+    
+    for (var p in _iapService.products) {
+      if (p.id == targetId) return p.price;
+    }
+    
+    return _isAnnual ? "Rs. 2850" : "Rs. 250";
+  }
+
   String _getOriginalPriceLabel() {
+    if (!_isEligibleForDiscount) return "";
     if (_iapService.products.isEmpty) return "Rs. 3000";
     return _isAnnual ? "Rs. 3000" : ""; 
   }
 
+  String _getButtonText() {
+    final active = _iapService.activePlatformPurchase;
+    String? activeId = active?.productID ?? _activePlatformProductId;
+    bool isPurchased = active?.status == PurchaseStatus.purchased || _activePlatformProductId != null;
+
+    if (activeId != null && isPurchased) {
+      if (_isAnnual && activeId == IAPService.premiumMonthly) {
+        return "Upgrade to Annual";
+      }
+      if (!_isAnnual && activeId == IAPService.premiumAnnual) {
+        return "Switch to Monthly";
+      }
+      if (activeId == (_isAnnual ? IAPService.premiumAnnual : IAPService.premiumMonthly)) {
+        return "Current Plan";
+      }
+    }
+    
+    if (_isAnnual) return "Subscribe Now";
+    return _hasExhaustedFreeTrial ? "Subscribe Now" : "Start 7-Day Free Trial";
+  }
+
   void _handleSubscription(BuildContext context) async {
     HapticFeedback.heavyImpact();
+
+    final active = _iapService.activePlatformPurchase;
+    String? activeId = active?.productID ?? _activePlatformProductId;
+    final targetId = _isAnnual ? IAPService.premiumAnnual : IAPService.premiumMonthly;
+
+    if (activeId == targetId) {
+      Toaster.show(context, "You are already subscribed to this plan.");
+      return;
+    }
+
+
     
     if (_iapService.products.isEmpty) {
       setState(() => _isLoadingProducts = true);
@@ -441,25 +533,51 @@ class _PremiumPaywallScreenState extends State<PremiumPaywallScreen> {
       setState(() => _isLoadingProducts = false);
       
       if (_iapService.products.isEmpty && context.mounted) {
-        Toaster.show(context, "Store service not ready. Please try again in a moment.", isError: true);
+        await _iapService.buyTesterProduct(
+          productId: targetId,
+          context: context,
+        );
       }
       return;
     }
 
     try {
-      final targetId = _isAnnual ? IAPService.premiumAnnual : IAPService.premiumMonthly;
-      final product = _iapService.products.firstWhere(
-        (p) => p.id == targetId, 
-        orElse: () => _iapService.products.first
-      );
+      debugPrint("IAP [DEBUG]: Looking for $targetId in loaded products: ${_iapService.products.map((p) => p.id).toList()}");
+      
+      ProductDetails? product;
+      for (var p in _iapService.products) {
+        if (p.id == targetId) {
+          product = p;
+          break;
+        }
+      }
+
+      if (product == null) {
+        debugPrint("IAP [ERROR]: Target product $targetId not found in loaded products.");
+        Toaster.show(context, "Product not available. Please try again later.", isError: true);
+        return;
+      }
 
       // Pass the existing purchase if this is an upgrade/downgrade
+      PurchaseDetails? oldPurchaseParam = active;
+      if (oldPurchaseParam == null && activeId != null) {
+        // Build a recovered purchase if we only have Firestore cache
+        oldPurchaseParam = PurchaseDetails(
+          productID: activeId,
+          purchaseID: 'recovered_$activeId',
+          status: PurchaseStatus.purchased,
+          transactionDate: DateTime.now().millisecondsSinceEpoch.toString(),
+          verificationData: PurchaseVerificationData(localVerificationData: '', serverVerificationData: '', source: ''),
+        );
+      }
+
       await _iapService.buyProduct(
         product, 
-        oldPurchase: _iapService.activePlatformPurchase,
+        oldPurchase: oldPurchaseParam,
         context: context,
       );
     } catch (e) {
+      debugPrint("IAP [PAYWALL ERROR]: $e");
       if (context.mounted) {
         Toaster.show(context, "Unable to process payment. Please try again.", isError: true);
       }
@@ -609,15 +727,19 @@ class _PrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isCurrent = text == "Current Plan";
     return GestureDetector(
       onTap: onPressed,
       child: Container(
         width: double.infinity,
         height: 56.sh,
         decoration: BoxDecoration(
-          color: isPremium ? const Color(0xFF462F4D) : const Color(0xFFEF8A54),
+          color: isCurrent 
+              ? const Color(0xFF462F4D).withValues(alpha: 0.1)
+              : (isPremium ? const Color(0xFF462F4D) : const Color(0xFFEF8A54)),
           borderRadius: BorderRadius.circular(16.sw),
-          boxShadow: [
+          border: isCurrent ? Border.all(color: const Color(0xFF462F4D).withValues(alpha: 0.2), width: 1.5) : null,
+          boxShadow: isCurrent ? [] : [
             BoxShadow(
               color: (isPremium ? const Color(0xFF462F4D) : const Color(0xFFEF8A54)).withValues(alpha: 0.3),
               blurRadius: 15,
@@ -629,7 +751,7 @@ class _PrimaryButton extends StatelessWidget {
         child: Text(
           text,
           style: TextStyle(
-            color: Colors.white,
+            color: isCurrent ? const Color(0xFF462F4D).withValues(alpha: 0.6) : Colors.white,
             fontSize: 16.sp,
             fontWeight: FontWeight.w800,
             fontFamily: 'Satoshi',

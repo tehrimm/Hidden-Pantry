@@ -79,6 +79,8 @@ class _HiddenPantryAppState extends State<HiddenPantryApp> with WidgetsBindingOb
     WidgetsBinding.instance.addObserver(this);
     // Start global notification listener for foreground sounds/vibration
     NotificationService().startGlobalListener();
+    // Start global status listener for online/offline tracking
+    UserStatusService().startGlobalListener();
     // Initialize In-App Purchases
     IAPService().initialize();
     _hideSystemUI();

@@ -10,6 +10,7 @@ enum NotificationType {
   subscription_alert,
   admin_alert,
   moderation_report,
+  nutritionist_application,
 }
 
 class AppNotification {
@@ -85,6 +86,7 @@ class AppNotification {
       case 'subscription_alert': return NotificationType.subscription_alert;
       case 'admin_alert': return NotificationType.admin_alert;
       case 'moderation_report': return NotificationType.moderation_report;
+      case 'nutritionist_application': return NotificationType.nutritionist_application;
       default: return NotificationType.like;
     }
   }

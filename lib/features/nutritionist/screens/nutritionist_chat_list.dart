@@ -217,6 +217,7 @@ class _NutritionistChatListScreenState extends State<NutritionistChatListScreen>
 
       if (mounted) {
         Toaster.show(context, "Chat with ${client["name"]} deleted.");
+        setState(() => _isSubsLoading = false);
       }
       // No need to manually refresh, stream handles it
     } catch (e) {

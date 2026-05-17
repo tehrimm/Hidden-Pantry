@@ -3,6 +3,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:hidden_pantry_app/core/services/notification_service.dart';
 import 'dart:io';
 
 class NutritionistService {
@@ -61,6 +62,14 @@ class NutritionistService {
         "createdAt": FieldValue.serverTimestamp(),
         "updatedAt": FieldValue.serverTimestamp(),
       });
+
+      // 🔔 Notify Admins about new application
+      try {
+        final ns = NotificationService();
+        ns.notifyAdminsOfApplication(user.uid, fullName);
+      } catch (e) {
+        print("[NutritionistService] Error notifying admins: $e");
+      }
     }
 
     // ⚡ Fire Auth profile update in background — do NOT block navigation
@@ -238,19 +247,67 @@ class NutritionistService {
     final data = doc.data();
     final certificateUrl = data?["certificateUrl"] as String?;
 
-    // Step 3: Delete Firestore document
-    await _nutritionists.doc(uid).delete();
+    // Step 3: Cleanup Financial Collections (Earnings & Payouts)
+    try {
+      final batch = FirebaseFirestore.instance.batch();
+      
+      // 3.1. Delete earnings_history subcollection
+      final earningsSnap = await _nutritionists.doc(uid).collection("earnings_history").get();
+      for (var d in earningsSnap.docs) batch.delete(d.reference);
 
-    // Step 4: Delete certificate from storage if it exists
-    if (certificateUrl != null && certificateUrl.isNotEmpty) {
-      try {
-        await deleteCertificateByUrl(certificateUrl);
-      } catch (e) {
-        print("Warning: Failed to delete certificate: $e");
-      }
+      // 3.2. Delete top-level payout_history
+      final payoutSnap = await FirebaseFirestore.instance
+          .collection("payout_history")
+          .where("nutritionistId", isEqualTo: uid)
+          .get();
+      for (var d in payoutSnap.docs) batch.delete(d.reference);
+
+      // 3.3. Delete top-level withdrawal_requests
+      final withdrawalSnap = await FirebaseFirestore.instance
+          .collection("withdrawal_requests")
+          .where("nutritionistId", isEqualTo: uid)
+          .get();
+      for (var d in withdrawalSnap.docs) batch.delete(d.reference);
+
+      await batch.commit();
+    } catch (e) {
+      print("Warning: Financial data cleanup partially failed: $e");
     }
 
-    // Step 5: Delete Firebase Auth account
+    // Step 4: Cleanup Nutritionist Content (Subcollections)
+    try {
+      final batch = FirebaseFirestore.instance.batch();
+      final subColls = ['tips', 'subscription_plans', 'meal_plans', 'notifications'];
+      
+      for (var coll in subColls) {
+        final snap = await _nutritionists.doc(uid).collection(coll).get();
+        for (var d in snap.docs) batch.delete(d.reference);
+      }
+      
+      await batch.commit();
+    } catch (e) {
+      print("Warning: Content subcollection cleanup partially failed: $e");
+    }
+
+    // Step 5: Delete Firestore document
+    await _nutritionists.doc(uid).delete();
+
+    // Step 6: Delete Storage Files (Certificates & Post Media)
+    try {
+      // 6.1 Delete certificates folder
+      final certsFolder = FirebaseStorage.instance.ref().child('certificates/$uid');
+      final certsList = await certsFolder.listAll();
+      for (var item in certsList.items) await item.delete();
+
+      // 6.2 Delete post media folder
+      final postsFolder = FirebaseStorage.instance.ref().child('nutritionist_posts/$uid');
+      final postsList = await postsFolder.listAll();
+      for (var item in postsList.items) await item.delete();
+    } catch (e) {
+      print("Warning: Storage cleanup partially failed: $e");
+    }
+
+    // Step 7: Delete Firebase Auth account
     final user = FirebaseAuth.instance.currentUser;
     if (user != null && user.uid == uid) {
       await user.delete();

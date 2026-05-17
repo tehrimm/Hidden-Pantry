@@ -139,6 +139,10 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> with Si
       HapticFeedback.mediumImpact();
       
       final image = await _controller!.takePicture();
+      
+      // Pause preview AFTER capture to prevent Impeller 'Invalid external texture' crash on Android
+      // while we do heavy ML processing.
+      await _controller!.pausePreview();
       final file = File(image.path);
 
       final results = await _recognitionService.predict(file);
@@ -146,26 +150,63 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> with Si
       
       if (!mounted) return;
       
+      // Resume preview after we finish our heavy ML processing
+      await _controller!.resumePreview();
+      
+      if (!mounted) return;
+      
       setState(() => _isProcessingAnimate = false);
 
       if (results.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Ingredient not recognized.")),
-        );
         setState(() => _isProcessing = false);
+        if (mounted) {
+          final err = _recognitionService.lastError;
+          if (err.isNotEmpty) {
+            // Show the actual exception if there was one
+            showDialog(
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text("Model Incompatible"),
+                content: const Text(
+                  "The machine learning model (ingredient_detector.tflite) was exported using a newer version of TensorFlow (2.16+) than this app's engine supports.\n\n"
+                  "This error happens before the camera even looks at your image. To fix this permanently, the .tflite model must be re-exported using TensorFlow 2.14.\n\n"
+                  "For now, please type the ingredient manually."
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _showManualEntryDialog();
+                    },
+                    child: const Text("Type Manually"),
+                  )
+                ],
+              ),
+            );
+          } else {
+            // If no exception but just zero confidence/empty results
+            _showManualEntryDialog();
+          }
+        }
         return;
       }
 
       final top1LabelClean = _cleanAndValidate(results.first.label);
       
-      if (results.length == 1 || results.first.confidence > 0.8) {
+      // Auto-confirm only when very confident (>=60%) and it's the only result
+      if (results.length == 1 && results.first.confidence >= 0.6) {
         _showResultDialog(top1LabelClean, results.first.confidence, file);
       } else {
         _showSelectionDialog(results, file);
       }
     } catch (e) {
       print("Error capturing picture: $e");
-      setState(() => _isProcessing = false);
+      try {
+        await _controller?.resumePreview();
+      } catch (_) {}
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
     }
   }
 
@@ -315,6 +356,84 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> with Si
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(20),
         duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  void _showManualEntryDialog() {
+    final textCtrl = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
+          decoration: const BoxDecoration(
+            color: Color(0xFFFFF3EB),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Type Ingredient",
+                style: TextStyle(
+                  fontFamily: "Satoshi",
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF462F4D),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: textCtrl,
+                autofocus: true,
+                textCapitalization: TextCapitalization.words,
+                style: const TextStyle(color: Color(0xFF462F4D), fontFamily: "Satoshi"),
+                decoration: InputDecoration(
+                  hintText: "e.g. Tomato, Garlic, Milk...",
+                  hintStyle: TextStyle(
+                    color: const Color(0xFF462F4D).withValues(alpha: 0.4),
+                    fontFamily: "Satoshi",
+                  ),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    final val = textCtrl.text.trim();
+                    if (val.isNotEmpty) {
+                      Navigator.pop(ctx);
+                      _onIngredientAdded(val.toLowerCase());
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFEF8A54),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text(
+                    "ADD",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontFamily: "Satoshi"),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

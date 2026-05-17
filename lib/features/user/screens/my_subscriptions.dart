@@ -484,6 +484,48 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
                   ),
                 ),
                 
+                // Upgrade / Change Plan Button
+                if (isActive && !isCancelled) ...[
+                  Container(
+                    margin: EdgeInsets.fromLTRB(26.sw, 0, 26.sw, 12.sh),
+                    child: GestureDetector(
+                      onTap: () {
+                        HapticFeedback.mediumImpact();
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => const PremiumPaywallScreen()),
+                        );
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        height: 52.sh,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(colors: [_orange, _orange.withValues(alpha: 0.8)]),
+                          borderRadius: BorderRadius.circular(18.sw),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _orange.withValues(alpha: 0.2),
+                              blurRadius: 12,
+                              offset: const Offset(0, 6),
+                            )
+                          ],
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Upgrade / Change Plan',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.w800,
+                            fontFamily: 'Satoshi',
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+
                 // Cancel Button
                 if (isActive && !isCancelled) ...[
                   Container(
@@ -873,15 +915,35 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
   }
 
   Future<void> _confirmCancel(String docId, DateTime? expiry) async {
+    final dateStr = expiry != null ? _formatDate(expiry) : "the end of the current period";
     await AppDialog.show(
       context: context,
       title: "Cancel Subscription",
-      contentText: "To cancel your subscription, please open the Google Play Store, go to 'Subscriptions' in your account menu, and select Hidden Pantry.",
+      contentText: "Are you sure you want to cancel your subscription? You will continue to have full access until $dateStr, and you won't be charged again.",
       actions: [
-        ElevatedButton(
+        TextButton(
           onPressed: () => Navigator.pop(context),
-          style: ElevatedButton.styleFrom(backgroundColor: _orange, foregroundColor: Colors.white),
-          child: const Text("Got it"),
+          child: Text("Keep Plan", style: TextStyle(color: _purple, fontWeight: FontWeight.bold)),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            Navigator.pop(context);
+            try {
+              await FirebaseFirestore.instance.collection('subscriptions').doc(docId).update({
+                'isCancelled': true,
+                'cancelledAt': FieldValue.serverTimestamp(),
+              });
+              if (mounted) {
+                Toaster.show(context, "Your plan will remain active until $dateStr.");
+              }
+            } catch (e) {
+              if (mounted) {
+                Toaster.show(context, "Failed to cancel subscription: $e", isError: true);
+              }
+            }
+          },
+          style: ElevatedButton.styleFrom(backgroundColor: _red, foregroundColor: Colors.white),
+          child: const Text("Yes, Cancel"),
         ),
       ],
     );
@@ -891,12 +953,31 @@ class _MySubscriptionsScreenState extends State<MySubscriptionsScreen> {
     await AppDialog.show(
       context: context,
       title: "Renew Subscription",
-      contentText: "To resume your subscription, please visit the Google Play Store 'Subscriptions' section.",
+      contentText: "Would you like to renew and resume your subscription? Your billing will continue as normal.",
       actions: [
-        ElevatedButton(
+        TextButton(
           onPressed: () => Navigator.pop(context),
+          child: Text("Cancel", style: TextStyle(color: _purple, fontWeight: FontWeight.bold)),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            Navigator.pop(context);
+            try {
+              await FirebaseFirestore.instance.collection('subscriptions').doc(docId).update({
+                'isCancelled': false,
+                'reactivatedAt': FieldValue.serverTimestamp(),
+              });
+              if (mounted) {
+                Toaster.show(context, "Your subscription has been successfully reactivated!");
+              }
+            } catch (e) {
+              if (mounted) {
+                Toaster.show(context, "Failed to renew subscription: $e", isError: true);
+              }
+            }
+          },
           style: ElevatedButton.styleFrom(backgroundColor: _orange, foregroundColor: Colors.white),
-          child: const Text("Got it"),
+          child: const Text("Renew Now"),
         ),
       ],
     );

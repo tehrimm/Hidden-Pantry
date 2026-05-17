@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -25,6 +26,7 @@ import 'package:hidden_pantry_app/core/services/user_status_service.dart';
 import 'package:hidden_pantry_app/features/user/services/iap_service.dart';
 import 'package:hidden_pantry_app/core/widgets/app_dialog.dart';
 import 'package:hidden_pantry_app/core/services/moderation_service.dart';
+import 'package:hidden_pantry_app/features/user/services/subscription_service.dart';
 
 
 class NutritionistDetailsScreen extends StatefulWidget {
@@ -145,16 +147,18 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
 
           if (isActive) {
             int currentDocTier = 0;
-            dynamic rawTier = data["tierLevel"];
-            if (rawTier is num) {
-              currentDocTier = rawTier.toInt();
-            } else if (rawTier is String) {
-              currentDocTier = int.tryParse(rawTier) ?? 0;
-            }
+            // 🔍 INTELLIGENT TIER & BENEFIT DETECTION
+            
+            // Step 1: Initial tier detection from product ID (as a baseline)
+            final String prodId = (data["productId"] ?? data["planId"] ?? "").toString().toLowerCase();
+            if (prodId.contains("platinum")) currentDocTier = 3;
+            else if (prodId.contains("gold")) currentDocTier = 2;
+            else if (prodId.contains("silver")) currentDocTier = 1;
 
-            // Fetch plan details to check for Priority Support benefit
+            // Step 2: Fetch the specific plan document for STRICT benefit verification
             if (data["planId"] != null) {
               try {
+                // Try finding by ID first
                 var planDoc = await FirebaseFirestore.instance
                     .collection("nutritionists")
                     .doc(widget.nutritionistId)
@@ -169,43 +173,40 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
                       .doc(widget.nutritionistId)
                       .collection("subscription_plans")
                       .where("title", isEqualTo: data["planId"])
-                      .limit(1)
-                      .get();
-                  if (querySnap.docs.isNotEmpty) {
-                    // Force cast to DocumentSnapshot (QueryDocumentSnapshot implements it)
-                    planDoc = querySnap.docs.first;
-                  }
+                      .limit(1).get();
+                  if (querySnap.docs.isNotEmpty) planDoc = querySnap.docs.first;
                 }
 
                 if (planDoc.exists) {
                   final pData = planDoc.data();
                   if (pData != null) {
-                    // Check for Priority Support in benefits
+                    // 🚨 STRICT CHECK: Only enable chat if "Priority Support" is explicitly listed
                     final List? benefits = pData["benefits"];
                     if (benefits != null) {
-                      final hasChat = benefits.any((b) {
-                        final String title = (b is Map ? (b["title"] ?? b["text"] ?? "") : b).toString().toLowerCase();
-                        return title.contains("priority support") || title.contains("chat access") || title.contains("direct chat");
+                      prioritySupportFound = benefits.any((b) {
+                        final String text = (b is Map ? (b["title"] ?? b["text"] ?? "") : b).toString().toLowerCase();
+                        return text.contains("priority support") || 
+                               text.contains("chat access") || 
+                               text.contains("direct chat") ||
+                               text.contains("one-on-one");
                       });
-                      if (hasChat) prioritySupportFound = true;
                     }
 
+                    // Update tier from doc if available
                     dynamic pTier = pData["tierLevel"];
-                    if (pTier is num) {
-                      currentDocTier = pTier.toInt();
-                    } else if (pTier == null) {
-                      final title = (pData["title"] ?? "").toString().toLowerCase();
-                      if (title.contains("platinum")) {
-                        currentDocTier = 3;
-                      } else if (title.contains("gold")) {
-                        currentDocTier = 2;
-                      } else {
-                        currentDocTier = 1;
-                      }
-                    }
+                    if (pTier is num) currentDocTier = pTier.toInt();
                   }
+                } else {
+                  // Fallback: If plan doc is missing (e.g. deleted), use productId as a conservative guess
+                  if (currentDocTier >= 2) prioritySupportFound = true;
                 }
-              } catch (_) {}
+              } catch (_) {
+                // On error, fallback to productId guess
+                if (currentDocTier >= 2) prioritySupportFound = true;
+              }
+            } else {
+                // No planId? Use productId guess
+                if (currentDocTier >= 2) prioritySupportFound = true;
             }
 
             if (currentDocTier == 0) currentDocTier = 1;
@@ -343,12 +344,15 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
               ),
             ],
           ),
-          floatingActionButton: (!_isLoadingSubscription && _isSubscribed && _hasPrioritySupport)
-              ? FloatingActionButton(
-                  onPressed: _openChat,
-                  backgroundColor: orange,
-                  elevation: 4.sw,
-                  child: Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 24.sw),
+          floatingActionButton: (!_isLoadingSubscription && ((_isSubscribed && _hasPrioritySupport) || _isMeNutritionist))
+              ? Padding(
+                  padding: EdgeInsets.only(right: 14.sw, bottom: 20.sh),
+                  child: FloatingActionButton(
+                    onPressed: _openChat,
+                    backgroundColor: orange,
+                    elevation: 4.sw,
+                    child: Icon(Icons.chat_bubble_rounded, color: Colors.white, size: 24.sw),
+                  ),
                 )
               : null,
         ),
@@ -1785,8 +1789,24 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
        final iap = IAPService();
        await iap.fetchProducts();
 
+       // 🛡️ BLOCK MULTIPLE NUTRITIONISTS (Expo Request)
+       final subService = SubscriptionService();
+       final hasAnySub = await subService.hasAnyActiveNutritionistSubscription();
+       final hasThisSub = await subService.hasNutritionistAccess(widget.nutritionistId);
+       
+       if (hasAnySub && !hasThisSub) {
+         if (mounted) {
+           setState(() => _isLoadingSubscription = false);
+           Toaster.show(
+             context, 
+             "You already have an active subscription with another nutritionist. Please wait for it to expire or cancel it first.",
+             isError: true,
+           );
+         }
+         return;
+       }
+
        final int tier = plan['tierLevel'] ?? 1;
-       final String interval = (plan['interval'] ?? 'Monthly').toString().toLowerCase();
        
        String productId = IAPService.nutritionistSilverMonthly;
        
@@ -1798,14 +1818,36 @@ class _NutritionistDetailsScreenState extends State<NutritionistDetailsScreen> w
          productId = IAPService.nutritionistPlatinumMonthly;
        }
 
-       final product = iap.products.firstWhere(
-         (p) => p.id == productId,
-         orElse: () => throw Exception("Product $productId not found in store"),
-       );
+       // EXPO BYPASS: If sideloaded or not a tester, Google Play will return empty products.
+       // We catch this and use our tester bypass to instantly unlock the sub for testing.
+       if (iap.products.isEmpty) {
+         await iap.buyTesterProduct(
+           productId: productId,
+           nutritionistId: widget.nutritionistId,
+           planId: plan['id'],
+           context: context,
+           popOnSuccess: false, // Prevents kicking the user out of the Nutritionist screen
+         );
+         if (mounted) setState(() => _isLoadingSubscription = false);
+         return;
+       }
+
+        ProductDetails? product;
+        for (var p in iap.products) {
+          if (p.id == productId) {
+            product = p;
+            break;
+          }
+        }
+
+        if (product == null) {
+          throw Exception("Product $productId not found in store");
+        }
 
        await iap.buyProduct(
          product, 
          nutritionistId: widget.nutritionistId, 
+         planId: plan['id'],
          oldPurchase: iap.getActiveNutritionistPurchase(widget.nutritionistId),
          context: context
        );

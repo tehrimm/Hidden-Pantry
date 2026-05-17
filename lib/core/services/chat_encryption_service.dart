@@ -86,10 +86,31 @@ class ChatEncryptionService {
         'q': priv.q.toString(),
       });
 
-      final publicKeyString = "${pub.n}:${pub.publicExponent}";
+      final publicKeyString = _publicKeyToString(pub);
 
       await _storage.write(key: keyPath, value: privateKeyJson);
       await _syncPublicKeyToFirestore(user.uid, publicKeyString);
+    } else {
+      // ⚡ SELF-HEAL: Even if local keys are valid, verify they match what's on the server
+      // This fixes "Decryption Failed" when switching between Debug/Deployed builds
+      try {
+        final Map<String, dynamic> keyMap = json.decode(jsonKeyData!);
+        final priv = _parsePrivateKeyFromJson(keyMap);
+        final pub = _derivePublicKey(priv);
+        final localPubStr = _publicKeyToString(pub);
+        
+        // Fetch server key
+        final nutDoc = await _firestore.collection('nutritionists').doc(user.uid).get();
+        final userDoc = await _firestore.collection('users').doc(user.uid).get();
+        final serverPubStr = nutDoc.data()?['chatPublicKey'] ?? userDoc.data()?['chatPublicKey'];
+
+        if (serverPubStr != localPubStr) {
+          debugPrint("RSA Sync: Server key mismatch detected. Re-syncing...");
+          await _syncPublicKeyToFirestore(user.uid, localPubStr);
+        }
+      } catch (e) {
+        debugPrint("RSA Sync Verification failed: $e");
+      }
     }
   }
 
@@ -109,6 +130,10 @@ class ChatEncryptionService {
 
   pc.RSAPublicKey _derivePublicKey(pc.RSAPrivateKey priv) {
     return pc.RSAPublicKey(priv.n!, priv.publicExponent!);
+  }
+
+  String _publicKeyToString(pc.RSAPublicKey pub) {
+    return "${pub.n}:${pub.publicExponent}";
   }
 
   Future<void> _syncPublicKeyToFirestore(String uid, String publicKeyString) async {
@@ -158,7 +183,20 @@ class ChatEncryptionService {
 
       // RSA Logic for sender (self-decryption)
       String? encKeySender;
-      if (senderPubStr != null && senderPubStr.contains(":")) {
+      if (senderPubStr == null || !senderPubStr.contains(":")) {
+        // ⚡ FIX: If Firestore sync is pending, try to derive public key from local storage
+        try {
+          final keyData = await _storage.read(key: '$_privateKeyPrefix${user.uid}');
+          if (keyData != null && keyData.startsWith('{')) {
+            final priv = _parsePrivateKeyFromJson(json.decode(keyData));
+            final pub = _derivePublicKey(priv);
+            final rsaSender = encrypt.Encrypter(encrypt.RSA(publicKey: pub));
+            encKeySender = rsaSender.encrypt(keyPayload).base64;
+          }
+        } catch (e) {
+          debugPrint("Local public key derivation failed: $e");
+        }
+      } else {
         final rsaSender = encrypt.Encrypter(encrypt.RSA(publicKey: _parsePublicKeyFromString(senderPubStr)));
         encKeySender = rsaSender.encrypt(keyPayload).base64;
       }

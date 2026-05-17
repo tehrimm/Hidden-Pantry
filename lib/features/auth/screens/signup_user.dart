@@ -660,7 +660,7 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
                                         child: Text(
                                           "Terms and Conditions",
                                           style: TextStyle(
-                                            color: purple,
+                                            color: btnOrange,
                                             fontSize: 12.sp,
                                             fontWeight: FontWeight.w900,
                                             fontFamily: "Satoshi",

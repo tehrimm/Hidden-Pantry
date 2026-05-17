@@ -887,29 +887,48 @@ class RecipeService {
       return [];
     }
     
-    final searchKey = query.toLowerCase();
+    final searchKey = query.toLowerCase().trim();
     
     try {
-      // 1. Initial query by name if provided
-      Query<Map<String, dynamic>> baseQuery = _firestore.collection('recipes');
-      
-      if (searchKey.isNotEmpty) {
-        baseQuery = baseQuery
-            .where('name_search', isGreaterThanOrEqualTo: searchKey)
-            .where('name_search', isLessThanOrEqualTo: '$searchKey\uf8ff');
-      }
+      // 1. Initial query: Fetch a larger pool for local text filtering
+      Query<Map<String, dynamic>> baseQuery = _firestore.collection('recipes')
+          .limit(limit * 20); // Fetch up to 400 to allow deep local filtering
 
-      // 2. Filter out nutritionist recipes
-      // Note: We do this locally to avoid hiding recipes where the field is missing
-      final snap = await baseQuery.limit(limit * 5).get(); // Fetch more for local filtering
+      // 2. Filter out private recipes (unless owned by the current user)
+      final snap = await baseQuery.get(); 
+      final currentUserId = FirebaseAuth.instance.currentUser?.uid;
           
       var results = snap.docs
           .map((doc) => Recipe.fromJson(doc.data()))
-          .where((r) {
-            // Only show recipes that are explicitly marked as public
-            return r.isPublic;
-          })
+          .where((r) => r.isPublic || (currentUserId != null && r.authorId == currentUserId))
           .toList();
+
+      // If the user is logged in, ensure we ALSO explicitly fetch all of their own recipes
+      // because the arbitrary limit(400) above might have missed them!
+      if (currentUserId != null) {
+        final mySnap = await _firestore.collection('recipes')
+            .where('author_id', isEqualTo: currentUserId)
+            .get();
+        final myRecipes = mySnap.docs.map((doc) => Recipe.fromJson(doc.data())).toList();
+        
+        // Merge without duplicates
+        final existingIds = results.map((r) => r.id).toSet();
+        for (var r in myRecipes) {
+          if (!existingIds.contains(r.id)) {
+            results.add(r);
+            existingIds.add(r.id);
+          }
+        }
+      }
+
+      // 2.5 Local Substring Search (Because Firestore doesn't support .contains())
+      if (searchKey.isNotEmpty) {
+        results = results.where((r) => 
+          r.name.toLowerCase().contains(searchKey) ||
+          r.ingredients.any((i) => i.name.toLowerCase().contains(searchKey)) ||
+          r.tags.any((t) => t.toLowerCase().contains(searchKey))
+        ).toList();
+      }
 
       // 3. Local filtering for ingredients/tags/maxMinutes
       if (maxMinutes != null) {
@@ -926,7 +945,11 @@ class RecipeService {
       if (ingredients != null && ingredients.isNotEmpty) {
         results = results.where((r) {
           final rIngs = r.ingredients.map((i) => i.name.toLowerCase()).toList();
-          return ingredients.every((si) => rIngs.any((ri) => ri.contains(si.toLowerCase())));
+          final rName = r.name.toLowerCase();
+          return ingredients.every((si) {
+            final s = si.toLowerCase();
+            return rIngs.any((ri) => ri.contains(s)) || rName.contains(s);
+          });
         }).toList();
       }
           
@@ -1201,8 +1224,7 @@ class RecipeService {
     return true;
   }
 
-  /// NEW: Fetches a specialized "Today's Pick" strictly based on a daily theme
-  Future<Recipe?> getTodaysPick({List<String>? allergies}) async {
+  Future<Recipe?> getTodaysPick({List<String>? allergies, String? selectedTag}) async {
     try {
       final now = DateTime.now();
       final day = now.weekday;
@@ -1222,11 +1244,13 @@ class RecipeService {
 
       List<Recipe> pool = [];
 
-      // 1. Try to fetch from API using the exact theme tag
+      // 1. Try to fetch from API using the exact theme tag and selected tag
       try {
+        final queryStr = (selectedTag != null && selectedTag != "All") ? themeTag : "popular";
+        final tagStr = (selectedTag != null && selectedTag != "All") ? selectedTag : themeTag;
         pool = await _api.recommend(
-          query: "popular", // Asks backend to sort by popularity/rating
-          tag: themeTag,
+          query: queryStr, 
+          tag: tagStr,
           topK: 20,
           allergies: allergies ?? [],
         );
@@ -1253,12 +1277,13 @@ class RecipeService {
            recipes = recipes.where((r) => _passesAllergyFilter(r, allergies)).toList();
         }
 
-        // Filter by the specific daily theme and ensure it has an image!
-        pool = recipes.where((r) => 
-          (r.imageUrl != null && r.imageUrl!.trim().isNotEmpty) &&
-          (r.tags.any((t) => t.toLowerCase() == themeTag.toLowerCase()) ||
-           r.name.toLowerCase().contains(themeTag.toLowerCase()))
-        ).toList();
+        // Filter by the specific daily theme, the selected UI tag, and ensure it has an image!
+        pool = recipes.where((r) {
+          final hasImage = r.imageUrl != null && r.imageUrl!.trim().isNotEmpty;
+          final matchesTheme = r.tags.any((t) => t.toLowerCase() == themeTag.toLowerCase()) || r.name.toLowerCase().contains(themeTag.toLowerCase());
+          final matchesSelected = selectedTag == null || selectedTag == "All" || r.tags.any((t) => t.toLowerCase() == selectedTag.toLowerCase());
+          return hasImage && matchesTheme && matchesSelected;
+        }).toList();
       }
 
       // 3. Select the recipe from the pool
@@ -1269,11 +1294,10 @@ class RecipeService {
         // Take the top 5 highest-rated recipes in this theme
         final topCandidates = pool.take(5).toList();
 
-        // Cycle through the top 5 based on the week of the month.
-        // This ensures they see the absolute highest rated, but it changes slightly 
-        // each week so they don't see the exact same dessert every single Monday forever.
-        final weekOfMonth = (now.day ~/ 7); 
-        final index = weekOfMonth % topCandidates.length;
+        // Cycle through the top 5 candidates based on the day of the year.
+        // This ensures the pick changes EVERY day, even if the top pool is similar.
+        final dayOfYear = now.difference(DateTime(now.year, 1, 1)).inDays;
+        final index = dayOfYear % topCandidates.length;
 
         return topCandidates[index];
       }
@@ -1296,7 +1320,9 @@ class RecipeService {
          // Ensure fallback recipe has an image
          recipes = recipes.where((r) => r.imageUrl != null && r.imageUrl!.trim().isNotEmpty).toList();
          if (recipes.isNotEmpty) {
-            return recipes.first;
+            final dayOfYear = now.difference(DateTime(now.year, 1, 1)).inDays;
+            final index = dayOfYear % recipes.length;
+            return recipes[index];
          }
       }
 

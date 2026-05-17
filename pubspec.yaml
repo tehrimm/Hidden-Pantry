@@ -2,7 +2,7 @@ name: hidden_pantry_app
 description: "A new Flutter project."
 publish_to: "none"
 
-version: 1.0.4+7
+version: 1.0.7+10
 
 environment:
   sdk: ^3.9.2
@@ -44,6 +44,8 @@ dependencies:
   flutter_secure_storage: ^9.2.2
   share_plus: ^10.1.0
   image_cropper: ^12.2.1
+  google_mlkit_text_recognition: ^0.14.0
+  cached_network_image: ^3.4.1
 
 
 dev_dependencies:
@@ -186,6 +188,3 @@ flutter:
     - assets/illustration/salad.png
     - assets/illustration/saves.png
     - assets/illustration/meal.png
-
-
-    

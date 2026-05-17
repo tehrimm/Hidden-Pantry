@@ -854,79 +854,82 @@ class _ChatInterfaceState extends State<ChatInterface> {
     _setTypingStatus(false);
     _typingTimer?.cancel();
 
-    _msgCtrl.clear();
-
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final chatRef = FirebaseFirestore.instance.collection("chats").doc(_chatId);
-    
-    // Determine update logic based on who is sending
-    final Map<String, dynamic> updateData = {
-      "lastMessage": text,
-      "lastMessageTime": FieldValue.serverTimestamp(),
-    };
-    
-    // If we are nutritionist, we set userUnread + 1, and reset nutritionistUnread
-    // If we are user, we set nutritionistUnread + 1, and reset userUnread
-    // Always ensure participants are properly set/merged for both parties
-    updateData["participants"] = FieldValue.arrayUnion([user.uid, widget.nutritionistId, widget.clientId ?? ""]);
-
-    if (_isNutritionist) {
-       updateData["userUnread"] = FieldValue.increment(1);
-       updateData["nutritionistUnread"] = 0;
-    } else {
-       updateData["nutritionistUnread"] = FieldValue.increment(1);
-       updateData["userUnread"] = 0;
-    }
-
-    await chatRef.set(updateData, SetOptions(merge: true));
-
-    // Encryption Layer
-    final recipientId = _isNutritionist ? widget.clientId : widget.nutritionistId;
-    if (recipientId != null) {
-      final encryptedData = await ChatEncryptionService().encryptMessage(text, recipientId);
-      debugPrint("Encryption check: key matches ${encryptedData['serverKeyMatch']}");
+    try {
+      final chatRef = FirebaseFirestore.instance.collection("chats").doc(_chatId);
       
-      await chatRef.collection("messages").add({
-        "text": encryptedData['isEncrypted'] == 'true' ? "[Encrypted]" : text, // Fallback for old apps
-        "cipherText": encryptedData['cipherText'],
-        "encryptedKey": encryptedData['encryptedKey'],
-        "senderEncryptedKey": encryptedData['senderEncryptedKey'], // Added for self-decryption
-        "isEncrypted": encryptedData['isEncrypted'],
-        "senderId": user.uid,
-        "timestamp": FieldValue.serverTimestamp(),
-      });
-    }
-
-    // Trigger Notification
-    if (recipientId != null && recipientId.isNotEmpty) {
-      String senderName = user.displayName ?? "";
+      // Determine update logic based on who is sending
+      final Map<String, dynamic> updateData = {
+        "lastMessage": text,
+        "lastMessageTime": FieldValue.serverTimestamp(),
+      };
       
-      // If display name is missing, fetch from Firestore
-      if (senderName.isEmpty) {
-        try {
-          final collection = _isNutritionist ? 'nutritionists' : 'users';
-          final doc = await FirebaseFirestore.instance.collection(collection).doc(user.uid).get();
-          final data = doc.data();
-          if (data != null) {
-            senderName = data['fullName'] ?? data['name'] ?? data['userName'] ?? "";
-          }
-        } catch (_) {}
+      updateData["participants"] = FieldValue.arrayUnion([user.uid, widget.nutritionistId, widget.clientId ?? ""]);
+
+      if (_isNutritionist) {
+         updateData["userUnread"] = FieldValue.increment(1);
+         updateData["nutritionistUnread"] = 0;
+      } else {
+         updateData["nutritionistUnread"] = FieldValue.increment(1);
+         updateData["userUnread"] = 0;
       }
 
-      if (senderName.isEmpty) {
-        senderName = _isNutritionist ? "Nutritionist" : "User";
+      await chatRef.set(updateData, SetOptions(merge: true));
+
+      // Encryption Layer
+      final recipientId = _isNutritionist ? widget.clientId : widget.nutritionistId;
+      if (recipientId != null) {
+        final encryptedData = await ChatEncryptionService().encryptMessage(text, recipientId);
+        
+        await chatRef.collection("messages").add({
+          "text": encryptedData['isEncrypted'] == 'true' ? "[Encrypted]" : text,
+          "cipherText": encryptedData['cipherText'],
+          "encryptedKey": encryptedData['encryptedKey'],
+          "senderEncryptedKey": encryptedData['senderEncryptedKey'],
+          "isEncrypted": encryptedData['isEncrypted'],
+          "senderId": user.uid,
+          "timestamp": FieldValue.serverTimestamp(),
+        });
       }
 
-      NotificationService().sendNotification(
-        recipientId: recipientId,
-        title: "New Message from $senderName",
-        body: "[Encrypted Message]", // Hide content for E2EE privacy
-        type: NotificationType.chat_message,
-        targetId: _chatId,
-        recipientRole: _isNutritionist ? 'user' : 'nutritionist',
-      );
+      // Clear controller only on success
+      _msgCtrl.clear();
+
+      // Trigger Notification
+      if (recipientId != null && recipientId.isNotEmpty) {
+        String senderName = user.displayName ?? "";
+        
+        if (senderName.isEmpty) {
+          try {
+            final collection = _isNutritionist ? 'nutritionists' : 'users';
+            final doc = await FirebaseFirestore.instance.collection(collection).doc(user.uid).get();
+            final data = doc.data();
+            if (data != null) {
+              senderName = data['fullName'] ?? data['name'] ?? data['userName'] ?? "";
+            }
+          } catch (_) {}
+        }
+
+        if (senderName.isEmpty) {
+          senderName = _isNutritionist ? "Nutritionist" : "User";
+        }
+
+        NotificationService().sendNotification(
+          recipientId: recipientId,
+          title: "New Message from $senderName",
+          body: "[Encrypted Message]",
+          type: NotificationType.chat_message,
+          targetId: _chatId,
+          recipientRole: _isNutritionist ? 'user' : 'nutritionist',
+        );
+      }
+    } catch (e) {
+      debugPrint("Error sending message: $e");
+      if (mounted) {
+        Toaster.show(context, "Failed to send message. Please try again.", isError: true);
+      }
     }
   }
 
@@ -1979,20 +1982,49 @@ class _ChatInterfaceState extends State<ChatInterface> {
   }
 }
 
-class _DecryptedMessage extends StatelessWidget {
+class _DecryptedMessage extends StatefulWidget {
   final Map<String, dynamic> data;
   final TextStyle style;
   const _DecryptedMessage({required this.data, required this.style});
 
   @override
+  State<_DecryptedMessage> createState() => _DecryptedMessageState();
+}
+
+class _DecryptedMessageState extends State<_DecryptedMessage> {
+  Future<String>? _decryptionFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _initFuture();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DecryptedMessage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // If the data map changes (e.g. new message content), re-init the future
+    if (widget.data['cipherText'] != oldWidget.data['cipherText']) {
+      _initFuture();
+    }
+  }
+
+  void _initFuture() {
+    if (widget.data['isEncrypted'] == 'true') {
+      _decryptionFuture = ChatEncryptionService().decryptMessage(widget.data);
+    } else {
+      _decryptionFuture = null;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    // If not encrypted, return plain text
-    if (data['isEncrypted'] != 'true') {
-      return Text(data['text'] ?? "", style: style);
+    if (_decryptionFuture == null) {
+      return Text(widget.data['text'] ?? "", style: widget.style);
     }
 
     return FutureBuilder<String>(
-      future: ChatEncryptionService().decryptMessage(data),
+      future: _decryptionFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return SizedBox(
@@ -2001,12 +2033,12 @@ class _DecryptedMessage extends StatelessWidget {
             child: LinearProgressIndicator(
               backgroundColor: Colors.transparent,
               valueColor: AlwaysStoppedAnimation<Color>(
-                style.color!.withValues(alpha:0.3),
+                widget.style.color!.withValues(alpha: 0.3),
               ),
             ),
           );
         }
-        return Text(snapshot.data ?? "[Encrypted]", style: style);
+        return Text(snapshot.data ?? "[Encrypted]", style: widget.style);
       },
     );
   }

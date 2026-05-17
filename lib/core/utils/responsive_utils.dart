@@ -6,6 +6,7 @@ class ResponsiveUtils {
   static double wScale = 1.0;
   static double hScale = 1.0;
   static TextScaler textScaler = TextScaler.noScaling;
+  static double maxBottomPadding = 0.0; // Cached to prevent keyboard shrinking bugs
 
   // Design dimensions (e.g., iPhone 14)
   static const double designWidth = 393.0;
@@ -19,6 +20,13 @@ class ResponsiveUtils {
     wScale = (screenWidth / designWidth).clamp(0.95, 2.0);
     hScale = (screenHeight / designHeight).clamp(0.95, 2.0);
     textScaler = mq.textScaler;
+
+    // Cache the maximum bottom padding. Samsung devices dynamically shrink
+    // viewPadding to 0 when the keyboard opens, causing the nav bar to jump.
+    final currentBottomPadding = mq.viewPadding.bottom;
+    if (currentBottomPadding > maxBottomPadding) {
+      maxBottomPadding = currentBottomPadding;
+    }
   }
 
   /// Scale width based on design width

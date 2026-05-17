@@ -65,8 +65,8 @@ class _StartingScreenState extends State<StartingScreen>
       debugPrint('[StartingScreen] Timer elapsed - checking auth state');
       if (!mounted) return;
 
-      // Ensure Firebase has fully restored the session from disk before checking
-      final user = await FirebaseAuth.instance.authStateChanges().first;
+      // Safely grab the current user directly rather than waiting on the stream
+      final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         // 🛑 Check for suspension first
         try {
