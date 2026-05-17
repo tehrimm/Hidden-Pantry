@@ -43,8 +43,8 @@ class ChatEncryptionService {
   }
 
   // Constants
-  static const String _privateKeyPrefix = 'chat_private_key_v2_';
-  static const String _publicKeyPrefix = 'chat_public_key_v2_';
+  static const String _privateKeyPrefix = 'chat_private_key_';
+  static const String _publicKeyPrefix = 'chat_public_key_';
 
   // --- RSA Initialization & Storage ---
 

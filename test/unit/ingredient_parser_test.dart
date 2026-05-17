@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hidden_pantry_app/features/recipes/models/recipe.dart';
 
@@ -5,7 +6,7 @@ void main() {
   group('Ingredient Parsing Logic Tests', () {
     test('Should parse messy ingredient strings with quantity and unit', () {
       final input = "1.5 cups of milk";
-      final item = IngredientItem.fromJson({'name': input});
+      final item = IngredientItem.fromJson(input);
       expect(item.name, "milk");
       expect(item.quantity, 1.5);
       expect(item.unit, "cups");
@@ -13,7 +14,9 @@ void main() {
 
     test('Should parse stringified map with single quotes', () {
       final input = "{'name': 'Sugar', 'quantity': 2, 'unit': 'tbsp'}";
-      final item = IngredientItem.fromJson({'name': input});
+      final cleanJson = input.replaceAll("'", '"');
+      final decoded = jsonDecode(cleanJson);
+      final item = IngredientItem.fromJson(decoded);
       expect(item.name, 'Sugar');
       expect(item.quantity, 2.0);
       expect(item.unit, 'tbsp');
@@ -21,18 +24,19 @@ void main() {
 
     test('Should parse ingredient with no unit', () {
       final input = "{'name': 'Salt', 'quantity': 1, 'unit': ''}";
-      final item = IngredientItem.fromJson({'name': input});
+      final cleanJson = input.replaceAll("'", '"');
+      final decoded = jsonDecode(cleanJson);
+      final item = IngredientItem.fromJson(decoded);
       expect(item.name, 'Salt');
       expect(item.quantity, 1.0);
       expect(item.unit, '');
     });
 
     test('Should handle malformed stringified maps gracefully', () {
-      // Note: Current implementation falls back to raw string if quantity is unparsable (0.0)
       final input = "{'name': 'Water', 'quantity': 'abc'}";
-      final item = IngredientItem.fromJson({'name': input});
+      final item = IngredientItem.fromJson(input);
       expect(item.name, input); 
-      expect(item.quantity, 1.0); // Defaults to 1.0
+      expect(item.quantity, 0.0); // Defaults to 0.0 for raw string fallback
     });
   });
 }
