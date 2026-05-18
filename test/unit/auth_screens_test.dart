@@ -34,16 +34,24 @@ void main() {
 
   group('UserLoginScreen Validation Tests', () {
     testWidgets('shows error messages for empty fields when Login button is pressed', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(createWidgetForTesting(
         child: UserLoginScreen(authService: mockAuthService),
       ));
+      await tester.pumpAndSettle();
 
       // Initially no errors
       expect(find.text('*field is required'), findsNothing);
       expect(find.text('*password field is required'), findsNothing);
 
       // Find and tap login button
-      await tester.tap(find.text('Login').last);
+      final loginBtn = find.text('Login').last;
+      await tester.ensureVisible(loginBtn);
+      await tester.tap(loginBtn);
       await tester.pump(); // Trigger setState
 
       // Should show validation errors
@@ -52,17 +60,27 @@ void main() {
     });
 
     testWidgets('shows error for weak password', (WidgetTester tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       await tester.pumpWidget(createWidgetForTesting(
         child: UserLoginScreen(authService: mockAuthService),
       ));
+      await tester.pumpAndSettle();
 
       final emailField = find.byType(TextField).first;
       final passField = find.byType(TextField).last;
 
+      await tester.ensureVisible(emailField);
       await tester.enterText(emailField, 'testuser');
+      await tester.ensureVisible(passField);
       await tester.enterText(passField, '123'); // Too short
       
-      await tester.tap(find.text('Login').last);
+      final loginBtn = find.text('Login').last;
+      await tester.ensureVisible(loginBtn);
+      await tester.tap(loginBtn);
       await tester.pump();
 
       expect(find.text('*password must be at least 8 characters'), findsOneWidget);
