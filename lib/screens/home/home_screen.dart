@@ -23,6 +23,7 @@ import 'package:hidden_pantry_app/features/recipes/upload/upload_recipe_step1.da
 import 'package:hidden_pantry_app/features/nutritionist/screens/discovery.dart';
 import 'package:hidden_pantry_app/core/services/view_mode_service.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_dashboard.dart';
+import 'package:hidden_pantry_app/features/auth/screens/nutritionist_signup_wrapper.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_settings.dart';
 import 'package:hidden_pantry_app/features/user/services/follow_service.dart';
 import 'package:hidden_pantry_app/features/recipes/widgets/recipe_card.dart';
@@ -459,7 +460,7 @@ void _openUserProfile() {
     if (!mounted) return;
     Navigator.pushAndRemoveUntil(
       context,
-      MaterialPageRoute(builder: (_) => const NutritionistDashboard()),
+      MaterialPageRoute(builder: (_) => const NutritionistSignupWrapper()),
       (route) => false,
     );
   }

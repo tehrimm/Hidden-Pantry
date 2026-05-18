@@ -8,6 +8,7 @@ import 'package:hidden_pantry_app/features/recipes/screens/saved_recipes.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/discovery.dart';
 import 'package:hidden_pantry_app/core/services/view_mode_service.dart';
 import 'package:hidden_pantry_app/features/nutritionist/screens/nutritionist_dashboard.dart';
+import 'package:hidden_pantry_app/features/auth/screens/nutritionist_signup_wrapper.dart';
 import 'package:hidden_pantry_app/core/utils/responsive_utils.dart';
 
 
@@ -48,12 +49,12 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     }
 
     if (index == 4 && _isNutritionist) {
-      debugPrint('[MainNavigationShell] Switching to Nutritionist Dashboard');
+      debugPrint('[MainNavigationShell] Switching to Nutritionist Dashboard via Wrapper');
       await ViewModeService().setUserView(false);
       if (!mounted) return;
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const NutritionistDashboard()),
+        MaterialPageRoute(builder: (_) => const NutritionistSignupWrapper()),
         (route) => false,
       );
       return;
