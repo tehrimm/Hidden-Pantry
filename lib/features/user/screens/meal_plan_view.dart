@@ -34,6 +34,49 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
   final Color cardColor = const Color(0xFFF9E3D5);
 
   bool _isSaving = false;
+  bool _isPlanSaved = false;
+  bool _checkingSavedStatus = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _isPlanSaved = widget.isViewingSavedPlan;
+    _checkIfPlanSaved();
+  }
+
+  Future<void> _checkIfPlanSaved() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      if (mounted) setState(() => _checkingSavedStatus = false);
+      return;
+    }
+
+    final planId = widget.planData["planId"] ?? widget.planData["id"];
+    if (planId == null) {
+      if (mounted) setState(() => _checkingSavedStatus = false);
+      return;
+    }
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection("users")
+          .doc(user.uid)
+          .collection("saved_meal_plans")
+          .doc(planId)
+          .get();
+
+      if (mounted) {
+        setState(() {
+          _isPlanSaved = doc.exists;
+          _checkingSavedStatus = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _checkingSavedStatus = false);
+      }
+    }
+  }
 
   Future<void> _savePlan() async {
     final user = FirebaseAuth.instance.currentUser;
@@ -42,7 +85,7 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final planId = widget.planData["planId"] ?? FirebaseFirestore.instance.collection("temp").doc().id;
+      final planId = widget.planData["planId"] ?? widget.planData["id"] ?? FirebaseFirestore.instance.collection("temp").doc().id;
       
       // Save entire plan data to user's saved_meal_plans subcollection
       final dataToSave = Map<String, dynamic>.from(widget.planData);
@@ -59,6 +102,10 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
           .set(dataToSave, SetOptions(merge: true));
 
       if (mounted) {
+        setState(() {
+          _isPlanSaved = true;
+          _isSaving = false;
+        });
         Toaster.show(context, "Plan saved successfully!");
       }
     } catch (e) {
@@ -79,7 +126,7 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
     setState(() => _isSaving = true);
 
     try {
-      final planId = widget.planData["planId"];
+      final planId = widget.planData["planId"] ?? widget.planData["id"];
       if (planId != null) {
         await FirebaseFirestore.instance
             .collection("users")
@@ -89,6 +136,10 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
             .delete();
 
         if (mounted) {
+          setState(() {
+            _isPlanSaved = false;
+            _isSaving = false;
+          });
           Toaster.show(context, "Plan removed from your library");
           Navigator.pop(context); // Go back after removing
         }
@@ -390,7 +441,7 @@ class _MealPlanViewScreenState extends State<MealPlanViewScreen> {
                         BoxShadow(color: purple.withValues(alpha:0.08), blurRadius: 20, offset: const Offset(0, -5))
                       ],
                     ),
-                    child: widget.isViewingSavedPlan 
+                    child: _isPlanSaved 
                       ? ElevatedButton(
                           onPressed: _isSaving ? null : _removePlan,
                           style: ElevatedButton.styleFrom(

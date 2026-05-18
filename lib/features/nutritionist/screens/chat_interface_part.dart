@@ -1856,7 +1856,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
                                   MaterialPageRoute(
                                     builder: (_) => MealPlanViewScreen(
                                       planData: plan,
-                                      isViewingSavedPlan: true,
+                                      isViewingSavedPlan: false,
                                     ),
                                   ),
                                 );

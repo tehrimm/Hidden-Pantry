@@ -514,8 +514,8 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
       {'val': 1.0, 'str': "UP"},
     ];
 
-    double minDiff = 0.025; // Tolerance for matching
-    Map<String, dynamic> bestMatch = {'val': 0.0, 'str': ""};
+    double minDiff = 999.0;
+    Map<String, dynamic> bestMatch = fractions.first;
 
     for (var f in fractions) {
       double diff = (fractionPart - f['val']).abs();
@@ -529,8 +529,13 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
       return (wholePart + 1).toString();
     }
     
-    if (bestMatch['str'] == "") {
-      return wholePart > 0 ? wholePart.toString() : "0";
+    if (bestMatch['val'] == 0.0) {
+      if (wholePart > 0) {
+        return wholePart.toString();
+      } else {
+        // Prevent scaling down to zero for active ingredients
+        return "1/8";
+      }
     }
 
     return wholePart > 0 ? "$wholePart ${bestMatch['str']}" : bestMatch['str'];
@@ -1042,7 +1047,7 @@ class _RecipeDetailsScreenState extends State<RecipeDetailsScreen> {
                           ),
                         ),
                         Text(
-                          "${ing.displayQuantity ?? _fmtQty(ing.quantity)}${ing.unit.isEmpty ? "" : " ${ing.unit}"}",
+                          "${(_scaleFactor() == 1.0) ? (ing.displayQuantity ?? _fmtQty(ing.quantity)) : _fmtQty(ing.quantity)}${ing.unit.isEmpty ? "" : " ${ing.unit}"}",
                           style: TextStyle(
                             color: textColor,
                             fontSize: 14.sp,

@@ -708,7 +708,12 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
     }
     
     if (bestMatch['val'] == 0.0) {
-      return wholePart > 0 ? wholePart.toString() : "0";
+      if (wholePart > 0) {
+        return wholePart.toString();
+      } else {
+        // Prevent scaling down to zero for active ingredients
+        return "1/8";
+      }
     }
 
     return wholePart > 0 ? "$wholePart ${bestMatch['str']}" : bestMatch['str'];
@@ -1028,7 +1033,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
                                               ),
                                               SizedBox(height: 2.sh),
                                               Text(
-                                                "${ing.displayQuantity ?? _fmtQty(ing.quantity)}${ing.unit.isEmpty ? '' : ' ${ing.unit}'}",
+                                                "${(_scaleFactor() == 1.0) ? (ing.displayQuantity ?? _fmtQty(ing.quantity)) : _fmtQty(ing.quantity)}${ing.unit.isEmpty ? '' : ' ${ing.unit}'}",
                                                 maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: TextStyle(
@@ -1271,7 +1276,7 @@ class _CookingDetailsScreenState extends State<CookingDetailsScreen> with Widget
                   separatorBuilder: (_, __) => Divider(height: 24.sh),
                   itemBuilder: (context, index) {
                     final ing = widget.recipe.ingredients[index];
-                    final qtyStr = ing.displayQuantity ?? _fmtQty(ing.quantity);
+                    final qtyStr = (_scaleFactor() == 1.0) ? (ing.displayQuantity ?? _fmtQty(ing.quantity)) : _fmtQty(ing.quantity);
                     return Padding(
                       padding: EdgeInsets.symmetric(vertical: 4.sh),
                       child: Row(
