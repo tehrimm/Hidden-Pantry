@@ -44,10 +44,10 @@ Future<void> main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Disable app verification so Phone OTP works on Android Emulators
-  if (kDebugMode) {
-    await FirebaseAuth.instance.setSettings(appVerificationDisabledForTesting: true);
-  }
+  // // Disable app verification so Phone OTP works on Android Emulators
+  // if (kDebugMode) {
+  //   await FirebaseAuth.instance.setSettings(appVerificationDisabledForTesting: true);
+  // }
 
   // ⚡ Enable Firestore offline persistence — reads are served from cache on repeat opens
   FirebaseFirestore.instance.settings = const Settings(

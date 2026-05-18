@@ -232,8 +232,9 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
         body: Builder(
           builder: (context) {
             ResponsiveUtils.init(context);
-            final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-            final topPad = MediaQuery.of(context).padding.top;
+            final mq = MediaQuery.of(context);
+            final bool isTablet = mq.size.width >= 600;
+            final bottomInset = mq.viewInsets.bottom;
             return GestureDetector(
               onTap: () => FocusScope.of(context).unfocus(),
               child: Stack(
@@ -241,14 +242,40 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
                   // Branded glassmorphic background
                   const PatternBackground(),
 
-                  // SCROLLABLE CONTENT
+                  // SCROLLABLE CONTENT in clean SafeArea Column
                   SafeArea(
+                    bottom: false,
                     child: Column(
                       children: [
-                        SizedBox(height: 80.sh), // Gap for fixed header
+                        SizedBox(height: isTablet ? 24.sh : 35.sh),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 30.sw),
+                          child: Stack(
+                            alignment: Alignment.center,
+                            children: [
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: BackButtonWidget(
+                                  onPressed: _goBackToProfile,
+                                  color: text,
+                                ),
+                              ),
+                              Text(
+                                'Profile setting',
+                                style: TextStyle(
+                                  color: text,
+                                  fontSize: 24.sp,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Satoshi',
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 25.sh),
                         Expanded(
                           child: ListView(
-                            padding: EdgeInsets.fromLTRB(30.sw, 20.sh, 30.sw, bottomInset + 40.sh),
+                            padding: EdgeInsets.fromLTRB(30.sw, 10.sh, 30.sw, bottomInset + 40.sh),
                             children: [
                               // Profile pic
                               _FadeSlideEntry(
@@ -609,7 +636,7 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
                                 child: GestureDetector(
                                   onTap: _loading ? null : _saveChanges,
                                   child: Container(
-                                    height: 62.sh,
+                                    height: math.max(62.0, 62.sh),
                                     decoration: BoxDecoration(
                                       gradient: const LinearGradient(
                                         colors: [orange, Color(0xFFFFA06A)],
@@ -646,33 +673,6 @@ class _NutritionistProfileSettingScreenState extends State<NutritionistProfileSe
                                 ),
                               ),
                             ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Fixed Header
-                  Positioned(
-                    left: 30.sw,
-                    right: 0,
-                    top: topPad + 36.sh,
-                    height: 50.sh,
-                    child: Stack(
-                      children: [
-                        BackButtonWidget(
-                          onPressed: _goBackToProfile,
-                          color: text,
-                        ),
-                        Center(
-                          child: Text(
-                            'Profile setting',
-                            style: TextStyle(
-                              color: text,
-                              fontSize: 24.sp,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Satoshi',
-                            ),
                           ),
                         ),
                       ],
@@ -721,6 +721,8 @@ class _InputCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      constraints: const BoxConstraints(minHeight: 64),
+      alignment: Alignment.centerLeft,
       decoration: BoxDecoration(
         color: const Color(0xFFFFF3EB),
         borderRadius: BorderRadius.circular(22.sw),

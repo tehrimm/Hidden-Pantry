@@ -17,7 +17,10 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      return web;
+      throw UnsupportedError(
+        'DefaultFirebaseOptions have not been configured for web - '
+        'you can reconfigure this by running the FlutterFire CLI again.',
+      );
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -25,9 +28,15 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
       case TargetPlatform.macOS:
-        return macos;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for macos - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.windows:
-        return windows;
+        throw UnsupportedError(
+          'DefaultFirebaseOptions have not been configured for windows - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
+        );
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -40,19 +49,9 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyA41Q3rETXs3OV46f2v625W2h4Yh14iUTo',
-    appId: '1:1089198153938:web:8074ef9ce0991a80080d0b',
-    messagingSenderId: '1089198153938',
-    projectId: 'arched-sunbeam-478306-u3',
-    authDomain: 'arched-sunbeam-478306-u3.firebaseapp.com',
-    storageBucket: 'arched-sunbeam-478306-u3.firebasestorage.app',
-    measurementId: 'G-5LHTE0PCH9',
-  );
-
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyB4mgi_eP_9lGfrBIteNJWa__a2LRoRQNQ',
-    appId: '1:1089198153938:android:6dec8ecf94fd3bd5080d0b',
+    appId: '1:1089198153938:android:84a6be8dff97c30c080d0b',
     messagingSenderId: '1089198153938',
     projectId: 'arched-sunbeam-478306-u3',
     storageBucket: 'arched-sunbeam-478306-u3.firebasestorage.app',
@@ -64,30 +63,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1089198153938',
     projectId: 'arched-sunbeam-478306-u3',
     storageBucket: 'arched-sunbeam-478306-u3.firebasestorage.app',
+    androidClientId: '1089198153938-04q35pvnoj4brdhvd738ov3ifa8vdbgs.apps.googleusercontent.com',
     iosClientId: '1089198153938-1gtlmm6q4ao6qsc2lm1g99fdh55jpijm.apps.googleusercontent.com',
     iosBundleId: 'com.example.hiddenPantryApp',
-  );
-
-  static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyBHAvKYxNKIBSQujcEPew4NFZQQ4XQ6Skg',
-    appId: '1:1089198153938:ios:e38c625c2ad7335f080d0b',
-    messagingSenderId: '1089198153938',
-    projectId: 'arched-sunbeam-478306-u3',
-    storageBucket: 'arched-sunbeam-478306-u3.firebasestorage.app',
-    iosClientId: '1089198153938-1gtlmm6q4ao6qsc2lm1g99fdh55jpijm.apps.googleusercontent.com',
-    iosBundleId: 'com.example.hiddenPantryApp',
-  );
-
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyA41Q3rETXs3OV46f2v625W2h4Yh14iUTo',
-    appId: '1:1089198153938:web:96731ebddf4e51f2080d0b',
-    messagingSenderId: '1089198153938',
-    projectId: 'arched-sunbeam-478306-u3',
-    authDomain: 'arched-sunbeam-478306-u3.firebaseapp.com',
-    storageBucket: 'arched-sunbeam-478306-u3.firebasestorage.app',
-    measurementId: 'G-W495JDRYXD',
   );
 }
-
-
-

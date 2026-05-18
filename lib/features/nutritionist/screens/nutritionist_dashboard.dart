@@ -715,38 +715,35 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
         }
       },
       child: Scaffold(
-        backgroundColor: Colors.white,
+        backgroundColor: bg,
         extendBody: true,
-        body: ClipRRect(
-          borderRadius: BorderRadius.circular(30.sw),
-          child: Container(
-            color: bg,
-            child: Stack(
-              children: [
-                const _DashboardBackgroundPattern(),
-                PatternBackground(opacity: 0.6),
-                SafeArea(
-                  bottom: false,
-                  child: Column(
-                    children: [
-                      if (bottomIndex != 4) _topRow(),
-                      Expanded(
-                        child: IndexedStack(
-                          index: bottomIndex > 2 ? bottomIndex - 1 : bottomIndex,
-                          children: [
-                            _dashboardHome(),
-                            const NutritionistPostsScreen(),
-                            // skip plus (index 2)
-                            const ClientPlansScreen(),
-                            const NutritionistChatListScreen(),
-                          ],
-                        ),
+        body: Container(
+          color: bg,
+          child: Stack(
+            children: [
+              const _DashboardBackgroundPattern(),
+              PatternBackground(opacity: 0.6),
+              SafeArea(
+                bottom: false,
+                child: Column(
+                  children: [
+                    if (bottomIndex != 4) _topRow(),
+                    Expanded(
+                      child: IndexedStack(
+                        index: bottomIndex > 2 ? bottomIndex - 1 : bottomIndex,
+                        children: [
+                          _dashboardHome(),
+                          const NutritionistPostsScreen(),
+                          // skip plus (index 2)
+                          const ClientPlansScreen(),
+                          const NutritionistChatListScreen(),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
         bottomNavigationBar: NbBottomNav(
@@ -760,7 +757,12 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
 
   Widget _topRow() {
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 22.sw, vertical: 16.sh),
+      padding: EdgeInsets.only(
+        left: 22.sw,
+        right: 22.sw,
+        top: math.max(24.0, 16.sh),
+        bottom: 16.sh,
+      ),
       child: Row(
         children: [
           GestureDetector(

@@ -332,7 +332,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
     final horizontal = isTablet ? 24.0 : 30.sw;
     final topPad = mq.padding.top;
 
-    final fieldHeight = isTablet ? 60.0 : 85.sh;
+    final fieldHeight = isTablet ? 60.0 : 70.sh;
 
     return PopScope(
       canPop: false,
@@ -469,8 +469,8 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                                       fontFamily: "Satoshi",
                                     ),
                                     contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 30.sw,
-                                      vertical: 22.sh,
+                                      horizontal: 24.sw,
+                                      vertical: 16.sh,
                                     ),
                                   ),
                                 ),
@@ -509,8 +509,8 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                                             fontFamily: "Satoshi",
                                           ),
                                           contentPadding: EdgeInsets.symmetric(
-                                            horizontal: 30.sw,
-                                            vertical: 22.sh,
+                                            horizontal: 24.sw,
+                                            vertical: 16.sh,
                                           ),
                                         ),
                                       ),
@@ -569,7 +569,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                                 onTap: _loading ? null : _onLogin,
                                 child: Container(
                                   width: double.infinity,
-                                  height: 62.sh,
+                                  height: 56.sh,
                                   decoration: BoxDecoration(
                                     color: btnOrange,
                                     borderRadius: BorderRadius.circular(20.sw),
@@ -627,7 +627,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                                     child: GestureDetector(
                                       onTap: _loading ? null : _onGoogleLogin,
                                       child: Container(
-                                        height: 59.sh,
+                                        height: 54.sh,
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFF9E3D5),
                                           borderRadius: BorderRadius.circular(15.sw),
@@ -651,7 +651,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                                     child: GestureDetector(
                                       onTap: _loading ? null : _onAppleLogin,
                                       child: Container(
-                                        height: 59.sh,
+                                        height: 54.sh,
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFF9E3D5),
                                           borderRadius: BorderRadius.circular(15.sw),

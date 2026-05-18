@@ -98,7 +98,6 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
     final mq = MediaQuery.of(context);
-    final topPad = mq.padding.top;
     final bool isTablet = mq.size.width >= 600;
 
     return Scaffold(
@@ -107,107 +106,129 @@ class _AllergiesScreenState extends State<AllergiesScreen> {
         children: [
           const PatternBackground(),
 
-          // Back button
-          if (widget.fromProfile)
-            Positioned(
-              left: 30.sw,
-              top: topPad + (isTablet ? 12.sh : 18.sh),
-              child: const BackButtonWidget(color: titleColor),
-            ),
-
-          // Skip
-          if (!widget.fromProfile)
-            Positioned(
-              right: 30.sw,
-              top: topPad + (isTablet ? 12.sh : 18.sh) + 12.sh,
-              child: GestureDetector(
-                onTap: _skip,
-                child: Text('Skip', style: TextStyle(color: const Color(0xFF74503C), fontSize: 15.sp, fontFamily: 'Satoshi', fontWeight: FontWeight.w500)),
-              ),
-            ),
-
-          // Title
-          Positioned(
-            left: 30.sw,
-            top: topPad + (isTablet ? 60.sh : 82.sh),
-            child: _StaggeredItem(
-              index: 0,
-              delay: 100,
-              child: SizedBox(
-                width: 330.sw,
-                child: Text('What should we\navoid for you?', style: TextStyle(color: titleColor, fontSize: 40.sp, fontFamily: 'Satoshi', fontWeight: FontWeight.w900, height: 1.10)),
-              ),
-            ),
-          ),
-
-          // Subtitle
-          Positioned(
-            left: 30.sw,
-            top: topPad + (isTablet ? 150.sh : 192.sh),
-            child: _StaggeredItem(
-              index: 1,
-              delay: 100,
-              child: SizedBox(
-                width: 325.sw,
-                child: Text('Pick the ingredients you want to avoid due to\nallergies, intolerances, or personal health\nneeds.', style: TextStyle(color: titleColor, fontSize: 15.sp, fontFamily: 'Satoshi', fontWeight: FontWeight.w400, height: 1.35)),
-              ),
-            ),
-          ),
-
-          for (int i = 0; i < _tiles.length; i++)
-            Positioned(
-              left: _tiles[i].left.sw,
-              top: _tiles[i].top.sh + (topPad > 35 ? 20.sh : 0),
-              child: _StaggeredItem(
-                index: i + 3,
-                delay: 40,
-                child: _DiamondTile(
-                  size: (_tiles[i].isLarge ? largeSize : smallSize).sw,
-                  radius: tileRadius.sw,
-                  asset: _tiles[i].asset,
-                  label: _tiles[i].label,
-                  selected: _selected.contains(_tiles[i].label),
-                  iconW: _tiles[i].iconW,
-                  iconH: _tiles[i].iconH,
-                  onTap: () => _toggle(_tiles[i].label),
-                ),
-              ),
-            ),
-
-          Positioned(
-            left: 30.sw,
-            bottom: 105.sh,
-            child: _StaggeredItem(
-              index: 15,
-              child: Text('${_selected.length}/12 Selected', style: TextStyle(color: titleColor, fontSize: 14.sp, fontWeight: FontWeight.w600, fontFamily: 'Satoshi')),
-            ),
-          ),
-
-          Positioned(
-            left: 30.sw,
-            right: 30.sw,
-            bottom: 30.sh,
-            child: _StaggeredItem(
-              index: 16,
-              child: GestureDetector(
-                onTap: _loading ? null : _save,
-                child: Container(
-                  height: math.max(60.0, 62.sh),
-                  decoration: BoxDecoration(color: buttonOrange, borderRadius: BorderRadius.circular(20.sw), boxShadow: [BoxShadow(color: buttonOrange.withValues(alpha: 0.35), blurRadius: 15, offset: const Offset(0, 8))]),
-                  child: Center(
-                    child: _loading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(widget.fromProfile ? 'Save Settings' : 'Continue', style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w700, fontFamily: 'Satoshi')),
-                              SizedBox(width: 10.sw),
-                              Image.asset('assets/icons/next_button.png', width: 18.sw, height: 18.sh, fit: BoxFit.contain),
-                            ],
-                          ),
+          SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: isTablet ? 16.sh : 25.sh),
+                // Header row
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 30.sw),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (widget.fromProfile)
+                        const BackButtonWidget(color: titleColor)
+                      else
+                        const SizedBox(width: 40, height: 40),
+                      if (!widget.fromProfile)
+                        GestureDetector(
+                          onTap: _skip,
+                          child: Text('Skip', style: TextStyle(color: const Color(0xFF74503C), fontSize: 16.sp, fontFamily: 'Satoshi', fontWeight: FontWeight.w600)),
+                        )
+                      else
+                        const SizedBox(width: 40, height: 40),
+                    ],
                   ),
                 ),
-              ),
+                SizedBox(height: 15.sh),
+
+                // Title
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 30.sw),
+                  child: _StaggeredItem(
+                    index: 0,
+                    delay: 100,
+                    child: Text('What should we\navoid for you?', style: TextStyle(color: titleColor, fontSize: 36.sp, fontFamily: 'Satoshi', fontWeight: FontWeight.w900, height: 1.10)),
+                  ),
+                ),
+                SizedBox(height: 10.sh),
+
+                // Subtitle
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 30.sw),
+                  child: _StaggeredItem(
+                    index: 1,
+                    delay: 100,
+                    child: Text('Pick the ingredients you want to avoid due to\nallergies, intolerances, or personal health\nneeds.', style: TextStyle(color: titleColor, fontSize: 15.sp, fontFamily: 'Satoshi', fontWeight: FontWeight.w400, height: 1.35)),
+                  ),
+                ),
+
+                // Tile Cluster in perfectly proportioned FittedBox
+                Expanded(
+                  child: Center(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: SizedBox(
+                        width: 380,
+                        height: 410,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            for (int i = 0; i < _tiles.length; i++)
+                              Positioned(
+                                left: _tiles[i].left.toDouble(),
+                                top: _tiles[i].top.toDouble() - 270.0,
+                                child: _StaggeredItem(
+                                  index: i + 3,
+                                  delay: 40,
+                                  child: _DiamondTile(
+                                    size: (_tiles[i].isLarge ? largeSize : smallSize).toDouble(),
+                                    radius: tileRadius.toDouble(),
+                                    asset: _tiles[i].asset,
+                                    label: _tiles[i].label,
+                                    selected: _selected.contains(_tiles[i].label),
+                                    iconW: _tiles[i].iconW?.toDouble(),
+                                    iconH: _tiles[i].iconH?.toDouble(),
+                                    onTap: () => _toggle(_tiles[i].label),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // Bottom bar
+                Padding(
+                  padding: EdgeInsets.fromLTRB(30.sw, 0, 30.sw, mq.padding.bottom + 20.sh),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _StaggeredItem(
+                        index: 15,
+                        child: Text('${_selected.length}/12 Selected', style: TextStyle(color: titleColor, fontSize: 14.sp, fontWeight: FontWeight.w600, fontFamily: 'Satoshi')),
+                      ),
+                      SizedBox(height: 12.sh),
+                      _StaggeredItem(
+                        index: 16,
+                        child: GestureDetector(
+                          onTap: _loading ? null : _save,
+                          child: Container(
+                            height: math.max(60.0, 62.sh),
+                            decoration: BoxDecoration(color: buttonOrange, borderRadius: BorderRadius.circular(20.sw), boxShadow: [BoxShadow(color: buttonOrange.withValues(alpha: 0.35), blurRadius: 15, offset: const Offset(0, 8))]),
+                            child: Center(
+                              child: _loading
+                                  ? const CircularProgressIndicator(color: Colors.white)
+                                  : Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        Text(widget.fromProfile ? 'Save Settings' : 'Continue', style: TextStyle(color: Colors.white, fontSize: 16.sp, fontWeight: FontWeight.w700, fontFamily: 'Satoshi')),
+                                        SizedBox(width: 10.sw),
+                                        Image.asset('assets/icons/next_button.png', width: 18.sw, height: 18.sh, fit: BoxFit.contain),
+                                      ],
+                                    ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -260,8 +281,8 @@ class _DiamondTile extends StatelessWidget {
     final bgColor = selected ? tileDark : tileLight.withValues(alpha: 0.6);
     final textColor = selected ? Colors.white : labelBrown;
     final double defaultIcon = size * 0.42;
-    final double w = (iconW != null) ? iconW!.sw : defaultIcon;
-    final double h = (iconH != null) ? iconH!.sh : defaultIcon;
+    final double w = (iconW != null) ? iconW! : defaultIcon;
+    final double h = (iconH != null) ? iconH! : defaultIcon;
 
     return GestureDetector(
       onTap: onTap,
@@ -293,7 +314,7 @@ class _DiamondTile extends StatelessWidget {
                   SizedBox(height: size * 0.05),
                   FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text(label, textAlign: TextAlign.center, style: TextStyle(color: textColor, fontSize: 11.sp, fontFamily: 'Satoshi', fontWeight: selected ? FontWeight.w900 : FontWeight.w600, height: 1.1)),
+                    child: Text(label, textAlign: TextAlign.center, style: TextStyle(color: textColor, fontSize: 12.5, fontFamily: 'Satoshi', fontWeight: selected ? FontWeight.w900 : FontWeight.w700, height: 1.1)),
                   ),
                 ],
               ),

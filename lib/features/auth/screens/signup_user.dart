@@ -315,7 +315,7 @@ class _SignupUserScreenState extends State<SignupUserScreen> with TickerProvider
     final bool isTablet = screenWidth >= 600;
 
     final horizontal = isTablet ? 24.0 : 30.sw;
-    final fieldH = isTablet ? 60.0 : 85.sh;
+    final fieldH = isTablet ? 60.0 : 70.sh;
     final baseGap = 16.sh;
     final errOffset = 4.sh;
     final topPad = mq.padding.top;

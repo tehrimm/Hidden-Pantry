@@ -162,7 +162,8 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
   @override
   Widget build(BuildContext context) {
     ResponsiveUtils.init(context);
-    final double topPad = MediaQuery.of(context).padding.top;
+    final mq = MediaQuery.of(context);
+    final bool isTablet = mq.size.width >= 600;
     
     return Scaffold(
       backgroundColor: bg,
@@ -170,173 +171,173 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
         children: [
           const PatternBackground(),
 
-            // Content Area
-            SafeArea(
-              child: loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : Column(
-                      children: [
-                        SizedBox(height: 96.sh), // Absolute gap for fixed header
-                        Expanded(
-                          child: ListView(
-                            padding: EdgeInsets.only(bottom: 20.sh),
-                            children: [
-                              // Profile block
-                              _modernProfileHeader(),
-                              SizedBox(height: 20.sh),
-                              
-                              // Tiles
-                              _tile(
-                                icon: "assets/icons/setting.png",
-                                title: "Profile Setting",
-                                onTap: () => _go(const NutritionistProfileSettingScreen()),
-                              ),
-                                _tile(
-                                  iconData: Icons.restaurant_menu_rounded,
-                                  title: "Create Meal Plans",
-                                  onTap: () => _go(const NutritionistMealPlansScreen()),
-                                ),
-                                _tile(
-                                  icon: "assets/icons/card.png",
-                                  title: "My Subscriptions",
-                                  onTap: () => _go(const MySubscriptionsScreen()),
-                                ),
-                                _tile(
-                                  iconData: Icons.payments_rounded,
-                                  title: "Payouts & Earnings",
-                                  onTap: () => _go(const PayoutManagementScreen()),
-                                ),
-                              _tile(
-                                icon: "assets/icons/book.png",
-                                title: "My Recipes",
-                                onTap: () => _go(const MyRecipesScreen()),
-                              ),
-                              _tile(
-                                iconData: Icons.favorite_border_rounded,
-                                title: "My Favourites",
-                                onTap: () => _go(const MyFavouritesScreen(isNutritionist: true)),
-                              ),
-                              _tile(
-                                icon: "assets/icons/users.png",
-                                title: "My Network",
-                                onTap: () => _go(const UserNetworkScreen(isNutritionist: true)),
-                              ),
-                              StreamBuilder<List<AppNotification>>(
-                                stream: NotificationService().streamNotifications(),
-                                builder: (context, snapshot) {
-                                  final unreadCount = snapshot.data?.where((n) => !n.isRead).length ?? 0;
-                                  return _tile(
-                                    icon: "assets/icons/notification.png",
-                                    title: "Notifications",
-                                    trailingIcon: unreadCount > 0 
-                                      ? Container(
-                                          padding: EdgeInsets.symmetric(horizontal: 8.sw, vertical: 4.sh),
-                                          decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(10.sw)),
-                                          child: Text(
-                                            unreadCount > 9 ? "9+" : "$unreadCount",
-                                            style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
-                                          ),
-                                        )
-                                      : null,
-                                    onTap: () => _go(const NotificationsScreen(isNutritionist: true)),
-                                  );
+          // Content Area in clean SafeArea Column
+          SafeArea(
+            bottom: false,
+            child: Column(
+              children: [
+                SizedBox(height: isTablet ? 24.sh : 35.sh),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 30.sw),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: BackButtonWidget(
+                          onPressed: () => Navigator.pop(context),
+                          color: purple,
+                        ),
+                      ),
+                      Text(
+                        "Settings",
+                        style: TextStyle(
+                          color: purple,
+                          fontSize: 26.sp,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                          fontFamily: "Satoshi",
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 25.sh),
+                Expanded(
+                  child: loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : ListView(
+                          physics: const BouncingScrollPhysics(),
+                          padding: EdgeInsets.only(bottom: mq.padding.bottom + 20.sh),
+                          children: [
+                            // Profile block
+                            _modernProfileHeader(),
+                            SizedBox(height: 20.sh),
+                            
+                            // Tiles
+                            _tile(
+                              icon: "assets/icons/setting.png",
+                              title: "Profile Setting",
+                              onTap: () => _go(const NutritionistProfileSettingScreen()),
+                            ),
+                            _tile(
+                              iconData: Icons.restaurant_menu_rounded,
+                              title: "Create Meal Plans",
+                              onTap: () => _go(const NutritionistMealPlansScreen()),
+                            ),
+                            _tile(
+                              icon: "assets/icons/card.png",
+                              title: "My Subscriptions",
+                              onTap: () => _go(const MySubscriptionsScreen()),
+                            ),
+                            _tile(
+                              iconData: Icons.payments_rounded,
+                              title: "Payouts & Earnings",
+                              onTap: () => _go(const PayoutManagementScreen()),
+                            ),
+                            _tile(
+                              icon: "assets/icons/book.png",
+                              title: "My Recipes",
+                              onTap: () => _go(const MyRecipesScreen()),
+                            ),
+                            _tile(
+                              iconData: Icons.favorite_border_rounded,
+                              title: "My Favourites",
+                              onTap: () => _go(const MyFavouritesScreen(isNutritionist: true)),
+                            ),
+                            _tile(
+                              icon: "assets/icons/users.png",
+                              title: "My Network",
+                              onTap: () => _go(const UserNetworkScreen(isNutritionist: true)),
+                            ),
+                            StreamBuilder<List<AppNotification>>(
+                              stream: NotificationService().streamNotifications(),
+                              builder: (context, snapshot) {
+                                final unreadCount = snapshot.data?.where((n) => !n.isRead).length ?? 0;
+                                return _tile(
+                                  icon: "assets/icons/notification.png",
+                                  title: "Notifications",
+                                  trailingIcon: unreadCount > 0 
+                                    ? Container(
+                                        padding: EdgeInsets.symmetric(horizontal: 8.sw, vertical: 4.sh),
+                                        decoration: BoxDecoration(color: orange, borderRadius: BorderRadius.circular(10.sw)),
+                                        child: Text(
+                                          unreadCount > 9 ? "9+" : "$unreadCount",
+                                          style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
+                                        ),
+                                      )
+                                    : null,
+                                  onTap: () => _go(const NotificationsScreen(isNutritionist: true)),
+                                );
+                              },
+                            ),
+                            _tile(
+                              iconData: Icons.help_outline_rounded,
+                              title: "Help & Support",
+                              onTap: () => _go(const HelpSupportScreen()),
+                            ),
+
+                            SizedBox(height: 26.sh),
+
+                            // Logout button
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 22.sw),
+                              child: GestureDetector(
+                                onTap: () {
+                                   HapticFeedback.lightImpact();
+                                   _logout();
                                 },
-                              ),
-                              _tile(
-                                iconData: Icons.help_outline_rounded,
-                                title: "Help & Support",
-                                onTap: () => _go(const HelpSupportScreen()),
-                              ),
-
-                              SizedBox(height: 26.sh),
-
-                              // Logout button
-                              Padding(
-                                padding: EdgeInsets.symmetric(horizontal: 22.sw),
-                                child: GestureDetector(
-                                  onTap: () {
-                                     HapticFeedback.lightImpact();
-                                     _logout();
-                                  },
-                                  child: Container(
-                                    height: 70.sh,
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [orange, const Color(0xFFFFA06A)],
+                                child: Container(
+                                  height: math.max(70.0, 70.sh),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [orange, const Color(0xFFFFA06A)],
+                                    ),
+                                    borderRadius: BorderRadius.circular(22.sw),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: orange.withValues(alpha: 0.3),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 6),
+                                      )
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Image.asset(
+                                        "assets/icons/logout.png",
+                                        width: 18.sw,
+                                        height: 18.sh,
+                                        fit: BoxFit.contain,
+                                        color: Colors.white,
                                       ),
-                                      borderRadius: BorderRadius.circular(22.sw),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: orange.withValues(alpha: 0.3),
-                                          blurRadius: 12,
-                                          offset: const Offset(0, 6),
-                                        )
-                                      ],
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Image.asset(
-                                          "assets/icons/logout.png",
-                                          width: 18.sw,
-                                          height: 18.sh,
-                                          fit: BoxFit.contain,
+                                      SizedBox(width: 12.sw),
+                                      Text(
+                                        "Logout",
+                                        style: TextStyle(
                                           color: Colors.white,
+                                          fontSize: 15.sp,
+                                          fontWeight: FontWeight.w700,
+                                          letterSpacing: 0.2,
+                                          fontFamily: "Satoshi",
                                         ),
-                                        SizedBox(width: 12.sw),
-                                        Text(
-                                          "Logout",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 15.sp,
-                                            fontWeight: FontWeight.w700,
-                                            letterSpacing: 0.2,
-                                            fontFamily: "Satoshi",
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
-                              SizedBox(height: 16.sh),
-                              _deleteAccountButton(),
-                            ],
-                          ),
+                            ),
+                            SizedBox(height: 16.sh),
+                            _deleteAccountButton(),
+                          ],
                         ),
-                      ],
-                    ),
-            ),
-
-            // Fixed Header (Top Layer)
-            Positioned(
-              left: 30.sw,
-              top: topPad + 36.sh,
-              child: BackButtonWidget(
-                onPressed: () => Navigator.pop(context),
-                color: purple,
-              ),
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              top: topPad + 36.sh,
-              height: 50.sh,
-              child: Center(
-                child: Text(
-                  "Settings",
-                  style: TextStyle(
-                    color: purple,
-                    fontSize: 26.sp,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.3,
-                    fontFamily: "Satoshi",
-                  ),
                 ),
-              ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -460,7 +461,7 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
             onTap();
           },
           child: Ink(
-            height: 70.sh,
+            height: math.max(70.0, 70.sh),
             decoration: BoxDecoration(
               color: tileBg,
               borderRadius: BorderRadius.circular(22.sw),
@@ -548,7 +549,7 @@ class _NutritionistSettingsScreenState extends State<NutritionistSettingsScreen>
       child: GestureDetector(
         onTap: loading ? null : _deleteAccount,
         child: Container(
-          height: 70.sh,
+          height: math.max(70.0, 70.sh),
           decoration: BoxDecoration(
             color: Colors.red,
             borderRadius: BorderRadius.circular(20.sw),

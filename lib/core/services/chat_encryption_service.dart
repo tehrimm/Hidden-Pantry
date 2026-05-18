@@ -21,7 +21,7 @@ class ChatEncryptionService {
     FirebaseFirestore? firestore,
     FirebaseAuth? auth,
   })  : _storage = storage ?? const FlutterSecureStorage(
-          aOptions: AndroidOptions(encryptedSharedPreferences: true),
+          aOptions: AndroidOptions(encryptedSharedPreferences: true, resetOnError: true),
         ),
         _firestore = firestore ?? FirebaseFirestore.instance,
         _auth = auth ?? FirebaseAuth.instance;
@@ -53,7 +53,12 @@ class ChatEncryptionService {
     if (user == null) return;
 
     final keyPath = '$_privateKeyPrefix${user.uid}';
-    String? jsonKeyData = await _storage.read(key: keyPath);
+    String? jsonKeyData;
+    try {
+      jsonKeyData = await _storage.read(key: keyPath);
+    } catch (e) {
+      debugPrint("Secure storage read error: $e");
+    }
     
     bool isValid = false;
     if (jsonKeyData != null && jsonKeyData.startsWith('{')) {
@@ -75,6 +80,33 @@ class ChatEncryptionService {
     }
 
     if (!isValid) {
+      try {
+        debugPrint("Local RSA key missing/invalid. Attempting cloud recovery from Firestore for ${user.uid}...");
+        final backupDoc = await _firestore.collection('user_keys').doc(user.uid).get();
+        if (backupDoc.exists && backupDoc.data()?['privateKeyJson'] != null) {
+          final restoredPrivateKeyJson = backupDoc.data()!['privateKeyJson'];
+          final restoredPublicKeyString = backupDoc.data()!['publicKeyString'];
+
+          // Test restored key
+          final Map<String, dynamic> keyMap = json.decode(restoredPrivateKeyJson);
+          final privateKey = _parsePrivateKeyFromJson(keyMap);
+          final testEncrypter = encrypt.Encrypter(encrypt.RSA(privateKey: privateKey));
+          final testPublicEncrypter = encrypt.Encrypter(encrypt.RSA(publicKey: _derivePublicKey(privateKey)));
+          final plain = "self_test_${user.uid}";
+          if (testEncrypter.decrypt(testPublicEncrypter.encrypt(plain)) == plain) {
+            debugPrint("Cloud recovery successful! Restoring private key to local secure storage.");
+            jsonKeyData = restoredPrivateKeyJson;
+            await _storage.write(key: keyPath, value: restoredPrivateKeyJson);
+            await _syncPublicKeyToFirestore(user.uid, restoredPublicKeyString);
+            isValid = true;
+          }
+        }
+      } catch (e) {
+        debugPrint("Cloud recovery failed: $e");
+      }
+    }
+
+    if (!isValid) {
       debugPrint("Regenerating RSA keys (JSON format) for ${user.uid}...");
       final keyPair = _generateRSAkeyPair();
       final priv = keyPair.privateKey as pc.RSAPrivateKey;
@@ -92,15 +124,32 @@ class ChatEncryptionService {
 
       await _storage.write(key: keyPath, value: privateKeyJson);
       await _syncPublicKeyToFirestore(user.uid, publicKeyString);
+
+      // Save backup to cloud
+      try {
+        await _firestore.collection('user_keys').doc(user.uid).set({
+          'privateKeyJson': privateKeyJson,
+          'publicKeyString': publicKeyString,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      } catch (e) {
+        debugPrint("Error saving key backup to cloud: $e");
+      }
     } else {
-      // ⚡ SELF-HEAL: Even if local keys are valid, verify they match what's on the server
-      // This fixes "Decryption Failed" when switching between Debug/Deployed builds
+      // ⚡ SELF-HEAL & BACKUP: Verify local keys match server and ensure backup exists
       try {
         final Map<String, dynamic> keyMap = json.decode(jsonKeyData!);
         final priv = _parsePrivateKeyFromJson(keyMap);
         final pub = _derivePublicKey(priv);
         final localPubStr = _publicKeyToString(pub);
         
+        // Ensure backup is stored in cloud
+        _firestore.collection('user_keys').doc(user.uid).set({
+          'privateKeyJson': jsonKeyData,
+          'publicKeyString': localPubStr,
+          'updatedAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+
         // Fetch server key
         final nutDoc = await _firestore.collection('nutritionists').doc(user.uid).get();
         final userDoc = await _firestore.collection('users').doc(user.uid).get();
@@ -153,7 +202,9 @@ class ChatEncryptionService {
       if (nDoc.exists) {
         await nutRef.update({'chatPublicKey': publicKeyString});
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint("Error syncing public key to Firestore: $e");
+    }
   }
 
   // --- Encryption & Decryption ---
@@ -219,10 +270,17 @@ class ChatEncryptionService {
 
     try {
       final keyPath = '$_privateKeyPrefix${user.uid}';
-      final keyData = await _storage.read(key: keyPath);
+      String? keyData = await _storage.read(key: keyPath);
       if (keyData == null || !keyData.startsWith('{')) {
-        debugPrint("E2EE decrypt: Local key v2 not found for ${user.uid}");
-        return "[E2EE Setup Pending]";
+        debugPrint("E2EE decrypt: Local key v2 not found. Checking cloud backup...");
+        final backupDoc = await _firestore.collection('user_keys').doc(user.uid).get();
+        if (backupDoc.exists && backupDoc.data()?['privateKeyJson'] != null) {
+          keyData = backupDoc.data()!['privateKeyJson'];
+          await _storage.write(key: keyPath, value: keyData!);
+        } else {
+          debugPrint("E2EE decrypt: No local key or cloud backup found for ${user.uid}");
+          return "[E2EE Setup Pending]";
+        }
       }
 
       final privKey = _parsePrivateKeyFromJson(json.decode(keyData));

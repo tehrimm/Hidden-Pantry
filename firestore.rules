@@ -33,7 +33,7 @@ service cloud.firestore {
           'updatedAt', 'lastLoginAt', 'hasLoggedInAfterRejection', 'fcmToken',
           'licenseNumber', 'expiryDate', 'certificateUrl', 'notificationsEnabled', 'bankDetails', 'payoutMethod',
           'totalEarnings', 'pendingPayout',
-          'total_review_count', 'total_rating_sum'
+          'total_review_count', 'total_rating_sum', 'chatPublicKey'
         ])
       ) || (
         isAuthenticated() &&
@@ -92,6 +92,11 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
     
+    // ==================== E2EE KEY BACKUP RULES ====================
+    match /user_keys/{userId} {
+      allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
+    }
+
     // ==================== USER RULES ====================
     match /users/{userId} {
       allow read: if request.auth != null;
