@@ -9,7 +9,7 @@ from scipy import sparse
 # =========================
 # PATHS
 # =========================
-BASE_DIR = Path(r"E:\University\FYP\backend")
+BASE_DIR = Path(__file__).resolve().parent
 DATA_PATH = BASE_DIR / "food_dataset_fast.json"
 OUT_DIR = BASE_DIR / "trained_model"
 OUT_DIR.mkdir(exist_ok=True)

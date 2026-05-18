@@ -65,115 +65,160 @@ class FeedRequest(BaseModel):
 # =========================
 # HELPERS
 # =========================
+    
 def parse_ingredient(ingredient_str):
     """Parse ingredient string or dict into clean components."""
     import re
     
-    # For debugging (output will appear in python console)
-    # print(f"[DEBUG] Parsing: {ingredient_str} (type: {type(ingredient_str)})")
-    
-    # Case A: Input is already a dictionary-like object
+    # Case A: Input is already a dictionary
     if isinstance(ingredient_str, dict) or (hasattr(ingredient_str, 'get') and not isinstance(ingredient_str, str)):
         raw_name = str(ingredient_str.get("name") or ingredient_str.get("ingredient") or "")
-        # If the name itself is a stringified dict, recurse briefly
         if '{name:' in raw_name.replace(" ", ""):
             return parse_ingredient(raw_name)
         
-        # Use a helper to parse quantity safely even if it's a string
+        raw_qty_val = ingredient_str.get("quantity") or ingredient_str.get("quantiy")
+        # Keep existing displayQuantity if it exists
+        display_qty = ingredient_str.get("displayQuantity")
+        if display_qty is None:
+            raw_qty_str = str(raw_qty_val).strip() if raw_qty_val is not None else ""
+            display_qty = raw_qty_str if any(c in raw_qty_str for c in '/-') else None
+
         def _to_float(v):
             if v is None: return 0.0
             if isinstance(v, (int, float)): return float(v)
-            s_val = str(v).strip()
+            s_val = str(v).strip().lower()
             if not s_val: return 0.0
             try:
-                # Handle fractions like "1/2"
                 if '/' in s_val:
-                    if ' ' in s_val:
-                        parts = s_val.split()
-                        total = 0.0
-                        for p in parts:
-                            if '/' in p:
-                                n, d = p.split('/')
-                                total += float(n)/float(d)
-                            else: total += float(p)
-                        return total
-                    n, d = s_val.split('/')
-                    return float(n)/float(d)
+                    parts = s_val.split()
+                    total = 0.0
+                    for p in parts:
+                        if '/' in p:
+                            n, d = p.split('/')
+                            total += float(n)/float(d)
+                        else: total += float(p)
+                    return total
                 return float(s_val)
             except: return 0.0
 
         return {
             "name": raw_name,
-            "quantity": _to_float(ingredient_str.get("quantity") or ingredient_str.get("quantiy")),
-            "unit": str(ingredient_str.get("unit") or "")
+            "quantity": _to_float(raw_qty_val),
+            "unit": str(ingredient_str.get("unit") or ""),
+            "displayQuantity": display_qty
         }
     
-    # Case B: Input is a string (could be a plain string or a stringified map)
+    # Case B: Input is a string
     s = str(ingredient_str).strip()
+    if not s:
+        return {"name": "", "quantity": 0.0, "unit": "", "displayQuantity": None}
+
+    original_s = s
+    qty_str = ""
+    unit_str = ""
+    display_qty = None
+
+    # 1. Handle special prefixes (to taste, as needed, handful)
+    # Using \s+ to be flexible with spaces
+    special_prefixes = [
+        r'^to\s+taste\b', 
+        r'^as\s+needed\b', 
+        r'^optional\b',
+        r'^taste\b',
+        r'^handful\b',
+        r'^a\s+handful\b'
+    ]
+    for pref in special_prefixes:
+        match = re.match(pref, s, re.I)
+        if match:
+            display_qty = match.group(0).lower()
+            s = s[match.end():].strip()
+            # Remove leading "of " or ","
+            s = re.sub(r'^of\s+|^,\s*', '', s, flags=re.I)
+            break
+            
+    # Also handle suffix "to taste" (e.g. "salt to taste")
+    if not display_qty:
+        suffix_match = re.search(r'\s+to\s+taste\s*$', s, re.I)
+        if suffix_match:
+            display_qty = "to taste"
+            s = s[:suffix_match.start()].strip()
+            # Remove trailing comma
+            s = s.rstrip(',')
+
+    # 2. Extract Quantity (Range first, then single)
+    if not display_qty:
+        # Check for range: "4 to 8" or "4-8"
+        # Note: we use non-greedy and word boundaries to be safe
+        range_match = re.match(r'^([\d\s\./¼½¾⅓⅔⅛⅜⅝⅞-]+)\s+(?:to|-)\s+([\d\s\./¼½¾⅓⅔⅛⅜⅝⅞-]+)', s, re.I)
+        if range_match:
+            qty_str = f"{range_match.group(1).strip()} to {range_match.group(2).strip()}"
+            s = s[range_match.end():].strip()
+        else:
+            # Single quantity
+            qty_match = re.match(r'^([\d\./¼½¾⅓⅔⅛⅜⅝⅞-]+(?:\s+[\d\./¼½¾⅓⅔⅛⅜⅝⅞-]+)?)', s, re.I)
+            if qty_match:
+                qty_str = qty_match.group(1).strip()
+                s = s[qty_match.end():].strip()
+
+    # 3. Extract Unit
+    units = [
+        'tablespoons', 'tablespoon', 'tbsp', 'tbs', 
+        'teaspoons', 'teaspoon', 'tsp', 'ts',
+        'cups', 'cup', 'c', 'ounces', 'ounce', 'oz',
+        'pounds', 'pound', 'lbs', 'lb', 'grams', 'gram', 'g',
+        'kilograms', 'kilogram', 'kg', 'milliliters', 'milliliter', 'ml',
+        'liters', 'liter', 'l', 'cloves', 'clove', 'can', 'pkg', 'slices', 'slice',
+        'pinch', 'dash', 'sticks', 'stick'
+    ]
+    units.sort(key=len, reverse=True)
+    unit_regex = r'^(' + '|'.join(units) + r')\b'
     
-    # Aggressive check for stringified maps/records: "{name: ..., quantity: ...}"
-    if ('name' in s.lower()) and (':' in s or '=' in s) and ('{' in s or '(' in s):
+    unit_match = re.match(unit_regex, s, re.I)
+    if unit_match:
+        unit_str = unit_match.group(1).lower()
+        s = s[unit_match.end():].strip()
+    
+    # 4. Final cleanup
+    name = re.sub(r'^of\s+|^,\s*|^-\s*', '', s, flags=re.I).strip()
+    if not name: name = original_s
+
+    # 5. Numeric quantity conversion
+    def _parse_qty(q):
+        q = q.strip().lower()
+        if not q: return 0.0
+        for delim in [' to ', '-', '–']:
+            if delim in q:
+                parts = q.split(delim)
+                try:
+                    v1 = _parse_qty(parts[0])
+                    v2 = _parse_qty(parts[1])
+                    return (v1 + v2) / 2.0
+                except: pass
         try:
-            # Handle optional quotes around keys and values
-            name_p = re.search(r"['\"]?name['\"]?\s*[:=]\s*['\"]?([^,}'\"]+)['\"]?", s, re.I)
-            qty_p = re.search(r"['\"]?quanti[ty]['\"]?\s*[:=]\s*['\"]?([^,}'\"]+)['\"]?", s, re.I)
-            unit_p = re.search(r"['\"]?unit['\"]?\s*[:=]\s*['\"]?([^,)}'\"]+)['\"]?", s, re.I)
-            
-            if name_p:
-                name = name_p.group(1).strip()
-                # Remove lingering quotes
-                name = re.sub(r"^['\"]|['\"]$", "", name).strip()
-                
-                qty_val = 0.0
-                if qty_p:
-                    qty_val = _to_float(qty_p.group(1).strip())
-                
-                unit = unit_p.group(1).strip() if unit_p else ""
-                unit = re.sub(r"^['\"]|['\"]$", "", unit).strip()
-                
-                return {
-                    "name": name,
-                    "quantity": qty_val,
-                    "unit": unit
-                }
-        except:
-            pass
-            
-    # Case C: Traditional "1 cup flour" style string
-    # Pattern: optional fraction/number, optional unit, then ingredient name
-    pattern = r'^([\d\s/\.]+)?\s*(cups?|tablespoons?|teaspoons?|ounces?|oz|lbs?|pounds?|g|kg|ml|l|pinch|dash|cans?|packages?|medium|large|small|cloves?|stalks?|quarts?|pints?)?\s*(.+)$'
+            if '/' in q:
+                parts = q.split()
+                total = 0.0
+                for p in parts:
+                    if '/' in p:
+                        n, d = p.split('/')
+                        total += float(n)/float(d)
+                    else: total += float(p)
+                return total
+            return float(q)
+        except: return 0.0
+
+    result = {
+        "name": name,
+        "quantity": _parse_qty(qty_str),
+        "unit": unit_str,
+        "displayQuantity": display_qty if display_qty else (qty_str if qty_str else None)
+    }
     
-    match = re.match(pattern, s, re.IGNORECASE)
-    if match:
-        qty_str, unit, name = match.groups()
-        
-        # Parse quantity
-        quantity = 0.0
-        if qty_str:
-            qty_str = qty_str.strip()
-            try:
-                if '/' in qty_str:
-                    parts = qty_str.split()
-                    total = 0.0
-                    for part in parts:
-                        if '/' in part:
-                            num, denom = part.split('/')
-                            total += float(num) / float(denom)
-                        else:
-                            total += float(part)
-                    quantity = total
-                else:
-                    quantity = float(qty_str)
-            except:
-                quantity = 0.0
-        
-        return {
-            "name": (name or s).strip().rstrip(','),
-            "quantity": quantity,
-            "unit": (unit or "").strip()
-        }
+    # Debug log (optional, remove for production)
+    # print(f"[DEBUG] '{original_s}' -> {result}")
     
-    return {"name": s, "quantity": 0.0, "unit": ""}
+    return result
 
 def map_recipe_to_flutter(row):
     """Maps the scraped JSON fields to the Flutter Recipe model names."""

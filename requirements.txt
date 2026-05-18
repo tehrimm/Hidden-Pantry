@@ -7,3 +7,4 @@ scipy
 joblib
 pydantic
 python-multipart
+gunicorn

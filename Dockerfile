@@ -3,32 +3,30 @@ FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
-# Install build dependencies for scipy/scikit-learn
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc g++ && \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir --target=/app/deps -r requirements.txt
+
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
 # ─── Stage 2: Production image ──────────────────────────
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy installed dependencies from builder
-COPY --from=builder /app/deps /app/deps
-ENV PYTHONPATH="/app/deps"
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PATH="/install/bin:$PATH" \
+    PYTHONPATH="/install/lib/python3.11/site-packages" \
+    PORT=8080
 
-# Copy application code and model files
-COPY main.py .
-COPY trained_model/ ./trained_model/
-COPY food_dataset_fast.json .
+COPY --from=builder /install /install
 
-# Cloud Run sets PORT env variable (default 8080)
-ENV PORT=8080
+# Copy all project files
+COPY . .
 
-EXPOSE ${PORT}
+EXPOSE 8080
 
-# Use uvicorn with the PORT env variable
-CMD ["sh", "-c", "python -m uvicorn main:app --host 0.0.0.0 --port ${PORT}"]
+CMD ["sh", "-c", "gunicorn main:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:${PORT} --timeout 120"]
