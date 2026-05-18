@@ -2226,7 +2226,7 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
       };
     }
 
-    // 2. Get existing chats to include past clients
+    // 2. Get existing chats to update the correct chat ID for our subscribed clients
     final chatsSnap = await FirebaseFirestore.instance
         .collection("chats")
         .where("participants", arrayContains: nutritionistId)
@@ -2238,12 +2238,8 @@ class _NutritionistDashboardState extends State<NutritionistDashboard> {
       final otherUserId = participants.firstWhere((id) => id != nutritionistId, orElse: () => "");
       if (otherUserId.isEmpty) continue;
 
-      if (!clientMap.containsKey(otherUserId)) {
-        clientMap[otherUserId] = {
-          "userId": otherUserId,
-          "chatId": doc.id,
-        };
-      } else {
+      // ONLY update chatId if they are already an active subscribed client
+      if (clientMap.containsKey(otherUserId)) {
         clientMap[otherUserId]!["chatId"] = doc.id;
       }
     }
