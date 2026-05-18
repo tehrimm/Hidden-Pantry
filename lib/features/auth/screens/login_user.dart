@@ -469,8 +469,8 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                                       fontFamily: "Satoshi",
                                     ),
                                     contentPadding: EdgeInsets.symmetric(
-                                      horizontal: 24.sw,
-                                      vertical: 16.sh,
+                                      horizontal: 30.sw,
+                                      vertical: 22.sh,
                                     ),
                                   ),
                                 ),
@@ -509,8 +509,8 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                                             fontFamily: "Satoshi",
                                           ),
                                           contentPadding: EdgeInsets.symmetric(
-                                            horizontal: 24.sw,
-                                            vertical: 16.sh,
+                                            horizontal: 30.sw,
+                                            vertical: 22.sh,
                                           ),
                                         ),
                                       ),
@@ -627,7 +627,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                                     child: GestureDetector(
                                       onTap: _loading ? null : _onGoogleLogin,
                                       child: Container(
-                                        height: 54.sh,
+                                        height: 59.sh,
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFF9E3D5),
                                           borderRadius: BorderRadius.circular(15.sw),
@@ -651,7 +651,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
                                     child: GestureDetector(
                                       onTap: _loading ? null : _onAppleLogin,
                                       child: Container(
-                                        height: 54.sh,
+                                        height: 59.sh,
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFF9E3D5),
                                           borderRadius: BorderRadius.circular(15.sw),

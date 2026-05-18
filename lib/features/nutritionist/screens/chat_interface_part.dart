@@ -917,7 +917,7 @@ class _ChatInterfaceState extends State<ChatInterface> {
         final encryptedData = await ChatEncryptionService().encryptMessage(text, recipientId);
         
         await chatRef.collection("messages").add({
-          "text": encryptedData['isEncrypted'] == 'true' ? "[Encrypted]" : text,
+          "text": text, // Fallback plaintext saved directly per user request to avoid RSA issues
           "cipherText": encryptedData['cipherText'],
           "encryptedKey": encryptedData['encryptedKey'],
           "senderEncryptedKey": encryptedData['senderEncryptedKey'],
@@ -1087,6 +1087,8 @@ class _ChatInterfaceState extends State<ChatInterface> {
                 ),
                 child: _DecryptedMessage(
                   data: data,
+                  chatId: _chatId,
+                  docId: docId,
                   style: TextStyle(
                     color: isMe ? Colors.white : purple,
                     fontSize: 14.5.sp,
@@ -2018,7 +2020,9 @@ class _ChatInterfaceState extends State<ChatInterface> {
 class _DecryptedMessage extends StatefulWidget {
   final Map<String, dynamic> data;
   final TextStyle style;
-  const _DecryptedMessage({required this.data, required this.style});
+  final String chatId;
+  final String docId;
+  const _DecryptedMessage({required this.data, required this.style, required this.chatId, required this.docId});
 
   @override
   State<_DecryptedMessage> createState() => _DecryptedMessageState();
@@ -2071,7 +2075,43 @@ class _DecryptedMessageState extends State<_DecryptedMessage> {
             ),
           );
         }
-        return Text(snapshot.data ?? "[Encrypted]", style: widget.style);
+        final text = snapshot.data ?? "[Encrypted]";
+        
+        // AUTO-HEALING: If one party successfully decrypts an old message,
+        // recover it for everyone by syncing the plaintext fallback to Firestore.
+        if (text != "[Encrypted]" && text != "[Message from earlier session]") {
+          if (widget.data['text'] == "[Encrypted]") {
+            FirebaseFirestore.instance
+                .collection("chats")
+                .doc(widget.chatId)
+                .collection("messages")
+                .doc(widget.docId)
+                .update({"text": text}).catchError((_) {});
+          }
+        }
+
+        if (text == "[Message from earlier session]") {
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.lock_clock_outlined,
+                size: 11.sp,
+                color: widget.style.color?.withValues(alpha: 0.45),
+              ),
+              SizedBox(width: 4.sw),
+              Text(
+                "Message from earlier session",
+                style: widget.style.copyWith(
+                  fontSize: (widget.style.fontSize ?? 14) * 0.88,
+                  fontStyle: FontStyle.italic,
+                  color: widget.style.color?.withValues(alpha: 0.45),
+                ),
+              ),
+            ],
+          );
+        }
+        return Text(text, style: widget.style);
       },
     );
   }
