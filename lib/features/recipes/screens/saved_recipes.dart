@@ -201,13 +201,6 @@ class _SavedRecipesScreenState extends State<SavedRecipesScreen> with AutomaticK
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _headerText(),
-                
-                // Back button if not in shell
-                if (!widget.inShell)
-                   Padding(
-                     padding: EdgeInsets.only(left: 25.sw, top: 10.sh),
-                     child: const BackButtonWidget(),
-                   ),
 
                 Expanded(
                   child: StreamBuilder<List<Map<String, dynamic>>>(

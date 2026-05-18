@@ -711,7 +711,7 @@ class _AnimatedNextButtonState extends State<_AnimatedNextButton> with SingleTic
         scale: _scale,
         child: Container(
           width: 184.sw,
-          height: 62.sh,
+          height: math.max(62.0, 62.sh),
           decoration: BoxDecoration(
             color: orange,
             borderRadius: BorderRadius.circular(20.sw),

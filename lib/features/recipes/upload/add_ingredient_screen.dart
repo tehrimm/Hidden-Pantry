@@ -27,7 +27,7 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
   final List<String> _units = [
     'tsp', 'teaspoon', 'teaspoons', 'tbsp', 'tablespoon', 'tablespoons', 'cup', 'cups', 
     'ml', 'l', 'g', 'kg', 'pinch', 'dash', 'slice', 'piece', 'clove', 'stalk', 'sprig', 
-    'oz', 'lb', 'pint', 'quart', 'gallon', 'large', 'medium', 'small', 'stick', 'head', 'bunch'
+    'oz', 'lb', 'pint', 'quart', 'gallon', 'large', 'medium', 'small', 'stick', 'head', 'bunch','as needed','to taste'
   ];
   String? _unit;
 
@@ -163,7 +163,7 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
                 padding: EdgeInsets.only(bottom: 92.sh + safeBottom),
                 child: Column(
                   children: [
-                    SizedBox(height: 12.sh),
+                    SizedBox(height: MediaQuery.of(context).size.width >= 600 ? 24.sh : 35.sh),
                     Padding(
                       padding: EdgeInsets.symmetric(horizontal: 20.sw),
                       child: Row(
@@ -172,7 +172,7 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
                             onTap: () => Navigator.pop(context),
                             child: Container(
                               width: 50.sw,
-                              height: 50.sh,
+                              height: 50.sw,
                               decoration: BoxDecoration(
                                 color: const Color(0xFFF9E3D5),
                                 borderRadius: BorderRadius.circular(25.sw),
@@ -210,7 +210,7 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
                       child: Column(
                         children: [
                           Container(
-                            height: 70.sh,
+                            height: math.max(60.0, 70.sh),
                             decoration: BoxDecoration(
                               color: const Color(0xFFF9E3D5),
                               borderRadius: BorderRadius.circular(20.sw),
@@ -231,6 +231,8 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
                               textAlignVertical: TextAlignVertical.center,
                               style: TextStyle(color: purple, fontSize: 16.sp, fontFamily: 'Satoshi', fontWeight: FontWeight.w600),
                               decoration: InputDecoration(
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
                                 hintText: 'Search Ingredient',
                                 hintStyle: TextStyle(
                                   color: purple.withValues(alpha: 0.5),
@@ -239,7 +241,6 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
                                   fontWeight: FontWeight.w600,
                                 ),
                                 border: InputBorder.none,
-                                contentPadding: EdgeInsets.only(bottom: 5.sh),
                                 suffixIcon: Icon(Icons.search, color: purple, size: 22.sw),
                               ),
                             ),
@@ -282,13 +283,14 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
                         );
                       },
                       child: Container(
-                        height: 70.sh,
+                        height: math.max(60.0, 70.sh),
                         decoration: BoxDecoration(
                           color: const Color(0xFFF9E3D5),
                           borderRadius: BorderRadius.circular(20.sw),
                         ),
                         padding: EdgeInsets.symmetric(horizontal: 20.sw),
                         child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Expanded(
                               child: TextField(
@@ -298,6 +300,8 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
                                 textAlignVertical: TextAlignVertical.center,
                                 style: TextStyle(color: purple, fontSize: 16.sp, fontFamily: 'Satoshi', fontWeight: FontWeight.w600),
                                 decoration: InputDecoration(
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.zero,
                                   hintText: 'Quantity',
                                   hintStyle: TextStyle(
                                     color: purple.withValues(alpha: 0.5),
@@ -306,7 +310,6 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
                                     fontWeight: FontWeight.w600,
                                   ),
                                   border: InputBorder.none,
-                                  contentPadding: EdgeInsets.only(bottom: 7.sh),
                                 ),
                               ),
                             ),
@@ -323,18 +326,15 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
                                 child: DropdownButton<String>(
                                   isExpanded: true,
                                   value: _unit,
-                                  hint: Padding(
-                                    padding: EdgeInsets.only(bottom: 5.sh),
-                                    child: Align(
-                                      alignment: Alignment.centerLeft,
-                                      child: Text(
-                                        'Unit',
-                                        style: TextStyle(
-                                          color: purple.withValues(alpha: 0.5),
-                                          fontSize: 16.sp,
-                                          fontFamily: 'Satoshi',
-                                          fontWeight: FontWeight.w600,
-                                        ),
+                                  hint: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'Unit',
+                                      style: TextStyle(
+                                        color: purple.withValues(alpha: 0.5),
+                                        fontSize: 16.sp,
+                                        fontFamily: 'Satoshi',
+                                        fontWeight: FontWeight.w600,
                                       ),
                                     ),
                                   ),
@@ -342,28 +342,22 @@ class _AddIngredientScreenState extends State<AddIngredientScreen> {
                                   items: _units.map((u) {
                                     return DropdownMenuItem<String>(
                                       value: u,
-                                      child: Padding(
-                                        padding: EdgeInsets.only(bottom: 5.sh),
-                                        child: Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            u,
-                                            style: TextStyle(color: purple, fontSize: 16.sp, fontFamily: 'Satoshi', fontWeight: FontWeight.w600),
-                                          ),
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          u,
+                                          style: TextStyle(color: purple, fontSize: 16.sp, fontFamily: 'Satoshi', fontWeight: FontWeight.w600),
                                         ),
                                       ),
                                     );
                                   }).toList(),
                                   selectedItemBuilder: (context) {
                                     return _units.map((u) {
-                                      return Padding(
-                                        padding: EdgeInsets.only(bottom: 5.sh),
-                                        child: Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Text(
-                                            u,
-                                            style: TextStyle(color: purple, fontSize: 16.sp, fontFamily: 'Satoshi', fontWeight: FontWeight.w600),
-                                          ),
+                                      return Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          u,
+                                          style: TextStyle(color: purple, fontSize: 16.sp, fontFamily: 'Satoshi', fontWeight: FontWeight.w600),
                                         ),
                                       );
                                     }).toList();

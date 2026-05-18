@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -155,96 +156,94 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
         child: Stack(
           children: [
             PatternBackground(),
-            SafeArea(
-              child: Column(
-                children: [
-                  SizedBox(height: 12.sh),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 29.sw),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        BackButtonWidget(color: purple),
-                        Text(
-                          widget.editingRecipe != null ? 'Edit Recipe' : 'Add Recipe',
-                          style: TextStyle(
-                            color: purple,
-                            fontSize: 20.sp,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Satoshi',
-                          ),
-                        ),
-                        Container(
-                          width: 69.sw,
-                          height: 42.sh,
-                          decoration: BoxDecoration(
-                            color: purple,
-                            borderRadius: BorderRadius.circular(10.sw),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '4/5',
-                              style: TextStyle(
-                                color: const Color(0xFFFFF2EA),
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Satoshi',
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 20.sh),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 27.sw),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Direction',
+            Column(
+              children: [
+                SizedBox(height: 50.sh),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 29.sw),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      BackButtonWidget(color: purple),
+                      Text(
+                        widget.editingRecipe != null ? 'Edit Recipe' : 'Add Recipe',
                         style: TextStyle(
                           color: purple,
-                          fontSize: 40.sp,
-                          fontWeight: FontWeight.w900,
-                          height: 1.1,
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.bold,
                           fontFamily: 'Satoshi',
                         ),
                       ),
+                      Container(
+                        width: 69.sw,
+                        height: math.max(36.0, 42.sh),
+                        decoration: BoxDecoration(
+                          color: purple,
+                          borderRadius: BorderRadius.circular(10.sw),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '4/5',
+                            style: TextStyle(
+                              color: const Color(0xFFFFF2EA),
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Satoshi',
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                SizedBox(height: 20.sh),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 27.sw),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Direction',
+                      style: TextStyle(
+                        color: purple,
+                        fontSize: 40.sp,
+                        fontWeight: FontWeight.w900,
+                        height: 1.1,
+                        fontFamily: 'Satoshi',
+                      ),
                     ),
                   ),
-                  Expanded(
-                    child: Theme(
-                      data: Theme.of(context).copyWith(
-                        canvasColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                      ),
-                      child: ReorderableListView.builder(
-                        padding: EdgeInsets.only(top: 20.sh, bottom: 120.sh),
-                        itemCount: _steps.length + 2,
-                        itemBuilder: (context, index) {
-                          if (index == _steps.length) {
-                            return _buildAddButton(index);
-                          }
-                          if (index == _steps.length + 1) {
-                            return _buildNavigationButtons(index);
-                          }
-                          return _buildStepItem(index);
-                        },
-                        onReorder: (oldIndex, newIndex) {
-                          if (newIndex > oldIndex) newIndex -= 1;
-                          if (newIndex >= _steps.length) return;
-                          if (oldIndex >= _steps.length) return;
-                          setState(() {
-                            final step = _steps.removeAt(oldIndex);
-                            _steps.insert(newIndex, step);
-                          });
-                        },
-                      ),
+                ),
+                Expanded(
+                  child: Theme(
+                    data: Theme.of(context).copyWith(
+                      canvasColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                    ),
+                    child: ReorderableListView.builder(
+                      padding: EdgeInsets.only(top: 20.sh, bottom: 120.sh),
+                      itemCount: _steps.length + 2,
+                      itemBuilder: (context, index) {
+                        if (index == _steps.length) {
+                          return _buildAddButton(index);
+                        }
+                        if (index == _steps.length + 1) {
+                          return _buildNavigationButtons(index);
+                        }
+                        return _buildStepItem(index);
+                      },
+                      onReorder: (oldIndex, newIndex) {
+                        if (newIndex > oldIndex) newIndex -= 1;
+                        if (newIndex >= _steps.length) return;
+                        if (oldIndex >= _steps.length) return;
+                        setState(() {
+                          final step = _steps.removeAt(oldIndex);
+                          _steps.insert(newIndex, step);
+                        });
+                      },
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ),
@@ -303,11 +302,11 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
             left: 10.sw,
             top: 5.sh,
             child: Container(
-              width: 22.sw,
-              height: 22.sh,
+              width: 24.sw,
+              height: 24.sw,
               decoration: BoxDecoration(
                 color: cardBg,
-                borderRadius: BorderRadius.circular(11.sw),
+                borderRadius: BorderRadius.circular(12.sw),
               ),
               child: Center(
                 child: Text(
@@ -328,7 +327,7 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  constraints: BoxConstraints(minHeight: 70.sh),
+                  constraints: BoxConstraints(minHeight: math.max(70.0, 70.sh)),
                   decoration: BoxDecoration(
                     color: cardBg,
                     borderRadius: BorderRadius.circular(20.sw),
@@ -369,7 +368,7 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
                   onTap: () => _pickStepImage(index),
                   child: Container(
                     width: 107.sw,
-                    height: 85.sh,
+                    height: math.max(75.0, 85.sh),
                     decoration: BoxDecoration(
                       color: cardBg,
                       borderRadius: BorderRadius.circular(20.sw),
@@ -415,7 +414,7 @@ class _UploadRecipeStep4State extends State<UploadRecipeStep4> {
       child: GestureDetector(
         onTap: _addStep,
         child: Container(
-          height: 62.sh,
+          height: math.max(62.0, 62.sh),
           decoration: BoxDecoration(
             color: cardBg,
             borderRadius: BorderRadius.circular(20.sw),
@@ -483,7 +482,7 @@ class _AnimatedNextButtonState extends State<_AnimatedNextButton> with SingleTic
         scale: _scale,
         child: Container(
           width: 184.sw,
-          height: 62.sh,
+          height: math.max(62.0, 62.sh),
           decoration: BoxDecoration(
             color: orange,
             borderRadius: BorderRadius.circular(20.sw),

@@ -213,12 +213,9 @@ class _PantryScreenState extends State<PantryScreen> {
 
     return Scaffold(
       resizeToAvoidBottomInset: false, // Prevent keyboard from pushing content
-      backgroundColor: Colors.white,
+      backgroundColor: bg,
       body: Container(
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(30.sw),
-        ),
+        color: bg,
         child: Stack(
           children: [
             // Background patterns (matching other screens)
@@ -257,7 +254,7 @@ class _PantryScreenState extends State<PantryScreen> {
               bottom: false,
               child: Column(
                 children: [
-                  SizedBox(height: 12.sh),
+                  SizedBox(height: MediaQuery.of(context).size.width >= 600 ? 24.sh : 35.sh),
                   _topBar(context),
                   SizedBox(height: 14.sh),
                   
@@ -284,10 +281,10 @@ class _PantryScreenState extends State<PantryScreen> {
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 20.sw),
                     child: Container(
-                      height: 50.sh,
+                      height: max(52.0, 50.sh),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFDECE4),
-                        borderRadius: BorderRadius.circular(25.sw),
+                        borderRadius: BorderRadius.circular(26.0),
                       ),
                       child: TextField(
                         controller: _searchController,

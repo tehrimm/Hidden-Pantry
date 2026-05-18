@@ -150,7 +150,7 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
                       return Padding(
                         padding: EdgeInsets.fromLTRB(30.sw, 0, 30.sw, 8.sh),
                         child: Container(
-                          height: 70.sh,
+                          height: math.max(60.0, 70.sh),
                           clipBehavior: Clip.hardEdge,
                           decoration: BoxDecoration(
                             color: cardBg,
@@ -174,28 +174,34 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
                                     // Name
                                     Expanded(
                                       flex: 174,
-                                      child: Text(
-                                        ingredient['name'] ?? '',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: purple,
-                                          fontSize: 15.sp,
-                                          fontFamily: 'Satoshi',
-                                          overflow: TextOverflow.ellipsis,
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(horizontal: 12.sw),
+                                        child: Text(
+                                          ingredient['name'] ?? '',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: purple,
+                                            fontSize: 15.sp,
+                                            fontFamily: 'Satoshi',
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
                                       ),
                                     ),
                                     // Quantity
                                     Expanded(
                                       flex: 158,
-                                      child: Text(
-                                        ingredient['quantity'] ?? '',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: purple,
-                                          fontSize: 15.sp,
-                                          fontFamily: 'Satoshi',
-                                          overflow: TextOverflow.ellipsis,
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(horizontal: 12.sw),
+                                        child: Text(
+                                          ingredient['quantity'] ?? '',
+                                          textAlign: TextAlign.center,
+                                          style: TextStyle(
+                                            color: purple,
+                                            fontSize: 15.sp,
+                                            fontFamily: 'Satoshi',
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -223,7 +229,7 @@ class _UploadRecipeStep3State extends State<UploadRecipeStep3> {
                        child: GestureDetector(
                         onTap: _addIngredient,
                         child: Container(
-                          height: 62.sh,
+                          height: math.max(54.0, 62.sh),
                           decoration: BoxDecoration(
                             color: cardBg,
                             borderRadius: BorderRadius.circular(20.sw),
@@ -328,7 +334,7 @@ class _AnimatedNextButtonState extends State<_AnimatedNextButton> with SingleTic
         scale: _scale,
         child: Container(
           width: 184.sw,
-          height: 62.sh,
+          height: math.max(62.0, 62.sh),
           decoration: BoxDecoration(
             color: orange,
             borderRadius: BorderRadius.circular(20.sw),

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -207,6 +208,7 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
 
     return Scaffold(
       backgroundColor: widget.inShell ? Colors.transparent : bg,
+      extendBody: true,
       resizeToAvoidBottomInset: false,
       bottomNavigationBar: HpBottomNav(
         currentIndex: _bottomIndex,
@@ -368,7 +370,7 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
   Widget _header() {
     return Container(
       width: double.infinity,
-      height: 220.sh,
+      height: math.max(220.0, 220.sh),
       decoration: BoxDecoration(
         color: Colors.transparent,
         borderRadius: BorderRadius.only(
@@ -472,10 +474,11 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
         tween: Tween(begin: 0.0, end: 1.0),
         builder: (context, value, child) {
           return Container(
-            height: 56.sh,
+            height: math.max(54.0, 56.sh),
+            alignment: Alignment.center,
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.9),
-              borderRadius: BorderRadius.circular(28.sw),
+              borderRadius: BorderRadius.circular(28.0),
               boxShadow: [
                 BoxShadow(
                   color: purple.withValues(alpha: 0.08),
@@ -493,6 +496,7 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
           );
         },
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(Icons.search_rounded, color: orange, size: 24.sw),
             SizedBox(width: 12.sw),
@@ -506,7 +510,10 @@ class _NutritionistDiscoveryScreenState extends State<NutritionistDiscoveryScree
                   fontFamily: "Satoshi",
                   fontWeight: FontWeight.w600,
                 ),
+                textAlignVertical: TextAlignVertical.center,
                 decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: EdgeInsets.zero,
                   hintText: "Search your expert...",
                   hintStyle: TextStyle(
                     color: purple.withValues(alpha: 0.4),

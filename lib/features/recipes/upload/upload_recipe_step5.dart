@@ -158,98 +158,96 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
         child: Stack(
           children: [
           PatternBackground(),
-            SafeArea(
-              child: Column(
-                children: [
-                  SizedBox(height: 12.sh),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 29.sw),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        BackButtonWidget(color: purple),
-                        Text(
-                          widget.editingRecipe != null ? 'Edit Recipe' : 'Add Recipe',
-                          style: TextStyle(
-                            color: purple,
-                            fontSize: 20.sp,
-                            fontWeight: FontWeight.bold,
-                            fontFamily: 'Satoshi',
-                          ),
-                        ),
-                        Container(
-                          width: 69.sw,
-                          height: 42.sh,
-                          decoration: BoxDecoration(
-                            color: purple,
-                            borderRadius: BorderRadius.circular(10.sw),
-                          ),
-                          child: Center(
-                            child: Text(
-                              '5/5',
-                              style: TextStyle(
-                                color: const Color(0xFFFFF2EA),
-                                fontSize: 12.sp,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'Satoshi',
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
- 
-                  SizedBox(height: 20.sh),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 27.sw),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        'Nutrition',
+            Column(
+              children: [
+                SizedBox(height: 50.sh),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 29.sw),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      BackButtonWidget(color: purple),
+                      Text(
+                        widget.editingRecipe != null ? 'Edit Recipe' : 'Add Recipe',
                         style: TextStyle(
                           color: purple,
-                          fontSize: 40.sp,
-                          fontWeight: FontWeight.w900,
-                          height: 1.1,
+                          fontSize: 20.sp,
+                          fontWeight: FontWeight.bold,
                           fontFamily: 'Satoshi',
                         ),
                       ),
-                    ),
-                  ),
- 
-                  Expanded(
-                    child: ListView(
-                      padding: EdgeInsets.only(top: 20.sh, bottom: 120.sh, left: 30.sw, right: 30.sw),
-                      children: [
-                        Text(
-                          'Enter nutritional information per serving (optional).',
-                          style: TextStyle(
-                            color: purple.withValues(alpha:0.6),
-                            fontSize: 14.sp,
-                            fontFamily: 'Satoshi',
-                          ),
+                      Container(
+                        width: 69.sw,
+                        height: math.max(36.0, 42.sh),
+                        decoration: BoxDecoration(
+                          color: purple,
+                          borderRadius: BorderRadius.circular(10.sw),
                         ),
-                        SizedBox(height: 30.sh),
-                        _buildVisibilityToggle(),
-                        SizedBox(height: 30.sh),
-                        ..._controllers.keys.map((key) => _buildNutritionField(key)).toList(),
- 
-                        Padding(
-                          padding: EdgeInsets.symmetric(vertical: 42.sh),
-                          child: Align(
-                            alignment: Alignment.centerRight,
-                            child: _AnimatedSubmitButton(
-                              isLoading: _isSubmitting,
-                              onTap: _submit,
+                        child: Center(
+                          child: Text(
+                            '5/5',
+                            style: TextStyle(
+                              color: const Color(0xFFFFF2EA),
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'Satoshi',
                             ),
                           ),
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                SizedBox(height: 20.sh),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 27.sw),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Nutrition',
+                      style: TextStyle(
+                        color: purple,
+                        fontSize: 40.sp,
+                        fontWeight: FontWeight.w900,
+                        height: 1.1,
+                        fontFamily: 'Satoshi',
+                      ),
                     ),
                   ),
-                ],
-              ),
+                ),
+
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.only(top: 20.sh, bottom: 120.sh, left: 30.sw, right: 30.sw),
+                    children: [
+                      Text(
+                        'Enter nutritional information per serving (optional).',
+                        style: TextStyle(
+                          color: purple.withValues(alpha:0.6),
+                          fontSize: 14.sp,
+                          fontFamily: 'Satoshi',
+                        ),
+                      ),
+                      SizedBox(height: 30.sh),
+                      _buildVisibilityToggle(),
+                      SizedBox(height: 30.sh),
+                      ..._controllers.keys.map((key) => _buildNutritionField(key)).toList(),
+
+                      Padding(
+                        padding: EdgeInsets.symmetric(vertical: 42.sh),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: _AnimatedSubmitButton(
+                            isLoading: _isSubmitting,
+                            onTap: _submit,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
  
             if (_isSubmitting)
@@ -322,7 +320,7 @@ class _UploadRecipeStep5State extends State<UploadRecipeStep5> {
     return Padding(
       padding: EdgeInsets.only(bottom: 16.sh),
       child: Container(
-        height: 62.sh,
+        height: math.max(60.0, 62.sh),
         decoration: BoxDecoration(
           color: cardBg,
           borderRadius: BorderRadius.circular(15.sw),
@@ -393,7 +391,7 @@ class _AnimatedSubmitButtonState extends State<_AnimatedSubmitButton> with Singl
         scale: _scale,
         child: Container(
           padding: EdgeInsets.symmetric(horizontal: 24.sw),
-          height: 62.sh,
+          height: math.max(62.0, 62.sh),
           decoration: BoxDecoration(
             color: orange,
             borderRadius: BorderRadius.circular(20.sw),
