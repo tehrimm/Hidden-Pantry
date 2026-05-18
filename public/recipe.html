@@ -381,7 +381,7 @@
         <a href="/terms.html">Terms</a>
       </nav>
 
-      <a href="/hidden_pantry.apk" download="hidden_pantry.apk" class="btn btn-primary nav-cta">Download App ↓</a>
+      <a href="hidden_pantry.apk" download="hidden_pantry.apk" class="btn btn-primary nav-cta">Download App ↓</a>
     </div>
   </header>
 
@@ -461,8 +461,9 @@
         <div class="text-center"
           style="margin-top: 60px; padding: 40px; border-radius: 24px; background: var(--orange-pale);">
           <h3 style="margin-bottom: 12px;">Love this recipe?</h3>
-          <p style="margin-bottom: 24px;">Download Hidden Pantry to save your favourites, track your pantry, and get detailed nutritional insights.</p>
-          <a href="/hidden_pantry.apk" download="hidden_pantry.apk" class="btn btn-primary">Download Android APK</a>
+          <p style="margin-bottom: 24px;">Download Hidden Pantry to save your favourites, track your pantry, and get
+            detailed nutritional insights.</p>
+          <a href="hidden_pantry.apk" download="hidden_pantry.apk" class="btn btn-primary">Download Android APK</a>
         </div>
       </div>
     </section>
@@ -505,7 +506,7 @@
         </div>
         <div class="footer-col">
           <h4>Download</h4>
-          <a href="/hidden_pantry.apk" download="hidden_pantry.apk">Download Android APK</a>
+          <a href="hidden_pantry.apk" download="hidden_pantry.apk">Download Android APK</a>
           <a href="#">App Store (Soon)</a>
           <h4 style="margin-top:20px;">Follow Us</h4>
           <div class="footer-social">
@@ -740,14 +741,14 @@
       if (typeof val === 'string') {
         const s = val.trim();
         if (s.startsWith('[') && s.endsWith(']')) {
-          try { return JSON.parse(s); } catch(e) {}
+          try { return JSON.parse(s); } catch (e) { }
           // Handle python stringified list with single quotes
           try {
             const fixed = s.replace(/\[\s*'/g, '["')
-                           .replace(/'\s*\]/g, '"]')
-                           .replace(/'\s*,\s*'/g, '","');
+              .replace(/'\s*\]/g, '"]')
+              .replace(/'\s*,\s*'/g, '","');
             return JSON.parse(fixed);
-          } catch(e) {}
+          } catch (e) { }
         }
       }
       return null;
@@ -764,7 +765,7 @@
       // Our client-side parser is robust, so prefer the raw 'ingredients' strings if available.
       let rawIngredients = coerceArray(currentRecipe.ingredients);
       if (!rawIngredients || rawIngredients.length === 0) {
-          rawIngredients = coerceArray(currentRecipe.ingredients_parsed) || [];
+        rawIngredients = coerceArray(currentRecipe.ingredients_parsed) || [];
       }
       if (!Array.isArray(rawIngredients) || rawIngredients.length === 0) return;
 
@@ -804,13 +805,13 @@
       const merged = [];
       let i = 0;
       while (i < normalized.length) {
-        const cur  = normalized[i];
+        const cur = normalized[i];
         const next = i + 1 < normalized.length ? normalized[i + 1] : null;
 
-        const curHasName  = cur.name.length > 0;
-        const curNoQty    = cur.qty === 0;
-        const curQtyOnly  = !curHasName && cur.qty > 0 && !cur.unit; // pure number, no unit
-        
+        const curHasName = cur.name.length > 0;
+        const curNoQty = cur.qty === 0;
+        const curQtyOnly = !curHasName && cur.qty > 0 && !cur.unit; // pure number, no unit
+
         // Robust check for "qty only" (allow for tiny leftovers like dots or commas)
         const isQtyOnly = (item) => item && (item.name.length === 0 || /^[\.,\s]+$/.test(item.name)) && item.qty > 0;
         const isUnitName = (item) => item && item.name.length > 0 && item.qty === 0 && item.unit;
@@ -857,7 +858,7 @@
 
         // Format quantity string
         let formattedQty = "";
-        
+
         // Pattern: If we have a special string (like "to taste" or "handful"), 
         // we show it ONLY if scaleFactor is 1 (original recipe) 
         // OR if it's a range (ranges scale, special strings don't).
@@ -866,9 +867,9 @@
         if (isSpecialString) {
           formattedQty = displayQtyStr;
         } else if (displayQtyStr && displayQtyStr.includes(' to ') && scaleFactor !== 1) {
-           // It's a range: scale both parts
-           const p = displayQtyStr.split(' to ');
-           formattedQty = `${toFraction(parseFraction(p[0]) * scaleFactor)} to ${toFraction(parseFraction(p[1]) * scaleFactor)}`;
+          // It's a range: scale both parts
+          const p = displayQtyStr.split(' to ');
+          formattedQty = `${toFraction(parseFraction(p[0]) * scaleFactor)} to ${toFraction(parseFraction(p[1]) * scaleFactor)}`;
         } else if (displayQtyStr && scaleFactor === 1) {
           formattedQty = displayQtyStr;
         } else if (displayQty > 0) {
