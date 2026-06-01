@@ -533,22 +533,14 @@ class _IngredientCameraScreenState extends State<IngredientCameraScreen> with Si
   Widget _buildScanningOverlay() {
     return Stack(
       children: [
-        ColorFiltered(
-          colorFilter: ColorFilter.mode(Colors.black.withValues(alpha: 0.4), BlendMode.srcOut),
-          child: Stack(
-            children: [
-              Container(decoration: const BoxDecoration(color: Colors.black, backgroundBlendMode: BlendMode.dstOut)),
-              Center(
-                child: Container(
-                  width: 250.sw,
-                  height: 250.sw,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                ),
-              ),
-            ],
+        ClipPath(
+          clipper: InvertedClipper(
+            width: 250.sw,
+            height: 250.sw,
+            radius: 30,
+          ),
+          child: Container(
+            color: Colors.black.withValues(alpha: 0.4),
           ),
         ),
         Center(
@@ -821,4 +813,40 @@ class _ScannerCornerPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+class InvertedClipper extends CustomClipper<Path> {
+  final double width;
+  final double height;
+  final double radius;
+
+  const InvertedClipper({
+    required this.width,
+    required this.height,
+    required this.radius,
+  });
+
+  @override
+  Path getClip(Size size) {
+    return Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height))
+      ..addRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset(size.width / 2, size.height / 2),
+            width: width,
+            height: height,
+          ),
+          Radius.circular(radius),
+        ),
+      )
+      ..fillType = PathFillType.evenOdd;
+  }
+
+  @override
+  bool shouldReclip(covariant InvertedClipper oldClipper) {
+    return oldClipper.width != width ||
+        oldClipper.height != height ||
+        oldClipper.radius != radius;
+  }
 }

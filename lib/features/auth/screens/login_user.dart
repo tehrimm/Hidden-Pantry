@@ -116,7 +116,7 @@ class _UserLoginScreenState extends State<UserLoginScreen> with TickerProviderSt
       if (_gmailErr == "*email field is required") {
         _gmailErr = "*field is required";
       }
-      _passErr = AuthValidator.validatePassword(pass);
+      _passErr = AuthValidator.validatePassword(pass, isLogin: true);
     });
 
     return _gmailErr == null && _passErr == null;

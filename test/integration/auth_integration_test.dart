@@ -21,7 +21,7 @@ void main() {
       test('registerWithEmail creates a new user successfully', () async {
         final cred = await authService.registerWithEmail(
           'alice@example.com',
-          'SecurePass123',
+          'SecurePass123!',
         );
         expect(cred, isNotNull);
         expect(cred!.user, isNotNull);
@@ -183,7 +183,7 @@ void main() {
     group('Validation Gates before Auth calls', () {
       test('Empty email blocks registration before Firebase call', () {
         final emailErr = AuthValidator.validateEmail('');
-        final passErr = AuthValidator.validatePassword('ValidPass1');
+        final passErr = AuthValidator.validatePassword('ValidPass1!');
         // Email fails first → Firebase never called
         expect(emailErr, isNotNull);
         expect(passErr, null);
@@ -191,7 +191,7 @@ void main() {
 
       test('Valid inputs pass all validators before Firebase call', () {
         final emailErr = AuthValidator.validateEmail('valid@email.com');
-        final passErr = AuthValidator.validatePassword('ValidPass1');
+        final passErr = AuthValidator.validatePassword('ValidPass1!');
         final nameErr = AuthValidator.validateFullName('Alice Smith');
         expect(emailErr, null);
         expect(passErr, null);
@@ -200,7 +200,7 @@ void main() {
 
       test('All validators passing means auth call is safe to proceed', () {
         final email = 'test@test.com';
-        final pass = 'SecurePass99';
+        final pass = 'SecurePass99!';
         final name = 'John Doe';
 
         final allValid = AuthValidator.validateEmail(email) == null &&

@@ -62,7 +62,7 @@ void main() {
       });
 
       test('Exactly 8 characters passes', () {
-        expect(AuthValidator.validatePassword('12345678'), null);
+        expect(AuthValidator.validatePassword('Ab1!5678'), null);
       });
 
       test('7 characters fails', () {
@@ -70,7 +70,7 @@ void main() {
       });
 
       test('Long password passes', () {
-        expect(AuthValidator.validatePassword('this_is_a_very_long_password_123!'), null);
+        expect(AuthValidator.validatePassword('This_is_a_very_long_password_123!'), null);
       });
     });
 

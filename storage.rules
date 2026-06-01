@@ -4,9 +4,7 @@ service firebase.storage {
     
     // Helper function to check if user is admin
     function isAdmin() {
-      return request.auth != null && 
-        (request.auth.token.email == 'hiddenpantry.support@gmail.com' || 
-         request.auth.uid == 'K35k8MPFWSbmKo3CTe8Wz8waZAS2');
+      return request.auth != null && request.auth.token.admin == true;
     }
     
     // Helper function to check if user is authenticated
@@ -44,11 +42,6 @@ service firebase.storage {
     match /profile_pictures/{uid} {
       allow read: if true;
       allow write: if isAuthenticated() && request.auth.uid == uid;
-    }
-    
-    // TEMPORARY: Allow all writes for testing other paths if authenticated
-    match /{allPaths=**} {
-      allow read, write: if isAuthenticated();
     }
   }
 }

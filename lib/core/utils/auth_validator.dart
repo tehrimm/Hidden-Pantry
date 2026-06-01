@@ -25,7 +25,6 @@ class AuthValidator {
     return null;
   }
 
-  // Validates a password
   static String? validatePassword(String? value, {bool isLogin = false}) {
     if (value == null || value.isEmpty) {
       return "*password field is required";
@@ -42,7 +41,17 @@ class AuthValidator {
     if (value.length < 8) {
       return "*password must be at least 8 characters";
     }
-    
+
+    if (!isLogin) {
+      final hasUppercase = RegExp(r'[A-Z]').hasMatch(value);
+      final hasLowercase = RegExp(r'[a-z]').hasMatch(value);
+      final hasDigits = RegExp(r'[0-9]').hasMatch(value);
+      final hasSpecialCharacters = RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value);
+
+      if (!hasUppercase || !hasLowercase || !hasDigits || !hasSpecialCharacters) {
+        return "*must contain uppercase, lowercase, number, and special character";
+      }
+    }
     
     return null;
   }
