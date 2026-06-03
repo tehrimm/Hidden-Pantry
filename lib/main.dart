@@ -1,5 +1,6 @@
 // lib/main.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -157,13 +158,13 @@ class _HiddenPantryAppState extends State<HiddenPantryApp> with WidgetsBindingOb
           selectionColor: Color(0x33462F4D),
           selectionHandleColor: Color(0xFF462F4D),
         ),
-        pageTransitionsTheme: const PageTransitionsTheme(
+        pageTransitionsTheme: PageTransitionsTheme(
           builders: {
-            TargetPlatform.android: ZoomPageTransitionsBuilder(),
+            TargetPlatform.android: const ZoomPageTransitionsBuilder(),
             TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.linux: FadeUpwardsPageTransitionsBuilder(),
+            TargetPlatform.linux: const FadeUpwardsPageTransitionsBuilder(),
             TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
-            TargetPlatform.windows: FadeUpwardsPageTransitionsBuilder(),
+            TargetPlatform.windows: const FadeUpwardsPageTransitionsBuilder(),
           },
         ),
       ),
