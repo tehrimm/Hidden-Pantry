@@ -363,13 +363,15 @@ class _UploadRecipeStep2State extends State<UploadRecipeStep2> {
                                   final selectedInCategory = categoryTags.where((t) => _selectedTags.contains(t)).length;
                                   final icon = _getCategoryIcon(categoryName);
 
-                                  return Container(
+                                  return Card(
                                     margin: EdgeInsets.only(bottom: 12.sh),
-                                    decoration: BoxDecoration(
-                                      color: cardBg.withValues(alpha: 0.5),
+                                    color: cardBg.withValues(alpha: 0.5),
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(20.sw),
-                                      border: Border.all(color: cardBg),
+                                      side: BorderSide(color: cardBg),
                                     ),
+                                    clipBehavior: Clip.antiAlias,
                                     child: ExpansionTile(
                                       leading: Icon(icon, color: purple, size: 22.sw),
                                       title: Row(
